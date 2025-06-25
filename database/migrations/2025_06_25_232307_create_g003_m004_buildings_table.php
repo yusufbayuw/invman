@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('g003_m004_buildings', function (Blueprint $table) {
             $table->id();
+            $table->string('name')->nullable();
+            $table->text('location')->nullable();
+            $table->string('photo')->nullable();
             $table->timestamps();
         });
     }

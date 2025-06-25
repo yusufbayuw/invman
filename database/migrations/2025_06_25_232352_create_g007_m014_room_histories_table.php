@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('g007_m014_room_histories', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('g003_m006_room_id')->nullable()->constrained('g003_m006_rooms')->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->string('action')->nullable();
+            $table->text('notes')->nullable();
+            $table->string('photo')->nullable();
             $table->timestamps();
         });
     }

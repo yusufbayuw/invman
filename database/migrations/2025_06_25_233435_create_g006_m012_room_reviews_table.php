@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('g002_m002_item_types', function (Blueprint $table) {
+        Schema::create('g006_m012_room_reviews', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->nullable();
-            $table->string('description')->nullable();
+            $table->foreignId('g005_m010_room_reservation_id')->nullable()->constrained('g005_m010_room_reservations')->cascadeOnDelete();
+            $table->tinyInteger('rating')->nullable();
+            $table->text('review')->nullable();
             $table->timestamps();
         });
     }
@@ -24,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('g002_m002_item_types');
+        Schema::dropIfExists('g006_m012_room_reviews');
     }
 };

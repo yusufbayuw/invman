@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('g004_m008_activities', function (Blueprint $table) {
+        Schema::create('g003_m006_rooms', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->foreignId('g003_m005_floor_id')->nullable()->constrained('g003_m005_floors')->cascadeOnDelete();
             $table->foreignId('g001_m001_unit_id')->nullable()->constrained('g001_m001_units')->cascadeOnDelete();
             $table->string('name')->nullable();
-            $table->text('description')->nullable();
-            $table->string('attachment')->nullable();
+            $table->boolean('is_borrowable')->nullable();
+            $table->integer('capacity')->nullable();
+            $table->string('status')->nullable();
             $table->timestamps();
         });
     }
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('g004_m008_activities');
+        Schema::dropIfExists('g003_m006_rooms');
     }
 };

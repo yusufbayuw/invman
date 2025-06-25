@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('g003_m005_floors', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('g003_m004_building_id')->nullable()->constrained('g003_m004_buildings')->cascadeOnDelete();
+            $table->string('name')->nullable();
+            $table->string('map')->nullable();
             $table->timestamps();
         });
     }

@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('g002_m007_items', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('g001_m001_unit_id')->nullable()->constrained('g001_m001_units')->cascadeOnDelete();
+            $table->foreignId('g002_m003_item_management_id')->nullable()->constrained('g002_m003_item_managements')->cascadeOnDelete();
+            $table->foreignId('g002_m002_item_type_id')->nullable()->constrained('g002_m002_item_types')->cascadeOnDelete();
+            $table->foreignId('g003_m006_room_id')->nullable()->constrained('g003_m006_rooms')->cascadeOnDelete();
+            $table->string('name')->nullable();
+            $table->boolean('is_borrowable')->nullable();
+            $table->string('status')->nullable();
             $table->timestamps();
         });
     }

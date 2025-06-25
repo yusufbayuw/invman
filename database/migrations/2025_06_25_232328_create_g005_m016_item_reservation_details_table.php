@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('g005_m016_item_reservation_details', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('g005_m009_item_reservation_id')->nullable()->constrained('g005_m009_item_reservations')->cascadeOnDelete();
+            $table->foreignId('g002_m015_item_instance_id')->nullable()->constrained('g002_m015_item_instances')->cascadeOnDelete();
             $table->timestamps();
         });
     }
