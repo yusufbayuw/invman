@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('g005_m009_item_reservations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('g004_m008_activity_id')->nullable()->constrained('g004_m008_activities')->cascadeOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('g004_m008_activity_id')->nullable()->constrained('g004_m008_activities')->cascadeOnDelete();
             $table->foreignId('g002_m007_item_id')->nullable()->constrained('g002_m007_items')->cascadeOnDelete();
             $table->dateTime('start_time')->nullable();
             $table->dateTime('end_time')->nullable();

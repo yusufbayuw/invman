@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('g002_m015_item_instances', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('g002_m015_item_instance_id')->nullable()->constrained('g002_m015_item_instances')->cascadeOnDelete();
+            $table->foreignId('g002_m007_item_id')->nullable()->constrained('g002_m007_items')->cascadeOnDelete();
             $table->string('code')->nullable();
             $table->string('status')->nullable();
             $table->boolean('is_available')->nullable();

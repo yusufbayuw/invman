@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('g006_m012_room_reviews', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('g005_m010_room_reservation_id')->nullable()->constrained('g005_m010_room_reservations')->cascadeOnDelete();
+            $table->foreignUuid('g005_m010_room_reservation_id')->nullable()->constrained('g005_m010_room_reservations')->cascadeOnDelete();
+            $table->foreignId('g003_m006_room_id')->nullable()->constrained('g003_m006_rooms')->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->tinyInteger('rating')->nullable();
             $table->text('review')->nullable();
             $table->timestamps();

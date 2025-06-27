@@ -12,11 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('g004_m008_activities', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->foreignId('g001_m001_unit_id')->nullable()->constrained('g001_m001_units')->cascadeOnDelete();
             $table->string('name')->nullable();
             $table->text('description')->nullable();
+            $table->dateTime('start_time')->nullable();
+            $table->dateTime('end_time')->nullable();
             $table->string('attachment')->nullable();
             $table->timestamps();
         });

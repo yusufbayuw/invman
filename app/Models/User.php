@@ -8,6 +8,8 @@ use Filament\Panel;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Filament\Models\Contracts\FilamentUser;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -54,5 +56,22 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return true;
+    }
+
+    public function activity(): HasMany
+    {
+        return $this->hasMany(G004M008Activity::class, 'user_id');
+    }
+    public function item_history(): HasMany
+    {
+        return $this->hasMany(G007M013ItemHistory::class, 'user_id');
+    }
+    public function room_history(): HasMany
+    {
+        return $this->hasMany(G007M014RoomHistory::class, 'user_id');
+    }
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(G001M001Unit::class, 'g001_m001_unit_id');
     }
 }

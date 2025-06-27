@@ -19,6 +19,8 @@ return new class extends Migration
             $table->boolean('is_borrowable')->nullable();
             $table->integer('capacity')->nullable();
             $table->string('status')->nullable();
+            $table->string('photo')->nullable();
+            $table->string('qrcode')->nullable();
             $table->timestamps();
         });
     }

@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('g006_m011_item_reviews', function (Blueprint $table) {
             $table->id();
             $table->foreignId('g002_m015_item_instance_id')->nullable()->constrained('g002_m015_item_instances')->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->foreignUuid('g005_m009_item_reservation_id')->nullable()->constrained('g005_m009_item_reservations')->cascadeOnDelete();
             $table->tinyInteger('rating')->nullable();
             $table->text('review')->nullable();
             $table->timestamps();
