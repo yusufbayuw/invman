@@ -17,7 +17,11 @@ class G006M012RoomReviewResource extends Resource
 {
     protected static ?string $model = G006M012RoomReview::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Review';
+    protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-bottom-center-text';
+    protected static ?string $slug = 'room-review';
+    protected static ?string $modelLabel = 'Ulasan Ruangan';
+    protected static ?string $navigationLabel = 'Ulasan Ruangan';
 
     public static function form(Form $form): Form
     {

@@ -17,16 +17,55 @@ class G003M004BuildingResource extends Resource
 {
     protected static ?string $model = G003M004Building::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Ruangan';
+    protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
+    protected static ?string $slug = 'building';
+    protected static ?string $modelLabel = 'Bangunan';
+    protected static ?string $navigationLabel = 'Bangunan';
+
+    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    {
+        return $infolist
+            ->schema([
+                \Filament\Infolists\Components\Grid::make(2)
+                    ->schema([
+                        \Filament\Infolists\Components\Group::make([
+                            \Filament\Infolists\Components\TextEntry::make('name')
+                                ->label('Nama Bangunan'),
+                            \Filament\Infolists\Components\TextEntry::make('location')
+                                ->label('Lokasi'),
+                        ]),
+                        \Filament\Infolists\Components\ImageEntry::make('photo')
+                            ->label('Foto Bangunan')
+                            ->circular()
+                            ->simpleLightbox()
+                            ->columnSpan(1),
+                    ]),
+                \Filament\Infolists\Components\Grid::make(2)
+                    ->schema([
+                        \Filament\Infolists\Components\TextEntry::make('created_at')
+                            ->label('Dibuat pada')
+                            ->dateTime(),
+                        \Filament\Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Diperbarui pada')
+                            ->dateTime(),
+                    ]),
+            ]);
+    }
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name'),
+                Forms\Components\TextInput::make('name')
+                    ->label('Nama Bangunan'),
                 Forms\Components\Textarea::make('location')
+                    ->label('Lokasi')
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('photo'),
+                Forms\Components\FileUpload::make('photo')
+                    ->label('Foto Bangunan')
+                    ->image()
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -35,9 +74,12 @@ class G003M004BuildingResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('photo')
-                    ->searchable(),
+                    ->searchable()
+                    ->label('Nama Bangunan'),
+                Tables\Columns\ImageColumn::make('photo')
+                    ->label('Foto Bangunan')
+                    ->circular()
+                    ->simpleLightbox(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

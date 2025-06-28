@@ -17,7 +17,11 @@ class G005M009ItemReservationResource extends Resource
 {
     protected static ?string $model = G005M009ItemReservation::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Peminjaman';
+    protected static ?string $navigationIcon = 'heroicon-o-bookmark-square';
+    protected static ?string $slug = 'item-reservation';
+    protected static ?string $modelLabel = 'Reservasi Barang';
+    protected static ?string $navigationLabel = 'Reservasi Barang';
 
     public static function form(Form $form): Form
     {

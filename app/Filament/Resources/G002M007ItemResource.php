@@ -7,6 +7,7 @@ use App\Filament\Resources\G002M007ItemResource\RelationManagers;
 use App\Models\G002M007Item;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -17,22 +18,56 @@ class G002M007ItemResource extends Resource
 {
     protected static ?string $model = G002M007Item::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Barang';
+    protected static ?string $navigationIcon = 'heroicon-o-cube';
+    protected static ?string $slug = 'item';
+    protected static ?string $modelLabel = 'Barang';
+    protected static ?string $navigationLabel = 'Barang';
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                \Filament\Infolists\Components\TextEntry::make('name')
+                    ->label('Nama Barang'),
+                \Filament\Infolists\Components\TextEntry::make('unit.name')
+                    ->label('Unit Pemilik'),
+                \Filament\Infolists\Components\TextEntry::make('item_management.name')
+                    ->label('Pengelola Barang'),
+                \Filament\Infolists\Components\TextEntry::make('item_type.name')
+                    ->label('Jenis Barang'),
+                \Filament\Infolists\Components\TextEntry::make('room.name')
+                    ->label('Ruangan Penempatan'),
+                \Filament\Infolists\Components\IconEntry::make('is_borrowable')
+                    ->label('Dapat Dipinjam')
+                    ->boolean(),
+                \Filament\Infolists\Components\TextEntry::make('status'),
+            ]);
+    }
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('g001_m001_unit_id')
-                    ->numeric(),
-                Forms\Components\TextInput::make('g002_m003_item_management_id')
-                    ->numeric(),
-                Forms\Components\TextInput::make('g002_m002_item_type_id')
-                    ->numeric(),
-                Forms\Components\TextInput::make('g003_m006_room_id')
-                    ->numeric(),
-                Forms\Components\TextInput::make('name'),
-                Forms\Components\Toggle::make('is_borrowable'),
+                Forms\Components\Select::make('g001_m001_unit_id')
+                    ->relationship('unit', 'name')
+                    ->label('Unit Pemilik'),
+                Forms\Components\Select::make('g002_m003_item_management_id')
+                    ->relationship('item_management', 'name')
+                    ->label('Pengelola Barang'),
+                Forms\Components\Select::make('g002_m002_item_type_id')
+                    ->relationship('item_type', 'name')
+                    ->label('Jenis Barang'),
+                Forms\Components\Select::make('g003_m006_room_id')
+                    ->relationship('room', 'name')
+                    ->label('Ruangan Penempatan'),
+                Forms\Components\TextInput::make('name')
+                    ->label('Nama Barang'),
+                Forms\Components\TextInput::make('code')
+                    ->label('Kode Barang'),
+                Forms\Components\Toggle::make('is_borrowable')
+                    ->label('Dapat Dipinjam')
+                    ->inlineLabel(),
                 Forms\Components\TextInput::make('status'),
             ]);
     }
@@ -41,21 +76,23 @@ class G002M007ItemResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('g001_m001_unit_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('g002_m003_item_management_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('g002_m002_item_type_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('g003_m006_room_id')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('name')
+                    ->label('Nama Barang')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('unit.name')
+                    ->label('Unit Pemilik')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('item_management.name')
+                    ->label('Pengelola Barang')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('item_type.name')
+                    ->label('Jenis Barang')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('room.name')
+                    ->label('Ruangan Penempatan')
+                    ->sortable(),
                 Tables\Columns\IconColumn::make('is_borrowable')
+                    ->label('Dapat Dipinjam')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('status')
                     ->searchable(),

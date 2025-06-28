@@ -17,7 +17,11 @@ class G005M010RoomReservationResource extends Resource
 {
     protected static ?string $model = G005M010RoomReservation::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Peminjaman';
+    protected static ?string $navigationIcon = 'heroicon-o-bookmark';
+    protected static ?string $slug = 'room-reservation';
+    protected static ?string $modelLabel = 'Reservasi Ruangan';
+    protected static ?string $navigationLabel = 'Reservasi Ruangan';
 
     public static function form(Form $form): Form
     {

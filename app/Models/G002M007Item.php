@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Observers\G002M007ItemObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[ObservedBy(G002M007ItemObserver::class)]
 class G002M007Item extends Model
 {
     public function item_reservation(): HasMany

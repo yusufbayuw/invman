@@ -17,7 +17,11 @@ class G007M013ItemHistoryResource extends Resource
 {
     protected static ?string $model = G007M013ItemHistory::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Riwayat';
+    protected static ?string $navigationIcon = 'heroicon-o-document-check';
+    protected static ?string $slug = 'item-history';
+    protected static ?string $modelLabel = 'Riwayat Barang';
+    protected static ?string $navigationLabel = 'Riwayat Barang';
 
     public static function form(Form $form): Form
     {

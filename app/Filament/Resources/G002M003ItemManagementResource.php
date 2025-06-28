@@ -17,14 +17,21 @@ class G002M003ItemManagementResource extends Resource
 {
     protected static ?string $model = G002M003ItemManagement::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Barang';
+    protected static ?string $navigationIcon = 'heroicon-o-adjustments-vertical';
+    protected static ?string $slug = 'item-management';
+    protected static ?string $modelLabel = 'Pengelola Barang';
+    protected static ?string $navigationLabel = 'Pengelola Barang';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name'),
-                Forms\Components\TextInput::make('description'),
+                Forms\Components\TextInput::make('name')
+                    ->label('Nama Pengelola Barang'),
+                Forms\Components\TextInput::make('description')
+                    ->label('Deskripsi')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -33,16 +40,21 @@ class G002M003ItemManagementResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable()
+                    ->label('Nama'),
                 Tables\Columns\TextColumn::make('description')
-                    ->searchable(),
+                    ->searchable()
+                    ->label('Deskripsi'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
+                    ->label('Dibuat pada')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
+                    ->label('Diperbarui pada')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([

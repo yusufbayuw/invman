@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('pinned_menus', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('label');
+            $table->string('url');
+            $table->string('icon')->nullable();
             $table->timestamps();
         });
     }

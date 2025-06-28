@@ -17,7 +17,26 @@ class G001M001UnitResource extends Resource
 {
     protected static ?string $model = G001M001Unit::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Manajemen';
+    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static ?string $slug = 'unit';
+    protected static ?string $modelLabel = 'Unit';
+    protected static ?string $navigationLabel = 'Unit';
+
+    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    {
+        return $infolist
+            ->schema([
+                \Filament\Infolists\Components\TextEntry::make('name')
+                    ->label('Nama Unit'),
+                \Filament\Infolists\Components\TextEntry::make('created_at')
+                    ->label('Dibuat pada')
+                    ->dateTime(),
+                \Filament\Infolists\Components\TextEntry::make('updated_at')
+                    ->label('Diperbarui pada')
+                    ->dateTime(),
+            ]);
+    }
 
     public static function form(Form $form): Form
     {

@@ -17,22 +17,53 @@ class G003M006RoomResource extends Resource
 {
     protected static ?string $model = G003M006Room::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Ruangan';
+    protected static ?string $navigationIcon = 'heroicon-o-map-pin';
+    protected static ?string $slug = 'room';
+    protected static ?string $modelLabel = 'Ruangan';
+    protected static ?string $navigationLabel = 'Ruangan';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('g003_m005_floor_id')
-                    ->numeric(),
-                Forms\Components\TextInput::make('g001_m001_unit_id')
-                    ->numeric(),
-                Forms\Components\TextInput::make('name'),
-                Forms\Components\Toggle::make('is_borrowable'),
+                Forms\Components\Select::make('g003_m005_floor_id')
+                    ->label('Gedung & Lantai')
+                    ->searchable()
+                    ->options(function () {
+                        // Ambil data lantai beserta relasi gedung
+                        return \App\Models\G003M005Floor::with('building')->get()->groupBy(function ($floor) {
+                            // Group berdasarkan nama gedung
+                            return $floor->building->name ?? 'Tanpa Gedung';
+                        })->mapWithKeys(function ($floors, $buildingName) {
+                            // Setiap group gedung, mapping lantai
+                            return [
+                                $buildingName => $floors->pluck('name', 'id')->toArray(),
+                            ];
+                        })->toArray();
+                    }),
+                Forms\Components\Select::make('g001_m001_unit_id')
+                    ->relationship('unit', 'name'),
+                Forms\Components\TextInput::make('name')
+                    ->label('Nama Ruangan'),
+                Forms\Components\Toggle::make('is_borrowable')
+                    ->label('Dapat Dipinjam')
+                    ->inlineLabel(),
                 Forms\Components\TextInput::make('capacity')
+                    ->label('Kapasitas')
                     ->numeric(),
-                Forms\Components\TextInput::make('status'),
-                Forms\Components\TextInput::make('photo'),
+                Forms\Components\Select::make('status')
+                    ->label('Status Ruangan')
+                    ->options([
+                        'Tersedia' => 'Tersedia',
+                        'Tidak Tersedia' => 'Tidak Tersedia',
+                        'Dalam Perbaikan' => 'Dalam Perbaikan',
+                    ])
+                    ->default('Tersedia'),
+                Forms\Components\FileUpload::make('photo')
+                    ->label('Foto Ruangan')
+                    ->image()
+                    ->columnSpanFull(),
                 Forms\Components\TextInput::make('qrcode'),
             ]);
     }
@@ -41,24 +72,31 @@ class G003M006RoomResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('g003_m005_floor_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('floor.building.name')
+                    ->label('Gedung')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('g001_m001_unit_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('floor.name')
+                    ->label('Lantai')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('unit.name')
+                    ->label('Unit')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->label('Nama Ruangan'),
                 Tables\Columns\IconColumn::make('is_borrowable')
+                    ->label('Dapat Dipinjam')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('capacity')
-                    ->numeric()
+                    ->label('Kapasitas')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('photo')
+                    ->label('Foto Ruangan')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('qrcode')
+                    ->label('QR Code')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

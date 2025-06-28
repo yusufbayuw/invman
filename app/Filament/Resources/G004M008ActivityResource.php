@@ -17,16 +17,24 @@ class G004M008ActivityResource extends Resource
 {
     protected static ?string $model = G004M008Activity::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Kegiatan';
+    protected static ?string $navigationIcon = 'heroicon-o-calendar';
+    protected static ?string $slug = 'activity';
+    protected static ?string $modelLabel = 'Kegiatan';
+    protected static ?string $navigationLabel = 'Kegiatan';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'name'),
-                Forms\Components\TextInput::make('g001_m001_unit_id')
-                    ->numeric(),
+                    ->relationship('user', 'name')
+                    ->label('Diajukan Oleh'),
+                Forms\Components\Select::make('g001_m001_unit_id')
+                    ->label('Unit')
+                    ->relationship('unit', 'name', function (Builder $query) {
+                        $query->where('is_active', true)->where('quantity', '>', 0);
+                    }),
                 Forms\Components\TextInput::make('name'),
                 Forms\Components\Textarea::make('description')
                     ->columnSpanFull(),

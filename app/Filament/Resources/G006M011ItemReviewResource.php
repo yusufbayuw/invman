@@ -17,7 +17,11 @@ class G006M011ItemReviewResource extends Resource
 {
     protected static ?string $model = G006M011ItemReview::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Review';
+    protected static ?string $navigationIcon = 'heroicon-o-star';
+    protected static ?string $slug = 'item-review';
+    protected static ?string $modelLabel = 'Ulasan Barang';
+    protected static ?string $navigationLabel = 'Ulasan Barang';
 
     public static function form(Form $form): Form
     {

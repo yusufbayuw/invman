@@ -17,14 +17,19 @@ class G002M015ItemInstanceResource extends Resource
 {
     protected static ?string $model = G002M015ItemInstance::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Barang';
+    protected static ?string $navigationIcon = 'heroicon-o-check-circle';
+    protected static ?string $slug = 'item-instance';
+    protected static ?string $modelLabel = 'Barang Satuan';
+    protected static ?string $navigationLabel = 'Barang Satuan';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('g002_m007_item_id')
-                    ->numeric(),
+                Forms\Components\Select::make('g002_m007_item_id')
+                    ->relationship('item', 'name')
+                    ->searchable(),
                 Forms\Components\TextInput::make('code'),
                 Forms\Components\TextInput::make('status'),
                 Forms\Components\Toggle::make('is_available'),
@@ -35,10 +40,16 @@ class G002M015ItemInstanceResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('g002_m007_item_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable()
+                    ->label('Nama Barang')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('item.name')
+                    ->searchable()
+                    ->label('Grup Barang')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('code')
+                    ->label('Kode Barang Satuan')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('status')
                     ->searchable(),

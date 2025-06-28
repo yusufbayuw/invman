@@ -17,16 +17,24 @@ class G003M005FloorResource extends Resource
 {
     protected static ?string $model = G003M005Floor::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Ruangan';
+    protected static ?string $navigationIcon = 'heroicon-o-map';
+    protected static ?string $slug = 'floor';
+    protected static ?string $modelLabel = 'Lantai';
+    protected static ?string $navigationLabel = 'Lantai';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('g003_m004_building_id')
-                    ->numeric(),
-                Forms\Components\TextInput::make('name'),
-                Forms\Components\TextInput::make('map'),
+                Forms\Components\Select::make('g003_m004_building_id')
+                    ->relationship('building', 'name')
+                    ->label('Gedung'),
+                Forms\Components\TextInput::make('name')
+                    ->label('Nama Lantai'),
+                Forms\Components\FileUpload::make('map')
+                    ->label('Denah Lantai')
+                    ->image(),
             ]);
     }
 
@@ -34,13 +42,16 @@ class G003M005FloorResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('g003_m004_building_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('building.name')
+                    ->label('Gedung')
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('name')
+                    ->label('Nama Lantai')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('map')
-                    ->searchable(),
+                Tables\Columns\ImageColumn::make('map')
+                    ->label('Denah Lantai')
+                    ->simpleLightbox(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

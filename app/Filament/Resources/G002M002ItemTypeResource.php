@@ -17,14 +17,38 @@ class G002M002ItemTypeResource extends Resource
 {
     protected static ?string $model = G002M002ItemType::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Barang';
+    protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
+    protected static ?string $slug = 'item-type';
+    protected static ?string $modelLabel = 'Jenis Barang';
+    protected static ?string $navigationLabel = 'Jenis Barang';
+
+    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    {
+        return $infolist
+            ->schema([
+                \Filament\Infolists\Components\TextEntry::make('name')
+                    ->label('Nama'),
+                \Filament\Infolists\Components\TextEntry::make('description')
+                    ->label('Deskripsi'),
+                \Filament\Infolists\Components\TextEntry::make('created_at')
+                    ->label('Dibuat')
+                    ->dateTime(),
+                \Filament\Infolists\Components\TextEntry::make('updated_at')
+                    ->label('Diubah')
+                    ->dateTime(),
+            ]);
+    }
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name'),
-                Forms\Components\TextInput::make('description'),
+                Forms\Components\TextInput::make('name')
+                    ->label('Nama Jenis Barang'),
+                Forms\Components\Textarea::make('description')
+                    ->label('Deskripsi')
+                    ->columnSpanFull(),
             ]);
     }
 

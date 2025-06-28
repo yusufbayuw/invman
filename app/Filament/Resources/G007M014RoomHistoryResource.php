@@ -17,7 +17,11 @@ class G007M014RoomHistoryResource extends Resource
 {
     protected static ?string $model = G007M014RoomHistory::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Riwayat';
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $slug = 'room-history';
+    protected static ?string $modelLabel = 'Riwayat Ruangan';
+    protected static ?string $navigationLabel = 'Riwayat Ruangan';
 
     public static function form(Form $form): Form
     {
