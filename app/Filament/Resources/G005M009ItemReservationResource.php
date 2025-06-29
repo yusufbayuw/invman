@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\G005M009ItemReservationResource\Pages;
 use App\Filament\Resources\G005M009ItemReservationResource\RelationManagers;
+use App\Filament\Resources\G005M009ItemReservationResource\RelationManagers\ItemReservationDetailRelationManager;
 use App\Models\G005M009ItemReservation;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -86,7 +87,7 @@ class G005M009ItemReservationResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ItemReservationDetailRelationManager::class,
         ];
     }
 

@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\G003M004BuildingResource\Pages;
 use App\Filament\Resources\G003M004BuildingResource\RelationManagers;
+use App\Filament\Resources\G003M004BuildingResource\RelationManagers\FloorRelationManager;
 use App\Models\G003M004Building;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -106,7 +107,7 @@ class G003M004BuildingResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            FloorRelationManager::class,
         ];
     }
 

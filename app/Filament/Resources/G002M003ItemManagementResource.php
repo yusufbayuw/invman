@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\G002M003ItemManagementResource\Pages;
 use App\Filament\Resources\G002M003ItemManagementResource\RelationManagers;
+use App\Filament\Resources\G002M003ItemManagementResource\RelationManagers\ItemRelationManager;
 use App\Models\G002M003ItemManagement;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -74,7 +75,7 @@ class G002M003ItemManagementResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ItemRelationManager::class,
         ];
     }
 

@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\G005M010RoomReservationResource\Pages;
 use App\Filament\Resources\G005M010RoomReservationResource\RelationManagers;
+use App\Filament\Resources\G005M010RoomReservationResource\RelationManagers\RoomReviewRelationManager;
 use App\Models\G005M010RoomReservation;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -82,7 +83,7 @@ class G005M010RoomReservationResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RoomReviewRelationManager::class,
         ];
     }
 

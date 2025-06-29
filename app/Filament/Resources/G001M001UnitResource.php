@@ -4,6 +4,10 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\G001M001UnitResource\Pages;
 use App\Filament\Resources\G001M001UnitResource\RelationManagers;
+use App\Filament\Resources\G001M001UnitResource\RelationManagers\ActivityRelationManager;
+use App\Filament\Resources\G001M001UnitResource\RelationManagers\ItemRelationManager;
+use App\Filament\Resources\G001M001UnitResource\RelationManagers\RoomRelationManager;
+use App\Filament\Resources\G001M001UnitResource\RelationManagers\UserRelationManager;
 use App\Models\G001M001Unit;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -78,7 +82,10 @@ class G001M001UnitResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ActivityRelationManager::class,
+            ItemRelationManager::class,
+            RoomRelationManager::class,
+            UserRelationManager::class,
         ];
     }
 

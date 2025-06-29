@@ -4,6 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\G003M006RoomResource\Pages;
 use App\Filament\Resources\G003M006RoomResource\RelationManagers;
+use App\Filament\Resources\G003M006RoomResource\RelationManagers\ItemRelationManager;
+use App\Filament\Resources\G003M006RoomResource\RelationManagers\RoomHistoryRelationManager;
+use App\Filament\Resources\G003M006RoomResource\RelationManagers\RoomReservationRelationManager;
 use App\Models\G003M006Room;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -124,7 +127,9 @@ class G003M006RoomResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ItemRelationManager::class,
+            RoomHistoryRelationManager::class,
+            RoomReservationRelationManager::class,
         ];
     }
 

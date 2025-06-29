@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\G003M005FloorResource\Pages;
 use App\Filament\Resources\G003M005FloorResource\RelationManagers;
+use App\Filament\Resources\G003M005FloorResource\RelationManagers\RoomRelationManager;
 use App\Models\G003M005Floor;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -78,7 +79,7 @@ class G003M005FloorResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RoomRelationManager::class,
         ];
     }
 

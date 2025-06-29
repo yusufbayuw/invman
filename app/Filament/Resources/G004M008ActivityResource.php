@@ -4,6 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\G004M008ActivityResource\Pages;
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers;
+use App\Filament\Resources\G004M008ActivityResource\RelationManagers\ItemReservationRelationManager;
+use App\Filament\Resources\G004M008ActivityResource\RelationManagers\RoomReservationRelationManager;
 use App\Models\G004M008Activity;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -29,17 +31,38 @@ class G004M008ActivityResource extends Resource
             ->schema([
                 Forms\Components\Select::make('user_id')
                     ->relationship('user', 'name')
-                    ->label('Diajukan Oleh'),
+                    ->default(auth()?->user()?->id ?? null)
+                    ->searchable()
+                    ->preload()
+                    ->label('Diajukan Oleh')
+                    ->required(),
                 Forms\Components\Select::make('g001_m001_unit_id')
                     ->label('Unit')
-                    ->relationship('unit', 'name', function (Builder $query) {
-                        $query->where('is_active', true)->where('quantity', '>', 0);
-                    }),
+                    ->relationship('unit', 'name')
+                    ->searchable()
+                    ->default(auth()?->user()?->g001_m001_unit_id ?? null)
+                    ->preload()
+                    ->required(),
                 Forms\Components\TextInput::make('name'),
                 Forms\Components\Textarea::make('description')
                     ->columnSpanFull(),
-                Forms\Components\DateTimePicker::make('start_time'),
-                Forms\Components\DateTimePicker::make('end_time'),
+                Forms\Components\DateTimePicker::make('start_time')
+                    ->default(now())
+                    ->label('Tanggal dan Waktu Mulai')
+                    ->required()
+                    ->seconds(false)
+                    ->locale('id')
+                    ->native()
+                    ->reactive(false),
+                Forms\Components\DateTimePicker::make('end_time')
+                    ->minDate(fn (callable $get) => $get('start_time') ?? now())
+                    ->label('Tanggal dan Waktu Selesai')
+                    ->required()
+                    ->seconds(false)
+                    ->native(true)
+                    ->after('start_time')
+                    ->rule('after:start_time')
+                    ->locale('id'),
                 Forms\Components\TextInput::make('attachment'),
             ]);
     }
@@ -93,7 +116,8 @@ class G004M008ActivityResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ItemReservationRelationManager::class,
+            RoomReservationRelationManager::class,
         ];
     }
 

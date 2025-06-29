@@ -4,6 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\G002M015ItemInstanceResource\Pages;
 use App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers;
+use App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers\ItemHistoryRelationManager;
+use App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers\ItemReservationDetailRelationManager;
+use App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers\ItemReviewRelationManager;
 use App\Models\G002M015ItemInstance;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -81,7 +84,9 @@ class G002M015ItemInstanceResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ItemHistoryRelationManager::class,
+            ItemReservationDetailRelationManager::class,
+            ItemReviewRelationManager::class,
         ];
     }
 
