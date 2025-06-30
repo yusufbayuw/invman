@@ -12,6 +12,8 @@ class G002M007ItemObserver
      */
     public function created(G002M007Item $g002M007Item): void
     {
+        $g002M007Item->available_quantity = $g002M007Item->quantity; // set available quantity to initial quantity
+        $g002M007Item->saveQuietly();
         // create item instance based on item quantity
         for ($i = 0; $i < $g002M007Item->quantity; $i++) {
             G002M015ItemInstance::create([

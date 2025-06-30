@@ -8,6 +8,7 @@ use App\Filament\Resources\G005M009ItemReservationResource\RelationManagers\Item
 use App\Models\G005M009ItemReservation;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -28,9 +29,22 @@ class G005M009ItemReservationResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('g004_m008_activity_id'),
-                Forms\Components\TextInput::make('g002_m007_item_id')
-                    ->numeric(),
+                Forms\Components\Select::make('g004_m008_activity_id')
+                    ->relationship('activity', 'name', function (Builder $query) {
+                        $query->where('status', 'active');
+                    })
+                    ->searchable()
+                    ->reactive()
+                    ->preload()
+                    ->label('Kegiatan'),
+                Forms\Components\Select::make('g002_m007_item_id')
+                    ->relationship('item', 'name', function (Builder $query) {
+                        $query->where('is_borrowable', true);
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->label('Barang')
+                    ->required(),
                 Forms\Components\DateTimePicker::make('start_time'),
                 Forms\Components\DateTimePicker::make('end_time'),
                 Forms\Components\DateTimePicker::make('returned_at'),
@@ -45,9 +59,9 @@ class G005M009ItemReservationResource extends Resource
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('g004_m008_activity_id')
+                Tables\Columns\TextColumn::make('activity.name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('g002_m007_item_id')
+                Tables\Columns\TextColumn::make('item.name')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('start_time')

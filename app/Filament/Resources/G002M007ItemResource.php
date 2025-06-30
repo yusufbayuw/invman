@@ -67,6 +67,8 @@ class G002M007ItemResource extends Resource
                     ->label('Nama Barang'),
                 Forms\Components\TextInput::make('code')
                     ->label('Kode Barang'),
+                Forms\Components\TextInput::make('quantity')
+                    ->label('Jumlah Barang'),
                 Forms\Components\Toggle::make('is_borrowable')
                     ->label('Dapat Dipinjam')
                     ->inlineLabel(),
