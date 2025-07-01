@@ -72,7 +72,6 @@ class G002M007ItemResource extends Resource
                 Forms\Components\Toggle::make('is_borrowable')
                     ->label('Dapat Dipinjam')
                     ->inlineLabel(),
-                Forms\Components\TextInput::make('status'),
             ]);
     }
 

@@ -17,6 +17,7 @@ class ItemReservationRelationManager extends RelationManager
 {
     protected static string $relationship = 'item_reservation';
     protected static ?string $modelLabel = 'Reservasi Barang';
+    protected static ?string $title = 'Reservasi Barang';
 
     public function form(Form $form): Form
     {
@@ -106,6 +107,7 @@ class ItemReservationRelationManager extends RelationManager
                         'menunggu persetujuan' => 'danger',
                         'disetujui/dipinjamkan' => 'success',
                         'dikembalikan' => 'info',
+                        'tersedia' => 'primary',
                     })
                     ->sortable(),
             ])
@@ -136,10 +138,10 @@ class ItemReservationRelationManager extends RelationManager
                         $record->save();
                     }),
                 Tables\Actions\Action::make('dikembalikan')
-                    ->label('Ditolak')
+                    ->label('Kembalikan')
                     ->color('warning')
                     ->hidden(fn ($record): bool => !($record->status === 'disetujui/dipinjamkan'))
-                    ->icon('heroicon-o-undo')
+                    ->icon('heroicon-o-arrow-uturn-left')
                     ->action(function ($record) {
                         $record->status = 'dikembalikan';
                         $record->save();
