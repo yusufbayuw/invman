@@ -20,7 +20,7 @@ class G002M007ItemObserver
                 'g002_m007_item_id' => $g002M007Item->id,
                 'g001_m001_unit_id' => $g002M007Item->g001_m001_unit_id,
                 'g003_m006_room_id' => $g002M007Item->g003_m006_room_id,
-                'status' => 'available', // default status
+                'status' => 'tersedia', // default status
                 'is_available' => true, // default availability
                 'name' => $g002M007Item->name . ' ' . ($i + 1), // unique name for each instance
                 'code' => $g002M007Item->code . '-' . ($i + 1), // unique code for each instance
@@ -44,6 +44,57 @@ class G002M007ItemObserver
                 ]);
             }
         }
+
+        /* if ($g002M007Item->isDirty('status')) {
+            if ($g002M007Item->status === "menunggu persetujuan") {
+                $selisih = $g002M007Item->getOriginal('available_quantity') - $g002M007Item->available_quantity;
+                if ($selisih > 0) {
+                    $itemInstances = G002M015ItemInstance::where('g002_m007_item_id', $g002M007Item->id)
+                        ->where('is_available', true)
+                        ->get();
+                    if ($itemInstances) {
+                        // ubah status item instance yang tersedia sebanyak selisih menjadi tidak tersedia
+                        $itemInstances->take($selisih)->each(function ($instance) use ($g002M007Item) {
+                            $instance->update([
+                                'status' => $g002M007Item->status,
+                                'is_available' => false,
+                            ]);
+                        });
+                    }
+                }
+            } elseif ($g002M007Item->status === "disetujui/dipinjamkan") {
+                $selisih = $g002M007Item->getOriginal('available_quantity') - $g002M007Item->available_quantity;
+                if ($selisih > 0) {
+                    $itemInstances = G002M015ItemInstance::where('g002_m007_item_id', $g002M007Item->id)
+                        ->where('is_available', false)
+                        ->get();
+                    if ($itemInstances) {
+                        // ubah status item instance yang tersedia sebanyak selisih menjadi tidak tersedia
+                        $itemInstances->take($selisih)->each(function ($instance) use ($g002M007Item) {
+                            $instance->update([
+                                'status' => $g002M007Item->status,
+                            ]);
+                        });
+                    }
+                }
+            } elseif ($g002M007Item->status === "dikembalikan") {
+                $selisih = $g002M007Item->getOriginal('available_quantity') - $g002M007Item->available_quantity;
+                if ($selisih > 0) {
+                    $itemInstances = G002M015ItemInstance::where('g002_m007_item_id', $g002M007Item->id)
+                        ->where('is_available', false)
+                        ->get();
+                    if ($itemInstances) {
+                        // ubah status item instance yang tersedia sebanyak selisih menjadi tidak tersedia
+                        $itemInstances->take($selisih)->each(function ($instance) use ($g002M007Item) {
+                            $instance->update([
+                                'status' => "tersedia",
+                                'is_available' => true,
+                            ]);
+                        });
+                    }
+                }
+            }
+        } */
     }
 
     /**

@@ -52,6 +52,22 @@ class ItemReservationRelationManager extends RelationManager
                         $available = $itemCache[$itemId]?->available_quantity ?? 0;
                         return "Saat ini tersedia: {$available}";
                     })
+                    ->maxValue(function (Get $get) {
+                        $itemId = $get('g002_m007_item_id');
+                        static $itemCache = [];
+
+                        if (!$itemId) {
+                            return 0;
+                        }
+
+                        // Cache the item lookup to avoid multiple queries in a single request
+                        if (!isset($itemCache[$itemId])) {
+                            $itemCache[$itemId] = G002M007Item::find($itemId);
+                        }
+
+                        return $itemCache[$itemId]?->available_quantity ?? 0;
+                    })
+                    ->minValue(1)
                     ->label('Jumlah Barang')
                     ->required(),
                 Forms\Components\DateTimePicker::make('start_time')
@@ -88,8 +104,7 @@ class ItemReservationRelationManager extends RelationManager
                     ->label('Status')
                     ->color(fn(string $state): string => match ($state) {
                         'menunggu persetujuan' => 'danger',
-                        'disetujui' => 'warning',
-                        'dipinjam' => 'success',
+                        'disetujui/dipinjamkan' => 'success',
                         'dikembalikan' => 'info',
                     })
                     ->sortable(),
@@ -101,6 +116,34 @@ class ItemReservationRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make(),
             ])
             ->actions([
+                Tables\Actions\Action::make('konfirmasi')
+                    ->label('Setujui')
+                    ->color('success')
+                    ->hidden(fn ($record): bool => !($record->status === 'menunggu persetujuan'))
+                    ->icon('heroicon-o-check-circle')
+                    ->action(function ($record) {
+                        $record->status = 'disetujui/dipinjamkan';
+                        $record->save();
+                    }),
+                Tables\Actions\Action::make('ditolak')
+                    ->label('Ditolak')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->hidden(fn ($record): bool => !($record->status === 'menunggu persetujuan'))
+                    ->icon('heroicon-o-x-circle')
+                    ->action(function ($record) {
+                        $record->status = 'dikembalikan';
+                        $record->save();
+                    }),
+                Tables\Actions\Action::make('dikembalikan')
+                    ->label('Ditolak')
+                    ->color('warning')
+                    ->hidden(fn ($record): bool => !($record->status === 'disetujui/dipinjamkan'))
+                    ->icon('heroicon-o-undo')
+                    ->action(function ($record) {
+                        $record->status = 'dikembalikan';
+                        $record->save();
+                    }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

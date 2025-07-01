@@ -83,6 +83,17 @@ class G002M007ItemResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Barang')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('quantity')
+                    ->label('Jumlah Barang')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('available_quantity')
+                    ->label('Jumlah Tersedia')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('code')
+                    ->label('Kode Barang')
+                    ->badge(),
                 Tables\Columns\TextColumn::make('unit.name')
                     ->label('Unit Pemilik')
                     ->sortable(),

@@ -27,9 +27,18 @@ class G005M016ItemReservationDetailResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('g005_m009_item_reservation_id'),
-                Forms\Components\TextInput::make('g002_m015_item_instance_id')
-                    ->numeric(),
+                Forms\Components\Select::make('g005_m009_item_reservation_id')
+                    ->relationship('item_reservation', 'id', function (Builder $query) {
+                        $query->where('status', 'active');
+                    })
+                    ->searchable(),
+                Forms\Components\Select::make('g002_m015_item_instance_id')
+                    ->relationship('item_instance', 'id', function (Builder $query) {
+                        $query->where('is_borrowable', true);
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->label('Instansi Barang'),
             ]);
     }
 
