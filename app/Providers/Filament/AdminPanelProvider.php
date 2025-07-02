@@ -7,6 +7,8 @@ use Filament\Panel;
 use Filament\Widgets;
 use Filament\PanelProvider;
 use App\Filament\Auth\Login;
+use App\Filament\Widgets\CalendarWidget;
+use App\Filament\Widgets\MenuGridWidget;
 use Filament\Support\Colors\Color;
 use Filament\Http\Middleware\Authenticate;
 use Illuminate\Session\Middleware\StartSession;
@@ -47,8 +49,10 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            //->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
+                MenuGridWidget::class,
+                CalendarWidget::class,
                 Widgets\AccountWidget::class,
                 //Widgets\FilamentInfoWidget::class,
             ])
@@ -74,7 +78,8 @@ class AdminPanelProvider extends PanelProvider
                         Triangles::make()
                     )
                     ->showAttribution(false),
-                FilamentFullCalendarPlugin::make(),
+                FilamentFullCalendarPlugin::make()
+                    ->editable(false),
             ]);
     }
 }

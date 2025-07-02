@@ -26,6 +26,41 @@ class G002M015ItemInstanceResource extends Resource
     protected static ?string $modelLabel = 'Barang Satuan';
     protected static ?string $navigationLabel = 'Barang Satuan';
 
+    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    {
+        return $infolist
+            ->schema([
+                \Filament\Infolists\Components\Split::make([
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('name')
+                            ->label('Nama Barang')
+                            ->weight('bold')
+                            ->size('md')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('item.name')
+                            ->label('Grup Barang')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('code')
+                            ->label('Kode Barang Satuan')
+                            ->badge()
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('status')
+                            ->label('Status Barang')
+                            ->badge()
+                            ->inlineLabel(),
+                    ]),
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('created_at')
+                            ->label('Dibuat pada')
+                            ->dateTime(),
+                        \Filament\Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Diperbarui pada')
+                            ->dateTime(),
+                    ])
+                ])->from('md')->columnSpanFull(),
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

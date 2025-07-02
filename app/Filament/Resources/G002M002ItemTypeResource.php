@@ -28,16 +28,25 @@ class G002M002ItemTypeResource extends Resource
     {
         return $infolist
             ->schema([
-                \Filament\Infolists\Components\TextEntry::make('name')
-                    ->label('Nama'),
-                \Filament\Infolists\Components\TextEntry::make('description')
-                    ->label('Deskripsi'),
-                \Filament\Infolists\Components\TextEntry::make('created_at')
-                    ->label('Dibuat')
-                    ->dateTime(),
-                \Filament\Infolists\Components\TextEntry::make('updated_at')
-                    ->label('Diubah')
-                    ->dateTime(),
+                \Filament\Infolists\Components\Split::make([
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('name')
+                            ->label('Nama Jenis Barang')
+                            ->weight('bold')
+                            ->size('lg'),
+                        \Filament\Infolists\Components\TextEntry::make('description')
+                            ->label('Deskripsi')
+                            ->size('md'),
+                    ]),
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('created_at')
+                            ->label('Dibuat pada')
+                            ->dateTime(),
+                        \Filament\Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Diperbarui pada')
+                            ->dateTime(),
+                    ])
+                ])->from('md'),
             ]);
     }
 

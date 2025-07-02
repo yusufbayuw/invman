@@ -28,22 +28,17 @@ class G003M004BuildingResource extends Resource
     {
         return $infolist
             ->schema([
-                \Filament\Infolists\Components\Grid::make(2)
-                    ->schema([
-                        \Filament\Infolists\Components\Group::make([
-                            \Filament\Infolists\Components\TextEntry::make('name')
-                                ->label('Nama Bangunan'),
-                            \Filament\Infolists\Components\TextEntry::make('location')
-                                ->label('Lokasi'),
-                        ]),
-                        \Filament\Infolists\Components\ImageEntry::make('photo')
-                            ->label('Foto Bangunan')
-                            ->circular()
-                            ->simpleLightbox()
-                            ->columnSpan(1),
+                \Filament\Infolists\Components\Split::make([
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('name')
+                            ->label('Nama Bangunan')
+                            ->weight('bold')
+                            ->size('lg'),
+                        \Filament\Infolists\Components\TextEntry::make('location')
+                            ->label('Lokasi')
+                            ->size('md'),
                     ]),
-                \Filament\Infolists\Components\Grid::make(2)
-                    ->schema([
+                    \Filament\Infolists\Components\Section::make([
                         \Filament\Infolists\Components\TextEntry::make('created_at')
                             ->label('Dibuat pada')
                             ->dateTime(),
@@ -51,6 +46,7 @@ class G003M004BuildingResource extends Resource
                             ->label('Diperbarui pada')
                             ->dateTime(),
                     ]),
+                ])->from('md')->columnSpanFull(),
             ]);
     }
 

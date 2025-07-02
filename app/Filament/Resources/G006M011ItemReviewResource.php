@@ -23,6 +23,38 @@ class G006M011ItemReviewResource extends Resource
     protected static ?string $modelLabel = 'Ulasan Barang';
     protected static ?string $navigationLabel = 'Ulasan Barang';
 
+    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    {
+        return $infolist
+            ->schema([
+                \Filament\Infolists\Components\Split::make([
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('g002_m015_item_instance_id')
+                            ->label('ID Barang Satuan')
+                            ->weight('bold')
+                            ->size('md')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('user_id')
+                            ->label('ID Pengguna')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('g005_m009_item_reservation_id')
+                            ->label('ID Reservasi Barang'),
+                    ]),
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('rating')
+                            ->label('Rating')
+                            ->numeric(),
+                        \Filament\Infolists\Components\TextEntry::make('created_at')
+                            ->label('Dibuat pada')
+                            ->dateTime(),
+                        \Filament\Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Diperbarui pada')
+                            ->dateTime(),
+                    ])
+                ])->from('md')->columnSpanFull(),
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

@@ -24,6 +24,32 @@ class UserResource extends Resource
     protected static ?string $modelLabel = 'Pengguna';
     protected static ?string $navigationLabel = 'Pengguna';
 
+    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    {
+        return $infolist
+            ->schema([
+                \Filament\Infolists\Components\Split::make([
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('name')
+                            ->label('Name')
+                            ->weight('bold')
+                            ->size('lg'),
+                        \Filament\Infolists\Components\TextEntry::make('email')
+                            ->label('E-mail')
+                            ->size('md'),
+                    ]),
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('created_at')
+                            ->label('Created at')
+                            ->dateTime(),
+                        \Filament\Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Updated at')
+                            ->dateTime(),
+                    ])
+                ])->from('md'),
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

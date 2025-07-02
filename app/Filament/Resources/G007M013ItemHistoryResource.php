@@ -23,6 +23,36 @@ class G007M013ItemHistoryResource extends Resource
     protected static ?string $modelLabel = 'Riwayat Barang';
     protected static ?string $navigationLabel = 'Riwayat Barang';
 
+    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    {
+        return $infolist
+            ->schema([
+                \Filament\Infolists\Components\Split::make([
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('g002_m015_item_instance_id')
+                            ->label('ID Barang Satuan')
+                            ->weight('bold')
+                            ->size('md')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('user.name')
+                            ->label('Pengguna')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('action')
+                            ->label('Aksi')
+                            ->inlineLabel(),
+                    ]),
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('created_at')
+                            ->label('Dibuat pada')
+                            ->dateTime(),
+                        \Filament\Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Diperbarui pada')
+                            ->dateTime(),
+                    ])
+                ])->from('md')->columnSpanFull(),
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

@@ -26,6 +26,36 @@ class G003M006RoomResource extends Resource
     protected static ?string $modelLabel = 'Ruangan';
     protected static ?string $navigationLabel = 'Ruangan';
 
+    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    {
+        return $infolist
+            ->schema([
+                \Filament\Infolists\Components\Split::make([
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('floor.building.name')
+                            ->label('Gedung')
+                            ->weight('bold')
+                            ->size('lg'),
+                        \Filament\Infolists\Components\TextEntry::make('floor.name')
+                            ->label('Lantai')
+                            ->size('md'),
+                        \Filament\Infolists\Components\TextEntry::make('unit.name')
+                            ->label('Unit'),
+                        \Filament\Infolists\Components\TextEntry::make('name')
+                            ->label('Nama Ruangan'),
+                    ]),
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('created_at')
+                            ->label('Dibuat pada')
+                            ->dateTime(),
+                        \Filament\Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Diperbarui pada')
+                            ->dateTime(),
+                    ]),
+                ])->from('md')->columnSpanFull(),
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

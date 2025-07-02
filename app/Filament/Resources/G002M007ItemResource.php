@@ -30,20 +30,53 @@ class G002M007ItemResource extends Resource
     {
         return $infolist
             ->schema([
-                \Filament\Infolists\Components\TextEntry::make('name')
-                    ->label('Nama Barang'),
-                \Filament\Infolists\Components\TextEntry::make('unit.name')
-                    ->label('Unit Pemilik'),
-                \Filament\Infolists\Components\TextEntry::make('item_management.name')
-                    ->label('Pengelola Barang'),
-                \Filament\Infolists\Components\TextEntry::make('item_type.name')
-                    ->label('Jenis Barang'),
-                \Filament\Infolists\Components\TextEntry::make('room.name')
-                    ->label('Ruangan Penempatan'),
-                \Filament\Infolists\Components\IconEntry::make('is_borrowable')
-                    ->label('Dapat Dipinjam')
-                    ->boolean(),
-                \Filament\Infolists\Components\TextEntry::make('status'),
+                \Filament\Infolists\Components\Split::make([
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('name')
+                            ->label('Nama Barang')
+                            ->weight('bold')
+                            ->size('md')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('code')
+                            ->label('Kode Barang')
+                            ->badge()
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('quantity')
+                            ->label('Jumlah Barang')
+                            ->inlineLabel()
+                            ->numeric(),
+                        \Filament\Infolists\Components\IconEntry::make('is_borrowable')
+                            ->label('Dapat Dipinjam')
+                            ->boolean()
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('status')
+                            ->label('Status Barang')
+                            ->badge()
+                            ->inlineLabel(),
+                    ])->grow(false),
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('unit.name')
+                            ->label('Unit Pemilik')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('item_management.name')
+                            ->label('Pengelola Barang')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('item_type.name')
+                            ->label('Jenis Barang')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('room.name')
+                            ->label('Ruangan Penempatan')
+                            ->inlineLabel(),
+                    ])->grow(false),
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('created_at')
+                            ->label('Dibuat pada')
+                            ->dateTime(),
+                        \Filament\Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Diperbarui pada')
+                            ->dateTime(),
+                    ])->grow(false)
+                ])->from('md')->columnSpanFull(),
             ]);
     }
 

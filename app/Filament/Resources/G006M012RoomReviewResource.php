@@ -23,6 +23,37 @@ class G006M012RoomReviewResource extends Resource
     protected static ?string $modelLabel = 'Ulasan Ruangan';
     protected static ?string $navigationLabel = 'Ulasan Ruangan';
 
+    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    {
+        return $infolist
+            ->schema([
+                \Filament\Infolists\Components\Split::make([
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('g005_m010_room_reservation_id')
+                            ->label('ID Reservasi Ruangan')
+                            ->weight('bold')
+                            ->size('md'),
+                        \Filament\Infolists\Components\TextEntry::make('g003_m006_room_id')
+                            ->label('ID Ruangan')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('user_id')
+                            ->label('ID Pengguna'),
+                    ]),
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('rating')
+                            ->label('Rating')
+                            ->numeric(),
+                        \Filament\Infolists\Components\TextEntry::make('created_at')
+                            ->label('Dibuat pada')
+                            ->dateTime(),
+                        \Filament\Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Diperbarui pada')
+                            ->dateTime(),
+                    ])
+                ])->from('md')->columnSpanFull(),
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

@@ -24,6 +24,45 @@ class G005M010RoomReservationResource extends Resource
     protected static ?string $modelLabel = 'Reservasi Ruangan';
     protected static ?string $navigationLabel = 'Reservasi Ruangan';
 
+    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    {
+        return $infolist
+            ->schema([
+                \Filament\Infolists\Components\Split::make([
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('g004_m008_activity.name')
+                            ->label('Kegiatan')
+                            ->weight('bold')
+                            ->size('md')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('g003_m006_room.name')
+                            ->label('Ruangan')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('start_time')
+                            ->label('Waktu Mulai')
+                            ->dateTime()
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('end_time')
+                            ->label('Waktu Selesai')
+                            ->dateTime()
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('status')
+                            ->label('Status Reservasi')
+                            ->badge()
+                            ->inlineLabel(),
+                    ])->grow(false),
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('created_at')
+                            ->label('Dibuat pada')
+                            ->dateTime(),
+                        \Filament\Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Diperbarui pada')
+                            ->dateTime(),
+                    ]),
+                ])->from('md')->columnSpanFull(),
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

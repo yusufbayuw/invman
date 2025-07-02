@@ -31,14 +31,22 @@ class G001M001UnitResource extends Resource
     {
         return $infolist
             ->schema([
-                \Filament\Infolists\Components\TextEntry::make('name')
-                    ->label('Nama Unit'),
-                \Filament\Infolists\Components\TextEntry::make('created_at')
-                    ->label('Dibuat pada')
-                    ->dateTime(),
-                \Filament\Infolists\Components\TextEntry::make('updated_at')
-                    ->label('Diperbarui pada')
-                    ->dateTime(),
+                \Filament\Infolists\Components\Split::make([
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('name')
+                            ->label('Nama Unit')
+                            ->weight('bold')
+                            ->size('lg'),
+                    ]),
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('created_at')
+                            ->label('Dibuat pada')
+                            ->dateTime(),
+                        \Filament\Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Diperbarui pada')
+                            ->dateTime(),
+                    ])
+                ])->from('md'),
             ]);
     }
 

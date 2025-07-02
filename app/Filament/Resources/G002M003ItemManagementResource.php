@@ -24,6 +24,32 @@ class G002M003ItemManagementResource extends Resource
     protected static ?string $modelLabel = 'Pengelola Barang';
     protected static ?string $navigationLabel = 'Pengelola Barang';
 
+    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    {
+        return $infolist
+            ->schema([
+                \Filament\Infolists\Components\Split::make([
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('name')
+                            ->label('Nama Pengelola Barang')
+                            ->weight('bold')
+                            ->size('lg'),
+                        \Filament\Infolists\Components\TextEntry::make('description')
+                            ->label('Deskripsi')
+                            ->size('md'),
+                    ]),
+                    \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('created_at')
+                            ->label('Dibuat pada')
+                            ->dateTime(),
+                        \Filament\Infolists\Components\TextEntry::make('updated_at')
+                            ->label('Diperbarui pada')
+                            ->dateTime(),
+                    ])
+                ])->from('md'),
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
