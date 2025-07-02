@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\G004M008ActivityResource\RelationManagers;
 
 use App\Models\G002M007Item;
+use App\Models\G005M009ItemReservation;
 use Filament\Forms;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Form;
@@ -40,6 +41,7 @@ class ItemReservationRelationManager extends RelationManager
                     ->hint(function (Get $get) {
                         $itemId = $get('g002_m007_item_id');
                         static $itemCache = [];
+                        static $itemOverlappingCache = [];
 
                         if (!$itemId) {
                             return '';
@@ -48,14 +50,20 @@ class ItemReservationRelationManager extends RelationManager
                         // Cache the item lookup to avoid multiple queries in a single request
                         if (!isset($itemCache[$itemId])) {
                             $itemCache[$itemId] = G002M007Item::find($itemId);
+                            $itemOverlappingCache[$itemId] = G005M009ItemReservation::where('g002_m007_item_id', $itemId)
+                                ->where('status', '<>', 'dikembalikan')
+                                ->where('start_time', '>=', $get('start_time'))
+                                ->where('end_time', '<=', $get('end_time'))
+                                ->sum('quantity');
                         }
 
-                        $available = $itemCache[$itemId]?->available_quantity ?? 0;
+                        $available = ($itemCache[$itemId]?->available_quantity - $itemOverlappingCache[$itemId] ?? 0) ?? 0;
                         return "Saat ini tersedia: {$available}";
                     })
                     ->maxValue(function (Get $get) {
                         $itemId = $get('g002_m007_item_id');
                         static $itemCache = [];
+                        static $itemOverlappingCache = [];
 
                         if (!$itemId) {
                             return 0;
@@ -64,21 +72,31 @@ class ItemReservationRelationManager extends RelationManager
                         // Cache the item lookup to avoid multiple queries in a single request
                         if (!isset($itemCache[$itemId])) {
                             $itemCache[$itemId] = G002M007Item::find($itemId);
+                            $itemOverlappingCache[$itemId] = G005M009ItemReservation::where('g002_m007_item_id', $itemId)
+                                ->where('status', '<>', 'dikembalikan')
+                                ->where('start_time', '>=', $get('start_time'))
+                                ->where('end_time', '<=', $get('end_time'))
+                                ->sum('quantity');
                         }
 
-                        return $itemCache[$itemId]?->available_quantity ?? 0;
+                        $available = ($itemCache[$itemId]?->available_quantity - $itemOverlappingCache[$itemId] ?? 0) ?? 0;
+
+                        return $available;
                     })
                     ->minValue(1)
                     ->label('Jumlah Barang')
                     ->required(),
                 Forms\Components\DateTimePicker::make('start_time')
                     ->label('Waktu Mulai')
+                    ->reactive()
                     ->readOnly()
                     ->default($this->ownerRecord->start_time ?? now()),
                 Forms\Components\DateTimePicker::make('end_time')
                     ->label('Waktu Selesai')
-                    ->readOnly()
-                    ->default($this->ownerRecord->end_time ?? now()),
+                    ->reactive()
+                    ->minDate(fn (Get $get) => $get('start_time') ?? now())
+                    ->maxDate($this->ownerRecord->end_time ?? now()->addHour())
+                    ->default($this->ownerRecord->end_time ?? now()->addHour()),
             ]);
     }
 

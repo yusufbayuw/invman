@@ -50,18 +50,21 @@ class G004M008ActivityResource extends Resource
                     ->default(now())
                     ->label('Tanggal dan Waktu Mulai')
                     ->required()
+                    ->reactive()
                     ->seconds(false)
+                    ->minutesStep(5)
                     ->locale('id')
-                    ->native()
+                    ->native(false)
                     ->reactive(false),
                 Forms\Components\DateTimePicker::make('end_time')
                     ->minDate(fn (callable $get) => $get('start_time') ?? now())
                     ->label('Tanggal dan Waktu Selesai')
                     ->required()
+                    ->minutesStep(5)
+                    ->reactive()
                     ->seconds(false)
-                    ->native(true)
-                    ->after('start_time')
-                    ->rule('after:start_time')
+                    ->native(false)
+                    ->afterOrEqual('start_time')
                     ->locale('id'),
                 Forms\Components\TextInput::make('attachment'),
             ]);

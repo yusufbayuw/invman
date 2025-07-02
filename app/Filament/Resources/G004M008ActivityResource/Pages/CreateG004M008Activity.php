@@ -10,13 +10,8 @@ class CreateG004M008Activity extends CreateRecord
 {
     protected static string $resource = G004M008ActivityResource::class;
 
-    // after create, redirect to edit page
-    protected function afterCreate(): void
+    protected function getRedirectUrl(): string
     {
-        $this->redirect(
-            G004M008ActivityResource::getUrl('edit', [
-                'record' => $this->getRecord(),
-            ])
-        );
+        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
     }
 }

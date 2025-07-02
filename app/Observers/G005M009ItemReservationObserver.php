@@ -17,7 +17,7 @@ class G005M009ItemReservationObserver
         $g005M009ItemReservation->status = 'menunggu persetujuan';
         $g005M009ItemReservation->saveQuietly();
 
-        // Ambil data item berdasarkan ID item pada reservasi
+        /* // Ambil data item berdasarkan ID item pada reservasi
         $item = G002M007Item::find($g005M009ItemReservation->g002_m007_item_id);
 
         // Kurangi jumlah available_quantity pada item sesuai jumlah yang dipesan
@@ -42,7 +42,7 @@ class G005M009ItemReservationObserver
                 'g005_m009_item_reservation_id' => $g005M009ItemReservation->id,
                 'g002_m015_item_instance_id' => $instance->id,
             ]);
-        }
+        } */
     }
 
     /**
@@ -51,7 +51,7 @@ class G005M009ItemReservationObserver
     public function updated(G005M009ItemReservation $g005M009ItemReservation): void
     {
 
-        // Cek apakah field 'status' pada reservasi berubah
+        /* // Cek apakah field 'status' pada reservasi berubah
         if ($g005M009ItemReservation->isDirty('status')) {
             // Jika status berubah menjadi 'disetujui/dipinjamkan'
             if ($g005M009ItemReservation->status === 'disetujui/dipinjamkan') {
@@ -90,7 +90,7 @@ class G005M009ItemReservationObserver
                     $item->saveQuietly();
                 }
             }
-        }
+        } */
     }
 
     /**
