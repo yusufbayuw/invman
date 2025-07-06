@@ -117,22 +117,24 @@ class G004M008ActivityResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label('Diajukan Oleh')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('unit.name')
-                    ->label('Unit')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Kegiatan')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('start_time')
-                    ->label('Tanggal dan Waktu Mulai')
-                    ->dateTime()
+                    ->label('Mulai')
+                    ->dateTime('d M Y H:i')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('end_time')
-                    ->label('Tanggal dan Waktu Selesai')
-                    ->dateTime()
+                    ->label('Selesai')
+                    ->dateTime('d M Y H:i')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('unit.name')
+                    ->label('Unit')
+                    ->badge()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Diajukan Oleh')
+                    ->badge()
                     ->sortable(),
                 Tables\Columns\ImageColumn::make('attachment')
                     ->searchable()

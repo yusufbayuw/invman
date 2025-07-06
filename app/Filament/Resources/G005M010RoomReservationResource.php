@@ -67,11 +67,32 @@ class G005M010RoomReservationResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('g004_m008_activity_id'),
+                Forms\Components\TextInput::make('g004_m008_activity_id')
+                    ->label('Kegiatan')
+                    ->required()
+                    ->relationship('activity', 'name', function (Builder $query) {
+                        $query->where('end_date', '<=', now());
+                    })
+                    ->searchable(),
                 Forms\Components\TextInput::make('g003_m006_room_id')
-                    ->numeric(),
-                Forms\Components\DateTimePicker::make('start_time'),
-                Forms\Components\DateTimePicker::make('end_time'),
+                    ->label('Ruangan')
+                    ->required()
+                    ->relationship('room', 'name', function (Builder $query) {
+                        $query->where('is_borrowable', true);
+                    })
+                    ->searchable(),
+                Forms\Components\DateTimePicker::make('start_time')
+                    ->label('Waktu Mulai')
+                    ->required()
+                    ->default(now())
+                    ->minDate(now())
+                    ->seconds(false),
+                Forms\Components\DateTimePicker::make('end_time')
+                    ->label('Waktu Selesai')
+                    ->required()
+                    ->default(now()->addHour())
+                    ->minDate(now())
+                    ->seconds(false),
                 Forms\Components\TextInput::make('status'),
             ]);
     }

@@ -105,18 +105,19 @@ class G003M006RoomResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('floor.building.name')
-                    ->label('Gedung')
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable()
+                    ->label('Nama Ruangan'),
+                Tables\Columns\TextColumn::make('unit.name')
+                    ->label('Unit')
+                    ->badge()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('floor.name')
                     ->label('Lantai')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('unit.name')
-                    ->label('Unit')
+                Tables\Columns\TextColumn::make('floor.building.name')
+                    ->label('Gedung')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('name')
-                    ->searchable()
-                    ->label('Nama Ruangan'),
                 Tables\Columns\IconColumn::make('is_borrowable')
                     ->label('Dapat Dipinjam')
                     ->boolean(),
@@ -124,7 +125,8 @@ class G003M006RoomResource extends Resource
                     ->label('Kapasitas')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
-                    ->searchable(),
+                    ->searchable()
+                    ->badge(),
                 Tables\Columns\TextColumn::make('photo')
                     ->label('Foto Ruangan')
                     ->searchable(),

@@ -88,8 +88,11 @@ class G002M015ItemInstanceResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('code')
                     ->label('Kode Barang Satuan')
+                    ->badge()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('status')
+                    ->label('Status Barang')
+                    ->badge()
                     ->searchable(),
                 Tables\Columns\IconColumn::make('is_available')
                     ->boolean(),

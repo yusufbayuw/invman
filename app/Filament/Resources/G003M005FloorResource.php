@@ -69,13 +69,13 @@ class G003M005FloorResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Nama Lantai')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('building.name')
                     ->label('Gedung')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('name')
-                    ->label('Nama Lantai')
-                    ->searchable(),
                 Tables\Columns\ImageColumn::make('map')
                     ->label('Denah Lantai')
                     ->simpleLightbox(),

@@ -41,63 +41,83 @@ class CalendarWidget extends FullCalendarWidget
             ->modalHeading(fn() => 'Kegiatan: ' . $this->record->name)
             ->modalWidth('2xl')
             ->infolist([
-                \Filament\Infolists\Components\Split::make([
-                    \Filament\Infolists\Components\Section::make([
-                        \Filament\Infolists\Components\TextEntry::make('name')
-                            ->label('Nama Kegiatan')
-                            ->weight('bold')
-                            ->size('md'),
-                        \Filament\Infolists\Components\TextEntry::make('start_time')
-                            ->label('Mulai')
-                            ->dateTime()
-                            ->inlineLabel(),
-                        \Filament\Infolists\Components\TextEntry::make('end_time')
-                            ->label('Selesai')
-                            ->dateTime()
-                            ->inlineLabel(),
-                        \Filament\Infolists\Components\TextEntry::make('user.name')
-                            ->label('Diajukan Oleh')
-                            ->inlineLabel(),
-                        \Filament\Infolists\Components\TextEntry::make('unit.name')
-                            ->label('Unit')
-                            ->inlineLabel(),
-                        \Filament\Infolists\Components\TextEntry::make('description')
-                            ->label('Deskripsi')
-                            ->size('md')
-                            ->inlineLabel(),
-                        \Filament\Infolists\Components\TextEntry::make('attachment')
-                            ->label('Lampiran')
-                            ->inlineLabel(),
-                    ]),
-                    \Filament\Infolists\Components\Section::make([
-                        // show list of all item reservations related to this activity
-                        \Filament\Infolists\Components\RepeatableEntry::make('room_reservation')
-                            ->label('Reservasi Ruangan')
-                            ->schema([
-                                \Filament\Infolists\Components\TextEntry::make('room.name')
-                                    ->label('Nama')
-                                    ->inlineLabel(),
-                                \Filament\Infolists\Components\TextEntry::make('status')
-                                    ->label('Status')
-                                    ->badge()
-                                    ->inlineLabel(),
-                            ]),
-                            \Filament\Infolists\Components\RepeatableEntry::make('item_reservation')
+                \Filament\Infolists\Components\Section::make([
+                    \Filament\Infolists\Components\TextEntry::make('name')
+                        ->label('Nama Kegiatan: ')
+                        ->weight('bold')
+                        ->alignCenter()
+                        ->size('md'),
+                    \Filament\Infolists\Components\TextEntry::make('description')
+                        ->label('Deskripsi')
+                        ->size('sm'),
+                ])
+                    ->columnSpanFull()
+                    ->compact(),
+            \Filament\Infolists\Components\Split::make([
+                \Filament\Infolists\Components\Section::make([
+                    \Filament\Infolists\Components\TextEntry::make('start_time')
+                        ->label('Mulai')
+                        ->dateTime()
+                        ->inlineLabel(),
+                    \Filament\Infolists\Components\TextEntry::make('end_time')
+                        ->label('Selesai')
+                        ->dateTime()
+                        ->inlineLabel(),
+                ]),
+                \Filament\Infolists\Components\Section::make([
+                    \Filament\Infolists\Components\TextEntry::make('user.name')
+                        ->label('Diajukan Oleh')
+                        ->inlineLabel(),
+                    \Filament\Infolists\Components\TextEntry::make('unit.name')
+                        ->label('Unit')
+                        ->inlineLabel(),
+                    \Filament\Infolists\Components\TextEntry::make('attachment')
+                        ->label('Lampiran')
+                        ->inlineLabel(),
+                ]), 
+            ])->from('md'),
+                \Filament\Infolists\Components\Tabs::make('Tabs')
+                    ->tabs([
+                        \Filament\Infolists\Components\Tabs\Tab::make('reservasi_barang')
                             ->label('Reservasi Barang')
+                            ->badge(fn() => $this->record->item_reservation->count() ?? 0)
+                            ->icon('heroicon-o-cube')
                             ->schema([
-                                \Filament\Infolists\Components\TextEntry::make('item.name')
-                                    ->label('Nama')
-                                    ->inlineLabel(),
-                                \Filament\Infolists\Components\TextEntry::make('quantity')
-                                    ->label('Jumlah')
-                                    ->inlineLabel(),
-                                \Filament\Infolists\Components\TextEntry::make('status')
-                                    ->label('Status')
-                                    ->badge()
-                                    ->inlineLabel(),
+                                \Filament\Infolists\Components\RepeatableEntry::make('item_reservation')
+                                    ->label('')
+                                    ->schema([
+                                        \Filament\Infolists\Components\TextEntry::make('item.name')
+                                            ->label('Nama')
+                                            ->inlineLabel(),
+                                        \Filament\Infolists\Components\TextEntry::make('quantity')
+                                            ->label('Jumlah')
+                                            ->inlineLabel(),
+                                        \Filament\Infolists\Components\TextEntry::make('status')
+                                            ->label('Status')
+                                            ->badge()
+                                            ->inlineLabel(),
+                                    ]),
                             ]),
-                    ]),
-                ])->from('md')->columnSpanFull(),
+                        \Filament\Infolists\Components\Tabs\Tab::make('reservasi_ruangan')
+                            ->label('Reservasi Ruangan')
+                            ->badge(function ($record) {
+                                return ($record->room_reservation?->count() ?? 0);
+                            })
+                            ->icon('heroicon-o-map-pin')
+                            ->schema([
+                                \Filament\Infolists\Components\RepeatableEntry::make('room_reservation')
+                                    ->label('')
+                                    ->schema([
+                                        \Filament\Infolists\Components\TextEntry::make('room.name')
+                                            ->label('Nama')
+                                            ->inlineLabel(),
+                                        \Filament\Infolists\Components\TextEntry::make('status')
+                                            ->label('Status')
+                                            ->badge()
+                                            ->inlineLabel(),
+                                    ]),
+                            ]),
+                    ])->columnSpanFull(),
             ])
             ->action(fn() => $this->record);
     }

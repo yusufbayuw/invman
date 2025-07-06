@@ -76,15 +76,18 @@ class G006M012RoomReviewResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('g005_m010_room_reservation_id')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('g003_m006_room_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('room.name')
+                    ->label('Ruangan')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('user_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Pengguna')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('rating')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('review')
+                    ->limit(50)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

@@ -6,6 +6,7 @@ use App\Filament\Resources\G006M011ItemReviewResource\Pages;
 use App\Filament\Resources\G006M011ItemReviewResource\RelationManagers;
 use App\Models\G006M011ItemReview;
 use Filament\Forms;
+use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -75,17 +76,20 @@ class G006M011ItemReviewResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('g002_m015_item_instance_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('item_instance.name')
+                    ->label('Barang Satuan')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('user_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Pengguna')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('g005_m009_item_reservation_id')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('rating')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('review')
+                    ->limit(50)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

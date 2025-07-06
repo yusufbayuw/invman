@@ -99,24 +99,32 @@ class G005M009ItemReservationResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('ID')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('activity.name')
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('item.name')
-                    ->numeric()
+                    ->label('Barang')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('activity.name')
+                    ->label('Kegiatan')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('activity.unit.name')
+                    ->label('Unit')
+                    ->searchable()
+                    ->badge()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('start_time')
-                    ->dateTime()
+                    ->dateTime('d M Y H:i')
+                    ->label('Mulai')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('end_time')
-                    ->dateTime()
+                    ->dateTime('d M Y H:i')
+                    ->label('Selesai')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('returned_at')
-                    ->dateTime()
+                    ->dateTime('d M Y H:i')
+                    ->label('Dikembalikan')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
+                    ->label('Status Reservasi')
+                    ->badge()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

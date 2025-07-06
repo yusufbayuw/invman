@@ -75,8 +75,8 @@ class G005M016ItemReservationDetailResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('g005_m009_item_reservation_id')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('g002_m015_item_instance_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('item_instance.name')
+                    ->label('Barang')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
