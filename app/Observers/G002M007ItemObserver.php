@@ -17,7 +17,7 @@ class G002M007ItemObserver
         $g002M007Item->saveQuietly();
         // create item instance based on item quantity
         for ($i = 0; $i < $g002M007Item->quantity; $i++) {
-            G002M015ItemInstance::create([
+            G002M015ItemInstance::createQuietly([
                 'g002_m007_item_id' => $g002M007Item->id,
                 'g001_m001_unit_id' => $g002M007Item->g001_m001_unit_id,
                 'g003_m006_room_id' => $g002M007Item->g003_m006_room_id,
