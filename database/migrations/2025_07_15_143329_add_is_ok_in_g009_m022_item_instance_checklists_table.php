@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('g002_m015_item_instances', function (Blueprint $table) {
-            $table->boolean('is_borrowable')->after('is_available')->nullable();
+        Schema::table('g009_m022_item_instance_checklists', function (Blueprint $table) {
+            $table->boolean('is_ok')->default(false)->after('checklist_date')->nullable();
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('g002_m015_item_instances', function (Blueprint $table) {
-            $table->dropColumn('is_borrowable');
+        Schema::table('g009_m022_item_instance_checklists', function (Blueprint $table) {
+            $table->dropColumn('is_ok');
         });
     }
 };

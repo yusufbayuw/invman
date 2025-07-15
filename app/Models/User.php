@@ -70,6 +70,18 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasMany(G007M014RoomHistory::class, 'user_id');
     }
+    public function vehicle_review(): HasMany
+    {
+        return $this->hasMany(G006M020VehicleReview::class, 'user_id');
+    }
+    public function vehicle_history(): HasMany
+    {
+        return $this->hasMany(G007M021VehicleHistory::class, 'user_id');
+    }
+    public function item_instance_checklist(): HasMany
+    {
+        return $this->hasMany(G009M022ItemInstanceChecklist::class, 'user_id');
+    }
     public function unit(): BelongsTo
     {
         return $this->belongsTo(G001M001Unit::class, 'g001_m001_unit_id');

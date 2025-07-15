@@ -23,4 +23,8 @@ class G001M001Unit extends Model
     {
         return $this->hasMany(G004M008Activity::class, 'g001_m001_unit_id');
     }
+    public function vehicle(): HasMany
+    {
+        return $this->hasMany(G008M017Vehicle::class, 'g001_m001_unit_id');
+    }
 }
