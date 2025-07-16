@@ -10,6 +10,7 @@
         "alperenersoy/filament-export": "*",
         "bezhansalleh/filament-shield": "^3.3",
         "coderflex/filament-turnstile": "^2.2",
+        "coolsam/flatpickr": "^4.1",
         "dominion-solutions/filament-captcha": "^0.1.0",
         "filament/filament": "^3.2",
         "hayderhatem/filament-excel-import": "^3.1",

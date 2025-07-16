@@ -2,17 +2,18 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Forms;
+use Filament\Tables;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Auth;
+use App\Models\G005M010RoomReservation;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\G005M010RoomReservationResource\Pages;
 use App\Filament\Resources\G005M010RoomReservationResource\RelationManagers;
 use App\Filament\Resources\G005M010RoomReservationResource\RelationManagers\RoomReviewRelationManager;
-use App\Models\G005M010RoomReservation;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class G005M010RoomReservationResource extends Resource
 {
@@ -20,9 +21,14 @@ class G005M010RoomReservationResource extends Resource
 
     protected static ?string $navigationGroup = 'Peminjaman';
     protected static ?string $navigationIcon = 'heroicon-o-bookmark';
-    protected static ?string $slug = 'room-reservation';
+    protected static ?string $slug = 'd345aa3b-0dc3-43ee-8ae4-b8916fb2a48f';//'room-reservation';
     protected static ?string $modelLabel = 'Reservasi Ruangan';
     protected static ?string $navigationLabel = 'Reservasi Ruangan';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()->hasRole(['super_admin', config('role.fasilitas')]);
+    }
 
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
     {

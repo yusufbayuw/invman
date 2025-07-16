@@ -2,18 +2,22 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Forms;
+use Filament\Tables;
+use Filament\Forms\Get;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use App\Models\G004M008Activity;
+use Filament\Resources\Resource;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\G004M008ActivityResource\Pages;
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers;
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers\ItemReservationRelationManager;
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers\RoomReservationRelationManager;
-use App\Models\G004M008Activity;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\G004M008ActivityResource\RelationManagers\VehicleReservationRelationManager;
+use Coolsam\Flatpickr\Forms\Components\Flatpickr;
+use Filament\Forms\Set;
 
 class G004M008ActivityResource extends Resource
 {
@@ -89,26 +93,27 @@ class G004M008ActivityResource extends Resource
                 Forms\Components\TextInput::make('name'),
                 Forms\Components\Textarea::make('description')
                     ->columnSpanFull(),
-                Forms\Components\DateTimePicker::make('start_time')
-                    ->default(now())
+                Flatpickr::make('start_time')
                     ->label('Tanggal dan Waktu Mulai')
-                    ->required()
-                    ->reactive()
+                    ->time(true)
                     ->seconds(false)
-                    ->minutesStep(5)
-                    ->locale('id')
-                    ->native(false)
-                    ->reactive(false),
-                Forms\Components\DateTimePicker::make('end_time')
-                    ->minDate(fn (callable $get) => $get('start_time') ?? now())
+                    ->live()
+                    ->time24hr(true)
+                    ->beforeOrEqual('end_time')
+                    ->reactive()
+                    ->afterStateUpdated(function ($state, Set $set) {
+                        if ($state) {
+                            $set('end_time', \Carbon\Carbon::parse($state)->addHour());
+                        }
+                    }),
+                Flatpickr::make('end_time')
                     ->label('Tanggal dan Waktu Selesai')
-                    ->required()
-                    ->minutesStep(5)
-                    ->reactive()
+                    ->time(true)
                     ->seconds(false)
-                    ->native(false)
+                    ->reactive()
+                    ->time24hr(true)
                     ->afterOrEqual('start_time')
-                    ->locale('id'),
+                    ->minDate(fn (Get $get) => $get('start_time') ? \Carbon\Carbon::parse($get('start_time'))->addMinute() : now()),
                 Forms\Components\TextInput::make('attachment'),
             ]);
     }
@@ -167,6 +172,7 @@ class G004M008ActivityResource extends Resource
         return [
             ItemReservationRelationManager::class,
             RoomReservationRelationManager::class,
+            VehicleReservationRelationManager::class,
         ];
     }
 

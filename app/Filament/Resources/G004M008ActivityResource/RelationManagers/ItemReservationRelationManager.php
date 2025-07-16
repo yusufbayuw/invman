@@ -2,17 +2,19 @@
 
 namespace App\Filament\Resources\G004M008ActivityResource\RelationManagers;
 
-use App\Models\G002M007Item;
-use App\Models\G005M009ItemReservation;
 use Filament\Forms;
-use Filament\Forms\Components\Tabs\Tab;
-use Filament\Forms\Form;
-use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Get;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use App\Models\G002M007Item;
+use Illuminate\Support\Facades\Auth;
+use App\Models\G005M009ItemReservation;
+use Filament\Forms\Components\Tabs\Tab;
+use Illuminate\Database\Eloquent\Builder;
+use Coolsam\Flatpickr\Forms\Components\Flatpickr;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Resources\RelationManagers\RelationManager;
 
 class ItemReservationRelationManager extends RelationManager
 {
@@ -86,17 +88,26 @@ class ItemReservationRelationManager extends RelationManager
                     ->minValue(1)
                     ->label('Jumlah Barang')
                     ->required(),
-                Forms\Components\DateTimePicker::make('start_time')
-                    ->label('Waktu Mulai')
+                Flatpickr::make('start_time')
+                    ->label('Tanggal dan Waktu Mulai')
+                    ->time(true)
+                    ->seconds(false)
                     ->reactive()
-                    ->readOnly()
-                    ->default($this->ownerRecord->start_time ?? now()),
-                Forms\Components\DateTimePicker::make('end_time')
-                    ->label('Waktu Selesai')
+                    ->time24hr(true)
+                    ->default($this->ownerRecord->start_time ?? now())
+                    ->minDate(\Carbon\Carbon::parse($this->ownerRecord->start_time)->subMinute() ?? $this->ownerRecord->start_time)
+                    ->maxDate(\Carbon\Carbon::parse($this->ownerRecord->end_time)->addMinute() ?? $this->ownerRecord->start_time)
+                    ->beforeOrEqual('end_time'),
+                Flatpickr::make('end_time')
+                    ->label('Tanggal dan Waktu Selesai')
+                    ->time(true)
+                    ->seconds(false)
                     ->reactive()
-                    ->minDate(fn (Get $get) => $get('start_time') ?? now())
-                    ->maxDate($this->ownerRecord->end_time ?? now()->addHour())
-                    ->default($this->ownerRecord->end_time ?? now()->addHour()),
+                    ->time24hr(true)
+                    ->default($this->ownerRecord->end_time ?? now())
+                    ->afterOrEqual('start_time')
+                    ->minDate(\Carbon\Carbon::parse($this->ownerRecord->start_time)->subMinute() ?? $this->ownerRecord->start_time)
+                    ->maxDate(\Carbon\Carbon::parse($this->ownerRecord->end_time)->addMinute() ?? $this->ownerRecord->start_time),
             ]);
     }
 
@@ -139,7 +150,11 @@ class ItemReservationRelationManager extends RelationManager
                 Tables\Actions\Action::make('konfirmasi')
                     ->label('Setujui')
                     ->color('success')
-                    ->hidden(fn ($record): bool => !($record->status === 'menunggu persetujuan'))
+                    ->hidden(fn($record): bool => !(
+                        $record->status === 'menunggu persetujuan'
+                        && Auth::user()
+                        && Auth::user()->hasRole(['super_admin', config('role.fasilitas')])
+                    ))
                     ->icon('heroicon-o-check-circle')
                     ->action(function ($record) {
                         $record->status = 'disetujui/dipinjamkan';
@@ -149,7 +164,11 @@ class ItemReservationRelationManager extends RelationManager
                     ->label('Ditolak')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->hidden(fn ($record): bool => !($record->status === 'menunggu persetujuan'))
+                    ->hidden(fn($record): bool => !(
+                        $record->status === 'menunggu persetujuan'
+                        && Auth::user()
+                        && Auth::user()->hasRole(['super_admin', config('role.fasilitas')])
+                    ))
                     ->icon('heroicon-o-x-circle')
                     ->action(function ($record) {
                         $record->status = 'dikembalikan';
@@ -158,10 +177,11 @@ class ItemReservationRelationManager extends RelationManager
                 Tables\Actions\Action::make('dikembalikan')
                     ->label('Kembalikan')
                     ->color('warning')
-                    ->hidden(fn ($record): bool => !($record->status === 'disetujui/dipinjamkan'))
+                    ->hidden(fn($record): bool => !($record->status === 'disetujui/dipinjamkan'))
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->action(function ($record) {
                         $record->status = 'dikembalikan';
+                        $record->returned_at = now();
                         $record->save();
                     }),
                 Tables\Actions\EditAction::make(),

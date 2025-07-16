@@ -2,16 +2,17 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Forms;
+use Filament\Tables;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\G005M019VehicleReservation;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\G005M019VehicleReservationResource\Pages;
 use App\Filament\Resources\G005M019VehicleReservationResource\RelationManagers;
-use App\Models\G005M019VehicleReservation;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class G005M019VehicleReservationResource extends Resource
 {
@@ -19,9 +20,14 @@ class G005M019VehicleReservationResource extends Resource
 
     protected static ?string $navigationGroup = 'Peminjaman';
     protected static ?string $navigationIcon = 'heroicon-o-calendar-date-range';
-    protected static ?string $slug = 'vehicle-reservation';
+    protected static ?string $slug = 'f8907dc8-c460-41f1-8ea7-b1eac45c2054';//'vehicle-reservation';
     protected static ?string $modelLabel = 'Reservasi Kendaraan';
     protected static ?string $navigationLabel = 'Reservasi Kendaraan';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()->hasRole(['super_admin', config('role.fasilitas')]);
+    }
 
     public static function form(Form $form): Form
     {
@@ -31,6 +37,10 @@ class G005M019VehicleReservationResource extends Resource
                     ->numeric(),
                 Forms\Components\TextInput::make('g008_m018_driver_id')
                     ->numeric(),
+                Forms\Components\Select::make('g004_m008_activity_id')
+                    ->relationship('activity', 'name')
+                    ->searchable()
+                    ->required(),
                 Forms\Components\DateTimePicker::make('start_time'),
                 Forms\Components\DateTimePicker::make('end_time'),
                 Forms\Components\TextInput::make('status'),

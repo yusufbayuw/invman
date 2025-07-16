@@ -7,19 +7,16 @@ use Filament\Tables;
 use Filament\Forms\Get;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
-use App\Models\G003M006Room;
 use Illuminate\Support\Facades\Auth;
-use App\Models\G005M010RoomReservation;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\G005M019VehicleReservation;
 use Coolsam\Flatpickr\Forms\Components\Flatpickr;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Resources\RelationManagers\RelationManager;
 
-class RoomReservationRelationManager extends RelationManager
+class VehicleReservationRelationManager extends RelationManager
 {
-    protected static string $relationship = 'room_reservation';
-    protected static ?string $modelLabel = 'Reservasi Ruangan';
-    protected static ?string $title = 'Reservasi Ruangan';
+    protected static string $relationship = 'vehicle_reservation';
 
     public function form(Form $form): Form
     {
@@ -27,31 +24,59 @@ class RoomReservationRelationManager extends RelationManager
             ->schema([
                 Forms\Components\Hidden::make('g004_m008_activity_id')
                     ->default($this->ownerRecord->id ?? null),
-                Forms\Components\Select::make('g003_m006_room_id')
-                    ->relationship('room', 'name', function (Builder $query) {
+                Forms\Components\Select::make('g008_m017_vehicle_id')
+                    ->relationship('vehicle', 'name', function (Builder $query) {
                         $query->where('is_borrowable', true);
                     })
                     ->getOptionLabelFromRecordUsing(function ($record) {
-                        return "{$record->name} - {$record->floor->name} - {$record->floor->building->name}";
+                        return "{$record->name} - {$record->license_plate}";
                     })
                     ->searchable()
-                    ->reactive()
-                    ->hint(function ($state , Get $get) {
-                        $roomId = $state;
-                        
+                    ->hint(function ($state, Get $get) {
+                        $vehicleId = $state;
+
                         static $itemOverlappingCache = [];
 
-                        $startTime = $get('start_time');
-                        $endTime = $get('end_time');
-
-                        if (!$roomId) {
+                        if (!$vehicleId) {
                             return '';
                         }
 
                         // Cache the item lookup to avoid multiple queries in a single request
-                        if (!isset($itemOverlappingCache[$roomId])) {
-                            
-                            $itemOverlappingCache[$roomId] = G005M010RoomReservation::where('g003_m006_room_id', $roomId)
+                        if (!isset($itemOverlappingCache[$vehicleId])) {
+                            $itemOverlappingCache[$vehicleId] = G005M019VehicleReservation::where('g008_m017_vehicle_id', $vehicleId)
+                                ->where('status', '<>', 'dikembalikan')
+                                ->where(function ($query) use ($get) {
+                                    $query->where(function ($q) use ($get) {
+                                        $q->where('start_time', '<=', $get('end_time'))
+                                          ->where('end_time', '>=', $get('start_time'));
+                                    });
+                                })
+                                ->exists();
+                        }
+
+                        $notAvailable = $itemOverlappingCache[$vehicleId] ?? 0;
+
+                        if ($notAvailable) {
+                            return "Kendaraan ini tidak tersedia pada waktu yang dipilih.";
+                        } else {
+                            return 'Kendaraan ini tersedia.';
+                        }
+                    })
+                    ->rules([
+                         function (Get $get) {
+                            return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                if (!$value) {
+                                    return;
+                                }
+
+                                $startTime = $get('start_time');
+                                $endTime = $get('end_time');
+
+                                if (!$startTime || !$endTime) {
+                                    return;
+                                }
+
+                                $overlap = G005M019VehicleReservation::where('g003_m006_room_id', $value)
                                     ->where('status', '<>', 'dikembalikan')
                                     ->where(function ($query) use ($startTime, $endTime) {
                                         $query->where(function ($q) use ($startTime, $endTime) {
@@ -60,16 +85,44 @@ class RoomReservationRelationManager extends RelationManager
                                         });
                                     })
                                     ->exists();
-                        }
 
-                        $notAvailable = $itemOverlappingCache[$roomId] ?? 0;
-                        
-                        if ($notAvailable) {
-                            return "Ruangan ini tidak tersedia pada waktu yang dipilih.";
-                        } else {
-                            return 'Ruangan ini tersedia.';
+                                if ($overlap) {
+                                    $fail('Kendaraan ini tidak tersedia pada waktu yang dipilih.');
+                                }
+                            };
                         }
+                    ])
+                    ->required(),
+                Forms\Components\Select::make('g008_m018_driver_id')
+                    ->relationship('driver', 'id')
+                    ->getOptionLabelFromRecordUsing(function ($record) {
+                        return "{$record->user->name}";
                     })
+                    ->hint(
+                        function ($state, Get $get) {
+                            $driverId = $state;
+
+                            if (!$driverId) {
+                                return '';
+                            }
+
+                            $vehicleId = $get('g008_m017_vehicle_id');
+                            if (!$vehicleId) {
+                                return 'Pilih kendaraan terlebih dahulu.';
+                            }
+
+                            $overlappingReservations = G005M019VehicleReservation::where('g008_m018_driver_id', $driverId)
+                                ->where(function ($query) use ($get) {
+                                    $query->where(function ($q) use ($get) {
+                                        $q->where('start_time', '<=', $get('end_time'))
+                                          ->where('end_time', '>=', $get('start_time'));
+                                    });
+                                })
+                                ->exists();
+
+                            return $overlappingReservations ? 'Pengemudi ini tidak tersedia pada waktu yang dipilih.' : 'Pengemudi ini tersedia.';
+                        }
+                    )
                     ->rules([
                         function (Get $get) {
                             return function (string $attribute, $value, \Closure $fail) use ($get) {
@@ -84,8 +137,7 @@ class RoomReservationRelationManager extends RelationManager
                                     return;
                                 }
 
-                                $overlap = G005M010RoomReservation::where('g003_m006_room_id', $value)
-                                    ->where('status', '<>', 'dikembalikan')
+                                $overlap = G005M019VehicleReservation::where('g008_m018_driver_id', $value)
                                     ->where(function ($query) use ($startTime, $endTime) {
                                         $query->where(function ($q) use ($startTime, $endTime) {
                                             $q->where('start_time', '<=', $endTime)
@@ -95,14 +147,17 @@ class RoomReservationRelationManager extends RelationManager
                                     ->exists();
 
                                 if ($overlap) {
-                                    $fail('Ruangan ini tidak tersedia pada waktu yang dipilih.');
+                                    $fail('Pengemudi ini tidak tersedia pada waktu yang dipilih.');
                                 }
                             };
                         }
                     ])
-                    ->preload()
-                    ->label('Ruangan')
-                    ->required(),
+                    ->searchable()
+                    ->hidden(fn ($record): bool => !(
+                        Auth::user()
+                        && Auth::user()->hasRole(['super_admin', config('role.fasilitas')])
+                    ))
+                    ,
                 Flatpickr::make('start_time')
                     ->label('Tanggal dan Waktu Mulai')
                     ->time(true)
@@ -123,6 +178,7 @@ class RoomReservationRelationManager extends RelationManager
                     ->afterOrEqual('start_time')
                     ->minDate(\Carbon\Carbon::parse($this->ownerRecord->start_time)->subMinute() ?? $this->ownerRecord->start_time)
                     ->maxDate(\Carbon\Carbon::parse($this->ownerRecord->end_time)->addMinute() ?? $this->ownerRecord->start_time),
+                Forms\Components\TextInput::make('status'),
             ]);
     }
 
@@ -131,27 +187,7 @@ class RoomReservationRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('id')
             ->columns([
-                Tables\Columns\TextColumn::make('room.name')
-                    ->searchable()
-                    ->label('Ruangan')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('room.floor.name')
-                    ->searchable()
-                    ->label('Lantai')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('room.floor.building.name')
-                    ->searchable()
-                    ->label('Gedung')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('start_time')
-                    ->dateTime()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('end_time')
-                    ->dateTime()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('id'),
             ])
             ->filters([
                 //
@@ -160,43 +196,6 @@ class RoomReservationRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make(),
             ])
             ->actions([
-                Tables\Actions\Action::make('konfirmasi')
-                    ->label('Setujui')
-                    ->color('success')
-                    ->hidden(fn($record): bool => !(
-                        $record->status === 'menunggu npersetujuan'
-                        && Auth::user()
-                        && Auth::user()->hasRole(['super_admin', config('role.fasilitas')])
-                    ))
-                    ->icon('heroicon-o-check-circle')
-                    ->action(function ($record) {
-                        $record->status = 'disetujui/dipinjamkan';
-                        $record->save();
-                    }),
-                Tables\Actions\Action::make('ditolak')
-                    ->label('Ditolak')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->hidden(fn($record): bool => !(
-                        $record->status === 'menunggu persetujuan'
-                        && Auth::user()
-                        && Auth::user()->hasRole(['super_admin', config('role.fasilitas')])
-                    ))
-                    ->icon('heroicon-o-x-circle')
-                    ->action(function ($record) {
-                        $record->status = 'dikembalikan';
-                        $record->save();
-                    }),
-                Tables\Actions\Action::make('dikembalikan')
-                    ->label('Kembalikan')
-                    ->color('warning')
-                    ->hidden(fn($record): bool => !($record->status === 'disetujui/dipinjamkan'))
-                    ->icon('heroicon-o-arrow-uturn-left')
-                    ->action(function ($record) {
-                        $record->status = 'dikembalikan';
-                        $record->returned_at = now();
-                        $record->save();
-                    }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

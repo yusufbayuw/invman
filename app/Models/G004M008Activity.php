@@ -19,6 +19,10 @@ class G004M008Activity extends Model
     {
         return $this->hasMany(G005M010RoomReservation::class, 'g004_m008_activity_id');
     }
+    public function vehicle_reservation(): HasMany
+    {
+        return $this->hasMany(G005M019VehicleReservation::class, 'g004_m008_activity_id');
+    }
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
