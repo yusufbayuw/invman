@@ -84,14 +84,17 @@ class G004M008ActivityResource extends Resource
                     ->label('Diajukan Oleh')
                     ->required(),
                 Forms\Components\Select::make('g001_m001_unit_id')
-                    ->label('Unit')
+                    ->label('Unit Penyelenggara')
                     ->relationship('unit', 'name')
                     ->searchable()
                     ->default(auth()?->user()?->g001_m001_unit_id ?? null)
                     ->preload()
                     ->required(),
-                Forms\Components\TextInput::make('name'),
+                Forms\Components\TextInput::make('name')
+                    ->label('Nama Kegiatan')
+                    ->required(),
                 Forms\Components\Textarea::make('description')
+                    ->label('Deskripsi Kegiatan')
                     ->columnSpanFull(),
                 Flatpickr::make('start_time')
                     ->label('Tanggal dan Waktu Mulai')
@@ -114,7 +117,8 @@ class G004M008ActivityResource extends Resource
                     ->time24hr(true)
                     ->afterOrEqual('start_time')
                     ->minDate(fn (Get $get) => $get('start_time') ? \Carbon\Carbon::parse($get('start_time'))->addMinute() : now()),
-                Forms\Components\TextInput::make('attachment'),
+                Forms\Components\FileUpload::make('attachment')
+                    ->label('Lampiran (jika ada)'),
             ]);
     }
 
@@ -141,9 +145,10 @@ class G004M008ActivityResource extends Resource
                     ->label('Diajukan Oleh')
                     ->badge()
                     ->sortable(),
-                Tables\Columns\ImageColumn::make('attachment')
-                    ->searchable()
-                    ->simpleLightbox(),
+                Tables\Columns\TextColumn::make('attachment')
+                    ->label('Lampiran')
+                    ->formatStateUsing(fn ($record) => $record->attachment ? 'file' : null)
+                    ->simpleLightbox(fn ($record) =>  $record?->attachment ?? null, defaultDisplayUrl: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

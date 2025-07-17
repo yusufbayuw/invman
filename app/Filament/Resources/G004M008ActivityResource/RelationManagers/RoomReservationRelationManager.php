@@ -20,6 +20,7 @@ class RoomReservationRelationManager extends RelationManager
     protected static string $relationship = 'room_reservation';
     protected static ?string $modelLabel = 'Reservasi Ruangan';
     protected static ?string $title = 'Reservasi Ruangan';
+    protected static ?string $icon = 'heroicon-o-building-office';
 
     public function form(Form $form): Form
     {

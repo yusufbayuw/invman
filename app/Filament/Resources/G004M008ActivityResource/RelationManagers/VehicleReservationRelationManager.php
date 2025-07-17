@@ -17,6 +17,9 @@ use Filament\Resources\RelationManagers\RelationManager;
 class VehicleReservationRelationManager extends RelationManager
 {
     protected static string $relationship = 'vehicle_reservation';
+    protected static ?string $modelLabel = 'Reservasi Kendaraan';
+    protected static ?string $title = 'Reservasi Kendaraan';
+    protected static ?string $icon = 'heroicon-o-truck';
 
     public function form(Form $form): Form
     {

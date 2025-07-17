@@ -21,6 +21,7 @@ class ItemReservationRelationManager extends RelationManager
     protected static string $relationship = 'item_reservation';
     protected static ?string $modelLabel = 'Reservasi Barang';
     protected static ?string $title = 'Reservasi Barang';
+    protected static ?string $icon = 'heroicon-o-bookmark-square';
 
     public function form(Form $form): Form
     {
