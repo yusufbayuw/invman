@@ -16,7 +16,7 @@ class ListG009M022ItemInstanceChecklists extends ListRecords
     {
         return [
             Actions\Action::make('generate_bulan')
-                ->label(fn () => 'Generate Bulan ' . (date('M')))
+                ->label(fn () => 'Generate Bulan ' . (date('MM')))
                 ->action(function () {
                     $instanceAll = G002M015ItemInstance::all();
                     foreach ($instanceAll as $instance) {
@@ -26,7 +26,7 @@ class ListG009M022ItemInstanceChecklists extends ListRecords
                                 'date' => date('d-m-Y'),
                             ],
                             [
-                                // Tambahkan field lain yang ingin diisi/update di sini
+                                // Tambahkan field lain yang ingin diisi/update di sinigs
                             ]
                         );
                     }

@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Container\Attributes\Auth;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -20,22 +21,50 @@ class G009M022ItemInstanceChecklistResource extends Resource
     protected static ?string $navigationGroup = 'Monitoring';
     protected static ?string $navigationIcon = 'heroicon-o-check-circle';
     protected static ?string $slug = 'item-instance-checklist';
-    protected static ?string $modelLabel = 'Daftar Periksa Instans Item';
-    protected static ?string $navigationLabel = 'Daftar Periksa Instans Item';
+    protected static ?string $modelLabel = 'Checklist Rutin Barang';
+    protected static ?string $navigationLabel = 'Checklist Rutin Barang';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\Select::make('g002_m015_item_instance_id')
-                    ->relationship('item_instance', 'name'),
+                    ->relationship('item_instance', 'name')
+                    ->label('Nama Barang'),
                 Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'name'),
-                Forms\Components\DatePicker::make('date'),
+                    ->relationship('user', 'name')
+                    ->disabled(!auth()->user()->hasRole(['super_admin']))
+                    ->hidden(fn($state) => $state ? False : True)
+                    ->label('Diperiksa Oleh'),
                 Forms\Components\Textarea::make('notes')
+                    ->label('Catatan')
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('photo'),
-                Forms\Components\DateTimePicker::make('checklist_date'),
+                Forms\Components\FileUpload::make('photo')
+                    ->label('Foto Barang')
+                    ->image(),
+                Forms\Components\ToggleButtons::make('is_ok')
+                    ->options([
+                        True => 'Baik',
+                        False => 'Trouble'
+                    ])
+                    ->colors([
+                        True => 'success',
+                        False => 'warning'
+                    ])
+                    ->icons([
+                        True => 'heroicon-o-check',
+                        False => 'heroicon-o-x-mark'
+                    ])
+                    ->inline()
+                    ->label('Kondisi'),
+                Forms\Components\TextInput::make('date')
+                    ->label('Bulan Laporan')
+                    ->formatStateUsing(fn($state) => $state ? \Carbon\Carbon::parse($state)->format('M Y') : null)
+                    ->disabled(),
+                Forms\Components\TextInput::make('checklist_date')
+                    ->disabled()
+                    ->formatStateUsing(fn($state) => $state ? \Carbon\Carbon::parse($state)->format('d M Y H:i:s') : null)
+                    ->default(now()),
             ]);
     }
 
@@ -45,18 +74,41 @@ class G009M022ItemInstanceChecklistResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('item_instance.name')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->label('Barang'),
                 Tables\Columns\TextColumn::make('user.name')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->label('Diperiksa'),
                 Tables\Columns\TextColumn::make('date')
                     ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('photo')
-                    ->searchable(),
+                    ->label('Tanggal Laporan')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('checklist_date')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->label('Tanggal Checklist')
+                    ->toggleable(),
+                Tables\Columns\ImageColumn::make('photo')
+                    ->label('Foto Barang')
+                    ->action(function ($record) {
+                        return \Filament\Forms\Components\FileUpload::make('photo')
+                            ->label('Ubah Foto Barang')
+                            ->image()
+                            ->saveUploadedFileUsing(function ($file, $record) {
+                                $record->update(['photo' => $file->store('photos', 'public')]);
+                            });
+                    }),
+                Tables\Columns\IconColumn::make('is_ok')
+                    ->boolean()
+                    ->label('Kondisi')
+                    ->action(function ($record, $column) {
+                        $name = $column->getName();
+                        $record->update([
+                            $name => !$record->$name,
+                        ]);
+                    }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -67,10 +119,36 @@ class G009M022ItemInstanceChecklistResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                // Filter berdasarkan bulan dan tahun pada field 'date'
+                Tables\Filters\SelectFilter::make('month_year')
+                    ->label('Bulan Laporan')
+                    ->options(
+                        \App\Models\G009M022ItemInstanceChecklist::all()
+                            ->unique('date')
+                            ->pluck('date')
+                            ->mapWithKeys(function ($date) {
+                                $formatted = \Carbon\Carbon::parse($date)->format('M Y');
+                                return [$date => $formatted];
+                            })
+                            ->toArray()
+                    )
+                    ->default(
+                        \App\Models\G009M022ItemInstanceChecklist::orderByDesc('date')->value('date')
+                    )
+                    ->attribute('date'),
+
+
+                // Filter berdasarkan unit barang (relasi item_instance->item->unit->name)
+                Tables\Filters\SelectFilter::make('unit')
+                    ->label('Unit Barang')
+                    ->searchable()
+                    ->options(
+                        \App\Models\G001M001Unit::all()
+                            ->pluck('name', 'id')
+                            ->toArray()
+                    ),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
