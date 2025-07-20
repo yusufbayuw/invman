@@ -14,37 +14,47 @@ class RoomRelationManager extends RelationManager
 {
     protected static string $relationship = 'room';
 
+    protected static ?string $modelLabel = 'Ruangan';
+    protected static ?string $title = 'Ruangan';
+    protected static ?string $icon = 'heroicon-o-map-pin';
+    protected static ?string $navigationLabel = 'Ruangan';
+
     public function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('id')
-                    ->required()
-                    ->maxLength(255),
+                //
             ]);
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('id')
+            ->recordTitleAttribute('name')
             ->columns([
-                Tables\Columns\TextColumn::make('id'),
+                Tables\Columns\TextColumn::make('name'),
+                Tables\Columns\TextColumn::make('description')
+                    ->limit(50),
+                Tables\Columns\TextColumn::make('capacity')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('floor.name'),
+                Tables\Columns\TextColumn::make('floor.building.name'),
             ])
             ->filters([
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                // Tables\Actions\CreateAction::make(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                //  Tables\Actions\EditAction::make(),
+                //  Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // Tables\Actions\BulkActionGroup::make([
+                //     Tables\Actions\DeleteBulkAction::make(),
+                // ]),
             ]);
     }
 }

@@ -13,6 +13,11 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class ItemHistoryRelationManager extends RelationManager
 {
     protected static string $relationship = 'item_history';
+    protected static ?string $recordTitleAttribute = 'name';
+    protected static ?string $modelLabel = 'Riwayat Barang';
+    protected static ?string $title = 'Riwayat Barang';
+    protected static ?string $icon = 'heroicon-o-document-text';
+    protected static ?string $navigationLabel = 'Riwayat Barang';
 
     public function form(Form $form): Form
     {

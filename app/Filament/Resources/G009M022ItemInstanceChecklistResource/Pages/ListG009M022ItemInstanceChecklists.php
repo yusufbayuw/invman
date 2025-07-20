@@ -16,14 +16,14 @@ class ListG009M022ItemInstanceChecklists extends ListRecords
     {
         return [
             Actions\Action::make('generate_bulan')
-                ->label(fn () => 'Generate Bulan ' . (date('MM')))
+                ->label(fn () => 'Generate Bulan ' . \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y'))
                 ->action(function () {
                     $instanceAll = G002M015ItemInstance::all();
                     foreach ($instanceAll as $instance) {
                         G009M022ItemInstanceChecklist::updateOrCreate(
                             [
                                 'g002_m015_item_instance_id' => $instance->id,
-                                'date' => date('d-m-Y'),
+                                'date' => now()->startOfMonth()->format('F Y'),
                             ],
                             [
                                 // Tambahkan field lain yang ingin diisi/update di sinigs
@@ -32,7 +32,8 @@ class ListG009M022ItemInstanceChecklists extends ListRecords
                     }
                     
                 }),
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->hidden(),
         ];
     }
 }

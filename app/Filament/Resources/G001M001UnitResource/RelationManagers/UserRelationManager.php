@@ -14,37 +14,45 @@ class UserRelationManager extends RelationManager
 {
     protected static string $relationship = 'user';
 
+    protected static ?string $recordTitleAttribute = 'name';
+    protected static ?string $modelLabel = 'Pengguna';
+    protected static ?string $title = 'Pengguna';
+    protected static ?string $icon = 'heroicon-o-user';
+    protected static ?string $navigationLabel = 'Pengguna';
+
     public function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('id')
-                    ->required()
-                    ->maxLength(255),
+                //
             ]);
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('id')
+            ->recordTitleAttribute('name')
             ->columns([
-                Tables\Columns\TextColumn::make('id'),
+                Tables\Columns\TextColumn::make('name'),
+                Tables\Columns\TextColumn::make('email')
+                    ->limit(50),
+                Tables\Columns\TextColumn::make('role.name')
+                    ->label('Peran'),
             ])
             ->filters([
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                // Tables\Actions\CreateAction::make(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                // Tables\Actions\EditAction::make(),
+                // Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // Tables\Actions\BulkActionGroup::make([
+                   // Tables\Actions\DeleteBulkAction::make(),
+                // ]),
             ]);
     }
 }

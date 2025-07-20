@@ -7,13 +7,15 @@ use Filament\Panel;
 use Filament\Widgets;
 use Filament\PanelProvider;
 use App\Filament\Auth\Login;
+use App\Filament\Pages\CustomChatifyPage;
+use Filament\Support\Colors\Color;
 use App\Filament\Widgets\CalendarWidget;
 use App\Filament\Widgets\MenuGridWidget;
-use Filament\Support\Colors\Color;
 use Filament\Http\Middleware\Authenticate;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Filament\Http\Middleware\AuthenticateSession;
+use Monzer\FilamentChatifyIntegration\ChatifyPlugin;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
@@ -71,6 +73,7 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugins([
+                ChatifyPlugin::make()->customPage(CustomChatifyPage::class),
                 SimpleLightBoxPlugin::make(),
                 FilamentShieldPlugin::make(),
                 FilamentBackgroundsPlugin::make()
