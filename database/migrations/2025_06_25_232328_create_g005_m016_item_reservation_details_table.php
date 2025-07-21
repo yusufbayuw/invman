@@ -16,6 +16,18 @@ return new class extends Migration
             $table->foreignUuid('g005_m009_item_reservation_id')->nullable()->constrained('g005_m009_item_reservations')->cascadeOnDelete();
             $table->foreignId('g002_m015_item_instance_id')->nullable()->constrained('g002_m015_item_instances')->cascadeOnDelete();
             $table->timestamps();
+
+            // Define foreign key with a shorter custom name
+            $table->foreign('g005_m009_item_reservation_id', 'fk_item_res_details_to_reservations')
+                ->references('id')
+                ->on('g005_m009_item_reservations')
+                ->cascadeOnDelete();
+
+            // Define foreign key with a shorter custom name
+            $table->foreign('g002_m015_item_instance_id', 'fk_item_res_details_to_instances')
+                ->references('id')
+                ->on('g002_m015_item_instances')
+                ->cascadeOnDelete();
         });
     }
 
