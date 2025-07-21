@@ -144,7 +144,7 @@ class G009M022ItemInstanceChecklistResource extends Resource
                         } else {
                             $stateText = $state;
                         }
-                        return $stateText ? Indicator::make('Bulan Laporan: ' . $stateText)->removable(false) : null;
+                        return $stateText ? Indicator::make('Bulan Laporan: ' . \Carbon\Carbon::parse($stateText)->locale('id')->format('F Y'))->removable(false) : null;
                     }),
 
                 // Filter berdasarkan unit barang (relasi item_instance->item->unit->name)
