@@ -21,11 +21,7 @@ return new class extends Migration
             $table->dateTime('checklist_date')->nullable();
             $table->timestamps();
 
-            $table->foreignUuid('g005_m009_item_reservation_id')->nullable();
-            $table->foreignId('g002_m015_item_instance_id')->nullable();
-            $table->timestamps();
-
-            // Define foreign key with a shorter custom name
+             // Define foreign key with a shorter custom name
             $table->foreign('g002_m015_item_instance_id', 'fk_item_checklist_to_instances')
                 ->references('id')
                 ->on('g002_m015_item_instances')
