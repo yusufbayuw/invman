@@ -23,7 +23,7 @@ class ListG009M022ItemInstanceChecklists extends ListRecords
                         G009M022ItemInstanceChecklist::updateOrCreate(
                             [
                                 'g002_m015_item_instance_id' => $instance->id,
-                                'date' => now()->startOfMonth()->format('F Y'),
+                                'date' => now()->startOfMonth(),
                             ],
                             [
                                 // Tambahkan field lain yang ingin diisi/update di sinigs
