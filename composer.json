@@ -12,6 +12,7 @@
         "coderflex/filament-turnstile": "^2.2",
         "coolsam/flatpickr": "^4.1",
         "dominion-solutions/filament-captcha": "^0.1.0",
+        "evilfreelancer/routeros-api-php": "^1.5",
         "filament/filament": "^3.2",
         "hayderhatem/filament-excel-import": "^3.1",
         "laravel/framework": "^11.31",
