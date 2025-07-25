@@ -19,9 +19,9 @@ class MikrotikHotspotCaptiveController extends Controller
 
         // Jika user belum login, redirect ke halaman login sistem
         // if (Auth::user()->id ?? true) {
-            // Simpan mac & ip di session agar bisa diakses setelah login
-        //    return redirect()->route('mikrotik.login');
-        //}
+        //     //Simpan mac & ip di session agar bisa diakses setelah login
+        //     return redirect()->route('mikrotik.login');
+        // }
 
         // kirim data user active ke mikrotik
 
@@ -68,5 +68,28 @@ class MikrotikHotspotCaptiveController extends Controller
 
         // Redirect ke halaman setelah login
         return redirect()->route('/admin')->with('success', 'Login hotspot berhasil.');
+    }
+
+    public function showLogin()
+    {
+        // Tampilkan halaman login captive portal
+        return view('mikrotik.login', [
+            'mac' => session('hotspot_mac') ?? '',
+            'ip' => session('hotspot_ip') ?? '',
+        ]);
+    }
+
+    public function postLogin(Request $request)
+    {
+        // Proses login captive portal
+        $credentials = $request->only('username', 'password');
+
+        if (Auth::attempt($credentials)) {
+            // Jika berhasil, redirect ke halaman yang diinginkan
+            return redirect()->route('mikrotik.login.show')->with('success', 'Login berhasil.');
+        }
+
+        // Jika gagal, kembali ke halaman login dengan pesan error
+        return redirect()->back()->withErrors(['login' => 'Username atau password salah.']);
     }
 }

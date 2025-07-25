@@ -20,3 +20,6 @@ Route::get('test-add-user', function () {
 
 Route::get('captive-login', [MikrotikHotspotCaptiveController::class, 'login'])->name('mikrotik.login');
 Route::post('captive-login', [MikrotikHotspotCaptiveController::class, 'login']);
+
+Route::get('captive-portal', [MikrotikHotspotCaptiveController::class, 'showLogin'])->name('mikrotik.login.show');
+Route::post('captive-portal', [MikrotikHotspotCaptiveController::class, 'showLogin']);
