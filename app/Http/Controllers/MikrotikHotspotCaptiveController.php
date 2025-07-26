@@ -17,13 +17,9 @@ class MikrotikHotspotCaptiveController extends Controller
         $ip = $request->query('ip');
         session(['hotspot_mac' => $mac, 'hotspot_ip' => $ip]);
 
-        // Jika user belum login, redirect ke halaman login sistem
-        // if (Auth::user()->id ?? true) {
-        //     //Simpan mac & ip di session agar bisa diakses setelah login
-        //     return redirect()->route('mikrotik.login');
-        // }
-
-        // kirim data user active ke mikrotik
+        if (Auth::check() === false) {
+            return redirect()->route('mikrotik.login.show');
+        }
 
         // 🔐 Setting API MikroTik
         $client = new Client([
@@ -58,9 +54,13 @@ class MikrotikHotspotCaptiveController extends Controller
 
         try {
             $client->query($loginUser)->read();
-            return view('mikrotik.success'); // sukses login
+            // Hapus session setelah sukses
+            //session()->forget(['hotspot_mac', 'hotspot_ip']);
+            return view('mikrotik.success');
         } catch (\Exception $e) {
-            return false; // gagal login
+            // Hapus session jika gagal
+            //session()->forget(['hotspot_mac', 'hotspot_ip']);
+            return redirect()->route('mikrotik.login.show')->with('error', 'Login hotspot gagal: ' . $e->getMessage());
         }
 
         // Hapus data dari session
@@ -73,10 +73,7 @@ class MikrotikHotspotCaptiveController extends Controller
     public function showLogin()
     {
         // Tampilkan halaman login captive portal
-        return view('mikrotik.login', [
-            'mac' => session('hotspot_mac') ?? '',
-            'ip' => session('hotspot_ip') ?? '',
-        ]);
+        return view('mikrotik.login');
     }
 
     public function postLogin(Request $request)
