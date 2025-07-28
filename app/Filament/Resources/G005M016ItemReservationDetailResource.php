@@ -2,16 +2,17 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Forms;
+use Filament\Tables;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\G005M016ItemReservationDetail;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\G005M016ItemReservationDetailResource\Pages;
 use App\Filament\Resources\G005M016ItemReservationDetailResource\RelationManagers;
-use App\Models\G005M016ItemReservationDetail;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class G005M016ItemReservationDetailResource extends Resource
 {
@@ -22,6 +23,11 @@ class G005M016ItemReservationDetailResource extends Resource
     protected static ?string $slug = 'item-reservation-detail';
     protected static ?string $modelLabel = 'Detail Reservasi Barang';
     protected static ?string $navigationLabel = 'Detail Reservasi Barang';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()->hasRole(['super_admin', config('role.fasilitas')]);
+    }
 
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
     {
