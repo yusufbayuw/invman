@@ -2,7 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\G003M004Building;
+use App\Models\G003M005Floor;
 use Illuminate\Database\Seeder;
 
 class FloorSeeder extends Seeder
@@ -12,29 +13,28 @@ class FloorSeeder extends Seeder
      */
     public function run(): void
     {
-        $floors = [
-            ['g003_m004_building_id' => 1, 'name' => 'Lantai 1', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 1, 'name' => 'Lantai 2', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 1, 'name' => 'Lantai 3', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 1, 'name' => 'Lantai 4', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 1, 'name' => 'Lantai 5', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 2, 'name' => 'Lantai 1', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 2, 'name' => 'Lantai 2', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 2, 'name' => 'Lantai 3', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 3, 'name' => 'Lantai 1', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 3, 'name' => 'Lantai 2', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 3, 'name' => 'Lantai 3', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 4, 'name' => 'Lantai Basement', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 4, 'name' => 'Lantai 1', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 4, 'name' => 'Lantai 2', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 4, 'name' => 'Lantai 3', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 4, 'name' => 'Lantai 4', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 5, 'name' => 'Lantai 1', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 5, 'name' => 'Lantai 2', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 6, 'name' => 'Lantai 1', 'map' => '', 'created_at' => now()],
-            ['g003_m004_building_id' => 7, 'name' => 'Lantai 2', 'map' => '', 'created_at' => now()],
+        $floorsByBuilding = [
+            'Gedung 52' => ['Lantai 1', 'Lantai 2', 'Lantai 3', 'Lantai 4', 'Lantai 5'],
+            'Gedung 91' => ['Lantai 1', 'Lantai 2', 'Lantai 3'],
+            'Gedung 93' => ['Lantai 1', 'Lantai 2', 'Lantai 3'],
+            'Gedung Setiabudi' => ['Lantai Basement', 'Lantai 1', 'Lantai 2', 'Lantai 3', 'Lantai 4'],
+            'Gedung PHH Mustofa' => ['Lantai 1', 'Lantai 2'],
+            'Gedung AH Nasution' => ['Lantai 1'],
+            'Gedung Kompas' => ['Lantai 2'],
         ];
 
-        \App\Models\G003M005Floor::insert($floors);
+        foreach ($floorsByBuilding as $buildingName => $floorNames) {
+            $building = G003M004Building::query()->where('name', $buildingName)->firstOrFail();
+
+            foreach ($floorNames as $floorName) {
+                G003M005Floor::query()->updateOrCreate(
+                    [
+                        'g003_m004_building_id' => $building->id,
+                        'name' => $floorName,
+                    ],
+                    ['map' => ''],
+                );
+            }
+        }
     }
 }

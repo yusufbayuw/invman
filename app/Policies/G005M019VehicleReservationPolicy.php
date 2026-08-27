@@ -15,7 +15,7 @@ class G005M019VehicleReservationPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_g005::m019::vehicle::reservation');
+        return $user->isFacility() || $user->isSarpras();
     }
 
     /**
@@ -23,7 +23,8 @@ class G005M019VehicleReservationPolicy
      */
     public function view(User $user, G005M019VehicleReservation $g005M019VehicleReservation): bool
     {
-        return $user->can('view_g005::m019::vehicle::reservation');
+        return $user->isFacility()
+            || $user->belongsToUnit($g005M019VehicleReservation->activity?->g001_m001_unit_id);
     }
 
     /**
@@ -31,7 +32,7 @@ class G005M019VehicleReservationPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_g005::m019::vehicle::reservation');
+        return $user->isFacility();
     }
 
     /**
@@ -39,7 +40,7 @@ class G005M019VehicleReservationPolicy
      */
     public function update(User $user, G005M019VehicleReservation $g005M019VehicleReservation): bool
     {
-        return $user->can('update_g005::m019::vehicle::reservation');
+        return $user->isFacility();
     }
 
     /**
@@ -47,7 +48,7 @@ class G005M019VehicleReservationPolicy
      */
     public function delete(User $user, G005M019VehicleReservation $g005M019VehicleReservation): bool
     {
-        return $user->can('delete_g005::m019::vehicle::reservation');
+        return $user->isFacility();
     }
 
     /**
@@ -55,7 +56,7 @@ class G005M019VehicleReservationPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_g005::m019::vehicle::reservation');
+        return $user->isFacility();
     }
 
     /**
@@ -105,4 +106,5 @@ class G005M019VehicleReservationPolicy
     {
         return $user->can('reorder_g005::m019::vehicle::reservation');
     }
+
 }

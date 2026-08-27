@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\G002M003ItemManagement;
 use Illuminate\Database\Seeder;
 
 class ItemManagementSeeder extends Seeder
@@ -13,28 +13,17 @@ class ItemManagementSeeder extends Seeder
     public function run(): void
     {
         $itemManagements = [
-            [
-                'name' => 'Fasilitas',
-                'description' => 'Dikelola oleh Bidang Fasilitas',
-                'created_at' => now(),
-            ],
-            [
-                'name' => 'IT',
-                'description' => 'Dikelola oleh Bidang IT',
-                'created_at' => now(),
-            ],
-            [
-                'name' => 'Perpustakaan',
-                'description' => 'Dikelola oleh Perpustakaan',
-                'created_at' => now(),
-            ],
-            [
-                'name' => 'Laboratorium',
-                'description' => 'Dikelola oleh Laboratorium',
-                'created_at' => now(),
-            ],
+            'Fasilitas' => 'Dikelola oleh Bidang Fasilitas',
+            'IT' => 'Dikelola oleh Bidang IT',
+            'Perpustakaan' => 'Dikelola oleh Perpustakaan',
+            'Laboratorium' => 'Dikelola oleh Laboratorium',
         ];
 
-        \App\Models\G002M003ItemManagement::insert($itemManagements);
+        foreach ($itemManagements as $name => $description) {
+            G002M003ItemManagement::query()->updateOrCreate(
+                ['name' => $name],
+                ['description' => $description],
+            );
+        }
     }
 }

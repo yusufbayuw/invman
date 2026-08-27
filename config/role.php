@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'admin' => 'admin',
     'fasilitas' => 'fasilitas',
-    'unit' => 'unit',
+    'sarpras' => 'sarpras',
+
+    // Alias sementara agar kode/modul lama yang membaca role.unit tetap aman.
+    'unit' => 'sarpras',
 ];

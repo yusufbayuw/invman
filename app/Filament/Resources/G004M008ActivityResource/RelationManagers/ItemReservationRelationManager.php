@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\G004M008ActivityResource\RelationManagers;
 
+use App\Enums\ReservationStatus;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Forms\Get;
@@ -54,9 +55,9 @@ class ItemReservationRelationManager extends RelationManager
                         if (!isset($itemCache[$itemId])) {
                             $itemCache[$itemId] = G002M007Item::find($itemId);
                             $itemOverlappingCache[$itemId] = G005M009ItemReservation::where('g002_m007_item_id', $itemId)
-                                ->where('status', '<>', 'dikembalikan')
-                                ->where('start_time', '>=', $get('start_time'))
-                                ->where('end_time', '<=', $get('end_time'))
+                                ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+                                ->where('start_time', '<', $get('end_time'))
+                                ->where('end_time', '>', $get('start_time'))
                                 ->sum('quantity');
                         }
 
@@ -76,9 +77,9 @@ class ItemReservationRelationManager extends RelationManager
                         if (!isset($itemCache[$itemId])) {
                             $itemCache[$itemId] = G002M007Item::find($itemId);
                             $itemOverlappingCache[$itemId] = G005M009ItemReservation::where('g002_m007_item_id', $itemId)
-                                ->where('status', '<>', 'dikembalikan')
-                                ->where('start_time', '>=', $get('start_time'))
-                                ->where('end_time', '<=', $get('end_time'))
+                                ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+                                ->where('start_time', '<', $get('end_time'))
+                                ->where('end_time', '>', $get('start_time'))
                                 ->sum('quantity');
                         }
 
@@ -133,60 +134,81 @@ class ItemReservationRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->label('Status')
-                    ->color(fn(string $state): string => match ($state) {
-                        'menunggu persetujuan' => 'danger',
-                        'disetujui/dipinjamkan' => 'success',
-                        'dikembalikan' => 'info',
-                        'tersedia' => 'primary',
-                    })
+                    ->formatStateUsing(fn (?string $state) => ReservationStatus::tryFrom($state)?->label() ?? $state)
+                    ->color(fn (?string $state) => ReservationStatus::tryFrom($state)?->color() ?? 'gray')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('rejection_reason')
+                    ->label('Alasan Penolakan')
+                    ->placeholder('-')
+                    ->wrap()
+                    ->toggleable(),
             ])
             ->filters([
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()
+                    ->visible(fn () => Auth::user()?->isFacility()),
             ])
             ->actions([
                 Tables\Actions\Action::make('konfirmasi')
                     ->label('Setujui')
                     ->color('success')
                     ->hidden(fn($record): bool => !(
-                        $record->status === 'menunggu persetujuan'
+                        $record->status === ReservationStatus::Submitted->value
                         && Auth::user()
-                        && Auth::user()->hasRole(['super_admin', config('role.fasilitas')])
+                        && Auth::user()->isFacility()
                     ))
                     ->icon('heroicon-o-check-circle')
                     ->action(function ($record) {
-                        $record->status = 'disetujui/dipinjamkan';
+                        $record->status = ReservationStatus::Approved->value;
                         $record->save();
                     }),
                 Tables\Actions\Action::make('ditolak')
-                    ->label('Ditolak')
+                    ->label('Tolak')
                     ->color('danger')
-                    ->requiresConfirmation()
+                    ->form([
+                        Forms\Components\Textarea::make('rejection_reason')
+                            ->label('Alasan penolakan')
+                            ->required()
+                            ->maxLength(2000),
+                    ])
                     ->hidden(fn($record): bool => !(
-                        $record->status === 'menunggu persetujuan'
+                        $record->status === ReservationStatus::Submitted->value
                         && Auth::user()
-                        && Auth::user()->hasRole(['super_admin', config('role.fasilitas')])
+                        && Auth::user()->isFacility()
                     ))
                     ->icon('heroicon-o-x-circle')
+                    ->action(function ($record, array $data) {
+                        $record->status = ReservationStatus::Rejected->value;
+                        $record->rejection_reason = $data['rejection_reason'];
+                        $record->save();
+                    }),
+                Tables\Actions\Action::make('serahkan')
+                    ->label('Serahkan')
+                    ->color('info')
+                    ->icon('heroicon-o-arrow-right-circle')
+                    ->visible(fn ($record): bool => $record->status === ReservationStatus::Approved->value
+                        && Auth::user()?->isFacility())
                     ->action(function ($record) {
-                        $record->status = 'dikembalikan';
+                        $record->status = ReservationStatus::CheckedOut->value;
                         $record->save();
                     }),
                 Tables\Actions\Action::make('dikembalikan')
                     ->label('Kembalikan')
                     ->color('warning')
-                    ->hidden(fn($record): bool => !($record->status === 'disetujui/dipinjamkan'))
+                    ->visible(fn ($record): bool => $record->status === ReservationStatus::CheckedOut->value
+                        && Auth::user()?->isFacility())
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->action(function ($record) {
-                        $record->status = 'dikembalikan';
+                        $record->status = ReservationStatus::Returned->value;
                         $record->returned_at = now();
                         $record->save();
                     }),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn () => Auth::user()?->isFacility()),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn () => Auth::user()?->isFacility()),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -23,8 +23,9 @@ class G002M007ItemObserver
                 'g003_m006_room_id' => $g002M007Item->g003_m006_room_id,
                 'status' => 'tersedia', // default status
                 'is_available' => true, // default availability
-                'name' => $g002M007Item->name . ' ' . ($i + 1), // unique name for each instance
-                'code' => $g002M007Item->code . '-' . ($i + 1), // unique code for each instance
+                'is_borrowable' => (bool) $g002M007Item->is_borrowable,
+                'name' => $g002M007Item->name.' '.($i + 1), // unique name for each instance
+                'code' => $g002M007Item->code.'-'.($i + 1), // unique code for each instance
             ]);
         }
     }
@@ -40,8 +41,8 @@ class G002M007ItemObserver
             $itemInstances = G002M015ItemInstance::where('g002_m007_item_id', $g002M007Item->id)->get();
             foreach ($itemInstances as $index => $instance) {
                 $instance->update([
-                    'name' => $g002M007Item->name . ' ' . ($index + 1),
-                    'code' => $g002M007Item->code . '-' . ($index + 1),
+                    'name' => $g002M007Item->name.' '.($index + 1),
+                    'code' => $g002M007Item->code.'-'.($index + 1),
                 ]);
             }
         }

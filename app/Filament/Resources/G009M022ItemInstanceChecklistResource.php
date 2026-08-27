@@ -36,7 +36,7 @@ class G009M022ItemInstanceChecklistResource extends Resource
                     ->label('Nama Barang'),
                 Forms\Components\Select::make('user_id')
                     ->relationship('user', 'name')
-                    ->disabled(!auth()->user()->hasRole(['super_admin']))
+                    ->disabled(! auth()->user()->isAdmin())
                     ->hidden(fn($state) => $state ? False : True)
                     ->label('Diperiksa Oleh'),
                 Forms\Components\MarkdownEditor::make('notes')

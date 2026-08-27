@@ -124,8 +124,14 @@ class CalendarWidget extends FullCalendarWidget
 
     public function fetchEvents(array $fetchInfo): array
     {
-        return G004M008Activity::where('start_time', '>=', $fetchInfo['start'])
-            ->where('end_time', '<=', $fetchInfo['end'])
+        $query = G004M008Activity::query();
+
+        if (auth()->user()?->isSarpras()) {
+            $query->where('g001_m001_unit_id', auth()->user()->g001_m001_unit_id);
+        }
+
+        return $query->where('start_time', '<', $fetchInfo['end'])
+            ->where('end_time', '>', $fetchInfo['start'])
             ->get()
             ->map(function (G004M008Activity $task) {
                 return [
@@ -140,6 +146,6 @@ class CalendarWidget extends FullCalendarWidget
 
     public static function canView(): bool
     {
-        return true;
+        return auth()->check();
     }
 }

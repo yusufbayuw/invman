@@ -2,20 +2,32 @@
 
 namespace App\Observers;
 
+use App\Enums\ReservationStatus;
 use App\Models\G002M007Item;
+use App\Services\LoanRequestService;
 use App\Models\G005M009ItemReservation;
 use App\Models\G005M016ItemReservationDetail;
 
 class G005M009ItemReservationObserver
 {
+    public function updating(G005M009ItemReservation $reservation): void
+    {
+        $this->recordDecision($reservation);
+    }
+
     /**
      * Handle the G005M009ItemReservation "created" event.
      */
     public function created(G005M009ItemReservation $g005M009ItemReservation): void
     {
-        // Set status reservasi menjadi 'menunggu persetujuan'
-        $g005M009ItemReservation->status = 'menunggu persetujuan';
-        $g005M009ItemReservation->saveQuietly();
+        if (! $g005M009ItemReservation->status) {
+            $g005M009ItemReservation->status = ReservationStatus::Submitted->value;
+            $g005M009ItemReservation->saveQuietly();
+        }
+
+        if ($g005M009ItemReservation->activity) {
+            app(LoanRequestService::class)->syncStatus($g005M009ItemReservation->activity);
+        }
 
         /* // Ambil data item berdasarkan ID item pada reservasi
         $item = G002M007Item::find($g005M009ItemReservation->g002_m007_item_id);
@@ -50,6 +62,10 @@ class G005M009ItemReservationObserver
      */
     public function updated(G005M009ItemReservation $g005M009ItemReservation): void
     {
+
+        if ($g005M009ItemReservation->activity) {
+            app(LoanRequestService::class)->syncStatus($g005M009ItemReservation->activity);
+        }
 
         /* // Cek apakah field 'status' pada reservasi berubah
         if ($g005M009ItemReservation->isDirty('status')) {
@@ -98,7 +114,9 @@ class G005M009ItemReservationObserver
      */
     public function deleted(G005M009ItemReservation $g005M009ItemReservation): void
     {
-        //
+        if ($g005M009ItemReservation->activity) {
+            app(LoanRequestService::class)->syncStatus($g005M009ItemReservation->activity);
+        }
     }
 
     /**
@@ -115,5 +133,22 @@ class G005M009ItemReservationObserver
     public function forceDeleted(G005M009ItemReservation $g005M009ItemReservation): void
     {
         //
+    }
+
+    private function recordDecision(G005M009ItemReservation $reservation): void
+    {
+        if (! $reservation->isDirty('status') || ! in_array($reservation->status, [
+            ReservationStatus::Approved->value,
+            ReservationStatus::Rejected->value,
+        ], true)) {
+            return;
+        }
+
+        $reservation->decision_by = auth()->id();
+        $reservation->decision_at = now();
+
+        if ($reservation->status === ReservationStatus::Approved->value) {
+            $reservation->rejection_reason = null;
+        }
     }
 }

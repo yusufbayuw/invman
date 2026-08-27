@@ -2,6 +2,10 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\ReservationStatus;
+use App\Models\LoanRequestChecklist;
+use App\Models\LoanRequestReview;
+use App\Services\LoanRequestService;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Forms\Get;
@@ -18,6 +22,8 @@ use App\Filament\Resources\G004M008ActivityResource\RelationManagers\RoomReserva
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers\VehicleReservationRelationManager;
 use Coolsam\Flatpickr\Forms\Components\Flatpickr;
 use Filament\Forms\Set;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 
 class G004M008ActivityResource extends Resource
 {
@@ -28,6 +34,21 @@ class G004M008ActivityResource extends Resource
     protected static ?string $slug = 'activity';
     protected static ?string $modelLabel = 'Kegiatan';
     protected static ?string $navigationLabel = 'Kegiatan';
+
+    public static function getNavigationLabel(): string
+    {
+        return auth()->user()?->isSarpras() ? 'Peminjaman Saya' : 'Kegiatan';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return auth()->user()?->isSarpras() ? 'Peminjaman' : 'Kegiatan';
+    }
+
+    public static function getModelLabel(): string
+    {
+        return auth()->user()?->isSarpras() ? 'Peminjaman' : 'Kegiatan';
+    }
 
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
     {
@@ -42,6 +63,14 @@ class G004M008ActivityResource extends Resource
                         \Filament\Infolists\Components\TextEntry::make('description')
                             ->label('Deskripsi')
                             ->size('md'),
+                        \Filament\Infolists\Components\TextEntry::make('notes')
+                            ->label('Catatan')
+                            ->placeholder('-'),
+                        \Filament\Infolists\Components\TextEntry::make('status')
+                            ->label('Status Pengajuan')
+                            ->badge()
+                            ->formatStateUsing(fn (?string $state) => ReservationStatus::tryFrom($state)?->label() ?? $state)
+                            ->color(fn (?string $state) => ReservationStatus::tryFrom($state)?->color() ?? 'gray'),
                         \Filament\Infolists\Components\TextEntry::make('user.name')
                             ->label('Diajukan Oleh')
                             ->inlineLabel(),
@@ -69,6 +98,31 @@ class G004M008ActivityResource extends Resource
                             ->dateTime(),
                     ]),
                 ])->from('md')->columnSpanFull(),
+                \Filament\Infolists\Components\Section::make('Checklist Pengembalian')
+                    ->schema([
+                        \Filament\Infolists\Components\IconEntry::make('return_checklist.is_ok')
+                            ->label('Kondisi baik')
+                            ->boolean(),
+                        \Filament\Infolists\Components\TextEntry::make('return_checklist.notes')
+                            ->label('Catatan')
+                            ->placeholder('-'),
+                        \Filament\Infolists\Components\TextEntry::make('return_checklist.created_at')
+                            ->label('Diisi pada')
+                            ->dateTime(),
+                    ])
+                    ->columns(3)
+                    ->visible(fn ($record) => filled($record->return_checklist)),
+                \Filament\Infolists\Components\Section::make('Ulasan Pemohon')
+                    ->schema([
+                        \Filament\Infolists\Components\TextEntry::make('review.rating')
+                            ->label('Rating')
+                            ->formatStateUsing(fn ($state) => $state ? "{$state} / 5" : '-'),
+                        \Filament\Infolists\Components\TextEntry::make('review.review')
+                            ->label('Ulasan')
+                            ->placeholder('-'),
+                    ])
+                    ->columns(2)
+                    ->visible(fn ($record) => filled($record->review)),
             ]);
     }
 
@@ -82,6 +136,8 @@ class G004M008ActivityResource extends Resource
                     ->searchable()
                     ->preload()
                     ->label('Diajukan Oleh')
+                    ->disabled(fn () => auth()->user()?->isSarpras())
+                    ->dehydrated()
                     ->required(),
                 Forms\Components\Select::make('g001_m001_unit_id')
                     ->label('Unit Penyelenggara')
@@ -89,12 +145,17 @@ class G004M008ActivityResource extends Resource
                     ->searchable()
                     ->default(auth()?->user()?->g001_m001_unit_id ?? null)
                     ->preload()
+                    ->disabled(fn () => auth()->user()?->isSarpras())
+                    ->dehydrated()
                     ->required(),
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Kegiatan')
                     ->required(),
                 Forms\Components\Textarea::make('description')
                     ->label('Deskripsi Kegiatan')
+                    ->columnSpanFull(),
+                Forms\Components\Textarea::make('notes')
+                    ->label('Catatan Tambahan')
                     ->columnSpanFull(),
                 Flatpickr::make('start_time')
                     ->label('Tanggal dan Waktu Mulai')
@@ -129,6 +190,21 @@ class G004M008ActivityResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Kegiatan')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => ReservationStatus::tryFrom($state)?->label() ?? $state)
+                    ->color(fn (?string $state) => ReservationStatus::tryFrom($state)?->color() ?? 'gray')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('requirements_summary')
+                    ->label('Kebutuhan')
+                    ->state(function (G004M008Activity $record): string {
+                        return collect([
+                            $record->item_reservation_count ? "{$record->item_reservation_count} barang" : null,
+                            $record->room_reservation_count ? "{$record->room_reservation_count} ruang/tempat" : null,
+                            $record->vehicle_reservation_count ? "{$record->vehicle_reservation_count} kendaraan" : null,
+                        ])->filter()->implode(' · ') ?: '-';
+                    }),
                 Tables\Columns\TextColumn::make('start_time')
                     ->label('Mulai')
                     ->dateTime('d M Y H:i')
@@ -159,11 +235,97 @@ class G004M008ActivityResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Status')
+                    ->options(ReservationStatus::options()),
             ])
+            ->defaultSort('created_at', 'desc')
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (G004M008Activity $record) => Auth::user()?->can('update', $record)),
+                Tables\Actions\Action::make('cancel')
+                    ->label('Batalkan')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalDescription('Pengajuan dan seluruh kebutuhannya akan dibatalkan.')
+                    ->visible(fn (G004M008Activity $record) => Auth::user()?->belongsToUnit($record->g001_m001_unit_id)
+                        && $record->status === ReservationStatus::Submitted->value)
+                    ->action(function (G004M008Activity $record): void {
+                        app(LoanRequestService::class)->cancel($record);
+                        Notification::make()->title('Pengajuan dibatalkan')->success()->send();
+                    }),
+                Tables\Actions\Action::make('return_checklist')
+                    ->label('Checklist Pengembalian')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->color('warning')
+                    ->visible(fn (G004M008Activity $record) => Auth::user()?->belongsToUnit($record->g001_m001_unit_id)
+                        && $record->status === ReservationStatus::CheckedOut->value)
+                    ->fillForm(fn (G004M008Activity $record): array => [
+                        'is_ok' => $record->return_checklist?->is_ok ?? true,
+                        'notes' => $record->return_checklist?->notes,
+                        'photo' => $record->return_checklist?->photo,
+                    ])
+                    ->form([
+                        Forms\Components\Toggle::make('is_ok')
+                            ->label('Semua aset dalam kondisi baik')
+                            ->default(true),
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Catatan kondisi')
+                            ->required(fn (Forms\Get $get) => ! $get('is_ok'))
+                            ->columnSpanFull(),
+                        Forms\Components\FileUpload::make('photo')
+                            ->label('Foto pengembalian')
+                            ->directory('loan-return-checklists')
+                            ->image()
+                            ->maxSize(5120),
+                    ])
+                    ->action(function (G004M008Activity $record, array $data): void {
+                        LoanRequestChecklist::query()->updateOrCreate(
+                            ['g004_m008_activity_id' => $record->id, 'stage' => 'return'],
+                            [
+                                'user_id' => Auth::id(),
+                                'is_ok' => $data['is_ok'],
+                                'notes' => $data['notes'] ?? null,
+                                'photo' => $data['photo'] ?? null,
+                            ],
+                        );
+                        Notification::make()->title('Checklist pengembalian tersimpan')->success()->send();
+                    }),
+                Tables\Actions\Action::make('review')
+                    ->label('Beri Ulasan')
+                    ->icon('heroicon-o-star')
+                    ->color('primary')
+                    ->visible(fn (G004M008Activity $record) => Auth::user()?->belongsToUnit($record->g001_m001_unit_id)
+                        && $record->status === ReservationStatus::Returned->value)
+                    ->fillForm(fn (G004M008Activity $record): array => [
+                        'rating' => $record->review?->rating,
+                        'review' => $record->review?->review,
+                    ])
+                    ->form([
+                        Forms\Components\Select::make('rating')
+                            ->label('Rating')
+                            ->options([
+                                5 => '5 - Sangat Baik',
+                                4 => '4 - Baik',
+                                3 => '3 - Cukup',
+                                2 => '2 - Kurang',
+                                1 => '1 - Sangat Kurang',
+                            ])
+                            ->required(),
+                        Forms\Components\Textarea::make('review')
+                            ->label('Ulasan')
+                            ->maxLength(2000)
+                            ->columnSpanFull(),
+                    ])
+                    ->action(function (G004M008Activity $record, array $data): void {
+                        LoanRequestReview::query()->updateOrCreate(
+                            ['g004_m008_activity_id' => $record->id],
+                            ['user_id' => Auth::id(), 'rating' => $data['rating'], 'review' => $data['review'] ?? null],
+                        );
+                        Notification::make()->title('Terima kasih atas ulasan Anda')->success()->send();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -179,6 +341,19 @@ class G004M008ActivityResource extends Resource
             RoomReservationRelationManager::class,
             VehicleReservationRelationManager::class,
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery()
+            ->with(['return_checklist', 'review'])
+            ->withCount(['item_reservation', 'room_reservation', 'vehicle_reservation']);
+
+        if (auth()->user()?->isSarpras()) {
+            $query->where('g001_m001_unit_id', auth()->user()->g001_m001_unit_id);
+        }
+
+        return $query;
     }
 
     public static function getPages(): array

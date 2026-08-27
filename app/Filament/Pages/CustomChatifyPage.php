@@ -11,5 +11,9 @@ class CustomChatifyPage extends Chatify
     protected static ?string $slug = "chatify";
     protected static ?string $navigationLabel = "Chat";
     protected static ?string $navigationGroup = "Koordinasi";
-    protected static ?string $title = "Chat";
+
+    public function getTitle(): string
+    {
+        return 'Chat ' . config('app.name');
+    }
 }

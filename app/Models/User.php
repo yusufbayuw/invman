@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable implements FilamentUser, HasAvatar
 {
@@ -26,7 +27,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     protected $fillable = [
         'name',
+        'g001_m001_unit_id',
         'email',
+        'email_verified_at',
         'username',
         'password',
     ];
@@ -56,12 +59,40 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
 
     public function getFilamentAvatarUrl(): ?string
     {
-        return asset('storage/users-avatar/' . $this->avatar);
+        if (blank($this->avatar) || $this->avatar === config('chatify.user_avatar.default')) {
+            return asset(config('app.logo'));
+        }
+
+        return Storage::disk(config('chatify.storage_disk_name'))->url(
+            config('chatify.user_avatar.folder') . '/' . $this->avatar,
+        );
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
         return true;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasAnyRole([config('role.admin'), 'super_admin']);
+    }
+
+    public function isFacility(): bool
+    {
+        return $this->isAdmin() || $this->hasRole(config('role.fasilitas'));
+    }
+
+    public function isSarpras(): bool
+    {
+        return $this->hasAnyRole([config('role.sarpras'), 'unit']);
+    }
+
+    public function belongsToUnit(?int $unitId): bool
+    {
+        return $this->isSarpras()
+            && $this->g001_m001_unit_id !== null
+            && $this->g001_m001_unit_id === $unitId;
     }
 
     public function activity(): HasMany

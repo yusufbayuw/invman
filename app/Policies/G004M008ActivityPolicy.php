@@ -15,7 +15,9 @@ class G004M008ActivityPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_g004::m008::activity');
+        return $user->isFacility()
+            || $user->isSarpras()
+            || $user->can('view_any_g004::m008::activity');
     }
 
     /**
@@ -23,7 +25,11 @@ class G004M008ActivityPolicy
      */
     public function view(User $user, G004M008Activity $g004M008Activity): bool
     {
-        return $user->can('view_g004::m008::activity');
+        if ($user->isSarpras()) {
+            return $user->belongsToUnit($g004M008Activity->g001_m001_unit_id);
+        }
+
+        return $user->isFacility() || $user->can('view_g004::m008::activity');
     }
 
     /**
@@ -31,7 +37,7 @@ class G004M008ActivityPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_g004::m008::activity');
+        return $user->isFacility() || ($user->isSarpras() && filled($user->g001_m001_unit_id));
     }
 
     /**
@@ -39,7 +45,12 @@ class G004M008ActivityPolicy
      */
     public function update(User $user, G004M008Activity $g004M008Activity): bool
     {
-        return $user->can('update_g004::m008::activity');
+        if ($user->isFacility()) {
+            return true;
+        }
+
+        return $user->belongsToUnit($g004M008Activity->g001_m001_unit_id)
+            && in_array($g004M008Activity->status, ['draft', 'submitted'], true);
     }
 
     /**
@@ -47,7 +58,7 @@ class G004M008ActivityPolicy
      */
     public function delete(User $user, G004M008Activity $g004M008Activity): bool
     {
-        return $user->can('delete_g004::m008::activity');
+        return $user->isAdmin();
     }
 
     /**
@@ -55,7 +66,7 @@ class G004M008ActivityPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_g004::m008::activity');
+        return $user->isAdmin();
     }
 
     /**
@@ -105,4 +116,5 @@ class G004M008ActivityPolicy
     {
         return $user->can('reorder_g004::m008::activity');
     }
+
 }

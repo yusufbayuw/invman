@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\ReservationStatus;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Forms\Get;
@@ -28,7 +29,7 @@ class G005M009ItemReservationResource extends Resource
 
      public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->hasRole(['super_admin', config('role.fasilitas')]);
+        return Auth::user()->isFacility();
     }
 
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
@@ -79,9 +80,7 @@ class G005M009ItemReservationResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Select::make('g004_m008_activity_id')
-                    ->relationship('activity', 'name', function (Builder $query) {
-                        $query->where('status', 'active');
-                    })
+                    ->relationship('activity', 'name')
                     ->searchable()
                     ->reactive()
                     ->preload()
@@ -97,7 +96,10 @@ class G005M009ItemReservationResource extends Resource
                 Forms\Components\DateTimePicker::make('start_time'),
                 Forms\Components\DateTimePicker::make('end_time'),
                 Forms\Components\DateTimePicker::make('returned_at'),
-                Forms\Components\TextInput::make('status'),
+                Forms\Components\Select::make('status')
+                    ->options(ReservationStatus::options())
+                    ->default(ReservationStatus::Submitted->value)
+                    ->required(),
             ]);
     }
 
@@ -131,6 +133,8 @@ class G005M009ItemReservationResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status Reservasi')
                     ->badge()
+                    ->formatStateUsing(fn (?string $state) => ReservationStatus::tryFrom($state)?->label() ?? $state)
+                    ->color(fn (?string $state) => ReservationStatus::tryFrom($state)?->color() ?? 'gray')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -160,6 +164,18 @@ class G005M009ItemReservationResource extends Resource
         return [
             ItemReservationDetailRelationManager::class,
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        if (auth()->user()?->isSarpras()) {
+            $query->whereHas('activity', fn (Builder $activity) => $activity
+                ->where('g001_m001_unit_id', auth()->user()->g001_m001_unit_id));
+        }
+
+        return $query;
     }
 
     public static function getPages(): array

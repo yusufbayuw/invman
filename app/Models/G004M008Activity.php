@@ -6,10 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class G004M008Activity extends Model
 {
     use HasUuids;
+
+    protected $casts = [
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
+        'cancelled_at' => 'datetime',
+    ];
 
     public function item_reservation(): HasMany
     {
@@ -31,5 +38,15 @@ class G004M008Activity extends Model
     {
         return $this->belongsTo(G001M001Unit::class, 'g001_m001_unit_id');
     }
-    
+
+    public function return_checklist(): HasOne
+    {
+        return $this->hasOne(LoanRequestChecklist::class, 'g004_m008_activity_id')
+            ->where('stage', 'return');
+    }
+
+    public function review(): HasOne
+    {
+        return $this->hasOne(LoanRequestReview::class, 'g004_m008_activity_id');
+    }
 }

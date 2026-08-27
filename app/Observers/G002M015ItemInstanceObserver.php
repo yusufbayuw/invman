@@ -13,7 +13,7 @@ class G002M015ItemInstanceObserver
     public function created(G002M015ItemInstance $g002M015ItemInstance): void
     {
         $item = G002M007Item::where('id', $g002M015ItemInstance->g002_m007_item_id)->first();
-        if ($item) {    
+        if ($item) {
             $item->quantity += 1; // Increment quantity
             if ($g002M015ItemInstance->is_borrowable) {
                 $item->available_quantity += 1; // Increment available quantity
@@ -31,7 +31,7 @@ class G002M015ItemInstanceObserver
             $item = G002M007Item::where('id', $g002M015ItemInstance->g002_m007_item_id)->first();
             if ($item) {
                 $item->available_quantity += $g002M015ItemInstance->is_borrowable ? 1 : -1;
-                $item->saveQuaietly();
+                $item->saveQuietly();
             }
         }
     }
@@ -42,7 +42,7 @@ class G002M015ItemInstanceObserver
     public function deleted(G002M015ItemInstance $g002M015ItemInstance): void
     {
         $item = G002M007Item::where('id', $g002M015ItemInstance->g002_m007_item_id)->first();
-        if ($item) {    
+        if ($item) {
             $item->quantity -= 1; // Increment quantity
             if ($g002M015ItemInstance->is_borrowable) {
                 $item->available_quantity -= 1; // Increment available quantity

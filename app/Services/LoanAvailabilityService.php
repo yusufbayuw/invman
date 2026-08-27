@@ -1,0 +1,152 @@
+<?php
+
+namespace App\Services;
+
+use App\Enums\ReservationStatus;
+use App\Models\G002M007Item;
+use App\Models\G003M006Room;
+use App\Models\G005M009ItemReservation;
+use App\Models\G005M010RoomReservation;
+use App\Models\G005M019VehicleReservation;
+use App\Models\G008M017Vehicle;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+
+class LoanAvailabilityService
+{
+    public function itemOptions(Carbon|string|null $startTime, Carbon|string|null $endTime): array
+    {
+        if (! $period = $this->period($startTime, $endTime)) {
+            return [];
+        }
+
+        [$start, $end] = $period;
+        $reserved = G005M009ItemReservation::query()
+            ->selectRaw('g002_m007_item_id, COALESCE(SUM(quantity), 0) as reserved_quantity')
+            ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+            ->where('start_time', '<', $end)
+            ->where('end_time', '>', $start)
+            ->groupBy('g002_m007_item_id')
+            ->pluck('reserved_quantity', 'g002_m007_item_id');
+
+        return G002M007Item::query()
+            ->where('is_borrowable', true)
+            ->with('unit')
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(function (G002M007Item $item) use ($reserved) {
+                $stock = (int) ($item->available_quantity ?? $item->quantity ?? 0);
+                $available = max(0, $stock - (int) ($reserved[$item->id] ?? 0));
+
+                if ($available < 1) {
+                    return [];
+                }
+
+                $unit = $item->unit?->name ? " · {$item->unit->name}" : '';
+
+                return [$item->id => "{$item->name}{$unit} · {$available} tersedia"];
+            })
+            ->all();
+    }
+
+    public function roomOptions(Carbon|string|null $startTime, Carbon|string|null $endTime): array
+    {
+        if (! $period = $this->period($startTime, $endTime)) {
+            return [];
+        }
+
+        [$start, $end] = $period;
+
+        return G003M006Room::query()
+            ->where('is_borrowable', true)
+            ->whereDoesntHave('room_reservation', fn (Builder $query) => $this->overlap($query, $start, $end))
+            ->with(['floor.building', 'unit'])
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(function (G003M006Room $room) {
+                $location = collect([
+                    $room->floor?->building?->name,
+                    $room->floor?->name,
+                ])->filter()->implode(' · ');
+
+                return [$room->id => trim("{$room->name} · {$location}", ' ·')];
+            })
+            ->all();
+    }
+
+    public function vehicleOptions(Carbon|string|null $startTime, Carbon|string|null $endTime): array
+    {
+        if (! $period = $this->period($startTime, $endTime)) {
+            return [];
+        }
+
+        [$start, $end] = $period;
+
+        return G008M017Vehicle::query()
+            ->where('is_borrowable', true)
+            ->whereDoesntHave('vehicle_reservation', fn (Builder $query) => $this->overlap($query, $start, $end))
+            ->with('unit')
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(function (G008M017Vehicle $vehicle) {
+                $plate = $vehicle->license_plate ? " · {$vehicle->license_plate}" : '';
+
+                return [$vehicle->id => "{$vehicle->name}{$plate}"];
+            })
+            ->all();
+    }
+
+    public function reservedItemQuantity(int $itemId, Carbon $start, Carbon $end): int
+    {
+        return (int) G005M009ItemReservation::query()
+            ->where('g002_m007_item_id', $itemId)
+            ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+            ->where('start_time', '<', $end)
+            ->where('end_time', '>', $start)
+            ->sum('quantity');
+    }
+
+    public function roomIsAvailable(int $roomId, Carbon $start, Carbon $end): bool
+    {
+        return ! G005M010RoomReservation::query()
+            ->where('g003_m006_room_id', $roomId)
+            ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+            ->where('start_time', '<', $end)
+            ->where('end_time', '>', $start)
+            ->exists();
+    }
+
+    public function vehicleIsAvailable(int $vehicleId, Carbon $start, Carbon $end): bool
+    {
+        return ! G005M019VehicleReservation::query()
+            ->where('g008_m017_vehicle_id', $vehicleId)
+            ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+            ->where('start_time', '<', $end)
+            ->where('end_time', '>', $start)
+            ->exists();
+    }
+
+    private function overlap(Builder $query, Carbon $start, Carbon $end): Builder
+    {
+        return $query
+            ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+            ->where('start_time', '<', $end)
+            ->where('end_time', '>', $start);
+    }
+
+    private function period(Carbon|string|null $startTime, Carbon|string|null $endTime): ?array
+    {
+        if (! $startTime || ! $endTime) {
+            return null;
+        }
+
+        try {
+            $start = $startTime instanceof Carbon ? $startTime->copy() : Carbon::parse($startTime);
+            $end = $endTime instanceof Carbon ? $endTime->copy() : Carbon::parse($endTime);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $end->greaterThan($start) ? [$start, $end] : null;
+    }
+}

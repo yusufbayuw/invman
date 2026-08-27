@@ -6,7 +6,8 @@ return [
     | Messenger display name
     |-------------------------------------
     */
-    'name' => env('CHATIFY_NAME', 'Chatify Messenger'),
+    'name' => env('APP_NAME', 'PPAS'),
+    'logo' => env('APP_LOGO', 'images/app/fav.png'),
 
     /*
     |-------------------------------------
@@ -72,7 +73,7 @@ return [
     |-------------------------------------
     */
     'gravatar' => [
-        'enabled' => true,
+        'enabled' => false,
         'image_size' => 200,
         'imageset' => 'identicon'
     ],

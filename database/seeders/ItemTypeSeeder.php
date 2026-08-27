@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\G002M002ItemType;
 use Illuminate\Database\Seeder;
 
 class ItemTypeSeeder extends Seeder
@@ -13,14 +13,19 @@ class ItemTypeSeeder extends Seeder
     public function run(): void
     {
         $itemTypes = [
-            ['name' => 'Server & Infrastruktur', 'description' => 'Server, infrastruktur jaringan, dan perangkat terkait.', 'created_at' => now()],
-            ['name' => 'Komputer & Laptop', 'description' => 'Semua jenis komputer, laptop, dan perangkat terkait.', 'created_at' => now()],
-            ['name' => 'Jaringan & Komunikasi', 'description' => 'Perangkat jaringan, komunikasi, dan konektivitas.', 'created_at' => now()],
-            ['name' => 'Multimedia & Audio Visual', 'description' => 'Perangkat multimedia, audio, dan visual.', 'created_at' => now()],
-            ['name' => 'Perangkat Keras Lainnya', 'description' => 'Kategori umum untuk perangkat keras IT lainnya.', 'created_at' => now()],
-            ['name' => 'Aksesori & Periferal', 'description' => 'Aksesori komputer dan periferal lainnya.', 'created_at' => now()],
+            'Server & Infrastruktur' => 'Server, infrastruktur jaringan, dan perangkat terkait.',
+            'Komputer & Laptop' => 'Semua jenis komputer, laptop, dan perangkat terkait.',
+            'Jaringan & Komunikasi' => 'Perangkat jaringan, komunikasi, dan konektivitas.',
+            'Multimedia & Audio Visual' => 'Perangkat multimedia, audio, dan visual.',
+            'Perangkat Keras Lainnya' => 'Kategori umum untuk perangkat keras IT lainnya.',
+            'Aksesori & Periferal' => 'Aksesori komputer dan periferal lainnya.',
         ];
-        
-        \App\Models\G002M002ItemType::insert($itemTypes);
+
+        foreach ($itemTypes as $name => $description) {
+            G002M002ItemType::query()->updateOrCreate(
+                ['name' => $name],
+                ['description' => $description],
+            );
+        }
     }
 }

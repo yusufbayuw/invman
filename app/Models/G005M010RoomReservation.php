@@ -14,6 +14,13 @@ class G005M010RoomReservation extends Model
 {
     use HasUuids;
 
+    protected $casts = [
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
+        'returned_at' => 'datetime',
+        'decision_at' => 'datetime',
+    ];
+
     public function room_review(): HasMany
     {
         return $this->hasMany(G006M012RoomReview::class, 'g005_m010_room_reservation_id');
@@ -25,5 +32,9 @@ class G005M010RoomReservation extends Model
     public function room(): BelongsTo
     {
         return $this->belongsTo(G003M006Room::class, 'g003_m006_room_id');
+    }
+    public function decisionBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'decision_by');
     }
 }

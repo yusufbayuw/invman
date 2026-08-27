@@ -26,7 +26,7 @@ class G005M016ItemReservationDetailResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->hasRole(['super_admin', config('role.fasilitas')]);
+        return Auth::user()->isFacility();
     }
 
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist

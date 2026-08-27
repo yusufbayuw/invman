@@ -2,10 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MikrotikHotspotCaptiveController;
+use App\Http\Controllers\PublicLoanScheduleController;
 
-Route::get('/', function () {
-    return redirect('/admin');
-});
+Route::get('/', PublicLoanScheduleController::class)->name('public.loan-schedule');
+Route::get('/storage/users-avatar/avatar.png', function () {
+    return response()->file(public_path(config('app.logo')));
+})->name('avatar.default');
 Route::get('/login', function () {
     return redirect('/admin/login');
 })->name('login');

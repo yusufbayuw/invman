@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\G003M004Building;
 use Illuminate\Database\Seeder;
 
 class GedungSeeder extends Seeder
@@ -13,15 +13,20 @@ class GedungSeeder extends Seeder
     public function run(): void
     {
         $buildings = [
-            ['name' => 'Gedung 52', 'location' => 'Jl. L.L.R.E. Martadinata 52, Bandung', 'created_at' => now()],
-            ['name' => 'Gedung 91', 'location' => 'Jl. L.L.R.E. Martadinata 91, Bandung', 'created_at' => now()],
-            ['name' => 'Gedung 93', 'location' => 'Jl. L.L.R.E. Martadinata 93, Bandung', 'created_at' => now()],
-            ['name' => 'Gedung Setiabudi', 'location' => 'Jl. Setiabudi 122A, Bandung', 'created_at' => now()],
-            ['name' => 'Gedung PHH Mustofa', 'location' => 'Jl. P.H.H. Mustofa 55, Bandung', 'created_at' => now()],
-            ['name' => 'Gedung AH Nasution', 'location' => 'Jl. Raya Ujung Berung 15e, Bandung', 'created_at' => now()],
-            ['name' => 'Gedung Kompas', 'location' => 'Jl. L.L.R.E. Martadinata 46, Bandung', 'created_at' => now()],
+            'Gedung 52' => 'Jl. L.L.R.E. Martadinata 52, Bandung',
+            'Gedung 91' => 'Jl. L.L.R.E. Martadinata 91, Bandung',
+            'Gedung 93' => 'Jl. L.L.R.E. Martadinata 93, Bandung',
+            'Gedung Setiabudi' => 'Jl. Setiabudi 122A, Bandung',
+            'Gedung PHH Mustofa' => 'Jl. P.H.H. Mustofa 55, Bandung',
+            'Gedung AH Nasution' => 'Jl. Raya Ujung Berung 15e, Bandung',
+            'Gedung Kompas' => 'Jl. L.L.R.E. Martadinata 46, Bandung',
         ];
 
-        \App\Models\G003M004Building::insert($buildings);
+        foreach ($buildings as $name => $location) {
+            G003M004Building::query()->updateOrCreate(
+                ['name' => $name],
+                ['location' => $location],
+            );
+        }
     }
 }

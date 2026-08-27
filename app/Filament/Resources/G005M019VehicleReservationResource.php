@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\ReservationStatus;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Forms\Form;
@@ -26,24 +27,31 @@ class G005M019VehicleReservationResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->hasRole(['super_admin', config('role.fasilitas')]);
+        return Auth::user()->isFacility();
     }
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('g008_m017_vehicle_id')
-                    ->numeric(),
-                Forms\Components\TextInput::make('g008_m018_driver_id')
-                    ->numeric(),
+                Forms\Components\Select::make('g008_m017_vehicle_id')
+                    ->relationship('vehicle', 'name')
+                    ->searchable()
+                    ->required(),
+                Forms\Components\Select::make('g008_m018_driver_id')
+                    ->relationship('driver', 'id')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->user?->name ?? "Pengemudi #{$record->id}")
+                    ->searchable(),
                 Forms\Components\Select::make('g004_m008_activity_id')
                     ->relationship('activity', 'name')
                     ->searchable()
                     ->required(),
                 Forms\Components\DateTimePicker::make('start_time'),
                 Forms\Components\DateTimePicker::make('end_time'),
-                Forms\Components\TextInput::make('status'),
+                Forms\Components\Select::make('status')
+                    ->options(ReservationStatus::options())
+                    ->default(ReservationStatus::Submitted->value)
+                    ->required(),
             ]);
     }
 
@@ -54,12 +62,12 @@ class G005M019VehicleReservationResource extends Resource
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('g008_m017_vehicle_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('vehicle.name')
+                    ->label('Kendaraan')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('g008_m018_driver_id')
-                    ->numeric()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('driver.user.name')
+                    ->label('Pengemudi')
+                    ->placeholder('-'),
                 Tables\Columns\TextColumn::make('start_time')
                     ->dateTime()
                     ->sortable(),
@@ -67,6 +75,9 @@ class G005M019VehicleReservationResource extends Resource
                     ->dateTime()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => ReservationStatus::tryFrom($state)?->label() ?? $state)
+                    ->color(fn (?string $state) => ReservationStatus::tryFrom($state)?->color() ?? 'gray')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -96,6 +107,18 @@ class G005M019VehicleReservationResource extends Resource
         return [
             //
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        if (auth()->user()?->isSarpras()) {
+            $query->whereHas('activity', fn (Builder $activity) => $activity
+                ->where('g001_m001_unit_id', auth()->user()->g001_m001_unit_id));
+        }
+
+        return $query;
     }
 
     public static function getPages(): array

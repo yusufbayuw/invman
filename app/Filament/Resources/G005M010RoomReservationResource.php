@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\ReservationStatus;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Forms\Form;
@@ -27,7 +28,7 @@ class G005M010RoomReservationResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->hasRole(['super_admin', config('role.fasilitas')]);
+        return Auth::user()->isFacility();
     }
 
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
@@ -73,14 +74,12 @@ class G005M010RoomReservationResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('g004_m008_activity_id')
+                Forms\Components\Select::make('g004_m008_activity_id')
                     ->label('Kegiatan')
                     ->required()
-                    ->relationship('activity', 'name', function (Builder $query) {
-                        $query->where('end_date', '<=', now());
-                    })
+                    ->relationship('activity', 'name')
                     ->searchable(),
-                Forms\Components\TextInput::make('g003_m006_room_id')
+                Forms\Components\Select::make('g003_m006_room_id')
                     ->label('Ruangan')
                     ->required()
                     ->relationship('room', 'name', function (Builder $query) {
@@ -99,7 +98,10 @@ class G005M010RoomReservationResource extends Resource
                     ->default(now()->addHour())
                     ->minDate(now())
                     ->seconds(false),
-                Forms\Components\TextInput::make('status'),
+                Forms\Components\Select::make('status')
+                    ->options(ReservationStatus::options())
+                    ->default(ReservationStatus::Submitted->value)
+                    ->required(),
             ]);
     }
 
@@ -122,6 +124,9 @@ class G005M010RoomReservationResource extends Resource
                     ->dateTime()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => ReservationStatus::tryFrom($state)?->label() ?? $state)
+                    ->color(fn (?string $state) => ReservationStatus::tryFrom($state)?->color() ?? 'gray')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -151,6 +156,18 @@ class G005M010RoomReservationResource extends Resource
         return [
             RoomReviewRelationManager::class,
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        if (auth()->user()?->isSarpras()) {
+            $query->whereHas('activity', fn (Builder $activity) => $activity
+                ->where('g001_m001_unit_id', auth()->user()->g001_m001_unit_id));
+        }
+
+        return $query;
     }
 
     public static function getPages(): array

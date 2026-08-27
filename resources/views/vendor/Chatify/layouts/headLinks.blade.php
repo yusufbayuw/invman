@@ -13,7 +13,6 @@
   src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{{ asset('js/chatify/font.awesome.min.js') }}"></script>
 <script src="{{ asset('js/chatify/autosize.js') }}"></script>
-<script src="{{ asset('js/app.js') }}"></script>
 <script src='https://unpkg.com/nprogress@0.2.0/nprogress.js'></script>
 
 {{-- styles --}}
@@ -26,5 +25,25 @@
 <style>
     :root {
         --primary-color: {{ $messengerColor }};
+    }
+
+    .chatify-brand {
+        display: inline-flex !important;
+        align-items: center;
+        gap: .55rem;
+    }
+
+    .chatify-brand img {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        object-fit: contain;
+        background: #fff;
+        padding: 2px;
+    }
+
+    .messenger-headTitle {
+        font-size: .88rem;
+        letter-spacing: .035em;
     }
 </style>

@@ -24,6 +24,11 @@ class MenuGridWidget extends Widget
 
     public array $pinnedMenus = [];
 
+    public static function canView(): bool
+    {
+        return ! auth()->user()?->isSarpras();
+    }
+
     public function mount()
     {
         $this->loadPinnedMenus();

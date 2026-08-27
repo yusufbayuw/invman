@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use Filament\Forms;
+use Filament\Forms\Get;
 use App\Models\User;
 use Filament\Tables;
 use Filament\Forms\Form;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\UserResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Spatie\Permission\Models\Role;
 use App\Filament\Resources\UserResource\RelationManagers;
 
 class UserResource extends Resource
@@ -68,8 +70,23 @@ class UserResource extends Resource
                     ->dehydrateStateUsing(static fn (null|string $state): null|string => filled($state) ? Hash::make($state) : null,)
                     ->dehydrated(static fn (null|string $state): bool => filled($state)),
                 Forms\Components\TextInput::make('username'),
+                Forms\Components\Select::make('g001_m001_unit_id')
+                    ->label('Unit')
+                    ->relationship('unit', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required(function (Get $get): bool {
+                        $sarprasRoleId = Role::query()->where('name', config('role.sarpras'))->value('id');
+
+                        return $sarprasRoleId && in_array($sarprasRoleId, $get('roles') ?? []);
+                    })
+                    ->helperText('Wajib untuk akun sarpras; kosongkan untuk admin dan fasilitas.'),
                 Forms\Components\Select::make('roles')
-                    ->relationship('roles', 'name')
+                    ->relationship('roles', 'name', fn (Builder $query) => $query->whereIn('name', [
+                        config('role.admin'),
+                        config('role.fasilitas'),
+                        config('role.sarpras'),
+                    ]))
                     ->multiple()
                     ->preload()
                     ->searchable(),
@@ -98,6 +115,13 @@ class UserResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('username')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('unit.name')
+                    ->label('Unit')
+                    ->placeholder('Akses global')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('roles.name')
+                    ->label('Role')
+                    ->badge(),
             ])
             ->filters([
                 //

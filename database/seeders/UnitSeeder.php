@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\G001M001Unit;
 use Illuminate\Database\Seeder;
 
 class UnitSeeder extends Seeder
@@ -12,16 +12,8 @@ class UnitSeeder extends Seeder
      */
     public function run(): void
     {
-        $unit = [
-            ['name' => 'Daycare, KB & TK', 'created_at' => now()],
-            ['name' => 'SD', 'created_at' => now()],
-            ['name' => 'SMP', 'created_at' => now()],
-            ['name' => 'SMA', 'created_at' => now()],
-            ['name' => 'TBU', 'created_at' => now()],
-            ['name' => 'ADM', 'created_at' => now()],
-        ];
-
-        // Create units in bulk for better performance
-        \App\Models\G001M001Unit::insert($unit);
+        foreach (['Daycare, KB & TK', 'SD', 'SMP', 'SMA', 'TBU', 'ADM', 'Organ Yayasan'] as $name) {
+            G001M001Unit::query()->firstOrCreate(['name' => $name]);
+        }
     }
 }

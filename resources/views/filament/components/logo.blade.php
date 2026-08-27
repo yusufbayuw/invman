@@ -3,4 +3,4 @@
     $imgClass = $isLogin ? 'w-52' : 'w-12';
 @endphp
 
-<img src="{{ asset('images/app/bg-main.png') }}" alt="" class="{{ $imgClass }}">
+<img src="{{ asset(config('app.logo')) }}" alt="Logo {{ config('app.name') }}" class="{{ $imgClass }}">

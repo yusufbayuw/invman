@@ -11,6 +11,7 @@ use App\Filament\Pages\CustomChatifyPage;
 use Filament\Support\Colors\Color;
 use App\Filament\Widgets\CalendarWidget;
 use App\Filament\Widgets\MenuGridWidget;
+use App\Filament\Widgets\UnitLoanDashboardWidget;
 use Filament\Http\Middleware\Authenticate;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -39,7 +40,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(fn () => view('filament.components.logo'))
             ->brandLogoHeight('4rem')
             ->path('admin')
-            ->favicon(asset('images/app/fav.png'))
+            ->favicon(asset(config('app.logo')))
             ->login(Login::class)
             ->colors([
                 'danger' => Color::Rose,
@@ -56,6 +57,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             //->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
+                UnitLoanDashboardWidget::class,
                 MenuGridWidget::class,
                 CalendarWidget::class,
                 Widgets\AccountWidget::class,
