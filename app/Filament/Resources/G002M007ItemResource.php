@@ -115,7 +115,11 @@ class G002M007ItemResource extends Resource
                     ->label('Unit Pemilik'),
                 Forms\Components\Select::make('g002_m003_item_management_id')
                     ->relationship('item_management', 'name')
-                    ->label('Pengelola Barang'),
+                    ->label('Pengelola Barang')
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->helperText('Menentukan user yang berwenang memproses flow peminjaman barang ini.'),
                 Forms\Components\Select::make('g002_m002_item_type_id')
                     ->relationship('item_type', 'name')
                     ->label('Jenis Barang'),

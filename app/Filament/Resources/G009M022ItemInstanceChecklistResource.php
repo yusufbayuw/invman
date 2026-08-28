@@ -3,71 +3,96 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\G009M022ItemInstanceChecklistResource\Pages;
-use App\Filament\Resources\G009M022ItemInstanceChecklistResource\RelationManagers;
 use App\Models\G009M022ItemInstanceChecklist;
-use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Table;
-use Illuminate\Container\Attributes\Auth;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class G009M022ItemInstanceChecklistResource extends Resource
 {
     protected static ?string $model = G009M022ItemInstanceChecklist::class;
 
     protected static ?string $navigationGroup = 'Monitoring';
-    protected static ?string $navigationIcon = 'heroicon-o-check-circle';
+
+    protected static ?string $navigationIcon = 'heroicon-o-cube';
+
+    protected static ?int $navigationSort = 10;
+
     protected static ?string $slug = 'item-instance-checklist';
+
     protected static ?string $modelLabel = 'Checklist Barang';
+
+    protected static ?string $pluralModelLabel = 'Checklist Barang';
+
     protected static ?string $navigationLabel = 'Checklist Barang';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('g002_m015_item_instance_id')
-                    ->relationship('item_instance', 'name')
-                    ->disabledOn('edit')
-                    ->label('Nama Barang'),
-                Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'name')
-                    ->disabled(! auth()->user()->isAdmin())
-                    ->hidden(fn($state) => $state ? False : True)
-                    ->label('Diperiksa Oleh'),
-                Forms\Components\MarkdownEditor::make('notes')
-                    ->label('Catatan')
-                    ->columnSpanFull(),
-                Forms\Components\FileUpload::make('photo')
-                    ->label('Foto Barang')
-                    ->image(),
-                Forms\Components\ToggleButtons::make('is_ok')
-                    ->options([
-                        True => 'Baik',
-                        False => 'Trouble'
+                Forms\Components\Section::make('Informasi Pemeriksaan')
+                    ->description('Data barang dan periode checklist.')
+                    ->schema([
+                        Forms\Components\Select::make('g002_m015_item_instance_id')
+                            ->label('Barang')
+                            ->relationship('item_instance', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->disabledOn('edit')
+                            ->required(),
+                        Forms\Components\Select::make('user_id')
+                            ->label('Pemeriksa')
+                            ->relationship('user', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->default(fn (): ?int => auth()->id())
+                            ->disabled(fn (): bool => ! auth()->user()->isAdmin())
+                            ->dehydrated(fn (): bool => auth()->user()->isAdmin()),
+                        Forms\Components\TextInput::make('date')
+                            ->label('Bulan Laporan')
+                            ->formatStateUsing(fn ($state): ?string => $state ? \Carbon\Carbon::parse($state)->locale('id')->translatedFormat('F Y') : null)
+                            ->disabled(),
+                        Forms\Components\TextInput::make('checklist_date')
+                            ->label('Waktu Checklist')
+                            ->formatStateUsing(fn ($state): ?string => $state ? \Carbon\Carbon::parse($state)->locale('id')->translatedFormat('d F Y H:i') : null)
+                            ->disabled(),
                     ])
-                    ->colors([
-                        True => 'success',
-                        False => 'danger'
+                    ->columns(2),
+                Forms\Components\Section::make('Hasil Pemeriksaan')
+                    ->description('Tentukan kondisi barang dan tambahkan bukti pemeriksaan.')
+                    ->schema([
+                        Forms\Components\ToggleButtons::make('is_ok')
+                            ->label('Kondisi')
+                            ->options([
+                                true => 'Baik',
+                                false => 'Perlu Tindak Lanjut',
+                            ])
+                            ->colors([
+                                true => 'success',
+                                false => 'danger',
+                            ])
+                            ->icons([
+                                true => 'heroicon-o-check-circle',
+                                false => 'heroicon-o-exclamation-triangle',
+                            ])
+                            ->inline()
+                            ->required(),
+                        Forms\Components\FileUpload::make('photo')
+                            ->label('Foto Kondisi')
+                            ->image()
+                            ->imageEditor()
+                            ->directory('item-checklists'),
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Catatan Pemeriksaan')
+                            ->placeholder('Tuliskan temuan atau tindak lanjut yang diperlukan.')
+                            ->rows(4)
+                            ->columnSpanFull(),
                     ])
-                    ->icons([
-                        True => 'heroicon-o-check',
-                        False => 'heroicon-o-x-mark'
-                    ])
-                    ->inline()
-                    ->label('Kondisi'),
-                Forms\Components\TextInput::make('date')
-                    ->label('Bulan Laporan')
-                    ->formatStateUsing(fn($state) => $state ? \Carbon\Carbon::parse($state)->locale('id')->format('F Y') : null)
-                    ->disabled(),
-                Forms\Components\TextInput::make('checklist_date')
-                    ->disabled()
-                    ->formatStateUsing(fn($state) => $state ? \Carbon\Carbon::parse($state)->locale('id')->format('d F Y H:i:s') : null)
-                    ->default(now()),
+                    ->columns(2),
             ]);
     }
 
@@ -76,47 +101,60 @@ class G009M022ItemInstanceChecklistResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('item_instance.name')
+                    ->description(fn (G009M022ItemInstanceChecklist $record): ?string => $record->item_instance?->code)
+                    ->weight('medium')
                     ->searchable()
                     ->sortable()
                     ->label('Barang'),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->numeric()
+                    ->placeholder('Belum diperiksa')
                     ->sortable()
-                    ->label('Diperiksa'),
+                    ->searchable()
+                    ->label('Pemeriksa'),
                 Tables\Columns\TextColumn::make('date')
-                    ->date()
-                    ->label('Tanggal Laporan')
+                    ->date('M Y')
+                    ->label('Bulan Laporan')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('checklist_date')
-                    ->dateTime()
+                    ->dateTime('d M Y H:i')
                     ->sortable()
-                    ->label('Tanggal Checklist')
+                    ->placeholder('Belum diperiksa')
+                    ->label('Waktu Checklist')
                     ->toggleable(),
                 Tables\Columns\ImageColumn::make('photo')
-                    ->label('Foto Barang')
+                    ->label('Foto')
+                    ->square()
                     ->simpleLightbox(),
                 Tables\Columns\IconColumn::make('is_ok')
                     ->boolean()
                     ->colors([
-                        True => 'success',
-                        False => 'danger'
+                        true => 'success',
+                        false => 'danger',
                     ])
                     ->trueIcon('heroicon-o-check-badge')
-                    ->falseIcon('heroicon-o-x-mark')
+                    ->falseIcon('heroicon-o-exclamation-triangle')
                     ->label('Kondisi')
+                    ->tooltip(fn (G009M022ItemInstanceChecklist $record): string => $record->is_ok ? 'Baik' : 'Perlu tindak lanjut')
                     ->action(function ($record, $column) {
                         $name = $column->getName();
                         $record->update([
-                            $name => !$record->$name,
+                            $name => ! $record->$name,
                         ]);
                     }),
+                Tables\Columns\TextColumn::make('notes')
+                    ->label('Catatan')
+                    ->limit(40)
+                    ->placeholder('Tidak ada catatan')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('Dibuat')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->label('Diperbarui')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -130,6 +168,7 @@ class G009M022ItemInstanceChecklistResource extends Resource
                             ->pluck('date')
                             ->mapWithKeys(function ($date) {
                                 $formatted = \Carbon\Carbon::parse($date)->format('M Y');
+
                                 return [$date => $formatted];
                             })
                             ->toArray()
@@ -144,7 +183,8 @@ class G009M022ItemInstanceChecklistResource extends Resource
                         } else {
                             $stateText = $state;
                         }
-                        return $stateText ? Indicator::make('Bulan Laporan: ' . \Carbon\Carbon::parse($stateText)->locale('id')->format('F Y'))->removable(false) : null;
+
+                        return $stateText ? Indicator::make('Bulan Laporan: '.\Carbon\Carbon::parse($stateText)->locale('id')->translatedFormat('F Y'))->removable(false) : null;
                     }),
 
                 // Filter berdasarkan unit barang (relasi item_instance->item->unit->name)
@@ -170,18 +210,25 @@ class G009M022ItemInstanceChecklistResource extends Resource
                         } else {
                             $stateText = $state;
                         }
-                        return $stateText ? Indicator::make('Unit: ' . \App\Models\G001M001Unit::find($stateText)->name )->removable(false) : null;
+                        $unitName = \App\Models\G001M001Unit::find($stateText)?->name;
+
+                        return $unitName ? Indicator::make('Unit: '.$unitName)->removable(false) : null;
                     }),
             ])
+            ->defaultSort('date', 'desc')
+            ->striped()
+            ->emptyStateIcon('heroicon-o-cube')
+            ->emptyStateHeading('Belum ada checklist barang')
+            ->emptyStateDescription('Buat checklist bulanan untuk mulai memantau kondisi barang.')
             ->actions([
                 Tables\Actions\Action::make('photoUploadAction')
-                    ->label(fn(G009M022ItemInstanceChecklist $record) => 'Foto: ' . $record->item_instance->name)
+                    ->label(fn (G009M022ItemInstanceChecklist $record) => 'Foto: '.$record->item_instance->name)
                     ->icon('heroicon-o-camera')
                     ->iconButton()
                     ->form([
                         Forms\Components\FileUpload::make('photoUpload')
                             ->label('Foto Barang')
-                            ->default(fn($record) => $record->photo)
+                            ->default(fn ($record) => $record->photo)
                             ->image(),
                     ])
                     ->action(function (array $data, G009M022ItemInstanceChecklist $record): void {
@@ -189,12 +236,12 @@ class G009M022ItemInstanceChecklistResource extends Resource
                         $record->save();
                     }),
                 Tables\Actions\Action::make('noteAction')
-                    ->label(fn(G009M022ItemInstanceChecklist $record) => 'Catatan: ' . $record->item_instance->name)
+                    ->label(fn (G009M022ItemInstanceChecklist $record) => 'Catatan: '.$record->item_instance->name)
                     ->icon('heroicon-o-document-text')
                     ->iconButton()
                     ->form([
                         Forms\Components\MarkdownEditor::make('noteUpload')
-                            ->default(fn($record) => $record->notes)
+                            ->default(fn ($record) => $record->notes)
                             ->label('Catatan'),
                     ])
                     ->action(function (array $data, G009M022ItemInstanceChecklist $record): void {

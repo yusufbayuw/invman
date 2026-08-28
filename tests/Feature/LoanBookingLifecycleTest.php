@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\ReservationStatus;
 use App\Models\G001M001Unit;
 use App\Models\G002M007Item;
+use App\Models\G002M003ItemManagement;
 use App\Models\G003M006Room;
 use App\Models\G008M017Vehicle;
 use App\Models\User;
@@ -13,6 +14,7 @@ use App\Services\LoanRequestService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
+use Spatie\Permission\Models\Role;
 
 class LoanBookingLifecycleTest extends TestCase
 {
@@ -151,8 +153,14 @@ class LoanBookingLifecycleTest extends TestCase
     {
         $unit = G001M001Unit::query()->create(['name' => 'Unit Booking']);
         $user = User::factory()->create(['g001_m001_unit_id' => $unit->id]);
+        Role::query()->firstOrCreate(['name' => config('role.sarpras'), 'guard_name' => 'web']);
+        $user->assignRole(config('role.sarpras'));
+        $management = G002M003ItemManagement::query()->create(['name' => 'Pengelola Booking']);
+        $management->users()->attach($user);
+        $this->actingAs($user);
         $item = G002M007Item::query()->create([
             'g001_m001_unit_id' => $unit->id,
+            'g002_m003_item_management_id' => $management->id,
             'name' => 'Proyektor Booking',
             'is_borrowable' => true,
             'quantity' => 5,
@@ -161,12 +169,14 @@ class LoanBookingLifecycleTest extends TestCase
         ]);
         $room = G003M006Room::query()->create([
             'g001_m001_unit_id' => $unit->id,
+            'g002_m003_item_management_id' => $management->id,
             'name' => 'Aula Booking',
             'is_borrowable' => true,
             'status' => 'tersedia',
         ]);
         $vehicle = G008M017Vehicle::query()->create([
             'g001_m001_unit_id' => $unit->id,
+            'g002_m003_item_management_id' => $management->id,
             'name' => 'Mobil Booking',
             'license_plate' => 'B 1000 TEST',
             'is_borrowable' => true,

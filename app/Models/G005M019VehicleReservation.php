@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Observers\G005M019VehicleReservationObserver;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 
 #[ObservedBy(G005M019VehicleReservationObserver::class)]
@@ -18,6 +19,7 @@ class G005M019VehicleReservation extends Model
         'end_time' => 'datetime',
         'returned_at' => 'datetime',
         'decision_at' => 'datetime',
+        'status_changed_at' => 'datetime',
     ];
 
     public function vehicle(): BelongsTo
@@ -36,5 +38,14 @@ class G005M019VehicleReservation extends Model
     public function decisionBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'decision_by');
+    }
+    public function statusChangedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'status_changed_by');
+    }
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(LoanReservationStatusHistory::class, 'reservation_id')
+            ->where('reservation_type', 'vehicle');
     }
 }

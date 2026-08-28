@@ -52,16 +52,63 @@ class G008M017VehicleResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('g001_m001_unit_id')
-                    ->numeric(),
-                Forms\Components\TextInput::make('name'),
-                Forms\Components\TextInput::make('license_plate'),
-                Forms\Components\DatePicker::make('stnk_date'),
-                Forms\Components\DatePicker::make('kir_date'),
-                Forms\Components\TextInput::make('capacity')
-                    ->numeric(),
-                Forms\Components\Toggle::make('is_borrowable'),
-                Forms\Components\TextInput::make('status'),
+                Forms\Components\Section::make('Informasi Kendaraan')
+                    ->schema([
+                        Forms\Components\Select::make('g001_m001_unit_id')
+                            ->label('Unit Pengelola')
+                            ->relationship('unit', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                        Forms\Components\Select::make('g002_m003_item_management_id')
+                            ->label('Pengelola Flow')
+                            ->relationship('item_management', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->helperText('User pada kelompok ini memproses persetujuan dan serah-terima kendaraan.'),
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nama Kendaraan')
+                            ->placeholder('Contoh: Toyota HiAce')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('license_plate')
+                            ->label('Nomor Polisi')
+                            ->placeholder('Contoh: D 1234 ABC')
+                            ->required()
+                            ->maxLength(20),
+                        Forms\Components\TextInput::make('capacity')
+                            ->label('Kapasitas Penumpang')
+                            ->numeric()
+                            ->minValue(1)
+                            ->suffix('orang'),
+                    ])
+                    ->columns(2),
+                Forms\Components\Section::make('Legalitas dan Ketersediaan')
+                    ->schema([
+                        Forms\Components\DatePicker::make('stnk_date')
+                            ->label('Berlaku STNK Sampai')
+                            ->native(false),
+                        Forms\Components\DatePicker::make('kir_date')
+                            ->label('Berlaku KIR Sampai')
+                            ->native(false),
+                        Forms\Components\Select::make('status')
+                            ->label('Status Kendaraan')
+                            ->options([
+                                'tersedia' => 'Tersedia',
+                                'digunakan' => 'Sedang Digunakan',
+                                'perawatan' => 'Dalam Perawatan',
+                                'tidak_aktif' => 'Tidak Aktif',
+                            ])
+                            ->default('tersedia')
+                            ->native(false)
+                            ->required(),
+                        Forms\Components\Toggle::make('is_borrowable')
+                            ->label('Dapat Dipinjam')
+                            ->helperText('Aktifkan agar kendaraan tersedia pada formulir pengajuan.')
+                            ->default(true),
+                    ])
+                    ->columns(2),
             ]);
     }
 
@@ -69,26 +116,58 @@ class G008M017VehicleResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('g001_m001_unit_id')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('license_plate')
-                    ->searchable(),
+                    ->label('Kendaraan')
+                    ->description(fn (G008M017Vehicle $record): string => $record->license_plate ?: 'Nomor polisi belum diisi')
+                    ->weight('medium')
+                    ->searchable(['name', 'license_plate'])
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('unit.name')
+                    ->label('Unit Pengelola')
+                    ->badge()
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('-'),
+                Tables\Columns\TextColumn::make('item_management.name')
+                    ->label('Pengelola Flow')
+                    ->badge()
+                    ->placeholder('Belum ditetapkan'),
+                Tables\Columns\TextColumn::make('capacity')
+                    ->label('Kapasitas')
+                    ->suffix(' orang')
+                    ->alignCenter()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('stnk_date')
-                    ->date()
+                    ->label('Masa Berlaku STNK')
+                    ->date('d M Y')
+                    ->color(fn ($state): string => $state && $state->isPast() ? 'danger' : 'gray')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('kir_date')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('capacity')
-                    ->numeric()
+                    ->label('Masa Berlaku KIR')
+                    ->date('d M Y')
+                    ->color(fn ($state): string => $state && $state->isPast() ? 'danger' : 'gray')
                     ->sortable(),
                 Tables\Columns\IconColumn::make('is_borrowable')
-                    ->boolean(),
+                    ->label('Dapat Dipinjam')
+                    ->boolean()
+                    ->alignCenter(),
                 Tables\Columns\TextColumn::make('status')
-                    ->searchable(),
+                    ->label('Status')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'tersedia' => 'Tersedia',
+                        'digunakan' => 'Sedang Digunakan',
+                        'perawatan' => 'Dalam Perawatan',
+                        'tidak_aktif' => 'Tidak Aktif',
+                        default => (string) str($state ?? '-')->replace('_', ' ')->title(),
+                    })
+                    ->color(fn (?string $state): string => match ($state) {
+                        'tersedia' => 'success',
+                        'digunakan' => 'info',
+                        'perawatan' => 'warning',
+                        'tidak_aktif' => 'gray',
+                        default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -99,8 +178,23 @@ class G008M017VehicleResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('g001_m001_unit_id')
+                    ->label('Unit Pengelola')
+                    ->relationship('unit', 'name')
+                    ->searchable()
+                    ->preload(),
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Status')
+                    ->options([
+                        'tersedia' => 'Tersedia',
+                        'digunakan' => 'Sedang Digunakan',
+                        'perawatan' => 'Dalam Perawatan',
+                        'tidak_aktif' => 'Tidak Aktif',
+                    ]),
+                Tables\Filters\TernaryFilter::make('is_borrowable')
+                    ->label('Dapat Dipinjam'),
             ])
+            ->defaultSort('name')
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

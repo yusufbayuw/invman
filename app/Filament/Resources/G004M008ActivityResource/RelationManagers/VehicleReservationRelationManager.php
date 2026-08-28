@@ -14,6 +14,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 class VehicleReservationRelationManager extends RelationManager
@@ -25,6 +26,11 @@ class VehicleReservationRelationManager extends RelationManager
     protected static ?string $title = 'Reservasi Kendaraan';
 
     protected static ?string $icon = 'heroicon-o-truck';
+
+    public static function getBadge(Model $ownerRecord, string $pageClass): ?string
+    {
+        return (string) $ownerRecord->vehicle_reservation()->count();
+    }
 
     public function form(Form $form): Form
     {
@@ -165,7 +171,7 @@ class VehicleReservationRelationManager extends RelationManager
                     ->searchable()
                     ->hidden(fn ($record): bool => ! (
                         Auth::user()
-                        && Auth::user()->isFacility()
+                        && Auth::user()->managesReservation($record)
                     )),
                 Flatpickr::make('start_time')
                     ->label('Tanggal dan Waktu Mulai')
@@ -195,7 +201,7 @@ class VehicleReservationRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('id')
+            ->recordTitle(fn ($record): string => $record->vehicle?->name ?? 'Reservasi Kendaraan')
             ->columns([
                 Tables\Columns\TextColumn::make('vehicle.name')
                     ->label('Kendaraan')
@@ -221,6 +227,15 @@ class VehicleReservationRelationManager extends RelationManager
                     ->placeholder('-')
                     ->wrap()
                     ->toggleable(),
+                Tables\Columns\TextColumn::make('statusChangedBy.name')
+                    ->label('Status Diubah Oleh')
+                    ->placeholder('Sistem')
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('status_changed_at')
+                    ->label('Waktu Perubahan')
+                    ->dateTime('d M Y H:i')
+                    ->placeholder('-')
+                    ->toggleable(),
             ])
             ->filters([
                 //
@@ -237,7 +252,7 @@ class VehicleReservationRelationManager extends RelationManager
                     ->icon('heroicon-o-check-circle')
                     ->visible(fn ($record): bool => $record->status === ReservationStatus::Submitted->value
                         && (! $record->activity?->hold_expires_at || $record->activity->hold_expires_at->isFuture())
-                        && Auth::user()?->isFacility())
+                        && Auth::user()?->managesReservation($record))
                     ->action(function ($record) {
                         $record->status = ReservationStatus::Approved->value;
                         $record->save();
@@ -255,7 +270,7 @@ class VehicleReservationRelationManager extends RelationManager
                     ])
                     ->visible(fn ($record): bool => $record->status === ReservationStatus::Submitted->value
                         && (! $record->activity?->hold_expires_at || $record->activity->hold_expires_at->isFuture())
-                        && Auth::user()?->isFacility())
+                        && Auth::user()?->managesReservation($record))
                     ->action(function ($record, array $data) {
                         $record->status = ReservationStatus::Rejected->value;
                         $record->rejection_reason = $data['rejection_reason'];
@@ -263,22 +278,22 @@ class VehicleReservationRelationManager extends RelationManager
                         app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Rejected, $record->vehicle?->name ?? 'kendaraan');
                     }),
                 Tables\Actions\Action::make('checkout')
-                    ->label('Serahkan')
+                    ->label('Pinjamkan')
                     ->color('info')
                     ->icon('heroicon-o-arrow-right-circle')
                     ->visible(fn ($record): bool => $record->status === ReservationStatus::Approved->value
-                        && Auth::user()?->isFacility())
+                        && Auth::user()?->managesReservation($record))
                     ->action(function ($record) {
                         $record->status = ReservationStatus::CheckedOut->value;
                         $record->save();
                         app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::CheckedOut, $record->vehicle?->name ?? 'kendaraan');
                     }),
                 Tables\Actions\Action::make('return')
-                    ->label('Kembalikan')
+                    ->label('Konfirmasi Pengembalian')
                     ->color('warning')
                     ->icon('heroicon-o-arrow-uturn-left')
-                    ->visible(fn ($record): bool => $record->status === ReservationStatus::CheckedOut->value
-                        && Auth::user()?->isFacility())
+                    ->visible(fn ($record): bool => $record->status === ReservationStatus::ReturnRequested->value
+                        && Auth::user()?->managesReservation($record))
                     ->action(function ($record) {
                         $record->status = ReservationStatus::Returned->value;
                         $record->returned_at = now();

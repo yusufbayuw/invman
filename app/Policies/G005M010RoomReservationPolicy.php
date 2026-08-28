@@ -15,7 +15,7 @@ class G005M010RoomReservationPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isFacility() || $user->isSarpras();
+        return $user->isAdmin() || $user->isSarpras() || $user->isAssetManager();
     }
 
     /**
@@ -23,7 +23,7 @@ class G005M010RoomReservationPolicy
      */
     public function view(User $user, G005M010RoomReservation $g005M010RoomReservation): bool
     {
-        return $user->isFacility()
+        return $user->managesReservation($g005M010RoomReservation)
             || $user->belongsToUnit($g005M010RoomReservation->activity?->g001_m001_unit_id);
     }
 
@@ -32,7 +32,7 @@ class G005M010RoomReservationPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isFacility();
+        return $user->isAdmin();
     }
 
     /**
@@ -40,7 +40,7 @@ class G005M010RoomReservationPolicy
      */
     public function update(User $user, G005M010RoomReservation $g005M010RoomReservation): bool
     {
-        return $user->isFacility();
+        return $user->managesReservation($g005M010RoomReservation);
     }
 
     /**
@@ -48,7 +48,7 @@ class G005M010RoomReservationPolicy
      */
     public function delete(User $user, G005M010RoomReservation $g005M010RoomReservation): bool
     {
-        return $user->isFacility();
+        return $user->isAdmin();
     }
 
     /**
@@ -56,7 +56,7 @@ class G005M010RoomReservationPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->isFacility();
+        return $user->isAdmin();
     }
 
     /**

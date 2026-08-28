@@ -13,7 +13,9 @@ class ListG009M023RoomChecklists extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Tambah Checklist')
+                ->icon('heroicon-o-plus'),
         ];
     }
 }

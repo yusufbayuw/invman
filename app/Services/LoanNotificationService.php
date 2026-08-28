@@ -45,7 +45,7 @@ class LoanNotificationService
                 ->sendToDatabase($activity->user);
         }
 
-        $reviewers = $this->reviewers(except: $activity->user);
+        $reviewers = $this->reviewers($activity, except: $activity->user);
 
         if ($reviewers->isEmpty()) {
             return;
@@ -93,7 +93,7 @@ class LoanNotificationService
             return;
         }
 
-        $reviewers = $this->reviewers(except: $activity->user);
+        $reviewers = $this->reviewers($activity, except: $activity->user);
 
         if ($reviewers->isNotEmpty()) {
             Notification::make()
@@ -127,7 +127,7 @@ class LoanNotificationService
                 ->sendToDatabase($activity->user);
         }
 
-        $reviewers = $this->reviewers(except: $activity->user);
+        $reviewers = $this->reviewers($activity, except: $activity->user);
 
         if ($reviewers->isNotEmpty()) {
             Notification::make()
@@ -211,13 +211,27 @@ class LoanNotificationService
     }
 
     /** @return Collection<int, User> */
-    private function reviewers(?User $except = null): Collection
+    private function reviewers(G004M008Activity $activity, ?User $except = null): Collection
     {
+        $managementIds = collect()
+            ->concat($activity->item_reservation()->with('item')->get()->pluck('item.g002_m003_item_management_id'))
+            ->concat($activity->room_reservation()->with('room')->get()->pluck('room.g002_m003_item_management_id'))
+            ->concat($activity->vehicle_reservation()->with('vehicle')->get()->pluck('vehicle.g002_m003_item_management_id'))
+            ->filter()
+            ->unique();
+
+        $reviewers = User::query()
+            ->whereHas('itemManagements', fn ($query) => $query->whereKey($managementIds))
+            ->when($except, fn ($query) => $query->whereKeyNot($except->getKey()))
+            ->get();
+
+        if ($reviewers->isNotEmpty()) {
+            return $reviewers;
+        }
+
+        // Emergency fallback for legacy assets that have not been assigned yet.
         return User::query()
-            ->whereHas('roles', fn ($query) => $query->whereIn('name', [
-                config('role.admin'),
-                config('role.fasilitas'),
-            ]))
+            ->whereHas('roles', fn ($query) => $query->where('name', config('role.admin')))
             ->when($except, fn ($query) => $query->whereKeyNot($except->getKey()))
             ->get();
     }

@@ -63,6 +63,8 @@ class G005M009ItemReservationObserver
     public function updated(G005M009ItemReservation $g005M009ItemReservation): void
     {
 
+        app(LoanRequestService::class)->recordStatusHistory($g005M009ItemReservation);
+
         if ($g005M009ItemReservation->activity) {
             app(LoanRequestService::class)->syncStatus($g005M009ItemReservation->activity);
         }
@@ -137,20 +139,6 @@ class G005M009ItemReservationObserver
 
     private function recordDecision(G005M009ItemReservation $reservation): void
     {
-        if (! $reservation->isDirty('status') || ! in_array($reservation->status, [
-            ReservationStatus::Approved->value,
-            ReservationStatus::Rejected->value,
-        ], true)) {
-            return;
-        }
-
-        app(LoanRequestService::class)->assertDecisionAllowed($reservation);
-
-        $reservation->decision_by = auth()->id();
-        $reservation->decision_at = now();
-
-        if ($reservation->status === ReservationStatus::Approved->value) {
-            $reservation->rejection_reason = null;
-        }
+        app(LoanRequestService::class)->assertReservationTransitionAllowed($reservation);
     }
 }

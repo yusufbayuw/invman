@@ -26,7 +26,7 @@ class G004M008Activity extends Model
             $status = $activity->status ?: \App\Enums\ReservationStatus::Submitted->value;
 
             if ($status === \App\Enums\ReservationStatus::Submitted->value && ! $activity->hold_expires_at) {
-                $deadline = now()->addHours(config('loans.hold_hours'));
+                $deadline = now()->addHours(app(\App\Services\LoanSettings::class)->holdHours());
                 $activity->hold_expires_at = $activity->start_time && $activity->start_time->lessThan($deadline)
                     ? $activity->start_time
                     : $deadline;

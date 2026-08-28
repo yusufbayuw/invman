@@ -15,6 +15,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 class ItemReservationRelationManager extends RelationManager
@@ -26,6 +27,11 @@ class ItemReservationRelationManager extends RelationManager
     protected static ?string $title = 'Reservasi Barang';
 
     protected static ?string $icon = 'heroicon-o-bookmark-square';
+
+    public static function getBadge(Model $ownerRecord, string $pageClass): ?string
+    {
+        return (string) $ownerRecord->item_reservation()->count();
+    }
 
     public function form(Form $form): Form
     {
@@ -146,6 +152,15 @@ class ItemReservationRelationManager extends RelationManager
                     ->placeholder('-')
                     ->wrap()
                     ->toggleable(),
+                Tables\Columns\TextColumn::make('statusChangedBy.name')
+                    ->label('Status Diubah Oleh')
+                    ->placeholder('Sistem')
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('status_changed_at')
+                    ->label('Waktu Perubahan')
+                    ->dateTime('d M Y H:i')
+                    ->placeholder('-')
+                    ->toggleable(),
             ])
             ->filters([
                 //
@@ -163,7 +178,7 @@ class ItemReservationRelationManager extends RelationManager
                         $record->status === ReservationStatus::Submitted->value
                         && (! $record->activity?->hold_expires_at || $record->activity->hold_expires_at->isFuture())
                         && Auth::user()
-                        && Auth::user()->isFacility()
+                        && Auth::user()->managesReservation($record)
                     ))
                     ->icon('heroicon-o-check-circle')
                     ->action(function ($record) {
@@ -184,7 +199,7 @@ class ItemReservationRelationManager extends RelationManager
                         $record->status === ReservationStatus::Submitted->value
                         && (! $record->activity?->hold_expires_at || $record->activity->hold_expires_at->isFuture())
                         && Auth::user()
-                        && Auth::user()->isFacility()
+                        && Auth::user()->managesReservation($record)
                     ))
                     ->icon('heroicon-o-x-circle')
                     ->action(function ($record, array $data) {
@@ -194,21 +209,21 @@ class ItemReservationRelationManager extends RelationManager
                         app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Rejected, $record->item?->name ?? 'barang');
                     }),
                 Tables\Actions\Action::make('serahkan')
-                    ->label('Serahkan')
+                    ->label('Pinjamkan')
                     ->color('info')
                     ->icon('heroicon-o-arrow-right-circle')
                     ->visible(fn ($record): bool => $record->status === ReservationStatus::Approved->value
-                        && Auth::user()?->isFacility())
+                        && Auth::user()?->managesReservation($record))
                     ->action(function ($record) {
                         $record->status = ReservationStatus::CheckedOut->value;
                         $record->save();
                         app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::CheckedOut, $record->item?->name ?? 'barang');
                     }),
                 Tables\Actions\Action::make('dikembalikan')
-                    ->label('Kembalikan')
+                    ->label('Konfirmasi Pengembalian')
                     ->color('warning')
-                    ->visible(fn ($record): bool => $record->status === ReservationStatus::CheckedOut->value
-                        && Auth::user()?->isFacility())
+                    ->visible(fn ($record): bool => $record->status === ReservationStatus::ReturnRequested->value
+                        && Auth::user()?->managesReservation($record))
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->action(function ($record) {
                         $record->status = ReservationStatus::Returned->value;

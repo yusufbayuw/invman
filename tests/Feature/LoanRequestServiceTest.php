@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\ReservationStatus;
 use App\Models\G001M001Unit;
 use App\Models\G002M007Item;
+use App\Models\G002M003ItemManagement;
 use App\Models\G003M006Room;
 use App\Models\G005M009ItemReservation;
 use App\Models\G008M017Vehicle;
@@ -13,6 +14,7 @@ use App\Services\LoanRequestService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
+use Spatie\Permission\Models\Role;
 
 class LoanRequestServiceTest extends TestCase
 {
@@ -21,6 +23,7 @@ class LoanRequestServiceTest extends TestCase
     public function test_it_creates_one_activity_with_multiple_types_of_needs(): void
     {
         [$user, $item, $room, $vehicle] = $this->fixtures();
+        $this->actingAs($user);
 
         $activity = app(LoanRequestService::class)->submit($user, [
             'name' => 'Rapat koordinasi',
@@ -53,15 +56,17 @@ class LoanRequestServiceTest extends TestCase
         $activity->vehicle_reservation->each->update(['status' => ReservationStatus::CheckedOut->value]);
         $this->assertSame(ReservationStatus::CheckedOut->value, $activity->fresh()->status);
 
-        $activity->item_reservation->each->update(['status' => ReservationStatus::Returned->value]);
-        $activity->room_reservation->each->update(['status' => ReservationStatus::Returned->value]);
-        $activity->vehicle_reservation->each->update(['status' => ReservationStatus::Returned->value]);
+        app(LoanRequestService::class)->requestReturn($activity->fresh());
+        $activity->item_reservation->each->refresh()->each->update(['status' => ReservationStatus::Returned->value]);
+        $activity->room_reservation->each->refresh()->each->update(['status' => ReservationStatus::Returned->value]);
+        $activity->vehicle_reservation->each->refresh()->each->update(['status' => ReservationStatus::Returned->value]);
         $this->assertSame(ReservationStatus::Returned->value, $activity->fresh()->status);
     }
 
     public function test_it_rejects_an_item_quantity_that_is_not_available_for_an_overlapping_period(): void
     {
         [$user, $item] = $this->fixtures();
+        $this->actingAs($user);
 
         $existingActivity = app(LoanRequestService::class)->submit($user, [
             'name' => 'Kegiatan pertama',
@@ -122,8 +127,13 @@ class LoanRequestServiceTest extends TestCase
     {
         $unit = G001M001Unit::query()->create(['name' => 'Unit Pengujian']);
         $user = User::factory()->create(['g001_m001_unit_id' => $unit->id]);
+        Role::query()->firstOrCreate(['name' => config('role.sarpras'), 'guard_name' => 'web']);
+        $user->assignRole(config('role.sarpras'));
+        $management = G002M003ItemManagement::query()->create(['name' => 'Pengelola Pengujian']);
+        $management->users()->attach($user);
         $item = G002M007Item::query()->create([
             'g001_m001_unit_id' => $unit->id,
+            'g002_m003_item_management_id' => $management->id,
             'name' => 'Proyektor',
             'is_borrowable' => true,
             'quantity' => 5,
@@ -132,6 +142,7 @@ class LoanRequestServiceTest extends TestCase
         ]);
         $room = G003M006Room::query()->create([
             'g001_m001_unit_id' => $unit->id,
+            'g002_m003_item_management_id' => $management->id,
             'name' => 'Aula',
             'is_borrowable' => true,
             'capacity' => 100,
@@ -139,6 +150,7 @@ class LoanRequestServiceTest extends TestCase
         ]);
         $vehicle = G008M017Vehicle::query()->create([
             'g001_m001_unit_id' => $unit->id,
+            'g002_m003_item_management_id' => $management->id,
             'name' => 'Minibus',
             'license_plate' => 'B 1234 TEST',
             'is_borrowable' => true,

@@ -109,21 +109,30 @@ class G005M010RoomReservationResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('ID')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('g004_m008_activity_id')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('g003_m006_room_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('activity.name')
+                    ->label('Kegiatan')
+                    ->searchable()
+                    ->sortable()
+                    ->wrap(),
+                Tables\Columns\TextColumn::make('activity.unit.name')
+                    ->label('Unit')
+                    ->badge()
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('room.name')
+                    ->label('Ruangan')
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('start_time')
-                    ->dateTime()
+                    ->label('Mulai')
+                    ->dateTime('d M Y H:i')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('end_time')
-                    ->dateTime()
+                    ->label('Selesai')
+                    ->dateTime('d M Y H:i')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
+                    ->label('Status Reservasi')
                     ->badge()
                     ->formatStateUsing(fn (?string $state) => ReservationStatus::tryFrom($state)?->label() ?? $state)
                     ->color(fn (?string $state) => ReservationStatus::tryFrom($state)?->color() ?? 'gray')
@@ -143,6 +152,7 @@ class G005M010RoomReservationResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
             ])
+            ->defaultSort('created_at', 'desc')
             ->bulkActions([
             ]);
     }

@@ -33,6 +33,8 @@ class G005M019VehicleReservationObserver
      */
     public function updated(G005M019VehicleReservation $g005M019VehicleReservation): void
     {
+        app(LoanRequestService::class)->recordStatusHistory($g005M019VehicleReservation);
+
         if ($g005M019VehicleReservation->activity) {
             app(LoanRequestService::class)->syncStatus($g005M019VehicleReservation->activity);
         }
@@ -66,20 +68,6 @@ class G005M019VehicleReservationObserver
 
     private function recordDecision(G005M019VehicleReservation $reservation): void
     {
-        if (! $reservation->isDirty('status') || ! in_array($reservation->status, [
-            ReservationStatus::Approved->value,
-            ReservationStatus::Rejected->value,
-        ], true)) {
-            return;
-        }
-
-        app(LoanRequestService::class)->assertDecisionAllowed($reservation);
-
-        $reservation->decision_by = auth()->id();
-        $reservation->decision_at = now();
-
-        if ($reservation->status === ReservationStatus::Approved->value) {
-            $reservation->rejection_reason = null;
-        }
+        app(LoanRequestService::class)->assertReservationTransitionAllowed($reservation);
     }
 }

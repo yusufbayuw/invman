@@ -3,8 +3,10 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Resources\G004M008ActivityResource;
+use App\Models\G004M008Activity;
 use App\Services\LoanAvailabilityService;
 use App\Services\LoanRequestService;
+use App\Services\LoanSettings;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
@@ -40,9 +42,36 @@ class AjukanPeminjaman extends Page implements HasForms
 
     public ?array $data = [];
 
-    public function mount(): void
+    public ?string $draftId = null;
+
+    public function mount(?string $record = null): void
     {
         abort_unless(static::canAccess(), 403);
+
+        if ($record) {
+            $this->draftId = $record;
+            $draft = G004M008Activity::query()
+                ->with(['item_reservation', 'room_reservation', 'vehicle_reservation'])
+                ->findOrFail($record);
+
+            abort_unless(
+                auth()->user()?->belongsToUnit($draft->g001_m001_unit_id)
+                && $draft->status === \App\Enums\ReservationStatus::Draft->value,
+                403,
+            );
+
+            $this->form->fill([
+                'name' => $draft->name,
+                'description' => $draft->description,
+                'notes' => $draft->notes,
+                'attachment' => $draft->attachment,
+                'start_time' => $draft->start_time,
+                'end_time' => $draft->end_time,
+                'needs' => $this->draftNeeds($draft),
+            ]);
+
+            return;
+        }
 
         $start = now()->addHour()->startOfHour();
         $this->form->fill([
@@ -182,7 +211,7 @@ class AjukanPeminjaman extends Page implements HasForms
                                     ->live()
                                     ->visible(fn (Get $get) => $get('type') === 'vehicle')
                                     ->required(fn (Get $get) => $get('type') === 'vehicle')
-                                    ->helperText('Pengemudi akan ditentukan oleh admin fasilitas setelah pengajuan disetujui.'),
+                                    ->helperText('Pengemudi akan ditentukan oleh pengelola kendaraan setelah pengajuan disetujui.'),
                             ])
                             ->columns(3)
                             ->minItems(1)
@@ -265,16 +294,48 @@ class AjukanPeminjaman extends Page implements HasForms
 
     public function submit(): void
     {
-        $activity = app(LoanRequestService::class)->submit(auth()->user(), $this->form->getState());
+        $draft = $this->currentDraft();
+        $activity = $draft
+            ? app(LoanRequestService::class)->submitDraft(auth()->user(), app(LoanRequestService::class)->saveDraft(auth()->user(), $this->form->getState(), $draft))
+            : app(LoanRequestService::class)->submit(auth()->user(), $this->form->getState());
 
         Notification::make()
             ->title('Pengajuan berhasil dikirim')
-            ->body('Aset ditahan sementara selama ' . config('loans.hold_hours') . ' jam sambil menunggu keputusan admin fasilitas.')
+            ->body('Aset ditahan sementara selama ' . app(LoanSettings::class)->holdHours() . ' jam sambil menunggu keputusan pengelola aset.')
             ->success()
             ->icon('heroicon-o-paper-airplane')
             ->seconds(8)
             ->send();
 
         $this->redirect(G004M008ActivityResource::getUrl('view', ['record' => $activity]));
+    }
+
+    public function saveDraft(): void
+    {
+        $activity = app(LoanRequestService::class)->saveDraft(auth()->user(), $this->form->getState(), $this->currentDraft());
+
+        Notification::make()
+            ->title('Draf disimpan')
+            ->body('Anda masih dapat mengubah draf ini sebelum mengajukannya.')
+            ->success()
+            ->send();
+
+        $this->redirect(static::getUrl(['record' => $activity->id]));
+    }
+
+    private function currentDraft(): ?G004M008Activity
+    {
+        return $this->draftId ? G004M008Activity::query()->find($this->draftId) : null;
+    }
+
+    private function draftNeeds(G004M008Activity $draft): array
+    {
+        return $draft->item_reservation->map(fn ($reservation) => [
+            'type' => 'item', 'item_id' => $reservation->g002_m007_item_id, 'quantity' => $reservation->quantity,
+        ])->concat($draft->room_reservation->map(fn ($reservation) => [
+            'type' => 'room', 'room_id' => $reservation->g003_m006_room_id,
+        ]))->concat($draft->vehicle_reservation->map(fn ($reservation) => [
+            'type' => 'vehicle', 'vehicle_id' => $reservation->g008_m017_vehicle_id,
+        ]))->values()->all();
     }
 }

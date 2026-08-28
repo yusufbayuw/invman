@@ -15,7 +15,7 @@ class G005M019VehicleReservationPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isFacility() || $user->isSarpras();
+        return $user->isAdmin() || $user->isSarpras() || $user->isAssetManager();
     }
 
     /**
@@ -23,7 +23,7 @@ class G005M019VehicleReservationPolicy
      */
     public function view(User $user, G005M019VehicleReservation $g005M019VehicleReservation): bool
     {
-        return $user->isFacility()
+        return $user->managesReservation($g005M019VehicleReservation)
             || $user->belongsToUnit($g005M019VehicleReservation->activity?->g001_m001_unit_id);
     }
 
@@ -32,7 +32,7 @@ class G005M019VehicleReservationPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isFacility();
+        return $user->isAdmin();
     }
 
     /**
@@ -40,7 +40,7 @@ class G005M019VehicleReservationPolicy
      */
     public function update(User $user, G005M019VehicleReservation $g005M019VehicleReservation): bool
     {
-        return $user->isFacility();
+        return $user->managesReservation($g005M019VehicleReservation);
     }
 
     /**
@@ -48,7 +48,7 @@ class G005M019VehicleReservationPolicy
      */
     public function delete(User $user, G005M019VehicleReservation $g005M019VehicleReservation): bool
     {
-        return $user->isFacility();
+        return $user->isAdmin();
     }
 
     /**
@@ -56,7 +56,7 @@ class G005M019VehicleReservationPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->isFacility();
+        return $user->isAdmin();
     }
 
     /**

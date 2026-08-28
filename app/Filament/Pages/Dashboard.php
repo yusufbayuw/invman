@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Enums\ReservationStatus;
 use App\Models\G001M001Unit;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -45,10 +46,10 @@ class Dashboard extends BaseDashboard
                         ->afterOrEqual('start_date'),
                     Select::make('unit_id')
                         ->label('Unit')
-                        ->options(fn (): array => G001M001Unit::query()->orderBy('name')->pluck('name', 'id')->all())
+                        ->options(fn(): array => G001M001Unit::query()->orderBy('name')->pluck('name', 'id')->all())
                         ->searchable()
                         ->preload()
-                        ->visible(fn (): bool => auth()->user()?->isFacility() ?? false),
+                        ->visible(fn(): bool => auth()->user()?->isFacility() ?? false),
                     Select::make('status')
                         ->label('Status')
                         ->options(ReservationStatus::options())
@@ -61,5 +62,29 @@ class Dashboard extends BaseDashboard
                 ])
                 ->collapsible(),
         ]);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('ajukanPeminjaman')
+                ->label('Ajukan Peminjaman')
+                ->icon('heroicon-o-plus-circle')
+                ->color('primary')
+                ->url(AjukanPeminjaman::getUrl()),
+
+            Action::make('peminjamanSaya')
+                ->label('Peminjaman Saya')
+                ->icon('heroicon-o-clipboard-document-list')
+                ->color('gray')
+                ->visible(fn (): bool => auth()->user()?->isSarpras() ?? false)
+                ->url(PeminjamanSaya::getUrl()),
+
+            Action::make('rekapan')
+                ->label('Lihat Rekapan')
+                ->icon('heroicon-o-chart-bar-square')
+                ->color('gray')
+                ->url(RekapanPenggunaan::getUrl()),
+        ];
     }
 }

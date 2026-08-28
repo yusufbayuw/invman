@@ -1,10 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MikrotikHotspotCaptiveController;
-use App\Http\Controllers\PublicLoanScheduleController;
+use Illuminate\Support\Facades\Route;
 
-Route::get('/', PublicLoanScheduleController::class)->name('public.loan-schedule');
 Route::get('/storage/users-avatar/avatar.png', function () {
     return response()->file(public_path('images/app/fav.png'));
 })->name('avatar.default');
@@ -18,7 +16,6 @@ Route::get('test-mikrotik', function () {
 Route::get('test-add-user', function () {
     return view('mikrotik.test-add-user');
 })->name('test.add.user');
-
 
 Route::get('captive-login', [MikrotikHotspotCaptiveController::class, 'login'])->name('mikrotik.login');
 Route::post('captive-login', [MikrotikHotspotCaptiveController::class, 'login']);

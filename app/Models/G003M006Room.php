@@ -28,4 +28,8 @@ class G003M006Room extends Model
     {
         return $this->belongsTo(G001M001Unit::class, 'g001_m001_unit_id');
     }
+    public function item_management(): BelongsTo
+    {
+        return $this->belongsTo(G002M003ItemManagement::class, 'g002_m003_item_management_id');
+    }
 }

@@ -10,6 +10,7 @@ use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\G008M018Driver;
 use App\Models\G005M019VehicleReservation;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\G005M019VehicleReservationResource\Pages;
@@ -35,46 +36,78 @@ class G005M019VehicleReservationResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Select::make('g008_m017_vehicle_id')
+                    ->label('Kendaraan')
                     ->relationship('vehicle', 'name')
-                    ->searchable()
+                    ->getOptionLabelFromRecordUsing(fn ($record): string => "{$record->name} · {$record->license_plate}")
+                    ->searchable(['name', 'license_plate'])
+                    ->preload()
                     ->required(),
                 Forms\Components\Select::make('g008_m018_driver_id')
+                    ->label('Pengemudi')
                     ->relationship('driver', 'id')
-                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->user?->name ?? "Pengemudi #{$record->id}")
-                    ->searchable(),
+                    ->getOptionLabelFromRecordUsing(fn ($record): string => $record->user?->name ?? 'Pengemudi belum memiliki nama')
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Belum ditentukan'),
                 Forms\Components\Select::make('g004_m008_activity_id')
+                    ->label('Kegiatan')
                     ->relationship('activity', 'name')
                     ->searchable()
+                    ->preload()
                     ->required(),
-                Forms\Components\DateTimePicker::make('start_time'),
-                Forms\Components\DateTimePicker::make('end_time'),
+                Forms\Components\DateTimePicker::make('start_time')
+                    ->label('Waktu Mulai')
+                    ->native(false)
+                    ->seconds(false)
+                    ->required(),
+                Forms\Components\DateTimePicker::make('end_time')
+                    ->label('Waktu Selesai')
+                    ->native(false)
+                    ->seconds(false)
+                    ->after('start_time')
+                    ->required(),
                 Forms\Components\Select::make('status')
+                    ->label('Status Reservasi')
                     ->options(ReservationStatus::options())
                     ->default(ReservationStatus::Submitted->value)
+                    ->native(false)
                     ->required(),
-            ]);
+            ])
+            ->columns(2);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('ID')
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('activity.name')
+                    ->label('Kegiatan')
+                    ->searchable()
+                    ->sortable()
+                    ->wrap(),
+                Tables\Columns\TextColumn::make('activity.unit.name')
+                    ->label('Unit')
+                    ->badge()
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('vehicle.name')
                     ->label('Kendaraan')
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('driver.user.name')
                     ->label('Pengemudi')
+                    ->searchable()
                     ->placeholder('-'),
                 Tables\Columns\TextColumn::make('start_time')
-                    ->dateTime()
+                    ->label('Mulai')
+                    ->dateTime('d M Y H:i')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('end_time')
-                    ->dateTime()
+                    ->label('Selesai')
+                    ->dateTime('d M Y H:i')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
+                    ->label('Status Reservasi')
                     ->badge()
                     ->formatStateUsing(fn (?string $state) => ReservationStatus::tryFrom($state)?->label() ?? $state)
                     ->color(fn (?string $state) => ReservationStatus::tryFrom($state)?->color() ?? 'gray')
@@ -89,11 +122,31 @@ class G005M019VehicleReservationResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('g008_m017_vehicle_id')
+                    ->label('Kendaraan')
+                    ->relationship('vehicle', 'name')
+                    ->searchable()
+                    ->preload(),
+                Tables\Filters\SelectFilter::make('g008_m018_driver_id')
+                    ->label('Pengemudi')
+                    ->options(fn (): array => G008M018Driver::query()
+                        ->with('user')
+                        ->get()
+                        ->mapWithKeys(fn (G008M018Driver $driver): array => [
+                            $driver->id => $driver->user?->name ?? 'Pengemudi tanpa nama',
+                        ])
+                        ->all())
+                    ->searchable()
+                    ->preload(),
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Status Reservasi')
+                    ->options(ReservationStatus::options())
+                    ->multiple(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
             ])
+            ->defaultSort('created_at', 'desc')
             ->bulkActions([
             ]);
     }

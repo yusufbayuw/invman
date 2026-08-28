@@ -128,6 +128,8 @@ class RekapanPenggunaan extends Page implements HasTable
     {
         return $table
             ->query($this->getTableQuery())
+            ->modelLabel('Kegiatan')
+            ->pluralModelLabel('Kegiatan')
             ->heading('Detail Penggunaan')
             ->description('Gunakan filter untuk mempersempit laporan. Kartu ringkasan di atas mengikuti hasil yang sama.')
             ->columns([

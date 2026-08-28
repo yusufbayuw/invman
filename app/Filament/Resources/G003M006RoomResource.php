@@ -103,6 +103,13 @@ class G003M006RoomResource extends Resource
                     }),
                 Forms\Components\Select::make('g001_m001_unit_id')
                     ->relationship('unit', 'name'),
+                Forms\Components\Select::make('g002_m003_item_management_id')
+                    ->label('Pengelola')
+                    ->relationship('item_management', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->helperText('User pada kelompok ini memproses persetujuan dan serah-terima ruangan.'),
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Ruangan'),
                 Forms\Components\Toggle::make('is_borrowable')
@@ -138,6 +145,10 @@ class G003M006RoomResource extends Resource
                     ->label('Unit')
                     ->badge()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('item_management.name')
+                    ->label('Pengelola')
+                    ->badge()
+                    ->placeholder('Belum ditetapkan'),
                 Tables\Columns\TextColumn::make('floor.name')
                     ->label('Lantai')
                     ->sortable(),

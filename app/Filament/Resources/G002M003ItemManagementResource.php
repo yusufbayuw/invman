@@ -37,6 +37,10 @@ class G002M003ItemManagementResource extends Resource
                         \Filament\Infolists\Components\TextEntry::make('description')
                             ->label('Deskripsi')
                             ->size('md'),
+                        \Filament\Infolists\Components\TextEntry::make('users.name')
+                            ->label('User Pengelola')
+                            ->badge()
+                            ->placeholder('Belum ditetapkan'),
                     ]),
                     \Filament\Infolists\Components\Section::make([
                         \Filament\Infolists\Components\TextEntry::make('created_at')
@@ -59,6 +63,15 @@ class G002M003ItemManagementResource extends Resource
                 Forms\Components\TextInput::make('description')
                     ->label('Deskripsi')
                     ->columnSpanFull(),
+                Forms\Components\Select::make('users')
+                    ->label('User Pengelola')
+                    ->relationship('users', 'name')
+                    ->multiple()
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->helperText('Hanya user yang dipilih di sini yang dapat memproses flow aset kelompok ini.')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -73,6 +86,10 @@ class G002M003ItemManagementResource extends Resource
                 Tables\Columns\TextColumn::make('description')
                     ->searchable()
                     ->label('Deskripsi'),
+                Tables\Columns\TextColumn::make('users.name')
+                    ->label('User Pengelola')
+                    ->badge()
+                    ->placeholder('Belum ditetapkan'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

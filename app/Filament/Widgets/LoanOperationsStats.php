@@ -33,47 +33,59 @@ class LoanOperationsStats extends BaseWidget
     }
 
     protected function getStats(): array
-    {
-        $query = $this->loanQuery();
-        $total = (clone $query)->count();
-        $pending = (clone $query)->where('status', ReservationStatus::Submitted->value)->count();
-        $approved = (clone $query)->whereIn('status', [
+{
+    $query = $this->loanQuery();
+
+    $pending = (clone $query)
+        ->where('status', ReservationStatus::Submitted->value)
+        ->count();
+
+    $approved = (clone $query)
+        ->whereIn('status', [
             ReservationStatus::Approved->value,
             ReservationStatus::PartiallyApproved->value,
-        ])->count();
-        $inUse = (clone $query)->where('status', ReservationStatus::CheckedOut->value)->count();
-        $expired = (clone $query)->where('status', ReservationStatus::Expired->value)->count();
-        $reportUrl = RekapanPenggunaan::getUrl();
+        ])
+        ->count();
 
-        return [
-            Stat::make('Total Pengajuan', number_format($total))
-                ->description('Dalam periode terpilih')
-                ->descriptionIcon('heroicon-m-calendar-days')
-                ->color('primary')
-                ->chart($this->dailyTrend())
-                ->url($reportUrl),
-            Stat::make('Perlu Persetujuan', number_format($pending))
-                ->description($pending > 0 ? 'Membutuhkan tindakan petugas' : 'Antrean sudah bersih')
-                ->descriptionIcon($pending > 0 ? 'heroicon-m-exclamation-circle' : 'heroicon-m-check-circle')
-                ->color($pending > 0 ? 'warning' : 'success')
-                ->url($reportUrl),
-            Stat::make('Disetujui', number_format($approved))
-                ->description($total > 0 ? round(($approved / $total) * 100).'% dari pengajuan' : 'Belum ada pengajuan')
-                ->descriptionIcon('heroicon-m-check-badge')
-                ->color('success')
-                ->url($reportUrl),
-            Stat::make('Sedang Digunakan', number_format($inUse))
-                ->description('Aset sedang berada pada pemohon')
-                ->descriptionIcon('heroicon-m-arrow-path-rounded-square')
-                ->color('info')
-                ->url($reportUrl),
-            Stat::make('Hold Kedaluwarsa', number_format($expired))
-                ->description('Aset dilepaskan otomatis')
-                ->descriptionIcon('heroicon-m-clock')
-                ->color('gray')
-                ->url($reportUrl),
-        ];
-    }
+    $inUse = (clone $query)
+        ->where('status', ReservationStatus::CheckedOut->value)
+        ->count();
+
+    $returned = (clone $query)
+        ->where('status', ReservationStatus::Returned->value)
+        ->count();
+
+    $expired = (clone $query)
+        ->where('status', ReservationStatus::Expired->value)
+        ->count();
+
+    return [
+        Stat::make('Menunggu', number_format($pending))
+            ->description('Menunggu persetujuan')
+            ->descriptionIcon('heroicon-m-clock')
+            ->color('warning'),
+
+        Stat::make('Disetujui', number_format($approved))
+            ->description('Siap digunakan')
+            ->descriptionIcon('heroicon-m-check-circle')
+            ->color('success'),
+
+        Stat::make('Sedang Dipakai', number_format($inUse))
+            ->description('Sedang digunakan pemohon')
+            ->descriptionIcon('heroicon-m-arrow-path-rounded-square')
+            ->color('info'),
+
+        Stat::make('Selesai', number_format($returned))
+            ->description('Telah dikembalikan')
+            ->descriptionIcon('heroicon-m-check-badge')
+            ->color('primary'),
+
+        Stat::make('Kedaluwarsa', number_format($expired))
+            ->description('Reservasi telah kedaluwarsa')
+            ->descriptionIcon('heroicon-m-clock')
+            ->color('gray'),
+    ];
+}
 
     private function dailyTrend(): array
     {

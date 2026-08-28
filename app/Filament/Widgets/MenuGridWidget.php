@@ -10,6 +10,8 @@ class MenuGridWidget extends Widget
 {
     protected static string $view = 'filament.widgets.menu-grid-widget';
 
+    protected static ?int $sort = -100;
+
     protected int | string | array $columnSpan = 'full';
 
     protected static bool $isLazy = false;

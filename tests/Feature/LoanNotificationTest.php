@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\ReservationStatus;
 use App\Models\G001M001Unit;
 use App\Models\G002M007Item;
+use App\Models\G002M003ItemManagement;
 use App\Models\User;
 use App\Services\LoanRequestService;
 use Database\Seeders\RoleSeeder;
@@ -36,9 +37,10 @@ class LoanNotificationTest extends TestCase
 
     public function test_requester_is_notified_when_aggregate_loan_status_changes(): void
     {
-        [$requester, , $item] = $this->fixtures();
+        [$requester, $reviewer, $item] = $this->fixtures();
 
         $activity = app(LoanRequestService::class)->submit($requester, $this->requestData($item));
+        $this->actingAs($reviewer);
         $activity->item_reservation()->first()->update(['status' => ReservationStatus::Approved->value]);
 
         $titles = $requester->notifications()->get()->pluck('data.title');
@@ -52,6 +54,7 @@ class LoanNotificationTest extends TestCase
         [$requester, $reviewer, $item] = $this->fixtures();
 
         $activity = app(LoanRequestService::class)->submit($requester, $this->requestData($item));
+        $this->actingAs($requester);
         app(LoanRequestService::class)->cancel($activity);
 
         $this->assertContains('Pengajuan dibatalkan', $requester->notifications()->get()->pluck('data.title'));
@@ -67,10 +70,12 @@ class LoanNotificationTest extends TestCase
         $requester->assignRole(config('role.sarpras'));
 
         $reviewer = User::factory()->create();
-        $reviewer->assignRole(config('role.fasilitas'));
+        $management = G002M003ItemManagement::query()->create(['name' => 'Pengelola Elektronik']);
+        $management->users()->attach($reviewer);
 
         $item = G002M007Item::query()->create([
             'g001_m001_unit_id' => $unit->id,
+            'g002_m003_item_management_id' => $management->id,
             'name' => 'Proyektor',
             'is_borrowable' => true,
             'quantity' => 2,

@@ -3,53 +3,66 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\G007M013ItemHistoryResource\Pages;
-use App\Filament\Resources\G007M013ItemHistoryResource\RelationManagers;
 use App\Models\G007M013ItemHistory;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class G007M013ItemHistoryResource extends Resource
 {
     protected static ?string $model = G007M013ItemHistory::class;
 
     protected static ?string $navigationGroup = 'Riwayat';
-    protected static ?string $navigationIcon = 'heroicon-o-document-check';
+
+    protected static ?string $navigationIcon = 'heroicon-o-cube';
+
     protected static ?string $slug = 'item-history';
+
     protected static ?string $modelLabel = 'Riwayat Barang';
+
     protected static ?string $navigationLabel = 'Riwayat Barang';
 
-    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    protected static ?int $navigationSort = 10;
+
+    public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
             ->schema([
-                \Filament\Infolists\Components\Split::make([
-                    \Filament\Infolists\Components\Section::make([
-                        \Filament\Infolists\Components\TextEntry::make('g002_m015_item_instance_id')
-                            ->label('ID Barang Satuan')
+                Infolists\Components\Section::make('Detail Riwayat')
+                    ->icon('heroicon-o-clock')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('item_instance.name')
+                            ->label('Barang Satuan')
                             ->weight('bold')
-                            ->size('md')
-                            ->inlineLabel(),
-                        \Filament\Infolists\Components\TextEntry::make('user.name')
-                            ->label('Pengguna')
-                            ->inlineLabel(),
-                        \Filament\Infolists\Components\TextEntry::make('action')
-                            ->label('Aksi')
-                            ->inlineLabel(),
+                            ->placeholder('-'),
+                        Infolists\Components\TextEntry::make('item_instance.code')
+                            ->label('Kode Barang')
+                            ->badge()
+                            ->placeholder('-'),
+                        Infolists\Components\TextEntry::make('action')
+                            ->label('Tindakan / Peristiwa')
+                            ->badge()
+                            ->color('info')
+                            ->placeholder('-'),
+                        Infolists\Components\TextEntry::make('user.name')
+                            ->label('Petugas')
+                            ->placeholder('-'),
+                        Infolists\Components\TextEntry::make('created_at')
+                            ->label('Waktu Kejadian')
+                            ->dateTime('d M Y, H:i'),
+                        Infolists\Components\TextEntry::make('notes')
+                            ->label('Catatan')
+                            ->placeholder('Tidak ada catatan')
+                            ->columnSpanFull(),
+                        Infolists\Components\ImageEntry::make('photo')
+                            ->label('Foto Dokumentasi')
+                            ->height(220)
+                            ->columnSpanFull(),
                     ]),
-                    \Filament\Infolists\Components\Section::make([
-                        \Filament\Infolists\Components\TextEntry::make('created_at')
-                            ->label('Dibuat pada')
-                            ->dateTime(),
-                        \Filament\Infolists\Components\TextEntry::make('updated_at')
-                            ->label('Diperbarui pada')
-                            ->dateTime(),
-                    ])
-                ])->from('md')->columnSpanFull(),
             ]);
     }
 
@@ -57,43 +70,81 @@ class G007M013ItemHistoryResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('g002_m015_item_instance_id')
-                    ->numeric(),
+                Forms\Components\Select::make('g002_m015_item_instance_id')
+                    ->label('Barang Satuan')
+                    ->relationship('item_instance', 'name')
+                    ->getOptionLabelFromRecordUsing(fn ($record): string => trim("{$record->name} · {$record->code}", ' ·'))
+                    ->searchable(['name', 'code'])
+                    ->preload()
+                    ->required(),
                 Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'name'),
-                Forms\Components\TextInput::make('action'),
+                    ->label('Petugas')
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+                Forms\Components\TextInput::make('action')
+                    ->label('Tindakan / Peristiwa')
+                    ->required()
+                    ->maxLength(255),
                 Forms\Components\Textarea::make('notes')
+                    ->label('Catatan')
+                    ->rows(4)
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('photo'),
-            ]);
+                Forms\Components\FileUpload::make('photo')
+                    ->label('Foto Dokumentasi')
+                    ->image()
+                    ->directory('item-history')
+                    ->columnSpanFull(),
+            ])
+            ->columns(2);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('g002_m015_item_instance_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('item_instance.name')
+                    ->label('Barang Satuan')
+                    ->description(fn ($record): ?string => $record->item_instance?->code)
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->numeric()
+                    ->label('Petugas')
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('action')
+                    ->label('Tindakan / Peristiwa')
+                    ->badge()
+                    ->color('info')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('photo')
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('notes')
+                    ->label('Catatan')
+                    ->limit(60)
+                    ->wrap()
+                    ->placeholder('-'),
+                Tables\Columns\ImageColumn::make('photo')
+                    ->label('Foto')
+                    ->square(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('Waktu Kejadian')
+                    ->dateTime('d M Y, H:i')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->label('Diperbarui pada')
+                    ->dateTime('d M Y, H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('g002_m015_item_instance_id')
+                    ->label('Barang Satuan')
+                    ->relationship('item_instance', 'name')
+                    ->searchable()
+                    ->preload(),
             ])
+            ->defaultSort('created_at', 'desc')
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

@@ -10,6 +10,7 @@ enum ReservationStatus: string
     case PartiallyApproved = 'partially_approved';
     case Rejected = 'rejected';
     case CheckedOut = 'checked_out';
+    case ReturnRequested = 'return_requested';
     case Returned = 'returned';
     case Cancelled = 'cancelled';
     case Expired = 'expired';
@@ -23,6 +24,7 @@ enum ReservationStatus: string
             self::PartiallyApproved => 'Disetujui Sebagian',
             self::Rejected => 'Ditolak',
             self::CheckedOut => 'Sedang Dipakai',
+            self::ReturnRequested => 'Menunggu Konfirmasi Pengembalian',
             self::Returned => 'Selesai / Dikembalikan',
             self::Cancelled => 'Dibatalkan',
             self::Expired => 'Kedaluwarsa',
@@ -38,6 +40,7 @@ enum ReservationStatus: string
             self::PartiallyApproved => 'warning',
             self::Rejected => 'danger',
             self::CheckedOut => 'info',
+            self::ReturnRequested => 'warning',
             self::Returned => 'primary',
             self::Cancelled => 'gray',
             self::Expired => 'gray',
@@ -69,6 +72,7 @@ enum ReservationStatus: string
             self::Approved->value,
             self::PartiallyApproved->value,
             self::CheckedOut->value,
+            self::ReturnRequested->value,
         ];
     }
 
@@ -78,6 +82,7 @@ enum ReservationStatus: string
             self::Approved->value,
             self::PartiallyApproved->value,
             self::CheckedOut->value,
+            self::ReturnRequested->value,
         ];
     }
 

@@ -40,6 +40,10 @@ class UserResource extends Resource
                         \Filament\Infolists\Components\TextEntry::make('email')
                             ->label('E-mail')
                             ->size('md'),
+                        \Filament\Infolists\Components\TextEntry::make('itemManagements.name')
+                            ->label('Pengelolaan Barang')
+                            ->badge()
+                            ->placeholder('Tidak ada'),
                     ]),
                     \Filament\Infolists\Components\Section::make([
                         \Filament\Infolists\Components\TextEntry::make('created_at')
@@ -115,6 +119,14 @@ class UserResource extends Resource
                     ->multiple()
                     ->preload()
                     ->searchable(),
+                Forms\Components\Select::make('itemManagements')
+                    ->label('Pengelolaan Barang')
+                    ->relationship('itemManagements', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable()
+                    ->helperText('User memperoleh kewenangan flow hanya untuk aset kelompok yang dipilih.')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -147,6 +159,10 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('roles.name')
                     ->label('Role')
                     ->badge(),
+                Tables\Columns\TextColumn::make('itemManagements.name')
+                    ->label('Pengelolaan Barang')
+                    ->badge()
+                    ->placeholder('Tidak ada'),
             ])
             ->filters([
                 //

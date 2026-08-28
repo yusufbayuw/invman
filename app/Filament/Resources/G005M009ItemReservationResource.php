@@ -25,11 +25,10 @@ class G005M009ItemReservationResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-bookmark-square';
     protected static ?string $slug = 'fdf5ffbe-f082-4e9a-a93f-5ceee206ae49';//'item-reservation';
     protected static ?string $modelLabel = 'Reservasi Barang';
-    protected static ?string $navigationLabel = 'Reservasi Barang';
 
-     public static function shouldRegisterNavigation(): bool
+    public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->isFacility();
+        return Auth::user()?->isFacility() ?? false;
     }
 
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
@@ -146,8 +145,23 @@ class G005M009ItemReservationResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('g004_m008_activity_id')
+                    ->label('Kegiatan')
+                    ->relationship('activity', 'name')
+                    ->searchable()
+                    ->preload(),
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Status Reservasi')
+                    ->options(ReservationStatus::options())
+                    ->multiple(),
             ])
+            ->groups([
+                Tables\Grouping\Group::make('activity.name')
+                    ->label('Kegiatan')
+                    ->collapsible(),
+            ])
+            ->defaultGroup('activity.name')
+            ->defaultSort('created_at', 'desc')
             ->actions([
                 Tables\Actions\ViewAction::make(),
             ])

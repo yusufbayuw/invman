@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G008M017Vehicle extends Model
 {
+    protected $casts = [
+        'stnk_date' => 'date',
+        'kir_date' => 'date',
+        'is_borrowable' => 'boolean',
+    ];
+
     public function vehicle_reservation(): HasMany
     {
         return $this->hasMany(G005M019VehicleReservation::class, 'g008_m017_vehicle_id');
@@ -23,5 +29,9 @@ class G008M017Vehicle extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(G001M001Unit::class, 'g001_m001_unit_id');
+    }
+    public function item_management(): BelongsTo
+    {
+        return $this->belongsTo(G002M003ItemManagement::class, 'g002_m003_item_management_id');
     }
 }

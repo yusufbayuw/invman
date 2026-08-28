@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\ReservationStatus;
 use App\Models\G001M001Unit;
 use App\Models\G002M007Item;
+use App\Models\G002M003ItemManagement;
 use App\Models\G004M008Activity;
 use App\Models\G005M009ItemReservation;
 use App\Models\User;
@@ -67,20 +68,52 @@ class RoleAndUnitAccessTest extends TestCase
         $this->assertFalse($sarpras->can('update', $sameUnit->fresh()));
     }
 
-    public function test_facility_decisions_are_audited_and_create_partial_approval_status(): void
+    public function test_assigned_asset_manager_decisions_are_audited_and_create_partial_approval_status(): void
     {
         Role::query()->create(['name' => 'fasilitas', 'guard_name' => 'web']);
-        $facility = User::factory()->create();
-        $facility->assignRole('fasilitas');
+        $manager = User::factory()->create();
+        $legacyFacility = User::factory()->create();
+        $legacyFacility->assignRole('fasilitas');
+        $management = G002M003ItemManagement::query()->create(['name' => 'Elektronik']);
+        $management->users()->attach($manager);
         $unit = G001M001Unit::query()->create(['name' => 'SMA']);
         $activity = $this->activity($unit, ReservationStatus::Submitted);
-        $firstItem = G002M007Item::query()->create(['name' => 'Proyektor']);
-        $secondItem = G002M007Item::query()->create(['name' => 'Speaker']);
+        $firstItem = G002M007Item::query()->create([
+            'name' => 'Proyektor',
+            'g002_m003_item_management_id' => $management->id,
+        ]);
+        $secondItem = G002M007Item::query()->create([
+            'name' => 'Speaker',
+            'g002_m003_item_management_id' => $management->id,
+        ]);
 
         $first = $this->reservation($activity, $firstItem);
         $second = $this->reservation($activity, $secondItem);
 
-        $this->actingAs($facility);
+        $this->actingAs($legacyFacility);
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $first->update(['status' => ReservationStatus::Approved->value]);
+    }
+
+    public function test_manager_status_changes_record_actor_and_full_history(): void
+    {
+        $manager = User::factory()->create();
+        $management = G002M003ItemManagement::query()->create(['name' => 'Elektronik']);
+        $management->users()->attach($manager);
+        $unit = G001M001Unit::query()->create(['name' => 'SMA']);
+        $activity = $this->activity($unit, ReservationStatus::Submitted);
+        $firstItem = G002M007Item::query()->create([
+            'name' => 'Proyektor',
+            'g002_m003_item_management_id' => $management->id,
+        ]);
+        $secondItem = G002M007Item::query()->create([
+            'name' => 'Speaker',
+            'g002_m003_item_management_id' => $management->id,
+        ]);
+        $first = $this->reservation($activity, $firstItem);
+        $second = $this->reservation($activity, $secondItem);
+
+        $this->actingAs($manager);
         $first->update(['status' => ReservationStatus::Approved->value]);
         $second->update([
             'status' => ReservationStatus::Rejected->value,
@@ -88,10 +121,19 @@ class RoleAndUnitAccessTest extends TestCase
         ]);
 
         $this->assertSame(ReservationStatus::PartiallyApproved->value, $activity->fresh()->status);
-        $this->assertSame($facility->id, $first->fresh()->decision_by);
+        $this->assertSame($manager->id, $first->fresh()->decision_by);
         $this->assertNotNull($first->fresh()->decision_at);
-        $this->assertSame($facility->id, $second->fresh()->decision_by);
+        $this->assertSame($manager->id, $first->fresh()->status_changed_by);
+        $this->assertNotNull($first->fresh()->status_changed_at);
+        $this->assertSame($manager->id, $second->fresh()->decision_by);
         $this->assertSame('Stok sedang dalam perawatan.', $second->fresh()->rejection_reason);
+        $this->assertDatabaseHas('loan_reservation_status_histories', [
+            'reservation_type' => 'item',
+            'reservation_id' => $first->id,
+            'from_status' => ReservationStatus::Submitted->value,
+            'to_status' => ReservationStatus::Approved->value,
+            'changed_by' => $manager->id,
+        ]);
     }
 
     private function activity(G001M001Unit $unit, ReservationStatus $status): G004M008Activity

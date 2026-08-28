@@ -19,6 +19,7 @@ class G005M009ItemReservation extends Model
         'end_time' => 'datetime',
         'returned_at' => 'datetime',
         'decision_at' => 'datetime',
+        'status_changed_at' => 'datetime',
     ];
 
     public function item_reservation_detail(): HasMany
@@ -36,5 +37,14 @@ class G005M009ItemReservation extends Model
     public function decisionBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'decision_by');
+    }
+    public function statusChangedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'status_changed_by');
+    }
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(LoanReservationStatusHistory::class, 'reservation_id')
+            ->where('reservation_type', 'item');
     }
 }

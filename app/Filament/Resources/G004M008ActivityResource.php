@@ -82,17 +82,17 @@ class G004M008ActivityResource extends Resource
 
     public static function getNavigationLabel(): string
     {
-        return auth()->user()?->isSarpras() ? 'Peminjaman Saya' : 'Kegiatan';
+        return 'Kegiatan';
     }
 
     public static function getNavigationGroup(): ?string
     {
-        return auth()->user()?->isSarpras() ? 'Peminjaman' : 'Kegiatan';
+        return 'Kegiatan';
     }
 
     public static function getModelLabel(): string
     {
-        return auth()->user()?->isSarpras() ? 'Peminjaman' : 'Kegiatan';
+        return 'Kegiatan';
     }
 
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
@@ -344,14 +344,14 @@ class G004M008ActivityResource extends Resource
                         app(LoanRequestService::class)->cancel($record);
                         Notification::make()
                             ->title('Pengajuan dibatalkan')
-                            ->body('Seluruh kebutuhan dibatalkan dan pengelola fasilitas telah diberi tahu.')
+                            ->body('Seluruh kebutuhan dibatalkan dan pengelola aset telah diberi tahu.')
                             ->warning()
                             ->icon('heroicon-o-no-symbol')
                             ->seconds(7)
                             ->send();
                     }),
                 Tables\Actions\Action::make('return_checklist')
-                    ->label('Checklist Pengembalian')
+                    ->label('Ajukan Pengembalian')
                     ->icon('heroicon-o-clipboard-document-check')
                     ->color('warning')
                     ->visible(fn (G004M008Activity $record) => Auth::user()?->belongsToUnit($record->g001_m001_unit_id)
@@ -385,11 +385,12 @@ class G004M008ActivityResource extends Resource
                                 'photo' => $data['photo'] ?? null,
                             ],
                         );
+                        app(LoanRequestService::class)->requestReturn($record);
                         Notification::make()
-                            ->title('Checklist pengembalian tersimpan')
+                            ->title('Pengembalian diajukan')
                             ->body($data['is_ok']
-                                ? 'Kondisi aset tercatat baik.'
-                                : 'Catatan kondisi aset tersimpan untuk tindak lanjut pengelola.')
+                                ? 'Checklist tersimpan dan menunggu konfirmasi pengelola aset.'
+                                : 'Catatan kondisi tersimpan dan menunggu konfirmasi pengelola aset.')
                             ->status($data['is_ok'] ? 'success' : 'warning')
                             ->icon('heroicon-o-clipboard-document-check')
                             ->seconds(7)
@@ -457,8 +458,27 @@ class G004M008ActivityResource extends Resource
             ->with(['return_checklist', 'review'])
             ->withCount(['item_reservation', 'room_reservation', 'vehicle_reservation']);
 
-        if (auth()->user()?->isSarpras()) {
-            $query->where('g001_m001_unit_id', auth()->user()->g001_m001_unit_id);
+        $user = auth()->user();
+
+        if ($user && ! $user->isFacility()) {
+            $managementIds = $user->itemManagements()->pluck('g002_m003_item_management.id');
+
+            if (! $user->isSarpras() && $managementIds->isEmpty()) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            $query->where(function (Builder $query) use ($user, $managementIds): void {
+                if ($user->belongsToUnit($user->g001_m001_unit_id)) {
+                    $query->orWhere('g001_m001_unit_id', $user->g001_m001_unit_id);
+                }
+
+                if ($managementIds->isNotEmpty()) {
+                    $query
+                        ->orWhereHas('item_reservation.item', fn (Builder $query) => $query->whereIn('g002_m003_item_management_id', $managementIds))
+                        ->orWhereHas('room_reservation.room', fn (Builder $query) => $query->whereIn('g002_m003_item_management_id', $managementIds))
+                        ->orWhereHas('vehicle_reservation.vehicle', fn (Builder $query) => $query->whereIn('g002_m003_item_management_id', $managementIds));
+                }
+            });
         }
 
         return $query;

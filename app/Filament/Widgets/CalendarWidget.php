@@ -9,6 +9,8 @@ use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
 class CalendarWidget extends FullCalendarWidget
 {
+    protected static ?int $sort = -60;
+
     public Model | string | null $model = G004M008Activity::class;
 
     protected function headerActions(): array

@@ -16,4 +16,9 @@ class G008M018Driver extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function defaultVehicle(): BelongsTo
+    {
+        return $this->belongsTo(G008M017Vehicle::class, 'vehicle_default');
+    }
 }

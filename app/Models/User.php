@@ -11,6 +11,8 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Storage;
@@ -94,6 +96,49 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         return $this->isSarpras()
             && $this->g001_m001_unit_id !== null
             && $this->g001_m001_unit_id === $unitId;
+    }
+
+    public function itemManagements(): BelongsToMany
+    {
+        return $this->belongsToMany(G002M003ItemManagement::class, 'g002_m003_item_management_user')
+            ->withTimestamps();
+    }
+
+    public function isAssetManager(): bool
+    {
+        return $this->itemManagements()->exists();
+    }
+
+    public function managesReservation(Model $reservation): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        $managementId = match (true) {
+            $reservation instanceof G005M009ItemReservation => $reservation->item?->g002_m003_item_management_id,
+            $reservation instanceof G005M010RoomReservation => $reservation->room?->g002_m003_item_management_id,
+            $reservation instanceof G005M019VehicleReservation => $reservation->vehicle?->g002_m003_item_management_id,
+            default => null,
+        };
+
+        return filled($managementId)
+            && $this->itemManagements()->whereKey($managementId)->exists();
+    }
+
+    public function managesActivity(G004M008Activity $activity): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        $managementIds = $this->itemManagements()->pluck('g002_m003_item_management.id');
+
+        return $managementIds->isNotEmpty() && (
+            $activity->item_reservation()->whereHas('item', fn ($query) => $query->whereIn('g002_m003_item_management_id', $managementIds))->exists()
+            || $activity->room_reservation()->whereHas('room', fn ($query) => $query->whereIn('g002_m003_item_management_id', $managementIds))->exists()
+            || $activity->vehicle_reservation()->whereHas('vehicle', fn ($query) => $query->whereIn('g002_m003_item_management_id', $managementIds))->exists()
+        );
     }
 
     public function activity(): HasMany
