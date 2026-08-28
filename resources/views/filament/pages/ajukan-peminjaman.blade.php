@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <form wire:submit="submit" class="space-y-6">
+    <form wire:submit="submit" wire:poll.15s="refreshAvailability" class="space-y-6">
         {{ $this->form }}
 
         <div class="flex justify-end">

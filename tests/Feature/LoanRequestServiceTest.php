@@ -94,6 +94,30 @@ class LoanRequestServiceTest extends TestCase
         $this->assertSame(1, G005M009ItemReservation::query()->count());
     }
 
+    public function test_it_rejects_the_same_item_twice_in_one_request(): void
+    {
+        [$user, $item] = $this->fixtures();
+
+        try {
+            app(LoanRequestService::class)->submit($user, [
+                'name' => 'Kegiatan dengan barang ganda',
+                'description' => 'Barang yang sama tidak boleh dipilih dua kali.',
+                'start_time' => '2026-09-01 10:00:00',
+                'end_time' => '2026-09-01 12:00:00',
+                'needs' => [
+                    ['type' => 'item', 'item_id' => $item->id, 'quantity' => 1],
+                    ['type' => 'item', 'item_id' => $item->id, 'quantity' => 1],
+                ],
+            ]);
+
+            $this->fail('Expected a validation exception for a duplicate item.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('data.needs.1.item_id', $exception->errors());
+        }
+
+        $this->assertSame(0, G005M009ItemReservation::query()->count());
+    }
+
     private function fixtures(): array
     {
         $unit = G001M001Unit::query()->create(['name' => 'Unit Pengujian']);

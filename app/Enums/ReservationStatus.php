@@ -12,6 +12,7 @@ enum ReservationStatus: string
     case CheckedOut = 'checked_out';
     case Returned = 'returned';
     case Cancelled = 'cancelled';
+    case Expired = 'expired';
 
     public function label(): string
     {
@@ -24,6 +25,7 @@ enum ReservationStatus: string
             self::CheckedOut => 'Sedang Dipakai',
             self::Returned => 'Selesai / Dikembalikan',
             self::Cancelled => 'Dibatalkan',
+            self::Expired => 'Kedaluwarsa',
         };
     }
 
@@ -38,6 +40,7 @@ enum ReservationStatus: string
             self::CheckedOut => 'info',
             self::Returned => 'primary',
             self::Cancelled => 'gray',
+            self::Expired => 'gray',
         };
     }
 
@@ -54,6 +57,32 @@ enum ReservationStatus: string
             self::Rejected->value,
             self::Returned->value,
             self::Cancelled->value,
+            self::Draft->value,
+            self::Expired->value,
         ];
+    }
+
+    public static function blockingValues(): array
+    {
+        return [
+            self::Submitted->value,
+            self::Approved->value,
+            self::PartiallyApproved->value,
+            self::CheckedOut->value,
+        ];
+    }
+
+    public static function confirmedBlockingValues(): array
+    {
+        return [
+            self::Approved->value,
+            self::PartiallyApproved->value,
+            self::CheckedOut->value,
+        ];
+    }
+
+    public function blocksAvailability(): bool
+    {
+        return in_array($this->value, self::blockingValues(), true);
     }
 }

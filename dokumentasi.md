@@ -63,7 +63,7 @@ Data contoh diberi awalan `[DEMO]` agar mudah dibedakan dari data operasional.
 3. Isi nama kegiatan, waktu mulai dan selesai, serta keterangan.
 4. Tambahkan satu atau beberapa kebutuhan: barang, ruangan, atau kendaraan.
 5. Kirim pengajuan dan pantau statusnya pada daftar pengajuan unit.
-6. Pengajuan yang masih berupa draf atau menunggu persetujuan dapat diperbarui atau dibatalkan sesuai hak akses.
+6. Pengajuan yang sudah dikirim tidak dapat diubah agar hold aset tetap konsisten. Batalkan lalu buat pengajuan baru jika kebutuhan berubah.
 
 Sarpras hanya dapat melihat dan mengelola pengajuan milik unitnya sendiri.
 
@@ -84,7 +84,17 @@ Administrator memiliki akses penuh untuk mengelola pengguna, peran, unit, master
 
 `Draf` → `Menunggu Persetujuan` → `Disetujui` → `Sedang Dipakai` → `Selesai / Dikembalikan`
 
-Pengajuan juga dapat berstatus **Disetujui Sebagian**, **Ditolak**, atau **Dibatalkan**. Hanya reservasi yang disetujui atau sedang dipakai yang ditampilkan pada jadwal publik.
+Pengajuan juga dapat berstatus **Disetujui Sebagian**, **Ditolak**, **Dibatalkan**, atau **Kedaluwarsa**. Hanya reservasi yang disetujui atau sedang dipakai yang ditampilkan pada jadwal publik.
+
+### Aturan hold dan ketersediaan
+
+- `submitted`, `approved`, `partially_approved`, dan `checked_out` mengurangi ketersediaan selama jadwalnya bertabrakan.
+- `draft`, `rejected`, `returned`, `cancelled`, dan `expired` tidak mengurangi ketersediaan.
+- Hold `submitted` berlaku 24 jam secara default. Ubah melalui `LOAN_HOLD_HOURS` pada `.env`.
+- Jika batas hold lewat, hanya kebutuhan yang masih menunggu yang dilepaskan. Kebutuhan yang sudah disetujui tetap dicadangkan.
+- Jumlah stok selalu diperiksa ulang dalam transaksi ketika pengajuan dikirim untuk mencegah overbooking.
+
+Scheduler Laravel wajib aktif di produksi agar status dan notifikasi kedaluwarsa diperbarui setiap menit. Jalankan `php artisan schedule:run` melalui cron setiap menit, atau gunakan `php artisan schedule:work` pada process manager.
 
 ## Pemeriksaan sebelum produksi
 
@@ -92,4 +102,5 @@ Pengajuan juga dapat berstatus **Disetujui Sebagian**, **Ditolak**, atau **Dibat
 - Set `APP_ENV=production`, `APP_DEBUG=false`, dan `APP_URL` yang benar.
 - Pastikan database sudah dicadangkan sebelum migrasi.
 - Konfigurasikan queue, mail, storage publik, serta Reverb/Chatify jika fitur percakapan real-time digunakan.
+- Pastikan Laravel scheduler aktif untuk memproses hold peminjaman yang kedaluwarsa.
 - Jalankan `php artisan test` dan `npm run build` sebelum rilis.

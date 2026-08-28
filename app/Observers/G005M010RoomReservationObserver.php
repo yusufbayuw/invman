@@ -73,6 +73,8 @@ class G005M010RoomReservationObserver
             return;
         }
 
+        app(LoanRequestService::class)->assertDecisionAllowed($reservation);
+
         $reservation->decision_by = auth()->id();
         $reservation->decision_at = now();
 

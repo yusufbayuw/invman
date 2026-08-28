@@ -59,7 +59,7 @@ class RoleAndUnitAccessTest extends TestCase
         $otherUnit = $this->activity($unitB, ReservationStatus::Submitted);
 
         $this->assertTrue($sarpras->can('view', $sameUnit));
-        $this->assertTrue($sarpras->can('update', $sameUnit));
+        $this->assertFalse($sarpras->can('update', $sameUnit));
         $this->assertFalse($sarpras->can('view', $otherUnit));
         $this->assertFalse($sarpras->can('update', $otherUnit));
 

@@ -3,26 +3,24 @@
 namespace App\Filament\Resources;
 
 use App\Enums\ReservationStatus;
-use App\Models\LoanRequestChecklist;
-use App\Models\LoanRequestReview;
-use App\Services\LoanRequestService;
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Get;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use App\Models\G004M008Activity;
-use Filament\Resources\Resource;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\G004M008ActivityResource\Pages;
-use App\Filament\Resources\G004M008ActivityResource\RelationManagers;
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers\ItemReservationRelationManager;
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers\RoomReservationRelationManager;
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers\VehicleReservationRelationManager;
+use App\Models\G004M008Activity;
+use App\Models\LoanRequestChecklist;
+use App\Models\LoanRequestReview;
+use App\Services\LoanRequestService;
 use Coolsam\Flatpickr\Forms\Components\Flatpickr;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class G004M008ActivityResource extends Resource
@@ -30,10 +28,57 @@ class G004M008ActivityResource extends Resource
     protected static ?string $model = G004M008Activity::class;
 
     protected static ?string $navigationGroup = 'Kegiatan';
+
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
+
     protected static ?string $slug = 'activity';
+
     protected static ?string $modelLabel = 'Kegiatan';
+
     protected static ?string $navigationLabel = 'Kegiatan';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    protected static int $globalSearchResultsLimit = 15;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'description', 'notes', 'user.name', 'unit.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return [
+            'Unit' => $record->unit?->name ?? '-',
+            'Pemohon' => $record->user?->name ?? '-',
+            'Status' => ReservationStatus::tryFrom($record->status)?->label() ?? $record->status,
+            'Jadwal' => $record->start_time?->translatedFormat('d M Y, H:i') ?? '-',
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['user', 'unit']);
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getEloquentQuery()
+            ->where('status', ReservationStatus::Submitted->value)
+            ->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'warning';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'Pengajuan yang menunggu persetujuan';
+    }
 
     public static function getNavigationLabel(): string
     {
@@ -71,6 +116,15 @@ class G004M008ActivityResource extends Resource
                             ->badge()
                             ->formatStateUsing(fn (?string $state) => ReservationStatus::tryFrom($state)?->label() ?? $state)
                             ->color(fn (?string $state) => ReservationStatus::tryFrom($state)?->color() ?? 'gray'),
+                        \Filament\Infolists\Components\TextEntry::make('hold_expires_at')
+                            ->label('Batas Persetujuan')
+                            ->dateTime('d M Y, H:i')
+                            ->helperText('Kebutuhan yang masih menunggu akan dilepaskan setelah waktu ini.')
+                            ->visible(fn (G004M008Activity $record): bool => $record->status === ReservationStatus::Submitted->value),
+                        \Filament\Infolists\Components\TextEntry::make('expired_at')
+                            ->label('Hold Dilepaskan')
+                            ->dateTime('d M Y, H:i')
+                            ->visible(fn (G004M008Activity $record): bool => filled($record->expired_at)),
                         \Filament\Infolists\Components\TextEntry::make('user.name')
                             ->label('Diajukan Oleh')
                             ->inlineLabel(),
@@ -87,7 +141,7 @@ class G004M008ActivityResource extends Resource
                             ->inlineLabel(),
                         \Filament\Infolists\Components\TextEntry::make('attachment')
                             ->label('Lampiran')
-                            ->inlineLabel()
+                            ->inlineLabel(),
                     ]),
                     \Filament\Infolists\Components\Section::make([
                         \Filament\Infolists\Components\TextEntry::make('created_at')
@@ -163,7 +217,7 @@ class G004M008ActivityResource extends Resource
                     ->seconds(false)
                     ->live()
                     ->time24hr(true)
-                    ->beforeOrEqual('end_time')
+                    ->before('end_time')
                     ->reactive()
                     ->afterStateUpdated(function ($state, Set $set) {
                         if ($state) {
@@ -176,7 +230,7 @@ class G004M008ActivityResource extends Resource
                     ->seconds(false)
                     ->reactive()
                     ->time24hr(true)
-                    ->afterOrEqual('start_time')
+                    ->after('start_time')
                     ->minDate(fn (Get $get) => $get('start_time') ? \Carbon\Carbon::parse($get('start_time'))->addMinute() : now()),
                 Forms\Components\FileUpload::make('attachment')
                     ->label('Lampiran (jika ada)'),
@@ -213,6 +267,12 @@ class G004M008ActivityResource extends Resource
                     ->label('Selesai')
                     ->dateTime('d M Y H:i')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('hold_expires_at')
+                    ->label('Batas Hold')
+                    ->dateTime('d M Y H:i')
+                    ->placeholder('-')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('unit.name')
                     ->label('Unit')
                     ->badge()
@@ -224,7 +284,7 @@ class G004M008ActivityResource extends Resource
                 Tables\Columns\TextColumn::make('attachment')
                     ->label('Lampiran')
                     ->formatStateUsing(fn ($record) => $record->attachment ? 'file' : null)
-                    ->simpleLightbox(fn ($record) =>  $record?->attachment ?? null, defaultDisplayUrl: true),
+                    ->simpleLightbox(fn ($record) => $record?->attachment ?? null, defaultDisplayUrl: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -237,9 +297,37 @@ class G004M008ActivityResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
-                    ->options(ReservationStatus::options()),
+                    ->options(ReservationStatus::options())
+                    ->multiple(),
+                Tables\Filters\SelectFilter::make('g001_m001_unit_id')
+                    ->label('Unit')
+                    ->relationship('unit', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->visible(fn (): bool => Auth::user()?->isFacility() ?? false),
+                Tables\Filters\Filter::make('jadwal_aktif')
+                    ->label('Sedang berlangsung hari ini')
+                    ->query(fn (Builder $query): Builder => $query
+                        ->whereDate('start_time', '<=', today())
+                        ->whereDate('end_time', '>=', today()))
+                    ->toggle(),
+            ], layout: \Filament\Tables\Enums\FiltersLayout::AboveContentCollapsible)
+            ->filtersFormColumns(3)
+            ->persistFiltersInSession()
+            ->groups([
+                \Filament\Tables\Grouping\Group::make('unit.name')->label('Unit')->collapsible(),
+                \Filament\Tables\Grouping\Group::make('status')
+                    ->label('Status')
+                    ->getTitleFromRecordUsing(fn (G004M008Activity $record): string => ReservationStatus::tryFrom($record->status)?->label() ?? $record->status),
+                \Filament\Tables\Grouping\Group::make('start_time')->label('Tanggal mulai')->date()->collapsible(),
             ])
             ->defaultSort('created_at', 'desc')
+            ->poll('30s')
+            ->striped()
+            ->recordUrl(fn (G004M008Activity $record): string => static::getUrl('view', ['record' => $record]))
+            ->emptyStateHeading('Belum ada pengajuan')
+            ->emptyStateDescription('Pengajuan baru akan muncul di sini setelah dikirim oleh pemohon.')
+            ->emptyStateIcon('heroicon-o-clipboard-document-list')
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
@@ -254,7 +342,13 @@ class G004M008ActivityResource extends Resource
                         && $record->status === ReservationStatus::Submitted->value)
                     ->action(function (G004M008Activity $record): void {
                         app(LoanRequestService::class)->cancel($record);
-                        Notification::make()->title('Pengajuan dibatalkan')->success()->send();
+                        Notification::make()
+                            ->title('Pengajuan dibatalkan')
+                            ->body('Seluruh kebutuhan dibatalkan dan pengelola fasilitas telah diberi tahu.')
+                            ->warning()
+                            ->icon('heroicon-o-no-symbol')
+                            ->seconds(7)
+                            ->send();
                     }),
                 Tables\Actions\Action::make('return_checklist')
                     ->label('Checklist Pengembalian')
@@ -291,7 +385,15 @@ class G004M008ActivityResource extends Resource
                                 'photo' => $data['photo'] ?? null,
                             ],
                         );
-                        Notification::make()->title('Checklist pengembalian tersimpan')->success()->send();
+                        Notification::make()
+                            ->title('Checklist pengembalian tersimpan')
+                            ->body($data['is_ok']
+                                ? 'Kondisi aset tercatat baik.'
+                                : 'Catatan kondisi aset tersimpan untuk tindak lanjut pengelola.')
+                            ->status($data['is_ok'] ? 'success' : 'warning')
+                            ->icon('heroicon-o-clipboard-document-check')
+                            ->seconds(7)
+                            ->send();
                     }),
                 Tables\Actions\Action::make('review')
                     ->label('Beri Ulasan')
@@ -324,7 +426,13 @@ class G004M008ActivityResource extends Resource
                             ['g004_m008_activity_id' => $record->id],
                             ['user_id' => Auth::id(), 'rating' => $data['rating'], 'review' => $data['review'] ?? null],
                         );
-                        Notification::make()->title('Terima kasih atas ulasan Anda')->success()->send();
+                        Notification::make()
+                            ->title('Terima kasih atas ulasan Anda')
+                            ->body("Penilaian {$data['rating']} dari 5 berhasil disimpan.")
+                            ->success()
+                            ->icon('heroicon-o-star')
+                            ->seconds(6)
+                            ->send();
                     }),
             ])
             ->bulkActions([

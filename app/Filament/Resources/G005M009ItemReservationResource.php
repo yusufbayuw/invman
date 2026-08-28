@@ -150,12 +150,8 @@ class G005M009ItemReservationResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
             ]);
     }
 
@@ -182,9 +178,7 @@ class G005M009ItemReservationResource extends Resource
     {
         return [
             'index' => Pages\ListG005M009ItemReservations::route('/'),
-            'create' => Pages\CreateG005M009ItemReservation::route('/create'),
             'view' => Pages\ViewG005M009ItemReservation::route('/{record}'),
-            'edit' => Pages\EditG005M009ItemReservation::route('/{record}/edit'),
         ];
     }
 }

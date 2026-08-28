@@ -3,25 +3,50 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\G008M017VehicleResource\Pages;
-use App\Filament\Resources\G008M017VehicleResource\RelationManagers;
 use App\Models\G008M017Vehicle;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class G008M017VehicleResource extends Resource
 {
     protected static ?string $model = G008M017Vehicle::class;
 
     protected static ?string $navigationGroup = 'Kendaraan';
+
     protected static ?string $navigationIcon = 'heroicon-o-truck';
+
     protected static ?string $slug = 'vehicle';
+
     protected static ?string $modelLabel = 'Kendaraan';
+
     protected static ?string $navigationLabel = 'Kendaraan';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    protected static int $globalSearchResultsLimit = 15;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'license_plate', 'status', 'unit.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return [
+            'Nomor Polisi' => $record->license_plate ?? '-',
+            'Unit' => $record->unit?->name ?? '-',
+            'Kapasitas' => $record->capacity ? number_format($record->capacity).' orang' : '-',
+            'Status' => $record->status ?? '-',
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with('unit');
+    }
 
     public static function form(Form $form): Form
     {

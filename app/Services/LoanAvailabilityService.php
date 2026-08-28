@@ -23,7 +23,7 @@ class LoanAvailabilityService
         [$start, $end] = $period;
         $reserved = G005M009ItemReservation::query()
             ->selectRaw('g002_m007_item_id, COALESCE(SUM(quantity), 0) as reserved_quantity')
-            ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+            ->where(fn (Builder $query) => $this->applyBlockingScope($query))
             ->where('start_time', '<', $end)
             ->where('end_time', '>', $start)
             ->groupBy('g002_m007_item_id')
@@ -100,17 +100,37 @@ class LoanAvailabilityService
     {
         return (int) G005M009ItemReservation::query()
             ->where('g002_m007_item_id', $itemId)
-            ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+            ->where(fn (Builder $query) => $this->applyBlockingScope($query))
             ->where('start_time', '<', $end)
             ->where('end_time', '>', $start)
             ->sum('quantity');
+    }
+
+    public function availableItemQuantity(int|string|null $itemId, Carbon|string|null $startTime, Carbon|string|null $endTime): int
+    {
+        if (! $itemId || ! $period = $this->period($startTime, $endTime)) {
+            return 0;
+        }
+
+        $item = G002M007Item::query()
+            ->where('is_borrowable', true)
+            ->find($itemId);
+
+        if (! $item) {
+            return 0;
+        }
+
+        [$start, $end] = $period;
+        $stock = (int) ($item->available_quantity ?? $item->quantity ?? 0);
+
+        return max(0, $stock - $this->reservedItemQuantity((int) $item->id, $start, $end));
     }
 
     public function roomIsAvailable(int $roomId, Carbon $start, Carbon $end): bool
     {
         return ! G005M010RoomReservation::query()
             ->where('g003_m006_room_id', $roomId)
-            ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+            ->where(fn (Builder $query) => $this->applyBlockingScope($query))
             ->where('start_time', '<', $end)
             ->where('end_time', '>', $start)
             ->exists();
@@ -120,7 +140,7 @@ class LoanAvailabilityService
     {
         return ! G005M019VehicleReservation::query()
             ->where('g008_m017_vehicle_id', $vehicleId)
-            ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+            ->where(fn (Builder $query) => $this->applyBlockingScope($query))
             ->where('start_time', '<', $end)
             ->where('end_time', '>', $start)
             ->exists();
@@ -129,9 +149,26 @@ class LoanAvailabilityService
     private function overlap(Builder $query, Carbon $start, Carbon $end): Builder
     {
         return $query
-            ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+            ->where(fn (Builder $query) => $this->applyBlockingScope($query))
             ->where('start_time', '<', $end)
             ->where('end_time', '>', $start);
+    }
+
+    public function applyBlockingScope(Builder $query): void
+    {
+        $query
+            ->whereIn('status', ReservationStatus::confirmedBlockingValues())
+            ->orWhere(function (Builder $query): void {
+                $query
+                    ->where('status', ReservationStatus::Submitted->value)
+                    ->whereHas('activity', function (Builder $query): void {
+                        $query->where(function (Builder $query): void {
+                            $query
+                                ->whereNull('hold_expires_at')
+                                ->orWhere('hold_expires_at', '>', now());
+                        });
+                    });
+            });
     }
 
     private function period(Carbon|string|null $startTime, Carbon|string|null $endTime): ?array

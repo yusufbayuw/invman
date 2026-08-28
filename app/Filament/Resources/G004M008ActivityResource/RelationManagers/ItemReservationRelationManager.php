@@ -3,25 +3,28 @@
 namespace App\Filament\Resources\G004M008ActivityResource\RelationManagers;
 
 use App\Enums\ReservationStatus;
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Get;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
+use App\Services\LoanAvailabilityService;
 use App\Models\G002M007Item;
-use Illuminate\Support\Facades\Auth;
 use App\Models\G005M009ItemReservation;
-use Filament\Forms\Components\Tabs\Tab;
-use Illuminate\Database\Eloquent\Builder;
+use App\Services\LoanNotificationService;
 use Coolsam\Flatpickr\Forms\Components\Flatpickr;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class ItemReservationRelationManager extends RelationManager
 {
     protected static string $relationship = 'item_reservation';
+
     protected static ?string $modelLabel = 'Reservasi Barang';
+
     protected static ?string $title = 'Reservasi Barang';
+
     protected static ?string $icon = 'heroicon-o-bookmark-square';
 
     public function form(Form $form): Form
@@ -47,21 +50,22 @@ class ItemReservationRelationManager extends RelationManager
                         static $itemCache = [];
                         static $itemOverlappingCache = [];
 
-                        if (!$itemId) {
+                        if (! $itemId) {
                             return '';
                         }
 
                         // Cache the item lookup to avoid multiple queries in a single request
-                        if (!isset($itemCache[$itemId])) {
+                        if (! isset($itemCache[$itemId])) {
                             $itemCache[$itemId] = G002M007Item::find($itemId);
                             $itemOverlappingCache[$itemId] = G005M009ItemReservation::where('g002_m007_item_id', $itemId)
-                                ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+                                ->where(fn (Builder $query) => app(LoanAvailabilityService::class)->applyBlockingScope($query))
                                 ->where('start_time', '<', $get('end_time'))
                                 ->where('end_time', '>', $get('start_time'))
                                 ->sum('quantity');
                         }
 
                         $available = ($itemCache[$itemId]?->available_quantity - $itemOverlappingCache[$itemId] ?? 0) ?? 0;
+
                         return "Saat ini tersedia: {$available}";
                     })
                     ->maxValue(function (Get $get) {
@@ -69,15 +73,15 @@ class ItemReservationRelationManager extends RelationManager
                         static $itemCache = [];
                         static $itemOverlappingCache = [];
 
-                        if (!$itemId) {
+                        if (! $itemId) {
                             return 0;
                         }
 
                         // Cache the item lookup to avoid multiple queries in a single request
-                        if (!isset($itemCache[$itemId])) {
+                        if (! isset($itemCache[$itemId])) {
                             $itemCache[$itemId] = G002M007Item::find($itemId);
                             $itemOverlappingCache[$itemId] = G005M009ItemReservation::where('g002_m007_item_id', $itemId)
-                                ->whereNotIn('status', ReservationStatus::nonBlockingValues())
+                                ->where(fn (Builder $query) => app(LoanAvailabilityService::class)->applyBlockingScope($query))
                                 ->where('start_time', '<', $get('end_time'))
                                 ->where('end_time', '>', $get('start_time'))
                                 ->sum('quantity');
@@ -99,7 +103,7 @@ class ItemReservationRelationManager extends RelationManager
                     ->default($this->ownerRecord->start_time ?? now())
                     ->minDate(\Carbon\Carbon::parse($this->ownerRecord->start_time)->subMinute() ?? $this->ownerRecord->start_time)
                     ->maxDate(\Carbon\Carbon::parse($this->ownerRecord->end_time)->addMinute() ?? $this->ownerRecord->start_time)
-                    ->beforeOrEqual('end_time'),
+                    ->before('end_time'),
                 Flatpickr::make('end_time')
                     ->label('Tanggal dan Waktu Selesai')
                     ->time(true)
@@ -107,7 +111,7 @@ class ItemReservationRelationManager extends RelationManager
                     ->reactive()
                     ->time24hr(true)
                     ->default($this->ownerRecord->end_time ?? now())
-                    ->afterOrEqual('start_time')
+                    ->after('start_time')
                     ->minDate(\Carbon\Carbon::parse($this->ownerRecord->start_time)->subMinute() ?? $this->ownerRecord->start_time)
                     ->maxDate(\Carbon\Carbon::parse($this->ownerRecord->end_time)->addMinute() ?? $this->ownerRecord->start_time),
             ]);
@@ -148,14 +152,16 @@ class ItemReservationRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->visible(fn () => Auth::user()?->isFacility()),
+                    ->visible(fn () => Auth::user()?->isFacility()
+                        && $this->ownerRecord->status === ReservationStatus::Draft->value),
             ])
             ->actions([
                 Tables\Actions\Action::make('konfirmasi')
                     ->label('Setujui')
                     ->color('success')
-                    ->hidden(fn($record): bool => !(
+                    ->hidden(fn ($record): bool => ! (
                         $record->status === ReservationStatus::Submitted->value
+                        && (! $record->activity?->hold_expires_at || $record->activity->hold_expires_at->isFuture())
                         && Auth::user()
                         && Auth::user()->isFacility()
                     ))
@@ -163,6 +169,7 @@ class ItemReservationRelationManager extends RelationManager
                     ->action(function ($record) {
                         $record->status = ReservationStatus::Approved->value;
                         $record->save();
+                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Approved, $record->item?->name ?? 'barang');
                     }),
                 Tables\Actions\Action::make('ditolak')
                     ->label('Tolak')
@@ -173,8 +180,9 @@ class ItemReservationRelationManager extends RelationManager
                             ->required()
                             ->maxLength(2000),
                     ])
-                    ->hidden(fn($record): bool => !(
+                    ->hidden(fn ($record): bool => ! (
                         $record->status === ReservationStatus::Submitted->value
+                        && (! $record->activity?->hold_expires_at || $record->activity->hold_expires_at->isFuture())
                         && Auth::user()
                         && Auth::user()->isFacility()
                     ))
@@ -183,6 +191,7 @@ class ItemReservationRelationManager extends RelationManager
                         $record->status = ReservationStatus::Rejected->value;
                         $record->rejection_reason = $data['rejection_reason'];
                         $record->save();
+                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Rejected, $record->item?->name ?? 'barang');
                     }),
                 Tables\Actions\Action::make('serahkan')
                     ->label('Serahkan')
@@ -193,6 +202,7 @@ class ItemReservationRelationManager extends RelationManager
                     ->action(function ($record) {
                         $record->status = ReservationStatus::CheckedOut->value;
                         $record->save();
+                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::CheckedOut, $record->item?->name ?? 'barang');
                     }),
                 Tables\Actions\Action::make('dikembalikan')
                     ->label('Kembalikan')
@@ -204,16 +214,20 @@ class ItemReservationRelationManager extends RelationManager
                         $record->status = ReservationStatus::Returned->value;
                         $record->returned_at = now();
                         $record->save();
+                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Returned, $record->item?->name ?? 'barang');
                     }),
                 Tables\Actions\EditAction::make()
-                    ->visible(fn () => Auth::user()?->isFacility()),
+                    ->visible(fn () => Auth::user()?->isFacility()
+                        && $this->ownerRecord->status === ReservationStatus::Draft->value),
                 Tables\Actions\DeleteAction::make()
-                    ->visible(fn () => Auth::user()?->isFacility()),
+                    ->visible(fn () => Auth::user()?->isFacility()
+                        && $this->ownerRecord->status === ReservationStatus::Draft->value),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                ])->visible(fn () => Auth::user()?->isFacility()
+                    && $this->ownerRecord->status === ReservationStatus::Draft->value),
             ]);
     }
 }

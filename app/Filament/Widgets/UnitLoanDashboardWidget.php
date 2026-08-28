@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Enums\ReservationStatus;
 use App\Filament\Pages\AjukanPeminjaman;
+use App\Filament\Pages\RekapanPenggunaan;
 use App\Filament\Resources\G004M008ActivityResource;
 use App\Models\G004M008Activity;
 use Filament\Widgets\Widget;
@@ -27,6 +28,7 @@ class UnitLoanDashboardWidget extends Widget
         return [
             'submitUrl' => AjukanPeminjaman::getUrl(),
             'mineUrl' => G004M008ActivityResource::getUrl('index'),
+            'reportUrl' => RekapanPenggunaan::getUrl(),
             'counts' => [
                 'submitted' => (clone $query)->where('status', ReservationStatus::Submitted->value)->count(),
                 'approved' => (clone $query)->whereIn('status', [
@@ -35,6 +37,7 @@ class UnitLoanDashboardWidget extends Widget
                 ])->count(),
                 'checked_out' => (clone $query)->where('status', ReservationStatus::CheckedOut->value)->count(),
                 'returned' => (clone $query)->where('status', ReservationStatus::Returned->value)->count(),
+                'expired' => (clone $query)->where('status', ReservationStatus::Expired->value)->count(),
             ],
         ];
     }

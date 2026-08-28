@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\UserResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -56,6 +57,30 @@ class UserResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\FileUpload::make('avatar')
+                    ->label('Avatar')
+                    ->avatar()
+                    ->image()
+                    ->imageEditor()
+                    ->disk(config('chatify.storage_disk_name'))
+                    ->directory(config('chatify.user_avatar.folder'))
+                    ->visibility('public')
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->maxSize(2048)
+                    ->formatStateUsing(static function (?string $state): ?string {
+                        if (blank($state) || $state === config('chatify.user_avatar.default')) {
+                            return null;
+                        }
+
+                        return Str::startsWith($state, config('chatify.user_avatar.folder') . '/')
+                            ? $state
+                            : config('chatify.user_avatar.folder') . '/' . $state;
+                    })
+                    ->dehydrateStateUsing(static fn (?string $state): string => filled($state)
+                        ? basename($state)
+                        : config('chatify.user_avatar.default'))
+                    ->helperText('JPG, PNG, atau WebP. Ukuran maksimal 2 MB. Kosongkan untuk menggunakan avatar bawaan.')
+                    ->columnSpanFull(),
                 Forms\Components\TextInput::make('name')
                     ->label('Name')
                     ->required(),

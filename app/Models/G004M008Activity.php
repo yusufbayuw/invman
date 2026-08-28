@@ -16,7 +16,23 @@ class G004M008Activity extends Model
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'cancelled_at' => 'datetime',
+        'hold_expires_at' => 'datetime',
+        'expired_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $activity): void {
+            $status = $activity->status ?: \App\Enums\ReservationStatus::Submitted->value;
+
+            if ($status === \App\Enums\ReservationStatus::Submitted->value && ! $activity->hold_expires_at) {
+                $deadline = now()->addHours(config('loans.hold_hours'));
+                $activity->hold_expires_at = $activity->start_time && $activity->start_time->lessThan($deadline)
+                    ? $activity->start_time
+                    : $deadline;
+            }
+        });
+    }
 
     public function item_reservation(): HasMany
     {

@@ -2,32 +2,40 @@
 
 namespace App\Providers\Filament;
 
-use Filament\Pages;
-use Filament\Panel;
-use Filament\Widgets;
-use Filament\PanelProvider;
 use App\Filament\Auth\Login;
+use App\Filament\Pages\Auth\EditProfile;
 use App\Filament\Pages\CustomChatifyPage;
-use Filament\Support\Colors\Color;
+use App\Filament\Pages\Dashboard;
+use App\Filament\Pages\RekapanPenggunaan;
 use App\Filament\Widgets\CalendarWidget;
+use App\Filament\Widgets\LoanOperationsStats;
+use App\Filament\Widgets\LoanStatusChart;
+use App\Filament\Widgets\LoanUsageTrendChart;
 use App\Filament\Widgets\MenuGridWidget;
+use App\Filament\Widgets\RecentLoanRequests;
 use App\Filament\Widgets\UnitLoanDashboardWidget;
-use Filament\Http\Middleware\Authenticate;
-use Illuminate\Session\Middleware\StartSession;
-use Illuminate\Cookie\Middleware\EncryptCookies;
-use Filament\Http\Middleware\AuthenticateSession;
-use Monzer\FilamentChatifyIntegration\ChatifyPlugin;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
-use Illuminate\Routing\Middleware\SubstituteBindings;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Swis\Filament\Backgrounds\ImageProviders\Triangles;
+use Filament\Http\Middleware\Authenticate;
+use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
-use Swis\Filament\Backgrounds\FilamentBackgroundsPlugin;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
-use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
+use Filament\Navigation\MenuItem;
+use Filament\Panel;
+use Filament\PanelProvider;
+use Filament\Support\Colors\Color;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Monzer\FilamentChatifyIntegration\ChatifyPlugin;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 use SolutionForest\FilamentSimpleLightBox\SimpleLightBoxPlugin;
+use Swis\Filament\Backgrounds\FilamentBackgroundsPlugin;
+use Swis\Filament\Backgrounds\ImageProviders\Triangles;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -42,6 +50,22 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->favicon(asset(config('app.logo')))
             ->login(Login::class)
+            ->profile(EditProfile::class, isSimple: false)
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('15s')
+            ->globalSearchKeyBindings(['ctrl+k', 'command+k'])
+            ->globalSearchFieldKeyBindingSuffix()
+            ->globalSearchDebounce('400ms')
+            ->sidebarCollapsibleOnDesktop()
+            ->unsavedChangesAlerts()
+            ->maxContentWidth(MaxWidth::Full)
+            ->userMenuItems([
+                MenuItem::make()
+                    ->label('Rekapan Penggunaan')
+                    ->icon('heroicon-o-chart-bar-square')
+                    ->url(fn (): string => RekapanPenggunaan::getUrl())
+                    ->sort(10),
+            ])
             ->colors([
                 'danger' => Color::Rose,
                 'gray' => Color::Gray,
@@ -53,15 +77,19 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                Dashboard::class,
             ])
-            //->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            // ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 UnitLoanDashboardWidget::class,
+                LoanOperationsStats::class,
+                LoanStatusChart::class,
+                LoanUsageTrendChart::class,
+                RecentLoanRequests::class,
                 MenuGridWidget::class,
                 CalendarWidget::class,
                 Widgets\AccountWidget::class,
-                //Widgets\FilamentInfoWidget::class,
+                // Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

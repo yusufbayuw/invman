@@ -12,8 +12,6 @@ class ListG005M010RoomReservations extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\CreateAction::make(),
-        ];
+        return [];
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\G002M007ItemResource\Pages;
-use App\Filament\Resources\G002M007ItemResource\RelationManagers;
 use App\Filament\Resources\G002M007ItemResource\RelationManagers\ItemInstanceRelationManager;
 use App\Filament\Resources\G002M007ItemResource\RelationManagers\ItemReservationRelationManager;
 use App\Models\G002M007Item;
@@ -14,17 +13,44 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class G002M007ItemResource extends Resource
 {
     protected static ?string $model = G002M007Item::class;
 
     protected static ?string $navigationGroup = 'Barang';
+
     protected static ?string $navigationIcon = 'heroicon-o-cube';
+
     protected static ?string $slug = 'item';
+
     protected static ?string $modelLabel = 'Barang';
+
     protected static ?string $navigationLabel = 'Barang';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    protected static int $globalSearchResultsLimit = 15;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'code', 'status', 'unit.name', 'item_type.name', 'room.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return [
+            'Kode' => $record->code ?? '-',
+            'Unit' => $record->unit?->name ?? '-',
+            'Jenis' => $record->item_type?->name ?? '-',
+            'Tersedia' => number_format($record->available_quantity ?? 0).' dari '.number_format($record->quantity ?? 0),
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['unit', 'item_type', 'room']);
+    }
 
     public static function infolist(Infolist $infolist): Infolist
     {
@@ -75,7 +101,7 @@ class G002M007ItemResource extends Resource
                         \Filament\Infolists\Components\TextEntry::make('updated_at')
                             ->label('Diperbarui pada')
                             ->dateTime(),
-                    ])->grow(false)
+                    ])->grow(false),
                 ])->from('md')->columnSpanFull(),
             ]);
     }

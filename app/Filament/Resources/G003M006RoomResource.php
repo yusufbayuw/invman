@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\G003M006RoomResource\Pages;
-use App\Filament\Resources\G003M006RoomResource\RelationManagers;
 use App\Filament\Resources\G003M006RoomResource\RelationManagers\ItemRelationManager;
 use App\Filament\Resources\G003M006RoomResource\RelationManagers\RoomHistoryRelationManager;
 use App\Filament\Resources\G003M006RoomResource\RelationManagers\RoomReservationRelationManager;
@@ -14,17 +13,44 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class G003M006RoomResource extends Resource
 {
     protected static ?string $model = G003M006Room::class;
 
     protected static ?string $navigationGroup = 'Ruangan';
+
     protected static ?string $navigationIcon = 'heroicon-o-map-pin';
+
     protected static ?string $slug = 'room';
+
     protected static ?string $modelLabel = 'Ruangan';
+
     protected static ?string $navigationLabel = 'Ruangan';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    protected static int $globalSearchResultsLimit = 15;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'status', 'unit.name', 'floor.name', 'floor.building.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return [
+            'Unit' => $record->unit?->name ?? '-',
+            'Lokasi' => collect([$record->floor?->building?->name, $record->floor?->name])->filter()->implode(' · ') ?: '-',
+            'Kapasitas' => $record->capacity ? number_format($record->capacity).' orang' : '-',
+            'Status' => $record->status ?? '-',
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['unit', 'floor.building']);
+    }
 
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
     {

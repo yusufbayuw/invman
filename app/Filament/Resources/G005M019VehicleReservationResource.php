@@ -93,12 +93,8 @@ class G005M019VehicleReservationResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
             ]);
     }
 
@@ -125,9 +121,7 @@ class G005M019VehicleReservationResource extends Resource
     {
         return [
             'index' => Pages\ListG005M019VehicleReservations::route('/'),
-            'create' => Pages\CreateG005M019VehicleReservation::route('/create'),
             'view' => Pages\ViewG005M019VehicleReservation::route('/{record}'),
-            'edit' => Pages\EditG005M019VehicleReservation::route('/{record}/edit'),
         ];
     }
 }

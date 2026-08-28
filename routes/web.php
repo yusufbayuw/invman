@@ -6,7 +6,7 @@ use App\Http\Controllers\PublicLoanScheduleController;
 
 Route::get('/', PublicLoanScheduleController::class)->name('public.loan-schedule');
 Route::get('/storage/users-avatar/avatar.png', function () {
-    return response()->file(public_path(config('app.logo')));
+    return response()->file(public_path('images/app/fav.png'));
 })->name('avatar.default');
 Route::get('/login', function () {
     return redirect('/admin/login');

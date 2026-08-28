@@ -45,12 +45,8 @@ class G004M008ActivityPolicy
      */
     public function update(User $user, G004M008Activity $g004M008Activity): bool
     {
-        if ($user->isFacility()) {
-            return true;
-        }
-
-        return $user->belongsToUnit($g004M008Activity->g001_m001_unit_id)
-            && in_array($g004M008Activity->status, ['draft', 'submitted'], true);
+        return $g004M008Activity->status === 'draft'
+            && ($user->isFacility() || $user->belongsToUnit($g004M008Activity->g001_m001_unit_id));
     }
 
     /**

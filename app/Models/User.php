@@ -32,6 +32,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         'email_verified_at',
         'username',
         'password',
+        'avatar',
     ];
 
     /**
@@ -60,7 +61,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     public function getFilamentAvatarUrl(): ?string
     {
         if (blank($this->avatar) || $this->avatar === config('chatify.user_avatar.default')) {
-            return asset(config('app.logo'));
+            return asset('images/app/fav.png');
         }
 
         return Storage::disk(config('chatify.storage_disk_name'))->url(

@@ -26,11 +26,11 @@ class BrandingAndAvatarTest extends TestCase
             ->assertDontSee('Chatify Messenger');
     }
 
-    public function test_default_avatar_uses_local_application_logo(): void
+    public function test_default_avatar_uses_fav_image(): void
     {
         $user = User::factory()->create(['avatar' => 'avatar.png']);
 
-        $this->assertSame(asset(config('app.logo')), $user->getFilamentAvatarUrl());
+        $this->assertSame(asset('images/app/fav.png'), $user->getFilamentAvatarUrl());
 
         $this->get('/storage/users-avatar/avatar.png')
             ->assertOk()

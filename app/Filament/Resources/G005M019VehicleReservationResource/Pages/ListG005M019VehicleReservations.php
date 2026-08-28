@@ -12,8 +12,6 @@ class ListG005M019VehicleReservations extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\CreateAction::make(),
-        ];
+        return [];
     }
 }

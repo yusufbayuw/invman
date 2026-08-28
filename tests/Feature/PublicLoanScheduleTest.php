@@ -27,6 +27,7 @@ class PublicLoanScheduleTest extends TestCase
         $activity = G004M008Activity::query()->create([
             'g001_m001_unit_id' => $unit->id,
             'name' => 'Kegiatan internal',
+            'description' => 'Presentasi hasil kerja tahunan',
             'start_time' => now()->subHour(),
             'end_time' => now()->addHours(3),
             'status' => ReservationStatus::Approved->value,
@@ -92,7 +93,8 @@ class PublicLoanScheduleTest extends TestCase
             ->assertSee('Unit Teknologi Informasi')
             ->assertSee('Sedang Berjalan')
             ->assertSee('Disetujui')
-            ->assertDontSee('Kegiatan internal')
+            ->assertSee('Kegiatan internal')
+            ->assertSee('Presentasi hasil kerja tahunan')
             ->assertDontSee('Barang Masih Menunggu')
             ->assertDontSee('Ruangan Sudah Selesai');
     }

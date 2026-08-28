@@ -1,0 +1,178 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\ReservationStatus;
+use App\Models\G001M001Unit;
+use App\Models\G002M007Item;
+use App\Models\G003M006Room;
+use App\Models\G008M017Vehicle;
+use App\Models\User;
+use App\Services\LoanAvailabilityService;
+use App\Services\LoanRequestService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
+use Tests\TestCase;
+
+class LoanBookingLifecycleTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_active_submitted_hold_blocks_items_rooms_and_vehicles(): void
+    {
+        [$user, $item, $room, $vehicle] = $this->fixtures();
+        $activity = $this->submit($user, $item, $room, $vehicle);
+        $availability = app(LoanAvailabilityService::class);
+
+        $this->assertTrue($activity->hold_expires_at->isFuture());
+        $this->assertSame(3, $availability->availableItemQuantity($item->id, '2026-09-01 10:00', '2026-09-01 11:00'));
+        $this->assertFalse($availability->roomIsAvailable($room->id, now()->parse('2026-09-01 10:00'), now()->parse('2026-09-01 11:00')));
+        $this->assertFalse($availability->vehicleIsAvailable($vehicle->id, now()->parse('2026-09-01 10:00'), now()->parse('2026-09-01 11:00')));
+    }
+
+    public function test_draft_and_elapsed_submitted_holds_do_not_block_availability(): void
+    {
+        [$user, $item, $room, $vehicle] = $this->fixtures();
+        $activity = $this->submit($user, $item, $room, $vehicle);
+        $activity->item_reservation()->first()->updateQuietly(['status' => ReservationStatus::Draft->value]);
+        $activity->updateQuietly(['hold_expires_at' => now()->subMinute()]);
+        $availability = app(LoanAvailabilityService::class);
+
+        $this->assertSame(5, $availability->availableItemQuantity($item->id, '2026-09-01 10:00', '2026-09-01 11:00'));
+        $this->assertTrue($availability->roomIsAvailable($room->id, now()->parse('2026-09-01 10:00'), now()->parse('2026-09-01 11:00')));
+        $this->assertTrue($availability->vehicleIsAvailable($vehicle->id, now()->parse('2026-09-01 10:00'), now()->parse('2026-09-01 11:00')));
+    }
+
+    public function test_expiry_releases_all_pending_needs_and_marks_the_activity_expired(): void
+    {
+        [$user, $item, $room, $vehicle] = $this->fixtures();
+        $activity = $this->submit($user, $item, $room, $vehicle);
+        $activity->updateQuietly(['hold_expires_at' => now()->subMinute()]);
+
+        $this->assertSame(1, app(LoanRequestService::class)->expireStaleHolds());
+
+        $activity->refresh();
+        $this->assertSame(ReservationStatus::Expired->value, $activity->status);
+        $this->assertNotNull($activity->expired_at);
+        $this->assertSame([ReservationStatus::Expired->value], $activity->item_reservation()->distinct()->pluck('status')->all());
+        $this->assertSame([ReservationStatus::Expired->value], $activity->room_reservation()->distinct()->pluck('status')->all());
+        $this->assertSame([ReservationStatus::Expired->value], $activity->vehicle_reservation()->distinct()->pluck('status')->all());
+        $this->assertSame(0, app(LoanRequestService::class)->expireStaleHolds());
+    }
+
+    public function test_expiry_keeps_approved_needs_and_only_releases_pending_needs(): void
+    {
+        [$user, $item, $room, $vehicle] = $this->fixtures();
+        $activity = $this->submit($user, $item, $room, $vehicle);
+        $activity->item_reservation()->first()->update(['status' => ReservationStatus::Approved->value]);
+        $activity->updateQuietly(['hold_expires_at' => now()->subMinute()]);
+
+        app(LoanRequestService::class)->expireStaleHolds();
+
+        $activity->refresh();
+        $this->assertSame(ReservationStatus::PartiallyApproved->value, $activity->status);
+        $this->assertSame(ReservationStatus::Approved->value, $activity->item_reservation()->first()->status);
+        $this->assertSame(ReservationStatus::Expired->value, $activity->room_reservation()->first()->status);
+        $this->assertSame(ReservationStatus::Expired->value, $activity->vehicle_reservation()->first()->status);
+        $this->assertSame(3, app(LoanAvailabilityService::class)->availableItemQuantity($item->id, '2026-09-01 10:00', '2026-09-01 11:00'));
+    }
+
+    public function test_decision_is_rejected_after_the_hold_deadline(): void
+    {
+        [$user, $item, $room, $vehicle] = $this->fixtures();
+        $activity = $this->submit($user, $item, $room, $vehicle);
+        $activity->updateQuietly(['hold_expires_at' => now()->subMinute()]);
+
+        $this->expectException(ValidationException::class);
+        $activity->item_reservation()->first()->update(['status' => ReservationStatus::Approved->value]);
+    }
+
+    public function test_expiry_command_processes_elapsed_holds(): void
+    {
+        [$user, $item, $room, $vehicle] = $this->fixtures();
+        $activity = $this->submit($user, $item, $room, $vehicle);
+        $activity->updateQuietly(['hold_expires_at' => now()->subMinute()]);
+
+        $this->artisan('loans:expire-holds')
+            ->expectsOutput('1 hold peminjaman kedaluwarsa telah diproses.')
+            ->assertSuccessful();
+    }
+
+    public function test_item_availability_follows_the_complete_status_matrix(): void
+    {
+        [$user, $item, $room, $vehicle] = $this->fixtures();
+        $activity = $this->submit($user, $item, $room, $vehicle);
+        $reservation = $activity->item_reservation()->first();
+        $availability = app(LoanAvailabilityService::class);
+        $available = fn (): int => $availability->availableItemQuantity(
+            $item->id,
+            '2026-09-01 10:00',
+            '2026-09-01 11:00',
+        );
+
+        foreach ([
+            ReservationStatus::Submitted,
+            ReservationStatus::Approved,
+            ReservationStatus::PartiallyApproved,
+            ReservationStatus::CheckedOut,
+        ] as $status) {
+            $reservation->updateQuietly(['status' => $status->value]);
+            $this->assertSame(3, $available(), "{$status->value} harus menahan stok.");
+        }
+
+        foreach ([
+            ReservationStatus::Draft,
+            ReservationStatus::Rejected,
+            ReservationStatus::Returned,
+            ReservationStatus::Cancelled,
+            ReservationStatus::Expired,
+        ] as $status) {
+            $reservation->updateQuietly(['status' => $status->value]);
+            $this->assertSame(5, $available(), "{$status->value} harus melepaskan stok.");
+        }
+    }
+
+    private function submit(User $user, G002M007Item $item, G003M006Room $room, G008M017Vehicle $vehicle)
+    {
+        return app(LoanRequestService::class)->submit($user, [
+            'name' => 'Kegiatan terjadwal',
+            'description' => 'Pengujian siklus booking.',
+            'start_time' => '2026-09-01 09:00:00',
+            'end_time' => '2026-09-01 12:00:00',
+            'needs' => [
+                ['type' => 'item', 'item_id' => $item->id, 'quantity' => 2],
+                ['type' => 'room', 'room_id' => $room->id],
+                ['type' => 'vehicle', 'vehicle_id' => $vehicle->id],
+            ],
+        ]);
+    }
+
+    private function fixtures(): array
+    {
+        $unit = G001M001Unit::query()->create(['name' => 'Unit Booking']);
+        $user = User::factory()->create(['g001_m001_unit_id' => $unit->id]);
+        $item = G002M007Item::query()->create([
+            'g001_m001_unit_id' => $unit->id,
+            'name' => 'Proyektor Booking',
+            'is_borrowable' => true,
+            'quantity' => 5,
+            'available_quantity' => 5,
+            'status' => 'tersedia',
+        ]);
+        $room = G003M006Room::query()->create([
+            'g001_m001_unit_id' => $unit->id,
+            'name' => 'Aula Booking',
+            'is_borrowable' => true,
+            'status' => 'tersedia',
+        ]);
+        $vehicle = G008M017Vehicle::query()->create([
+            'g001_m001_unit_id' => $unit->id,
+            'name' => 'Mobil Booking',
+            'license_plate' => 'B 1000 TEST',
+            'is_borrowable' => true,
+            'status' => 'tersedia',
+        ]);
+
+        return [$user, $item, $room, $vehicle];
+    }
+}

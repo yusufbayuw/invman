@@ -14,12 +14,14 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\Model;
 
 class LoanRequestService
 {
-    public function __construct(private readonly LoanAvailabilityService $availability)
-    {
-    }
+    public function __construct(
+        private readonly LoanAvailabilityService $availability,
+        private readonly LoanNotificationService $notifications,
+    ) {}
 
     public function submit(User $user, array $data): G004M008Activity
     {
@@ -32,13 +34,26 @@ class LoanRequestService
         $start = Carbon::parse($data['start_time']);
         $end = Carbon::parse($data['end_time']);
 
+        if ($start->lessThanOrEqualTo(now())) {
+            throw ValidationException::withMessages([
+                'data.start_time' => 'Waktu mulai harus berada di masa mendatang.',
+            ]);
+        }
+
         if (! $end->greaterThan($start)) {
             throw ValidationException::withMessages([
                 'data.end_time' => 'Waktu selesai harus setelah waktu mulai.',
             ]);
         }
 
-        return DB::transaction(function () use ($user, $data, $start, $end) {
+        $this->validateDistinctNeeds($data['needs'] ?? []);
+        $holdExpiresAt = now()->addHours(config('loans.hold_hours'));
+
+        if ($start->lessThan($holdExpiresAt)) {
+            $holdExpiresAt = $start->copy();
+        }
+
+        $activity = DB::transaction(function () use ($user, $data, $start, $end, $holdExpiresAt) {
             $activity = G004M008Activity::query()->create([
                 'user_id' => $user->id,
                 'g001_m001_unit_id' => $user->g001_m001_unit_id,
@@ -49,6 +64,7 @@ class LoanRequestService
                 'end_time' => $end,
                 'attachment' => $data['attachment'] ?? null,
                 'status' => ReservationStatus::Submitted->value,
+                'hold_expires_at' => $holdExpiresAt,
             ]);
 
             foreach (array_values($data['needs'] ?? []) as $index => $need) {
@@ -68,24 +84,35 @@ class LoanRequestService
                 'vehicle_reservation.vehicle',
             ]);
         }, 3);
+
+        $this->notifications->submitted($activity);
+
+        return $activity;
     }
 
     public function cancel(G004M008Activity $activity): void
     {
+        $previousStatus = ReservationStatus::tryFrom($activity->status) ?? ReservationStatus::Submitted;
+
         DB::transaction(function () use ($activity) {
-            $activity->item_reservation()->update(['status' => ReservationStatus::Cancelled->value]);
-            $activity->room_reservation()->update(['status' => ReservationStatus::Cancelled->value]);
-            $activity->vehicle_reservation()->update(['status' => ReservationStatus::Cancelled->value]);
             $activity->update([
                 'status' => ReservationStatus::Cancelled->value,
                 'cancelled_at' => now(),
             ]);
+            $activity->item_reservation()->update(['status' => ReservationStatus::Cancelled->value]);
+            $activity->room_reservation()->update(['status' => ReservationStatus::Cancelled->value]);
+            $activity->vehicle_reservation()->update(['status' => ReservationStatus::Cancelled->value]);
         });
+
+        $this->notifications->statusChanged($activity->fresh(), $previousStatus, ReservationStatus::Cancelled);
     }
 
-    public function syncStatus(G004M008Activity $activity): void
+    public function syncStatus(G004M008Activity $activity, bool $notify = true): void
     {
-        if ($activity->status === ReservationStatus::Cancelled->value) {
+        if (in_array($activity->status, [
+            ReservationStatus::Cancelled->value,
+            ReservationStatus::Expired->value,
+        ], true)) {
             return;
         }
 
@@ -107,14 +134,100 @@ class LoanRequestService
                 && $statuses->contains(fn (string $value) => in_array($value, [
                     ReservationStatus::Rejected->value,
                     ReservationStatus::Cancelled->value,
+                    ReservationStatus::Expired->value,
                 ], true)) => ReservationStatus::PartiallyApproved,
             $statuses->contains(ReservationStatus::Approved->value) => ReservationStatus::Approved,
             $statuses->contains(ReservationStatus::Returned->value) => ReservationStatus::Returned,
             $statuses->every(fn (string $value) => $value === ReservationStatus::Rejected->value) => ReservationStatus::Rejected,
+            $statuses->contains(ReservationStatus::Expired->value) => ReservationStatus::Expired,
             default => ReservationStatus::Cancelled,
         };
 
+        $previousStatus = ReservationStatus::tryFrom($activity->status) ?? ReservationStatus::Submitted;
+
+        if ($previousStatus === $status) {
+            return;
+        }
+
         $activity->updateQuietly(['status' => $status->value]);
+        if ($notify) {
+            $this->notifications->statusChanged($activity->fresh(), $previousStatus, $status);
+        }
+    }
+
+    public function expireStaleHolds(): int
+    {
+        $expired = 0;
+
+        G004M008Activity::query()
+            ->where('status', ReservationStatus::Submitted->value)
+            ->whereNotNull('hold_expires_at')
+            ->where('hold_expires_at', '<=', now())
+            ->orderBy('id')
+            ->chunkById(100, function ($activities) use (&$expired): void {
+                foreach ($activities as $activity) {
+                    if ($this->expirePendingHold($activity)) {
+                        $expired++;
+                    }
+                }
+            });
+
+        return $expired;
+    }
+
+    public function expirePendingHold(G004M008Activity $activity): bool
+    {
+        $previousStatus = ReservationStatus::tryFrom($activity->status) ?? ReservationStatus::Submitted;
+        $changed = DB::transaction(function () use ($activity): bool {
+            $locked = G004M008Activity::query()->lockForUpdate()->find($activity->getKey());
+
+            if (! $locked
+                || $locked->status !== ReservationStatus::Submitted->value
+                || ! $locked->hold_expires_at
+                || $locked->hold_expires_at->isFuture()) {
+                return false;
+            }
+
+            $pending = [ReservationStatus::Draft->value, ReservationStatus::Submitted->value];
+            $affected = 0;
+            $affected += $locked->item_reservation()->whereIn('status', $pending)->update(['status' => ReservationStatus::Expired->value]);
+            $affected += $locked->room_reservation()->whereIn('status', $pending)->update(['status' => ReservationStatus::Expired->value]);
+            $affected += $locked->vehicle_reservation()->whereIn('status', $pending)->update(['status' => ReservationStatus::Expired->value]);
+
+            if ($affected < 1) {
+                return false;
+            }
+
+            $locked->updateQuietly(['expired_at' => now()]);
+            $this->syncStatus($locked, notify: false);
+
+            return true;
+        }, 3);
+
+        if ($changed) {
+            $fresh = $activity->fresh();
+            $newStatus = ReservationStatus::tryFrom($fresh->status) ?? ReservationStatus::Expired;
+            $this->notifications->holdExpired($fresh, $previousStatus, $newStatus);
+        }
+
+        return $changed;
+    }
+
+    public function assertDecisionAllowed(Model $reservation): void
+    {
+        if ($reservation->getOriginal('status') !== ReservationStatus::Submitted->value) {
+            throw ValidationException::withMessages([
+                'status' => 'Hanya kebutuhan yang masih menunggu persetujuan yang dapat diputuskan.',
+            ]);
+        }
+
+        $activity = $reservation->activity;
+
+        if (! $activity || ($activity->hold_expires_at && $activity->hold_expires_at->lessThanOrEqualTo(now()))) {
+            throw ValidationException::withMessages([
+                'status' => 'Masa tahan pengajuan telah berakhir. Muat ulang halaman untuk melihat status terbaru.',
+            ]);
+        }
     }
 
     private function createItemReservation(G004M008Activity $activity, array $need, int $index, Carbon $start, Carbon $end): void
@@ -129,8 +242,7 @@ class LoanRequestService
             ]);
         }
 
-        $stock = (int) ($item->available_quantity ?? $item->quantity ?? 0);
-        $available = max(0, $stock - $this->availability->reservedItemQuantity($itemId, $start, $end));
+        $available = $this->availability->availableItemQuantity($itemId, $start, $end);
 
         if ($quantity > $available) {
             throw ValidationException::withMessages([
@@ -166,6 +278,36 @@ class LoanRequestService
             'end_time' => $end,
             'status' => ReservationStatus::Submitted->value,
         ]);
+    }
+
+    private function validateDistinctNeeds(array $needs): void
+    {
+        $fields = [
+            'item' => 'item_id',
+            'room' => 'room_id',
+            'vehicle' => 'vehicle_id',
+        ];
+        $selected = [];
+
+        foreach (array_values($needs) as $index => $need) {
+            $type = $need['type'] ?? null;
+            $field = $fields[$type] ?? null;
+            $id = $field ? ($need[$field] ?? null) : null;
+
+            if (! $field || blank($id)) {
+                continue;
+            }
+
+            $key = "{$type}:{$id}";
+
+            if (isset($selected[$key])) {
+                throw ValidationException::withMessages([
+                    "data.needs.{$index}.{$field}" => 'Pilihan ini sudah ditambahkan pada baris sebelumnya.',
+                ]);
+            }
+
+            $selected[$key] = true;
+        }
     }
 
     private function createVehicleReservation(G004M008Activity $activity, array $need, int $index, Carbon $start, Carbon $end): void
