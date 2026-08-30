@@ -18,7 +18,6 @@ class FloorSeeder extends Seeder
             'Gedung 91' => ['Lantai 1', 'Lantai 2', 'Lantai 3'],
             'Gedung 93' => ['Lantai 1', 'Lantai 2', 'Lantai 3'],
             'Gedung Setiabudi' => ['Lantai Basement', 'Lantai 1', 'Lantai 2', 'Lantai 3', 'Lantai 4'],
-            'Gedung PHH Mustofa' => ['Lantai 1', 'Lantai 2'],
             'Gedung AH Nasution' => ['Lantai 1'],
             'Gedung Kompas' => ['Lantai 2'],
         ];

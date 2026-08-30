@@ -131,7 +131,12 @@ class G002M007ItemResource extends Resource
                 Forms\Components\TextInput::make('code')
                     ->label('Kode Barang'),
                 Forms\Components\TextInput::make('quantity')
-                    ->label('Jumlah Barang'),
+                    ->label('Jumlah Barang')
+                    ->numeric()
+                    ->minValue(0)
+                    ->required()
+                    ->disabledOn('edit')
+                    ->helperText('Setelah dibuat, jumlah mengikuti data Barang Satuan.'),
                 Forms\Components\Toggle::make('is_borrowable')
                     ->label('Dapat Dipinjam')
                     ->inlineLabel(),
@@ -189,11 +194,7 @@ class G002M007ItemResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array

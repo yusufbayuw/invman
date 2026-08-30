@@ -3,10 +3,10 @@
 namespace App\Filament\Resources\G004M008ActivityResource\RelationManagers;
 
 use App\Enums\ReservationStatus;
-use App\Services\LoanAvailabilityService;
 use App\Models\G002M007Item;
 use App\Models\G005M009ItemReservation;
-use App\Services\LoanNotificationService;
+use App\Services\LoanAvailabilityService;
+use App\Services\LoanRequestService;
 use Coolsam\Flatpickr\Forms\Components\Flatpickr;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -181,11 +181,9 @@ class ItemReservationRelationManager extends RelationManager
                         && Auth::user()->managesReservation($record)
                     ))
                     ->icon('heroicon-o-check-circle')
-                    ->action(function ($record) {
-                        $record->status = ReservationStatus::Approved->value;
-                        $record->save();
-                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Approved, $record->item?->name ?? 'barang');
-                    }),
+                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
+                        'item', $record->getKey(), ReservationStatus::Approved,
+                    )),
                 Tables\Actions\Action::make('ditolak')
                     ->label('Tolak')
                     ->color('danger')
@@ -202,35 +200,27 @@ class ItemReservationRelationManager extends RelationManager
                         && Auth::user()->managesReservation($record)
                     ))
                     ->icon('heroicon-o-x-circle')
-                    ->action(function ($record, array $data) {
-                        $record->status = ReservationStatus::Rejected->value;
-                        $record->rejection_reason = $data['rejection_reason'];
-                        $record->save();
-                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Rejected, $record->item?->name ?? 'barang');
-                    }),
+                    ->action(fn ($record, array $data) => app(LoanRequestService::class)->processReservation(
+                        'item', $record->getKey(), ReservationStatus::Rejected, $data['rejection_reason'],
+                    )),
                 Tables\Actions\Action::make('serahkan')
                     ->label('Pinjamkan')
                     ->color('info')
                     ->icon('heroicon-o-arrow-right-circle')
                     ->visible(fn ($record): bool => $record->status === ReservationStatus::Approved->value
                         && Auth::user()?->managesReservation($record))
-                    ->action(function ($record) {
-                        $record->status = ReservationStatus::CheckedOut->value;
-                        $record->save();
-                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::CheckedOut, $record->item?->name ?? 'barang');
-                    }),
+                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
+                        'item', $record->getKey(), ReservationStatus::CheckedOut,
+                    )),
                 Tables\Actions\Action::make('dikembalikan')
                     ->label('Konfirmasi Pengembalian')
                     ->color('warning')
                     ->visible(fn ($record): bool => $record->status === ReservationStatus::ReturnRequested->value
                         && Auth::user()?->managesReservation($record))
                     ->icon('heroicon-o-arrow-uturn-left')
-                    ->action(function ($record) {
-                        $record->status = ReservationStatus::Returned->value;
-                        $record->returned_at = now();
-                        $record->save();
-                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Returned, $record->item?->name ?? 'barang');
-                    }),
+                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
+                        'item', $record->getKey(), ReservationStatus::Returned,
+                    )),
                 Tables\Actions\EditAction::make()
                     ->visible(fn () => Auth::user()?->isFacility()
                         && $this->ownerRecord->status === ReservationStatus::Draft->value),

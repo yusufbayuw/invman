@@ -17,7 +17,6 @@ class GedungSeeder extends Seeder
             'Gedung 91' => 'Jl. L.L.R.E. Martadinata 91, Bandung',
             'Gedung 93' => 'Jl. L.L.R.E. Martadinata 93, Bandung',
             'Gedung Setiabudi' => 'Jl. Setiabudi 122A, Bandung',
-            'Gedung PHH Mustofa' => 'Jl. P.H.H. Mustofa 55, Bandung',
             'Gedung AH Nasution' => 'Jl. Raya Ujung Berung 15e, Bandung',
             'Gedung Kompas' => 'Jl. L.L.R.E. Martadinata 46, Bandung',
         ];

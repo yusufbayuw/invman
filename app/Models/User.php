@@ -4,23 +4,23 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-use Filament\Panel;
-use Spatie\Permission\Traits\HasRoles;
-use Illuminate\Notifications\Notifiable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Filament\Panel;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, HasAvatar
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -62,12 +62,23 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
 
     public function getFilamentAvatarUrl(): ?string
     {
-        if (blank($this->avatar) || $this->avatar === config('chatify.user_avatar.default')) {
+        $avatar = $this->avatar;
+        $defaultAvatar = config('chatify.user_avatar.default');
+
+        if (blank($avatar) || $avatar === $defaultAvatar) {
             return asset('images/app/fav.png');
         }
 
+        if (filter_var($avatar, FILTER_VALIDATE_URL)) {
+            $path = parse_url($avatar, PHP_URL_PATH);
+
+            return basename((string) $path) === $defaultAvatar
+                ? asset('images/app/fav.png')
+                : $avatar;
+        }
+
         return Storage::disk(config('chatify.storage_disk_name'))->url(
-            config('chatify.user_avatar.folder') . '/' . $this->avatar,
+            config('chatify.user_avatar.folder').'/'.$avatar,
         );
     }
 
@@ -145,26 +156,32 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     {
         return $this->hasMany(G004M008Activity::class, 'user_id');
     }
+
     public function item_history(): HasMany
     {
         return $this->hasMany(G007M013ItemHistory::class, 'user_id');
     }
+
     public function room_history(): HasMany
     {
         return $this->hasMany(G007M014RoomHistory::class, 'user_id');
     }
+
     public function vehicle_review(): HasMany
     {
         return $this->hasMany(G006M020VehicleReview::class, 'user_id');
     }
+
     public function vehicle_history(): HasMany
     {
         return $this->hasMany(G007M021VehicleHistory::class, 'user_id');
     }
+
     public function item_instance_checklist(): HasMany
     {
         return $this->hasMany(G009M022ItemInstanceChecklist::class, 'user_id');
     }
+
     public function unit(): BelongsTo
     {
         return $this->belongsTo(G001M001Unit::class, 'g001_m001_unit_id');

@@ -3,9 +3,9 @@
 namespace App\Filament\Resources\G004M008ActivityResource\RelationManagers;
 
 use App\Enums\ReservationStatus;
-use App\Services\LoanAvailabilityService;
 use App\Models\G005M019VehicleReservation;
-use App\Services\LoanNotificationService;
+use App\Services\LoanAvailabilityService;
+use App\Services\LoanRequestService;
 use Coolsam\Flatpickr\Forms\Components\Flatpickr;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -91,11 +91,11 @@ class VehicleReservationRelationManager extends RelationManager
                                 }
 
                                 $overlap = G005M019VehicleReservation::where('g008_m017_vehicle_id', $value)
-                                ->where(fn (Builder $query) => app(LoanAvailabilityService::class)->applyBlockingScope($query))
+                                    ->where(fn (Builder $query) => app(LoanAvailabilityService::class)->applyBlockingScope($query))
                                     ->where(function ($query) use ($startTime, $endTime) {
                                         $query->where(function ($q) use ($startTime, $endTime) {
-                                        $q->where('start_time', '<', $endTime)
-                                            ->where('end_time', '>', $startTime);
+                                            $q->where('start_time', '<', $endTime)
+                                                ->where('end_time', '>', $startTime);
                                         });
                                     })
                                     ->exists();
@@ -153,11 +153,11 @@ class VehicleReservationRelationManager extends RelationManager
                                 }
 
                                 $overlap = G005M019VehicleReservation::where('g008_m018_driver_id', $value)
-                                ->where(fn (Builder $query) => app(LoanAvailabilityService::class)->applyBlockingScope($query))
+                                    ->where(fn (Builder $query) => app(LoanAvailabilityService::class)->applyBlockingScope($query))
                                     ->where(function ($query) use ($startTime, $endTime) {
                                         $query->where(function ($q) use ($startTime, $endTime) {
-                                        $q->where('start_time', '<', $endTime)
-                                            ->where('end_time', '>', $startTime);
+                                            $q->where('start_time', '<', $endTime)
+                                                ->where('end_time', '>', $startTime);
                                         });
                                     })
                                     ->exists();
@@ -194,7 +194,7 @@ class VehicleReservationRelationManager extends RelationManager
                     ->minDate(\Carbon\Carbon::parse($this->ownerRecord->start_time)->subMinute() ?? $this->ownerRecord->start_time)
                     ->maxDate(\Carbon\Carbon::parse($this->ownerRecord->end_time)->addMinute() ?? $this->ownerRecord->start_time),
                 Forms\Components\Hidden::make('status')
-                    ->default(ReservationStatus::Submitted->value),
+                    ->default(fn (): string => $this->ownerRecord->status),
             ]);
     }
 
@@ -253,11 +253,9 @@ class VehicleReservationRelationManager extends RelationManager
                     ->visible(fn ($record): bool => $record->status === ReservationStatus::Submitted->value
                         && (! $record->activity?->hold_expires_at || $record->activity->hold_expires_at->isFuture())
                         && Auth::user()?->managesReservation($record))
-                    ->action(function ($record) {
-                        $record->status = ReservationStatus::Approved->value;
-                        $record->save();
-                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Approved, $record->vehicle?->name ?? 'kendaraan');
-                    }),
+                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
+                        'vehicle', $record->getKey(), ReservationStatus::Approved,
+                    )),
                 Tables\Actions\Action::make('reject')
                     ->label('Tolak')
                     ->color('danger')
@@ -271,35 +269,27 @@ class VehicleReservationRelationManager extends RelationManager
                     ->visible(fn ($record): bool => $record->status === ReservationStatus::Submitted->value
                         && (! $record->activity?->hold_expires_at || $record->activity->hold_expires_at->isFuture())
                         && Auth::user()?->managesReservation($record))
-                    ->action(function ($record, array $data) {
-                        $record->status = ReservationStatus::Rejected->value;
-                        $record->rejection_reason = $data['rejection_reason'];
-                        $record->save();
-                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Rejected, $record->vehicle?->name ?? 'kendaraan');
-                    }),
+                    ->action(fn ($record, array $data) => app(LoanRequestService::class)->processReservation(
+                        'vehicle', $record->getKey(), ReservationStatus::Rejected, $data['rejection_reason'],
+                    )),
                 Tables\Actions\Action::make('checkout')
                     ->label('Pinjamkan')
                     ->color('info')
                     ->icon('heroicon-o-arrow-right-circle')
                     ->visible(fn ($record): bool => $record->status === ReservationStatus::Approved->value
                         && Auth::user()?->managesReservation($record))
-                    ->action(function ($record) {
-                        $record->status = ReservationStatus::CheckedOut->value;
-                        $record->save();
-                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::CheckedOut, $record->vehicle?->name ?? 'kendaraan');
-                    }),
+                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
+                        'vehicle', $record->getKey(), ReservationStatus::CheckedOut,
+                    )),
                 Tables\Actions\Action::make('return')
                     ->label('Konfirmasi Pengembalian')
                     ->color('warning')
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->visible(fn ($record): bool => $record->status === ReservationStatus::ReturnRequested->value
                         && Auth::user()?->managesReservation($record))
-                    ->action(function ($record) {
-                        $record->status = ReservationStatus::Returned->value;
-                        $record->returned_at = now();
-                        $record->save();
-                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Returned, $record->vehicle?->name ?? 'kendaraan');
-                    }),
+                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
+                        'vehicle', $record->getKey(), ReservationStatus::Returned,
+                    )),
                 Tables\Actions\EditAction::make()
                     ->visible(fn () => Auth::user()?->isFacility()
                         && $this->ownerRecord->status === ReservationStatus::Draft->value),

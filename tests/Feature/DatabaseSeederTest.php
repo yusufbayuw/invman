@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Enums\ReservationStatus;
 use App\Models\G001M001Unit;
 use App\Models\G002M007Item;
 use App\Models\G002M015ItemInstance;
@@ -18,7 +17,7 @@ class DatabaseSeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_database_seeder_creates_complete_demo_data_and_is_idempotent(): void
+    public function test_database_seeder_creates_reference_data_and_is_idempotent(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->seed(DatabaseSeeder::class);
@@ -27,19 +26,18 @@ class DatabaseSeederTest extends TestCase
         $this->assertSame(8, User::query()->count());
         $this->assertTrue(Hash::check('password', User::query()->where('username', 'admin')->firstOrFail()->password));
         $this->assertTrue(Hash::check('password', User::query()->where('username', 'sarpras.sd')->firstOrFail()->password));
-        $this->assertSame(4, G002M007Item::query()->count());
-        $this->assertSame(15, G002M015ItemInstance::query()->count());
-        $this->assertSame(15, G002M015ItemInstance::query()->where('is_borrowable', true)->count());
-        $this->assertSame(2, G008M017Vehicle::query()->count());
-        $this->assertSame(2, G004M008Activity::query()->count());
-
-        $this->assertDatabaseHas('g004_m008_activities', [
-            'name' => '[DEMO] Rapat Koordinasi SD',
-            'status' => ReservationStatus::Approved->value,
-        ]);
-        $this->assertDatabaseHas('g004_m008_activities', [
-            'name' => '[DEMO] Kunjungan Belajar SMP',
-            'status' => ReservationStatus::Submitted->value,
-        ]);
+        $this->assertSame(0, G002M007Item::query()->count());
+        $this->assertSame(0, G002M015ItemInstance::query()->count());
+        $this->assertSame(7, G008M017Vehicle::query()->count());
+        $this->assertSame([
+            'D 1052 FTB' => 'INNOVA SILVER',
+            'D 1152 FTB' => 'RUSH',
+            'D 1505 ABD' => 'INNOVA PUTIH',
+            'D 7052 FB' => 'HIACE',
+            'D 7292 AS' => 'BUS 01',
+            'D 7293 AS' => 'BUS 02',
+            'D 7294 AS' => 'BUS 03',
+        ], G008M017Vehicle::query()->orderBy('license_plate')->pluck('name', 'license_plate')->all());
+        $this->assertSame(0, G004M008Activity::query()->count());
     }
 }

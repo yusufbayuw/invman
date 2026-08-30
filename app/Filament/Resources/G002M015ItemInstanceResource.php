@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\G002M015ItemInstanceResource\Pages;
-use App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers;
 use App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers\ItemHistoryRelationManager;
 use App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers\ItemReservationDetailRelationManager;
 use App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers\ItemReviewRelationManager;
@@ -13,17 +12,19 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class G002M015ItemInstanceResource extends Resource
 {
     protected static ?string $model = G002M015ItemInstance::class;
 
     protected static ?string $navigationGroup = 'Barang';
+
     protected static ?string $navigationIcon = 'heroicon-o-check-circle';
+
     protected static ?string $slug = 'item-instance';
+
     protected static ?string $modelLabel = 'Barang Satuan';
+
     protected static ?string $navigationLabel = 'Barang Satuan';
 
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
@@ -56,7 +57,7 @@ class G002M015ItemInstanceResource extends Resource
                         \Filament\Infolists\Components\TextEntry::make('updated_at')
                             ->label('Diperbarui pada')
                             ->dateTime(),
-                    ])
+                    ]),
                 ])->from('md')->columnSpanFull(),
             ]);
     }
@@ -67,10 +68,15 @@ class G002M015ItemInstanceResource extends Resource
             ->schema([
                 Forms\Components\Select::make('g002_m007_item_id')
                     ->relationship('item', 'name')
-                    ->searchable(),
+                    ->searchable()
+                    ->required(),
+                Forms\Components\TextInput::make('name'),
                 Forms\Components\TextInput::make('code'),
                 Forms\Components\TextInput::make('status'),
-                Forms\Components\Toggle::make('is_available'),
+                Forms\Components\Toggle::make('is_available')
+                    ->default(true),
+                Forms\Components\Toggle::make('is_borrowable')
+                    ->default(true),
             ]);
     }
 
@@ -113,9 +119,7 @@ class G002M015ItemInstanceResource extends Resource
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // Histori barang satuan dipertahankan; nonaktifkan status pinjam untuk memensiunkan aset.
             ]);
     }
 

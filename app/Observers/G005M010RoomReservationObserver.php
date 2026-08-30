@@ -5,12 +5,29 @@ namespace App\Observers;
 use App\Enums\ReservationStatus;
 use App\Models\G005M010RoomReservation;
 use App\Services\LoanRequestService;
+use Illuminate\Validation\ValidationException;
 
 class G005M010RoomReservationObserver
 {
+    public function creating(G005M010RoomReservation $reservation): void
+    {
+        $reservation->status ??= $reservation->activity?->status === ReservationStatus::Draft->value
+            ? ReservationStatus::Draft->value
+            : ReservationStatus::Submitted->value;
+    }
+
     public function updating(G005M010RoomReservation $reservation): void
     {
         $this->recordDecision($reservation);
+    }
+
+    public function deleting(G005M010RoomReservation $reservation): void
+    {
+        if ($reservation->status !== ReservationStatus::Draft->value) {
+            throw ValidationException::withMessages([
+                'status' => 'Reservasi yang sudah diajukan tidak boleh dihapus.',
+            ]);
+        }
     }
 
     /**
@@ -18,11 +35,6 @@ class G005M010RoomReservationObserver
      */
     public function created(G005M010RoomReservation $g005M010RoomReservation): void
     {
-        if (! $g005M010RoomReservation->status) {
-            $g005M010RoomReservation->status = ReservationStatus::Submitted->value;
-            $g005M010RoomReservation->saveQuietly();
-        }
-
         if ($g005M010RoomReservation->activity) {
             app(LoanRequestService::class)->syncStatus($g005M010RoomReservation->activity);
         }

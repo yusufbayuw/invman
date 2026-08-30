@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
             FloorSeeder::class,
             RoomSeeder::class,
             UserSeeder::class,
-            DemoDataSeeder::class,
+            VehicleSeeder::class,
         ]);
     }
 }

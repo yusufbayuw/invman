@@ -41,6 +41,8 @@ Kata sandi dapat diganti sebelum seeding dengan mengatur `SEEDED_USER_PASSWORD` 
 
 Untuk database pengembangan yang boleh dikosongkan sepenuhnya, gunakan `php artisan migrate:fresh --seed`. Perintah tersebut menghapus seluruh data lama.
 
+Sebelum membuka aplikasi, konfigurasi dan terbitkan token mengikuti [panduan lisensi offline](docs/LISENSI.md). Aplikasi akan mengembalikan HTTP 423 sampai allowlist dan token valid untuk host yang digunakan.
+
 ## Data yang dibuat seeder
 
 Seeder aman dijalankan ulang dan menyediakan:
@@ -48,11 +50,9 @@ Seeder aman dijalankan ulang dan menyediakan:
 - 7 unit, 3 peran, dan 8 akun uji;
 - 6 jenis barang dan 4 pengelola barang;
 - 7 gedung, 20 lantai, dan 5 ruangan;
-- 4 jenis inventaris dengan total 15 instance barang;
-- 2 kendaraan yang dapat dipinjam;
-- 1 contoh peminjaman yang sudah disetujui dan 1 contoh pengajuan yang masih menunggu keputusan.
+- 7 kendaraan operasional yang dapat dipinjam.
 
-Data contoh diberi awalan `[DEMO]` agar mudah dibedakan dari data operasional.
+Seeder tidak membuat barang, aktivitas, atau transaksi peminjaman contoh.
 
 ## Tata cara penggunaan
 
@@ -100,6 +100,7 @@ Scheduler Laravel wajib aktif di produksi agar status dan notifikasi kedaluwarsa
 
 - Ubah seluruh kata sandi awal.
 - Set `APP_ENV=production`, `APP_DEBUG=false`, dan `APP_URL` yang benar.
+- Pastikan `php artisan license:status` menampilkan `VALID`.
 - Pastikan database sudah dicadangkan sebelum migrasi.
 - Konfigurasikan queue, mail, storage publik, serta Reverb/Chatify jika fitur percakapan real-time digunakan.
 - Pastikan Laravel scheduler aktif untuk memproses hold peminjaman yang kedaluwarsa.

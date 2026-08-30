@@ -14,7 +14,6 @@ class EditG002M015ItemInstance extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
-            Actions\DeleteAction::make(),
         ];
     }
 }

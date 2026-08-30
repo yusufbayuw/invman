@@ -4,15 +4,61 @@ namespace App\Observers;
 
 use App\Models\G002M007Item;
 use App\Models\G002M015ItemInstance;
+use Illuminate\Validation\ValidationException;
 
 class G002M007ItemObserver
 {
+    public function deleting(G002M007Item $item): void
+    {
+        $hasInstanceHistory = $item->item_instance()
+            ->where(function ($query): void {
+                $query
+                    ->whereHas('item_reservation_detail')
+                    ->orWhereHas('item_history')
+                    ->orWhereHas('item_review')
+                    ->orWhereHas('item_instance_checklist');
+            })
+            ->exists();
+
+        if ($item->item_reservation()->exists() || $hasInstanceHistory) {
+            throw ValidationException::withMessages([
+                'item' => 'Barang yang memiliki reservasi atau histori tidak boleh dihapus. Nonaktifkan opsi Dapat Dipinjam.',
+            ]);
+        }
+    }
+
+    public function creating(G002M007Item $item): void
+    {
+        if (blank($item->quantity)) {
+            $item->quantity = 0;
+
+            return;
+        }
+
+        if (! is_numeric($item->quantity) || (int) $item->quantity < 0) {
+            throw ValidationException::withMessages([
+                'quantity' => 'Jumlah barang harus berupa angka nol atau lebih.',
+            ]);
+        }
+    }
+
+    public function updating(G002M007Item $item): void
+    {
+        if ($item->isDirty('quantity')) {
+            throw ValidationException::withMessages([
+                'quantity' => 'Jumlah barang dikelola melalui data Barang Satuan.',
+            ]);
+        }
+    }
+
     /**
      * Handle the G002M007Item "created" event.
      */
     public function created(G002M007Item $g002M007Item): void
     {
-        $g002M007Item->available_quantity = $g002M007Item->quantity;
+        $g002M007Item->available_quantity = $g002M007Item->is_borrowable
+            ? $g002M007Item->quantity
+            : 0;
         $g002M007Item->status = 'tersedia';
         $g002M007Item->saveQuietly();
         // create item instance based on item quantity
@@ -38,9 +84,11 @@ class G002M007ItemObserver
         // when item's code or name is updated, update all related item instances with number addition
         // check isDirty to avoid unnecessary updates
         if ($g002M007Item->isDirty(['code', 'name'])) {
-            $itemInstances = G002M015ItemInstance::where('g002_m007_item_id', $g002M007Item->id)->get();
+            $itemInstances = G002M015ItemInstance::where('g002_m007_item_id', $g002M007Item->id)
+                ->orderBy('id')
+                ->get();
             foreach ($itemInstances as $index => $instance) {
-                $instance->update([
+                $instance->updateQuietly([
                     'name' => $g002M007Item->name.' '.($index + 1),
                     'code' => $g002M007Item->code.'-'.($index + 1),
                 ]);

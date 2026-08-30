@@ -24,9 +24,9 @@ class RoomSeeder extends Seeder
         $unit = G001M001Unit::query()->where('name', 'ADM')->firstOrFail();
 
         $rooms = [
-            ['floor' => 'Lantai 1', 'name' => 'Lorong Server', 'is_borrowable' => false, 'capacity' => 30],
-            ['floor' => 'Lantai 1', 'name' => 'Ruang Server', 'is_borrowable' => false, 'capacity' => 30],
-            ['floor' => 'Lantai 1', 'name' => 'Ruang CCTV', 'is_borrowable' => false, 'capacity' => 30],
+            ['floor' => 'Lantai 1', 'name' => 'Lorong Server', 'is_borrowable' => false, 'capacity' => 2],
+            ['floor' => 'Lantai 1', 'name' => 'Ruang Server', 'is_borrowable' => false, 'capacity' => 2],
+            ['floor' => 'Lantai 1', 'name' => 'Ruang CCTV', 'is_borrowable' => false, 'capacity' => 4],
             ['floor' => 'Lantai 1', 'name' => 'Aula Lantai 1', 'is_borrowable' => true, 'capacity' => 150],
             ['floor' => 'Lantai 2', 'name' => 'Aula Lantai 2', 'is_borrowable' => true, 'capacity' => 300],
         ];

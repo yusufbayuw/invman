@@ -6,6 +6,13 @@ use App\Models\G009M022ItemInstanceChecklist;
 
 class G009M022ItemInstanceChecklistObserver
 {
+    public function creating(G009M022ItemInstanceChecklist $checklist): void
+    {
+        if ($this->containsInspection($checklist)) {
+            $this->stampInspection($checklist);
+        }
+    }
+
     /**
      * Handle the G009M022ItemInstanceChecklist "created" event.
      */
@@ -17,11 +24,11 @@ class G009M022ItemInstanceChecklistObserver
     /**
      * Handle the G009M022ItemInstanceChecklist "updated" event.
      */
-    public function updated(G009M022ItemInstanceChecklist $g009M022ItemInstanceChecklist): void
+    public function updating(G009M022ItemInstanceChecklist $checklist): void
     {
-        $g009M022ItemInstanceChecklist->user_id = auth()->user()->id;
-        $g009M022ItemInstanceChecklist->checklist_date = now();
-        $g009M022ItemInstanceChecklist->saveQuietly();
+        if (! $checklist->checklist_date && $checklist->isDirty(['is_ok', 'photo', 'notes'])) {
+            $this->stampInspection($checklist);
+        }
     }
 
     /**
@@ -46,5 +53,18 @@ class G009M022ItemInstanceChecklistObserver
     public function forceDeleted(G009M022ItemInstanceChecklist $g009M022ItemInstanceChecklist): void
     {
         //
+    }
+
+    private function containsInspection(G009M022ItemInstanceChecklist $checklist): bool
+    {
+        return array_key_exists('is_ok', $checklist->getAttributes())
+            || filled($checklist->photo)
+            || filled($checklist->notes);
+    }
+
+    private function stampInspection(G009M022ItemInstanceChecklist $checklist): void
+    {
+        $checklist->user_id ??= auth()->id();
+        $checklist->checklist_date ??= now();
     }
 }

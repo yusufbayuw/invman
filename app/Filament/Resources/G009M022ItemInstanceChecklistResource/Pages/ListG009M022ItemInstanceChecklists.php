@@ -26,7 +26,7 @@ class ListG009M022ItemInstanceChecklists extends ListRecords
                 ->action(function () {
                     $instanceAll = G002M015ItemInstance::all();
                     foreach ($instanceAll as $instance) {
-                        G009M022ItemInstanceChecklist::updateOrCreate(
+                        G009M022ItemInstanceChecklist::firstOrCreate(
                             [
                                 'g002_m015_item_instance_id' => $instance->id,
                                 'date' => now()->startOfMonth(),

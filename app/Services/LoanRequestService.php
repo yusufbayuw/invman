@@ -10,18 +10,20 @@ use App\Models\G005M009ItemReservation;
 use App\Models\G005M010RoomReservation;
 use App\Models\G005M019VehicleReservation;
 use App\Models\G008M017Vehicle;
-use App\Models\User;
+use App\Models\LoanRequestChecklist;
 use App\Models\LoanReservationStatusHistory;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Database\Eloquent\Model;
 
 class LoanRequestService
 {
     public function __construct(
         private readonly LoanAvailabilityService $availability,
         private readonly LoanNotificationService $notifications,
+        private readonly ItemReservationAllocationService $itemAllocations,
     ) {}
 
     public function submit(User $user, array $data): G004M008Activity
@@ -153,7 +155,7 @@ class LoanRequestService
         $this->notifications->statusChanged($activity->fresh(), $previousStatus, ReservationStatus::Cancelled);
     }
 
-    public function requestReturn(G004M008Activity $activity): void
+    public function requestReturn(G004M008Activity $activity, ?array $checklistData = null): void
     {
         $user = auth()->user();
 
@@ -161,14 +163,42 @@ class LoanRequestService
             throw ValidationException::withMessages(['status' => 'Hanya unit pemohon yang dapat mengajukan pengembalian.']);
         }
 
-        $changed = DB::transaction(function () use ($activity, $user): int {
+        $changed = DB::transaction(function () use ($activity, $checklistData, $user): int {
+            $locked = G004M008Activity::query()->lockForUpdate()->findOrFail($activity->getKey());
+
+            if ($checklistData !== null) {
+                $conditionIsGood = (bool) ($checklistData['is_ok'] ?? false);
+
+                if (! $conditionIsGood && blank($checklistData['notes'] ?? null)) {
+                    throw ValidationException::withMessages([
+                        'checklist.notes' => 'Catatan kerusakan atau masalah wajib diisi jika kondisi aset tidak baik.',
+                    ]);
+                }
+
+                LoanRequestChecklist::query()->updateOrCreate(
+                    ['g004_m008_activity_id' => $locked->id, 'stage' => 'return'],
+                    [
+                        'user_id' => $user->id,
+                        'is_ok' => $conditionIsGood,
+                        'notes' => $checklistData['notes'] ?? null,
+                        'photo' => $checklistData['photo'] ?? null,
+                    ],
+                );
+            }
+
+            if (! $locked->return_checklist()->exists()) {
+                throw ValidationException::withMessages([
+                    'checklist' => 'Checklist kondisi aset wajib diisi sebelum mengajukan pengembalian.',
+                ]);
+            }
+
             $count = $this->transitionReservations(
-                $activity,
+                $locked,
                 [ReservationStatus::CheckedOut],
                 ReservationStatus::ReturnRequested,
                 $user,
             );
-            $this->syncStatus($activity->fresh(), notify: false);
+            $this->syncStatus($locked->fresh(), notify: false);
 
             return $count;
         }, 3);
@@ -184,36 +214,76 @@ class LoanRequestService
         ReservationStatus $status,
         ?string $rejectionReason = null,
     ): void {
-        $reservation = match ($type) {
-            'item' => G005M009ItemReservation::query()->findOrFail($reservationId),
-            'room' => G005M010RoomReservation::query()->findOrFail($reservationId),
-            'vehicle' => G005M019VehicleReservation::query()->findOrFail($reservationId),
+        $modelClass = match ($type) {
+            'item' => G005M009ItemReservation::class,
+            'room' => G005M010RoomReservation::class,
+            'vehicle' => G005M019VehicleReservation::class,
             default => throw ValidationException::withMessages(['status' => 'Jenis kebutuhan tidak valid.']),
         };
 
-        if (! auth()->user()?->managesReservation($reservation)) {
-            throw ValidationException::withMessages([
-                'status' => 'Hanya user yang ditetapkan pada Pengelola Barang aset ini yang dapat memproses peminjaman.',
-            ]);
-        }
+        $activityId = $modelClass::query()
+            ->whereKey($reservationId)
+            ->value('g004_m008_activity_id');
 
-        $reservation->status = $status->value;
+        $name = DB::transaction(function () use ($activityId, $modelClass, $rejectionReason, $reservationId, $status, $type): string {
+            if ($activityId) {
+                G004M008Activity::query()->lockForUpdate()->findOrFail($activityId);
+            }
 
-        if ($status === ReservationStatus::Rejected) {
-            $reservation->rejection_reason = $rejectionReason;
-        }
+            $reservation = $modelClass::query()->lockForUpdate()->findOrFail($reservationId);
 
-        if ($status === ReservationStatus::Returned) {
-            $reservation->returned_at = now();
-        }
+            if ($activityId && $reservation->g004_m008_activity_id !== $activityId) {
+                throw ValidationException::withMessages([
+                    'status' => 'Data pengajuan berubah saat diproses. Muat ulang halaman dan coba kembali.',
+                ]);
+            }
 
-        $reservation->save();
+            if (! auth()->user()?->managesReservation($reservation)) {
+                throw ValidationException::withMessages([
+                    'status' => 'Hanya user yang ditetapkan pada Pengelola Barang aset ini yang dapat memproses peminjaman.',
+                ]);
+            }
 
-        $name = match ($type) {
-            'item' => $reservation->item?->name ?? 'barang',
-            'room' => $reservation->room?->name ?? 'ruangan',
-            'vehicle' => $reservation->vehicle?->name ?? 'kendaraan',
-        };
+            $reservation->status = $status->value;
+
+            if ($reservation instanceof G005M009ItemReservation && $status === ReservationStatus::CheckedOut) {
+                $this->itemAllocations->allocate($reservation);
+            }
+
+            if ($status === ReservationStatus::Rejected) {
+                $reservation->rejection_reason = $rejectionReason;
+            }
+
+            if ($status === ReservationStatus::Returned) {
+                $reservation->returned_at = now();
+            }
+
+            $reservation->save();
+
+            if ($status === ReservationStatus::Returned) {
+                $conditionIsGood = (bool) $reservation->activity?->return_checklist?->is_ok;
+
+                if ($reservation instanceof G005M009ItemReservation) {
+                    $this->itemAllocations->release($reservation, $conditionIsGood);
+                } elseif (! $conditionIsGood) {
+                    $asset = match (true) {
+                        $reservation instanceof G005M010RoomReservation => $reservation->room,
+                        $reservation instanceof G005M019VehicleReservation => $reservation->vehicle,
+                    };
+
+                    $asset?->update([
+                        'is_borrowable' => false,
+                        'status' => 'perlu_perbaikan',
+                    ]);
+                }
+            }
+
+            return match ($type) {
+                'item' => $reservation->item?->name ?? 'barang',
+                'room' => $reservation->room?->name ?? 'ruangan',
+                'vehicle' => $reservation->vehicle?->name ?? 'kendaraan',
+            };
+        }, 3);
 
         $this->notifications->sendStatusToast($status, $name);
     }
@@ -403,6 +473,12 @@ class LoanRequestService
         };
 
         if (in_array($to, [ReservationStatus::Approved, ReservationStatus::Rejected], true)) {
+            if ($to === ReservationStatus::Rejected && blank($reservation->rejection_reason)) {
+                throw ValidationException::withMessages([
+                    'rejection_reason' => 'Alasan penolakan wajib diisi.',
+                ]);
+            }
+
             $reservation->decision_by = $user->id;
             $reservation->decision_at = now();
 

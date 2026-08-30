@@ -23,19 +23,23 @@ class LoanAvailabilityService
         [$start, $end] = $period;
         $reserved = G005M009ItemReservation::query()
             ->selectRaw('g002_m007_item_id, COALESCE(SUM(quantity), 0) as reserved_quantity')
-            ->where(fn (Builder $query) => $this->applyBlockingScope($query))
-            ->where('start_time', '<', $end)
-            ->where('end_time', '>', $start)
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
             ->groupBy('g002_m007_item_id')
             ->pluck('reserved_quantity', 'g002_m007_item_id');
 
         return G002M007Item::query()
             ->where('is_borrowable', true)
             ->with('unit')
+            ->withCount([
+                'item_instance',
+                'item_instance as borrowable_instance_count' => fn (Builder $query) => $query->where('is_borrowable', true),
+            ])
             ->orderBy('name')
             ->get()
             ->mapWithKeys(function (G002M007Item $item) use ($reserved) {
-                $stock = (int) ($item->available_quantity ?? $item->quantity ?? 0);
+                $stock = $item->item_instance_count > 0
+                    ? (int) $item->borrowable_instance_count
+                    : (int) ($item->quantity ?? 0);
                 $available = max(0, $stock - (int) ($reserved[$item->id] ?? 0));
 
                 if ($available < 1) {
@@ -100,9 +104,7 @@ class LoanAvailabilityService
     {
         return (int) G005M009ItemReservation::query()
             ->where('g002_m007_item_id', $itemId)
-            ->where(fn (Builder $query) => $this->applyBlockingScope($query))
-            ->where('start_time', '<', $end)
-            ->where('end_time', '>', $start)
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
             ->sum('quantity');
     }
 
@@ -114,6 +116,10 @@ class LoanAvailabilityService
 
         $item = G002M007Item::query()
             ->where('is_borrowable', true)
+            ->withCount([
+                'item_instance',
+                'item_instance as borrowable_instance_count' => fn (Builder $query) => $query->where('is_borrowable', true),
+            ])
             ->find($itemId);
 
         if (! $item) {
@@ -121,7 +127,9 @@ class LoanAvailabilityService
         }
 
         [$start, $end] = $period;
-        $stock = (int) ($item->available_quantity ?? $item->quantity ?? 0);
+        $stock = $item->item_instance_count > 0
+            ? (int) $item->borrowable_instance_count
+            : (int) ($item->quantity ?? 0);
 
         return max(0, $stock - $this->reservedItemQuantity((int) $item->id, $start, $end));
     }
@@ -130,9 +138,7 @@ class LoanAvailabilityService
     {
         return ! G005M010RoomReservation::query()
             ->where('g003_m006_room_id', $roomId)
-            ->where(fn (Builder $query) => $this->applyBlockingScope($query))
-            ->where('start_time', '<', $end)
-            ->where('end_time', '>', $start)
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
             ->exists();
     }
 
@@ -140,18 +146,29 @@ class LoanAvailabilityService
     {
         return ! G005M019VehicleReservation::query()
             ->where('g008_m017_vehicle_id', $vehicleId)
-            ->where(fn (Builder $query) => $this->applyBlockingScope($query))
-            ->where('start_time', '<', $end)
-            ->where('end_time', '>', $start)
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
             ->exists();
     }
 
     private function overlap(Builder $query, Carbon $start, Carbon $end): Builder
     {
         return $query
-            ->where(fn (Builder $query) => $this->applyBlockingScope($query))
-            ->where('start_time', '<', $end)
-            ->where('end_time', '>', $start);
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
+    }
+
+    private function applyReservationWindow(Builder $query, Carbon $start, Carbon $end): void
+    {
+        $query
+            ->where(function (Builder $query) use ($end, $start): void {
+                $query
+                    ->where(fn (Builder $query) => $this->applyBlockingScope($query))
+                    ->where('start_time', '<', $end)
+                    ->where('end_time', '>', $start);
+            })
+            ->orWhereIn('status', [
+                ReservationStatus::CheckedOut->value,
+                ReservationStatus::ReturnRequested->value,
+            ]);
     }
 
     public function applyBlockingScope(Builder $query): void
@@ -162,11 +179,13 @@ class LoanAvailabilityService
                 $query
                     ->where('status', ReservationStatus::Submitted->value)
                     ->whereHas('activity', function (Builder $query): void {
-                        $query->where(function (Builder $query): void {
-                            $query
-                                ->whereNull('hold_expires_at')
-                                ->orWhere('hold_expires_at', '>', now());
-                        });
+                        $query
+                            ->where('status', ReservationStatus::Submitted->value)
+                            ->where(function (Builder $query): void {
+                                $query
+                                    ->whereNull('hold_expires_at')
+                                    ->orWhere('hold_expires_at', '>', now());
+                            });
                     });
             });
     }

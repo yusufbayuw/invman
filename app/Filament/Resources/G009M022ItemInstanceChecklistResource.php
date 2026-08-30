@@ -126,16 +126,24 @@ class G009M022ItemInstanceChecklistResource extends Resource
                     ->label('Foto')
                     ->square()
                     ->simpleLightbox(),
-                Tables\Columns\IconColumn::make('is_ok')
-                    ->boolean()
-                    ->colors([
+                Tables\Columns\TextColumn::make('is_ok')
+                    ->label('Kondisi')
+                    ->badge()
+                    ->formatStateUsing(fn (?bool $state): string => match ($state) {
+                        true => 'Baik',
+                        false => 'Perlu Tindak Lanjut',
+                        null => 'Belum Diperiksa',
+                    })
+                    ->color(fn (?bool $state): string => match ($state) {
                         true => 'success',
                         false => 'danger',
-                    ])
-                    ->trueIcon('heroicon-o-check-badge')
-                    ->falseIcon('heroicon-o-exclamation-triangle')
-                    ->label('Kondisi')
-                    ->tooltip(fn (G009M022ItemInstanceChecklist $record): string => $record->is_ok ? 'Baik' : 'Perlu tindak lanjut')
+                        null => 'gray',
+                    })
+                    ->icon(fn (?bool $state): string => match ($state) {
+                        true => 'heroicon-o-check-badge',
+                        false => 'heroicon-o-exclamation-triangle',
+                        null => 'heroicon-o-clock',
+                    })
                     ->action(function ($record, $column) {
                         $name = $column->getName();
                         $record->update([

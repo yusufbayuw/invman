@@ -8,7 +8,6 @@ use App\Filament\Resources\G004M008ActivityResource\RelationManagers\ItemReserva
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers\RoomReservationRelationManager;
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers\VehicleReservationRelationManager;
 use App\Models\G004M008Activity;
-use App\Models\LoanRequestChecklist;
 use App\Models\LoanRequestReview;
 use App\Services\LoanRequestService;
 use Coolsam\Flatpickr\Forms\Components\Flatpickr;
@@ -376,16 +375,7 @@ class G004M008ActivityResource extends Resource
                             ->maxSize(5120),
                     ])
                     ->action(function (G004M008Activity $record, array $data): void {
-                        LoanRequestChecklist::query()->updateOrCreate(
-                            ['g004_m008_activity_id' => $record->id, 'stage' => 'return'],
-                            [
-                                'user_id' => Auth::id(),
-                                'is_ok' => $data['is_ok'],
-                                'notes' => $data['notes'] ?? null,
-                                'photo' => $data['photo'] ?? null,
-                            ],
-                        );
-                        app(LoanRequestService::class)->requestReturn($record);
+                        app(LoanRequestService::class)->requestReturn($record, $data);
                         Notification::make()
                             ->title('Pengembalian diajukan')
                             ->body($data['is_ok']
@@ -436,11 +426,7 @@ class G004M008ActivityResource extends Resource
                             ->send();
                     }),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array

@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Enums\ReservationStatus;
 use App\Models\G001M001Unit;
-use App\Models\G002M007Item;
 use App\Models\G002M003ItemManagement;
+use App\Models\G002M007Item;
 use App\Models\G003M006Room;
 use App\Models\G008M017Vehicle;
 use App\Models\User;
@@ -13,8 +13,8 @@ use App\Services\LoanAvailabilityService;
 use App\Services\LoanRequestService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
-use Tests\TestCase;
 use Spatie\Permission\Models\Role;
+use Tests\TestCase;
 
 class LoanBookingLifecycleTest extends TestCase
 {
@@ -132,6 +132,34 @@ class LoanBookingLifecycleTest extends TestCase
             $reservation->updateQuietly(['status' => $status->value]);
             $this->assertSame(5, $available(), "{$status->value} harus melepaskan stok.");
         }
+    }
+
+    public function test_open_overdue_usage_blocks_future_item_room_and_vehicle_availability(): void
+    {
+        [$user, $item, $room, $vehicle] = $this->fixtures();
+        $activity = $this->submit($user, $item, $room, $vehicle);
+        $activity->item_reservation()->update([
+            'status' => ReservationStatus::CheckedOut->value,
+            'start_time' => now()->subDays(2),
+            'end_time' => now()->subDay(),
+        ]);
+        $activity->room_reservation()->update([
+            'status' => ReservationStatus::ReturnRequested->value,
+            'start_time' => now()->subDays(2),
+            'end_time' => now()->subDay(),
+        ]);
+        $activity->vehicle_reservation()->update([
+            'status' => ReservationStatus::CheckedOut->value,
+            'start_time' => now()->subDays(2),
+            'end_time' => now()->subDay(),
+        ]);
+        $availability = app(LoanAvailabilityService::class);
+        $futureStart = now()->addDay();
+        $futureEnd = now()->addDay()->addHour();
+
+        $this->assertSame(3, $availability->availableItemQuantity($item->id, $futureStart, $futureEnd));
+        $this->assertFalse($availability->roomIsAvailable($room->id, $futureStart, $futureEnd));
+        $this->assertFalse($availability->vehicleIsAvailable($vehicle->id, $futureStart, $futureEnd));
     }
 
     private function submit(User $user, G002M007Item $item, G003M006Room $room, G008M017Vehicle $vehicle)

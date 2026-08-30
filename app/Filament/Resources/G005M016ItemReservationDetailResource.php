@@ -2,31 +2,48 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use Filament\Resources\Resource;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Builder;
-use App\Models\G005M016ItemReservationDetail;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\G005M016ItemReservationDetailResource\Pages;
-use App\Filament\Resources\G005M016ItemReservationDetailResource\RelationManagers;
+use App\Models\G005M016ItemReservationDetail;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class G005M016ItemReservationDetailResource extends Resource
 {
     protected static ?string $model = G005M016ItemReservationDetail::class;
 
     protected static ?string $navigationGroup = 'Peminjaman';
+
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
+
     protected static ?string $slug = 'item-reservation-detail';
+
     protected static ?string $modelLabel = 'Detail Reservasi Barang';
+
     protected static ?string $navigationLabel = 'Detail Reservasi Barang';
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->isFacility();
+        return false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
     }
 
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
@@ -51,7 +68,7 @@ class G005M016ItemReservationDetailResource extends Resource
                         \Filament\Infolists\Components\TextEntry::make('updated_at')
                             ->label('Diperbarui pada')
                             ->dateTime(),
-                    ])
+                    ]),
                 ])->from('md')->columnSpanFull(),
             ]);
     }
@@ -98,13 +115,8 @@ class G005M016ItemReservationDetailResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array
@@ -118,9 +130,7 @@ class G005M016ItemReservationDetailResource extends Resource
     {
         return [
             'index' => Pages\ListG005M016ItemReservationDetails::route('/'),
-            'create' => Pages\CreateG005M016ItemReservationDetail::route('/create'),
             'view' => Pages\ViewG005M016ItemReservationDetail::route('/{record}'),
-            'edit' => Pages\EditG005M016ItemReservationDetail::route('/{record}/edit'),
         ];
     }
 }

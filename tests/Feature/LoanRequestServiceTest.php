@@ -4,17 +4,18 @@ namespace Tests\Feature;
 
 use App\Enums\ReservationStatus;
 use App\Models\G001M001Unit;
-use App\Models\G002M007Item;
 use App\Models\G002M003ItemManagement;
+use App\Models\G002M007Item;
 use App\Models\G003M006Room;
 use App\Models\G005M009ItemReservation;
 use App\Models\G008M017Vehicle;
 use App\Models\User;
+use App\Services\LoanAvailabilityService;
 use App\Services\LoanRequestService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
-use Tests\TestCase;
 use Spatie\Permission\Models\Role;
+use Tests\TestCase;
 
 class LoanRequestServiceTest extends TestCase
 {
@@ -46,21 +47,181 @@ class LoanRequestServiceTest extends TestCase
         $this->assertCount(1, $activity->vehicle_reservation);
         $this->assertNotEmpty($activity->vehicle_reservation->first()->id);
 
-        $activity->item_reservation->each->update(['status' => ReservationStatus::Approved->value]);
-        $activity->room_reservation->each->update(['status' => ReservationStatus::Approved->value]);
-        $activity->vehicle_reservation->each->update(['status' => ReservationStatus::Approved->value]);
+        $service = app(LoanRequestService::class);
+        $itemReservation = $activity->item_reservation->first();
+        $roomReservation = $activity->room_reservation->first();
+        $vehicleReservation = $activity->vehicle_reservation->first();
+
+        $service->processReservation('item', $itemReservation->id, ReservationStatus::Approved);
+        $service->processReservation('room', $roomReservation->id, ReservationStatus::Approved);
+        $service->processReservation('vehicle', $vehicleReservation->id, ReservationStatus::Approved);
         $this->assertSame(ReservationStatus::Approved->value, $activity->fresh()->status);
 
-        $activity->item_reservation->each->update(['status' => ReservationStatus::CheckedOut->value]);
-        $activity->room_reservation->each->update(['status' => ReservationStatus::CheckedOut->value]);
-        $activity->vehicle_reservation->each->update(['status' => ReservationStatus::CheckedOut->value]);
+        $service->processReservation('item', $itemReservation->id, ReservationStatus::CheckedOut);
+        $service->processReservation('room', $roomReservation->id, ReservationStatus::CheckedOut);
+        $service->processReservation('vehicle', $vehicleReservation->id, ReservationStatus::CheckedOut);
         $this->assertSame(ReservationStatus::CheckedOut->value, $activity->fresh()->status);
+        $this->assertSame(2, $itemReservation->item_reservation_detail()->count());
+        $this->assertSame(2, $item->item_instance()->where('is_available', false)->count());
+        $this->assertSame(3, app(LoanAvailabilityService::class)->availableItemQuantity(
+            $item->id,
+            $activity->start_time,
+            $activity->end_time,
+        ));
 
-        app(LoanRequestService::class)->requestReturn($activity->fresh());
-        $activity->item_reservation->each->refresh()->each->update(['status' => ReservationStatus::Returned->value]);
-        $activity->room_reservation->each->refresh()->each->update(['status' => ReservationStatus::Returned->value]);
-        $activity->vehicle_reservation->each->refresh()->each->update(['status' => ReservationStatus::Returned->value]);
+        $service->requestReturn($activity->fresh(), [
+            'is_ok' => true,
+            'notes' => 'Seluruh aset kembali dalam kondisi baik.',
+        ]);
+        $service->processReservation('item', $itemReservation->id, ReservationStatus::Returned);
+        $service->processReservation('room', $roomReservation->id, ReservationStatus::Returned);
+        $service->processReservation('vehicle', $vehicleReservation->id, ReservationStatus::Returned);
         $this->assertSame(ReservationStatus::Returned->value, $activity->fresh()->status);
+        $this->assertSame(5, $item->item_instance()->where('is_available', true)->count());
+        $this->assertTrue((bool) $room->fresh()->is_borrowable);
+        $this->assertTrue((bool) $vehicle->fresh()->is_borrowable);
+    }
+
+    public function test_return_request_requires_a_checklist(): void
+    {
+        [$user, $item] = $this->fixtures();
+        $this->actingAs($user);
+        $activity = app(LoanRequestService::class)->submit($user, [
+            'name' => 'Pengembalian tanpa checklist',
+            'description' => 'Menguji enforcement service.',
+            'start_time' => '2026-09-01 09:00:00',
+            'end_time' => '2026-09-01 11:00:00',
+            'needs' => [['type' => 'item', 'item_id' => $item->id, 'quantity' => 1]],
+        ]);
+        $reservation = $activity->item_reservation()->firstOrFail();
+        $service = app(LoanRequestService::class);
+        $service->processReservation('item', $reservation->id, ReservationStatus::Approved);
+        $service->processReservation('item', $reservation->id, ReservationStatus::CheckedOut);
+
+        try {
+            $service->requestReturn($activity->fresh());
+            $this->fail('Expected the return checklist to be required.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('checklist', $exception->errors());
+        }
+
+        try {
+            $service->requestReturn($activity->fresh(), ['is_ok' => false]);
+            $this->fail('Expected damage notes to be required for a bad return.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('checklist.notes', $exception->errors());
+        }
+
+        $this->assertSame(ReservationStatus::CheckedOut->value, $reservation->fresh()->status);
+        $this->assertDatabaseMissing('loan_request_checklists', [
+            'g004_m008_activity_id' => $activity->id,
+            'stage' => 'return',
+        ]);
+    }
+
+    public function test_failed_item_allocation_rolls_back_the_checkout(): void
+    {
+        [$user, $item] = $this->fixtures();
+        $this->actingAs($user);
+        $activity = app(LoanRequestService::class)->submit($user, [
+            'name' => 'Alokasi atomik',
+            'description' => 'Menguji rollback alokasi serial.',
+            'start_time' => '2026-09-01 09:00:00',
+            'end_time' => '2026-09-01 11:00:00',
+            'needs' => [['type' => 'item', 'item_id' => $item->id, 'quantity' => 2]],
+        ]);
+        $reservation = $activity->item_reservation()->firstOrFail();
+        $service = app(LoanRequestService::class);
+        $service->processReservation('item', $reservation->id, ReservationStatus::Approved);
+        $item->item_instance()->orderBy('id')->skip(1)->take(4)->get()
+            ->each->update(['is_available' => false]);
+
+        try {
+            $service->processReservation('item', $reservation->id, ReservationStatus::CheckedOut);
+            $this->fail('Expected allocation to fail when instances are unavailable.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('status', $exception->errors());
+        }
+
+        $this->assertSame(ReservationStatus::Approved->value, $reservation->fresh()->status);
+        $this->assertSame(0, $reservation->item_reservation_detail()->count());
+    }
+
+    public function test_bad_return_keeps_allocated_item_instances_out_of_service(): void
+    {
+        [$user, $item, $room, $vehicle] = $this->fixtures();
+        $this->actingAs($user);
+        $service = app(LoanRequestService::class);
+        $activity = $service->submit($user, [
+            'name' => 'Pengembalian rusak',
+            'description' => 'Menguji karantina aset.',
+            'start_time' => '2026-09-01 09:00:00',
+            'end_time' => '2026-09-01 11:00:00',
+            'needs' => [
+                ['type' => 'item', 'item_id' => $item->id, 'quantity' => 1],
+                ['type' => 'room', 'room_id' => $room->id],
+                ['type' => 'vehicle', 'vehicle_id' => $vehicle->id],
+            ],
+        ]);
+        $itemReservation = $activity->item_reservation()->firstOrFail();
+        $roomReservation = $activity->room_reservation()->firstOrFail();
+        $vehicleReservation = $activity->vehicle_reservation()->firstOrFail();
+
+        $service->processReservation('item', $itemReservation->id, ReservationStatus::Approved);
+        $service->processReservation('room', $roomReservation->id, ReservationStatus::Approved);
+        $service->processReservation('vehicle', $vehicleReservation->id, ReservationStatus::Approved);
+        $service->processReservation('item', $itemReservation->id, ReservationStatus::CheckedOut);
+        $service->processReservation('room', $roomReservation->id, ReservationStatus::CheckedOut);
+        $service->processReservation('vehicle', $vehicleReservation->id, ReservationStatus::CheckedOut);
+        $service->requestReturn($activity->fresh(), [
+            'is_ok' => false,
+            'notes' => 'Lensa retak.',
+        ]);
+        $service->processReservation('item', $itemReservation->id, ReservationStatus::Returned);
+        $service->processReservation('room', $roomReservation->id, ReservationStatus::Returned);
+        $service->processReservation('vehicle', $vehicleReservation->id, ReservationStatus::Returned);
+        $instance = $itemReservation->item_reservation_detail()->firstOrFail()->item_instance;
+
+        $this->assertFalse((bool) $instance->is_available);
+        $this->assertFalse((bool) $instance->is_borrowable);
+        $this->assertSame('perlu_perbaikan', $instance->status);
+        $this->assertSame(4, (int) $item->fresh()->available_quantity);
+        $this->assertFalse((bool) $room->fresh()->is_borrowable);
+        $this->assertSame('perlu_perbaikan', $room->fresh()->status);
+        $this->assertFalse((bool) $vehicle->fresh()->is_borrowable);
+        $this->assertSame('perlu_perbaikan', $vehicle->fresh()->status);
+    }
+
+    public function test_a_stale_second_decision_cannot_overwrite_the_first_decision(): void
+    {
+        [$user, $item] = $this->fixtures();
+        $this->actingAs($user);
+        $service = app(LoanRequestService::class);
+        $activity = $service->submit($user, [
+            'name' => 'Keputusan serentak',
+            'description' => 'Menguji keputusan stale.',
+            'start_time' => '2026-09-01 09:00:00',
+            'end_time' => '2026-09-01 11:00:00',
+            'needs' => [['type' => 'item', 'item_id' => $item->id, 'quantity' => 1]],
+        ]);
+        $reservation = $activity->item_reservation()->firstOrFail();
+        $service->processReservation('item', $reservation->id, ReservationStatus::Approved);
+
+        try {
+            $service->processReservation('item', $reservation->id, ReservationStatus::Rejected, 'Keputusan kedua.');
+            $this->fail('Expected the stale decision to be rejected.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('status', $exception->errors());
+        }
+
+        $this->assertSame(ReservationStatus::Approved->value, $reservation->fresh()->status);
+        $this->assertSame(1, $reservation->statusHistories()
+            ->where('to_status', ReservationStatus::Approved->value)
+            ->count());
+        $this->assertDatabaseMissing('loan_reservation_status_histories', [
+            'reservation_id' => $reservation->id,
+            'to_status' => ReservationStatus::Rejected->value,
+        ]);
     }
 
     public function test_it_rejects_an_item_quantity_that_is_not_available_for_an_overlapping_period(): void

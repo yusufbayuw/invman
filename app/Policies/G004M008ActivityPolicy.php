@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\G004M008Activity;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class G004M008ActivityPolicy
@@ -56,7 +56,8 @@ class G004M008ActivityPolicy
      */
     public function delete(User $user, G004M008Activity $g004M008Activity): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin()
+            && $g004M008Activity->status === \App\Enums\ReservationStatus::Draft->value;
     }
 
     /**
@@ -64,7 +65,7 @@ class G004M008ActivityPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->isAdmin();
+        return false;
     }
 
     /**
@@ -114,5 +115,4 @@ class G004M008ActivityPolicy
     {
         return $user->can('reorder_g004::m008::activity');
     }
-
 }

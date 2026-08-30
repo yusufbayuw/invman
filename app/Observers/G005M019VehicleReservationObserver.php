@@ -5,12 +5,29 @@ namespace App\Observers;
 use App\Enums\ReservationStatus;
 use App\Models\G005M019VehicleReservation;
 use App\Services\LoanRequestService;
+use Illuminate\Validation\ValidationException;
 
 class G005M019VehicleReservationObserver
 {
+    public function creating(G005M019VehicleReservation $reservation): void
+    {
+        $reservation->status ??= $reservation->activity?->status === ReservationStatus::Draft->value
+            ? ReservationStatus::Draft->value
+            : ReservationStatus::Submitted->value;
+    }
+
     public function updating(G005M019VehicleReservation $reservation): void
     {
         $this->recordDecision($reservation);
+    }
+
+    public function deleting(G005M019VehicleReservation $reservation): void
+    {
+        if ($reservation->status !== ReservationStatus::Draft->value) {
+            throw ValidationException::withMessages([
+                'status' => 'Reservasi yang sudah diajukan tidak boleh dihapus.',
+            ]);
+        }
     }
 
     /**
@@ -18,11 +35,6 @@ class G005M019VehicleReservationObserver
      */
     public function created(G005M019VehicleReservation $g005M019VehicleReservation): void
     {
-        if (! $g005M019VehicleReservation->status) {
-            $g005M019VehicleReservation->status = ReservationStatus::Submitted->value;
-            $g005M019VehicleReservation->saveQuietly();
-        }
-
         if ($g005M019VehicleReservation->activity) {
             app(LoanRequestService::class)->syncStatus($g005M019VehicleReservation->activity);
         }

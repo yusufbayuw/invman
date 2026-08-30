@@ -3,9 +3,9 @@
 namespace App\Filament\Resources\G004M008ActivityResource\RelationManagers;
 
 use App\Enums\ReservationStatus;
-use App\Services\LoanAvailabilityService;
 use App\Models\G005M010RoomReservation;
-use App\Services\LoanNotificationService;
+use App\Services\LoanAvailabilityService;
+use App\Services\LoanRequestService;
 use Coolsam\Flatpickr\Forms\Components\Flatpickr;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -96,11 +96,11 @@ class RoomReservationRelationManager extends RelationManager
                                 }
 
                                 $overlap = G005M010RoomReservation::where('g003_m006_room_id', $value)
-                                ->where(fn (Builder $query) => app(LoanAvailabilityService::class)->applyBlockingScope($query))
+                                    ->where(fn (Builder $query) => app(LoanAvailabilityService::class)->applyBlockingScope($query))
                                     ->where(function ($query) use ($startTime, $endTime) {
                                         $query->where(function ($q) use ($startTime, $endTime) {
-                                        $q->where('start_time', '<', $endTime)
-                                            ->where('end_time', '>', $startTime);
+                                            $q->where('start_time', '<', $endTime)
+                                                ->where('end_time', '>', $startTime);
                                         });
                                     })
                                     ->exists();
@@ -199,11 +199,9 @@ class RoomReservationRelationManager extends RelationManager
                         && Auth::user()->managesReservation($record)
                     ))
                     ->icon('heroicon-o-check-circle')
-                    ->action(function ($record) {
-                        $record->status = ReservationStatus::Approved->value;
-                        $record->save();
-                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Approved, $record->room?->name ?? 'ruangan');
-                    }),
+                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
+                        'room', $record->getKey(), ReservationStatus::Approved,
+                    )),
                 Tables\Actions\Action::make('ditolak')
                     ->label('Tolak')
                     ->color('danger')
@@ -220,35 +218,27 @@ class RoomReservationRelationManager extends RelationManager
                         && Auth::user()->managesReservation($record)
                     ))
                     ->icon('heroicon-o-x-circle')
-                    ->action(function ($record, array $data) {
-                        $record->status = ReservationStatus::Rejected->value;
-                        $record->rejection_reason = $data['rejection_reason'];
-                        $record->save();
-                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Rejected, $record->room?->name ?? 'ruangan');
-                    }),
+                    ->action(fn ($record, array $data) => app(LoanRequestService::class)->processReservation(
+                        'room', $record->getKey(), ReservationStatus::Rejected, $data['rejection_reason'],
+                    )),
                 Tables\Actions\Action::make('serahkan')
                     ->label('Pinjamkan')
                     ->color('info')
                     ->icon('heroicon-o-arrow-right-circle')
                     ->visible(fn ($record): bool => $record->status === ReservationStatus::Approved->value
                         && Auth::user()?->managesReservation($record))
-                    ->action(function ($record) {
-                        $record->status = ReservationStatus::CheckedOut->value;
-                        $record->save();
-                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::CheckedOut, $record->room?->name ?? 'ruangan');
-                    }),
+                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
+                        'room', $record->getKey(), ReservationStatus::CheckedOut,
+                    )),
                 Tables\Actions\Action::make('dikembalikan')
                     ->label('Konfirmasi Pengembalian')
                     ->color('warning')
                     ->visible(fn ($record): bool => $record->status === ReservationStatus::ReturnRequested->value
                         && Auth::user()?->managesReservation($record))
                     ->icon('heroicon-o-arrow-uturn-left')
-                    ->action(function ($record) {
-                        $record->status = ReservationStatus::Returned->value;
-                        $record->returned_at = now();
-                        $record->save();
-                        app(LoanNotificationService::class)->sendStatusToast(ReservationStatus::Returned, $record->room?->name ?? 'ruangan');
-                    }),
+                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
+                        'room', $record->getKey(), ReservationStatus::Returned,
+                    )),
                 Tables\Actions\EditAction::make()
                     ->visible(fn () => Auth::user()?->isFacility()
                         && $this->ownerRecord->status === ReservationStatus::Draft->value),
