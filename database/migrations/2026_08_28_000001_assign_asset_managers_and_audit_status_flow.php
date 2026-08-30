@@ -10,8 +10,10 @@ return new class extends Migration
     {
         Schema::create('g002_m003_item_management_user', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('g002_m003_item_management_id')
-                ->constrained('g002_m003_item_management')
+            $table->unsignedBigInteger('g002_m003_item_management_id');
+            $table->foreign('g002_m003_item_management_id', 'item_management_user_management_fk')
+                ->references('id')
+                ->on('g002_m003_item_management')
                 ->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
