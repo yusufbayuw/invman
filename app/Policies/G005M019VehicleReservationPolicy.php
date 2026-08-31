@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\G005M019VehicleReservation;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class G005M019VehicleReservationPolicy
@@ -15,7 +15,7 @@ class G005M019VehicleReservationPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin() || $user->isSarpras() || $user->isAssetManager();
+        return $user->isFacility() || $user->isSarpras() || $user->isAssetManager();
     }
 
     /**
@@ -106,5 +106,4 @@ class G005M019VehicleReservationPolicy
     {
         return $user->can('reorder_g005::m019::vehicle::reservation');
     }
-
 }

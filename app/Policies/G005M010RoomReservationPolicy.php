@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\G005M010RoomReservation;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class G005M010RoomReservationPolicy
@@ -15,7 +15,7 @@ class G005M010RoomReservationPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin() || $user->isSarpras() || $user->isAssetManager();
+        return $user->isFacility() || $user->isSarpras() || $user->isAssetManager();
     }
 
     /**
@@ -106,5 +106,4 @@ class G005M010RoomReservationPolicy
     {
         return $user->can('reorder_g005::m010::room::reservation');
     }
-
 }

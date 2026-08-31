@@ -122,7 +122,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
 
     public function managesReservation(Model $reservation): bool
     {
-        if ($this->isAdmin()) {
+        if ($this->isFacility()) {
             return true;
         }
 

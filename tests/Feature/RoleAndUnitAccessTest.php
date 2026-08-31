@@ -3,11 +3,16 @@
 namespace Tests\Feature;
 
 use App\Enums\ReservationStatus;
+use App\Filament\Resources\G005M009ItemReservationResource;
+use App\Filament\Resources\G005M010RoomReservationResource;
+use App\Filament\Resources\G005M019VehicleReservationResource;
 use App\Models\G001M001Unit;
-use App\Models\G002M007Item;
 use App\Models\G002M003ItemManagement;
+use App\Models\G002M007Item;
 use App\Models\G004M008Activity;
 use App\Models\G005M009ItemReservation;
+use App\Models\G005M010RoomReservation;
+use App\Models\G005M019VehicleReservation;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\UnitSeeder;
@@ -68,7 +73,26 @@ class RoleAndUnitAccessTest extends TestCase
         $this->assertFalse($sarpras->can('update', $sameUnit->fresh()));
     }
 
-    public function test_assigned_asset_manager_decisions_are_audited_and_create_partial_approval_status(): void
+    public function test_facility_can_access_and_manage_all_reservation_types(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $facility = User::factory()->create();
+        $facility->assignRole(config('role.fasilitas'));
+        $this->actingAs($facility);
+
+        $this->assertTrue($facility->can('viewAny', G005M009ItemReservation::class));
+        $this->assertTrue($facility->can('viewAny', G005M010RoomReservation::class));
+        $this->assertTrue($facility->can('viewAny', G005M019VehicleReservation::class));
+        $this->assertTrue(G005M009ItemReservationResource::shouldRegisterNavigation());
+        $this->assertTrue(G005M010RoomReservationResource::shouldRegisterNavigation());
+        $this->assertTrue(G005M019VehicleReservationResource::shouldRegisterNavigation());
+        $this->assertTrue(G005M009ItemReservationResource::canAccess());
+        $this->assertTrue(G005M010RoomReservationResource::canAccess());
+        $this->assertTrue(G005M019VehicleReservationResource::canAccess());
+    }
+
+    public function test_facility_can_decide_reservation_without_asset_manager_assignment(): void
     {
         Role::query()->create(['name' => 'fasilitas', 'guard_name' => 'web']);
         $manager = User::factory()->create();
@@ -91,8 +115,11 @@ class RoleAndUnitAccessTest extends TestCase
         $second = $this->reservation($activity, $secondItem);
 
         $this->actingAs($legacyFacility);
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
         $first->update(['status' => ReservationStatus::Approved->value]);
+
+        $this->assertSame(ReservationStatus::Approved->value, $first->fresh()->status);
+        $this->assertSame($legacyFacility->id, $first->fresh()->decision_by);
+        $this->assertNotNull($first->fresh()->decision_at);
     }
 
     public function test_manager_status_changes_record_actor_and_full_history(): void
@@ -140,7 +167,7 @@ class RoleAndUnitAccessTest extends TestCase
     {
         return G004M008Activity::query()->create([
             'g001_m001_unit_id' => $unit->id,
-            'name' => 'Kegiatan ' . $unit->name,
+            'name' => 'Kegiatan '.$unit->name,
             'start_time' => now()->addDay(),
             'end_time' => now()->addDay()->addHour(),
             'status' => $status->value,

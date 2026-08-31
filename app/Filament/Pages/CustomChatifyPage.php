@@ -7,6 +7,8 @@ use Monzer\FilamentChatifyIntegration\Pages\Chatify;
 
 class CustomChatifyPage extends Chatify
 {
+    protected static string $view = 'filament.pages.custom-chatify-page';
+
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-oval-left-ellipsis';
     protected static ?string $slug = "chatify";
     protected static ?string $navigationLabel = "Chat";
