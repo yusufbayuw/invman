@@ -17,6 +17,11 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        config()->set([
+            'filesystems.disks.public.root' => storage_path('framework/testing/disks/public'),
+            'filesystems.disks.public.url' => 'http://localhost/storage',
+        ]);
+
         $this->ensureTestLicenseKeyPair();
         $this->app->instance(LicensePublicKeyProvider::class, new class(self::$licensePublicKey) implements LicensePublicKeyProvider
         {

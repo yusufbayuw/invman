@@ -7,6 +7,7 @@ use App\Filament\Resources\G003M006RoomResource\RelationManagers\ItemRelationMan
 use App\Filament\Resources\G003M006RoomResource\RelationManagers\RoomHistoryRelationManager;
 use App\Filament\Resources\G003M006RoomResource\RelationManagers\RoomReservationRelationManager;
 use App\Models\G003M006Room;
+use App\Services\RoomQrCodeService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -69,6 +70,17 @@ class G003M006RoomResource extends Resource
                             ->label('Unit'),
                         \Filament\Infolists\Components\TextEntry::make('name')
                             ->label('Nama Ruangan'),
+                        \Filament\Infolists\Components\ImageEntry::make('qrcode')
+                            ->label('QR Code Jadwal')
+                            ->disk('public')
+                            ->getStateUsing(fn (G003M006Room $record): string => app(RoomQrCodeService::class)->ensure($record))
+                            ->height(280),
+                        \Filament\Infolists\Components\TextEntry::make('public_schedule_url')
+                            ->label('Halaman Jadwal Publik')
+                            ->getStateUsing(fn (G003M006Room $record): string => $record->publicScheduleUrl())
+                            ->url(fn (G003M006Room $record): string => $record->publicScheduleUrl())
+                            ->openUrlInNewTab()
+                            ->columnSpanFull(),
                     ]),
                     \Filament\Infolists\Components\Section::make([
                         \Filament\Infolists\Components\TextEntry::make('created_at')
@@ -130,7 +142,6 @@ class G003M006RoomResource extends Resource
                     ->label('Foto Ruangan')
                     ->image()
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('qrcode'),
             ]);
     }
 
@@ -167,9 +178,12 @@ class G003M006RoomResource extends Resource
                 Tables\Columns\TextColumn::make('photo')
                     ->label('Foto Ruangan')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('qrcode')
+                Tables\Columns\ImageColumn::make('qrcode')
                     ->label('QR Code')
-                    ->searchable(),
+                    ->disk('public')
+                    ->getStateUsing(fn (G003M006Room $record): string => app(RoomQrCodeService::class)->ensure($record))
+                    ->height(72)
+                    ->width(72),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -183,6 +197,16 @@ class G003M006RoomResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('publicSchedule')
+                    ->label('Jadwal Publik')
+                    ->icon('heroicon-o-qr-code')
+                    ->url(fn (G003M006Room $record): string => $record->publicScheduleUrl())
+                    ->openUrlInNewTab(),
+                Tables\Actions\Action::make('downloadQrPdf')
+                    ->label('Unduh QR A4')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->url(fn (G003M006Room $record): string => $record->qrCodePdfUrl()),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])

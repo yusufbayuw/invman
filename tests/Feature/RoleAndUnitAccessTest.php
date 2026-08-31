@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Enums\ReservationStatus;
+use App\Filament\Resources\G004M008ActivityResource\Pages\ViewG004M008Activity;
+use App\Filament\Resources\G004M008ActivityResource\RelationManagers\ItemReservationRelationManager;
 use App\Filament\Resources\G005M009ItemReservationResource;
 use App\Filament\Resources\G005M010RoomReservationResource;
 use App\Filament\Resources\G005M019VehicleReservationResource;
@@ -19,6 +21,7 @@ use Database\Seeders\UnitSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -120,6 +123,34 @@ class RoleAndUnitAccessTest extends TestCase
         $this->assertSame(ReservationStatus::Approved->value, $first->fresh()->status);
         $this->assertSame($legacyFacility->id, $first->fresh()->decision_by);
         $this->assertNotNull($first->fresh()->decision_at);
+    }
+
+    public function test_facility_approval_action_advances_the_reservation(): void
+    {
+        Role::query()->create(['name' => 'fasilitas', 'guard_name' => 'web']);
+        $facility = User::factory()->create();
+        $facility->assignRole('fasilitas');
+        $management = G002M003ItemManagement::query()->create(['name' => 'Elektronik']);
+        $unit = G001M001Unit::query()->create(['name' => 'SMA']);
+        $activity = $this->activity($unit, ReservationStatus::Submitted);
+        $item = G002M007Item::query()->create([
+            'name' => 'Proyektor',
+            'g002_m003_item_management_id' => $management->id,
+        ]);
+        $reservation = $this->reservation($activity, $item);
+
+        Livewire::actingAs($facility)
+            ->test(ItemReservationRelationManager::class, [
+                'ownerRecord' => $activity,
+                'pageClass' => ViewG004M008Activity::class,
+            ])
+            ->assertTableActionVisible('konfirmasi', $reservation)
+            ->callTableAction('konfirmasi', $reservation)
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame(ReservationStatus::Approved->value, $reservation->fresh()->status);
+        $this->assertSame(ReservationStatus::Approved->value, $activity->fresh()->status);
+        $this->assertSame($facility->id, $reservation->fresh()->decision_by);
     }
 
     public function test_manager_status_changes_record_actor_and_full_history(): void

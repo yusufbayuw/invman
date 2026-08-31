@@ -2,7 +2,9 @@
 
 use App\Licensing\InvalidAllowlist;
 use App\Licensing\LicenseManager;
+use App\Models\G003M006Room;
 use App\Services\LoanRequestService;
+use App\Services\RoomQrCodeService;
 use Illuminate\Console\Command;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -11,6 +13,21 @@ use Illuminate\Support\Facades\Schedule;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+Artisan::command('rooms:generate-qr {--force}', function (RoomQrCodeService $qrCodes) {
+    $count = 0;
+
+    G003M006Room::query()->chunkById(100, function ($rooms) use ($qrCodes, &$count): void {
+        foreach ($rooms as $room) {
+            $qrCodes->ensure($room, (bool) $this->option('force'));
+            $count++;
+        }
+    });
+
+    $this->info("{$count} QR code ruangan tersedia.");
+
+    return Command::SUCCESS;
+})->purpose('Generate missing QR codes for public room schedule pages');
 
 Artisan::command('license:request', function (LicenseManager $licenses) {
     try {

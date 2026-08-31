@@ -13,6 +13,11 @@ class ViewG003M006Room extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('downloadQrPdf')
+                ->label('Unduh QR A4')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('success')
+                ->url(fn (): string => $this->getRecord()->qrCodePdfUrl()),
             Actions\EditAction::make(),
         ];
     }

@@ -1,7 +1,16 @@
 <?php
 
 use App\Http\Controllers\MikrotikHotspotCaptiveController;
+use App\Http\Controllers\PublicRoomScheduleController;
+use App\Http\Controllers\RoomQrCodePdfController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/ruangan/{room:qr_uuid}/qrcode-a4', RoomQrCodePdfController::class)
+    ->whereUuid('room')
+    ->name('public.rooms.qrcode-pdf');
+Route::get('/ruangan/{room:qr_uuid}', PublicRoomScheduleController::class)
+    ->whereUuid('room')
+    ->name('public.rooms.show');
 
 Route::get('/storage/users-avatar/avatar.png', function () {
     return response()->file(public_path('images/app/fav.png'));

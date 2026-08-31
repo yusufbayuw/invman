@@ -80,7 +80,7 @@ class UserResource extends Resource
                             ? $state
                             : config('chatify.user_avatar.folder') . '/' . $state;
                     })
-                    ->dehydrateStateUsing(static fn (?string $state): string => filled($state)
+                    ->mutateDehydratedStateUsing(static fn (?string $state): string => filled($state)
                         ? basename($state)
                         : config('chatify.user_avatar.default'))
                     ->helperText('JPG, PNG, atau WebP. Ukuran maksimal 2 MB. Kosongkan untuk menggunakan avatar bawaan.')
