@@ -57,7 +57,7 @@
                                                     size="xs"
                                                     :color="$presentation['color']"
                                                     :icon="$presentation['icon']"
-                                                    wire:click="mountAction('{{ $action }}', @js(['type' => $row['type'], 'reservation_id' => $row['reservation_id']]))"
+                                                    x-on:click="$wire.mountAction(@js($action), @js(['type' => $row['type'], 'reservation_id' => $row['reservation_id']]))"
                                                     wire:loading.attr="disabled"
                                                 >
                                                     {{ $presentation['label'] }}
@@ -95,7 +95,7 @@
                                         size="xs"
                                         :color="$presentation['color']"
                                         :icon="$presentation['icon']"
-                                        wire:click="mountAction('{{ $action }}', @js(['type' => $row['type'], 'reservation_id' => $row['reservation_id']]))"
+                                        x-on:click="$wire.mountAction(@js($action), @js(['type' => $row['type'], 'reservation_id' => $row['reservation_id']]))"
                                         wire:loading.attr="disabled"
                                     >
                                         {{ $presentation['label'] }}

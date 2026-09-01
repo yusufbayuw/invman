@@ -2,54 +2,53 @@
 
 namespace App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers;
 
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ItemHistoryRelationManager extends RelationManager
 {
     protected static string $relationship = 'item_history';
-    protected static ?string $recordTitleAttribute = 'name';
+
+    protected static ?string $recordTitleAttribute = 'action';
+
     protected static ?string $modelLabel = 'Riwayat Barang';
+
     protected static ?string $title = 'Riwayat Barang';
+
     protected static ?string $icon = 'heroicon-o-document-text';
+
     protected static ?string $navigationLabel = 'Riwayat Barang';
 
     public function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Forms\Components\TextInput::make('id')
-                    ->required()
-                    ->maxLength(255),
-            ]);
+            ->schema([]);
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('id')
+            ->recordTitleAttribute('action')
+            ->defaultSort('created_at', 'desc')
             ->columns([
-                Tables\Columns\TextColumn::make('id'),
+                Tables\Columns\TextColumn::make('created_at')->label('Waktu')->dateTime('d M Y H:i')->sortable(),
+                Tables\Columns\TextColumn::make('action')->label('Aksi')->badge()->searchable(),
+                Tables\Columns\TextColumn::make('user.name')->label('Petugas')->searchable()->placeholder('-'),
+                Tables\Columns\TextColumn::make('notes')->label('Catatan')->limit(60)->wrap()->placeholder('-'),
+                Tables\Columns\ImageColumn::make('photo')->label('Foto')->toggleable(),
             ])
             ->filters([
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                // Riwayat dibuat otomatis oleh proses bisnis.
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // Audit trail tidak dapat diubah atau dihapus.
             ]);
     }
 }

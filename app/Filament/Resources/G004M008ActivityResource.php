@@ -8,8 +8,8 @@ use App\Filament\Resources\G004M008ActivityResource\RelationManagers\ItemReserva
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers\RoomReservationRelationManager;
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers\VehicleReservationRelationManager;
 use App\Models\G004M008Activity;
-use App\Models\LoanRequestReview;
 use App\Services\LoanRequestService;
+use App\Services\LoanReviewService;
 use Coolsam\Flatpickr\Forms\Components\Flatpickr;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -173,9 +173,55 @@ class G004M008ActivityResource extends Resource
                         \Filament\Infolists\Components\TextEntry::make('review.review')
                             ->label('Ulasan')
                             ->placeholder('-'),
+                        \Filament\Infolists\Components\RepeatableEntry::make('item_reviews')
+                            ->label('Ulasan Barang')
+                            ->schema([
+                                \Filament\Infolists\Components\TextEntry::make('item_instance.name')
+                                    ->label('Barang satuan')
+                                    ->description(fn ($record): ?string => $record->item_instance?->code),
+                                \Filament\Infolists\Components\TextEntry::make('rating')
+                                    ->label('Rating')
+                                    ->formatStateUsing(fn ($state): string => filled($state) ? "{$state} / 5" : '-'),
+                                \Filament\Infolists\Components\TextEntry::make('review')
+                                    ->label('Ulasan')
+                                    ->placeholder('-'),
+                            ])
+                            ->columns(3)
+                            ->columnSpanFull(),
+                        \Filament\Infolists\Components\RepeatableEntry::make('room_reviews')
+                            ->label('Ulasan Ruangan')
+                            ->schema([
+                                \Filament\Infolists\Components\TextEntry::make('room.name')->label('Ruangan'),
+                                \Filament\Infolists\Components\TextEntry::make('rating')
+                                    ->label('Rating')
+                                    ->formatStateUsing(fn ($state): string => filled($state) ? "{$state} / 5" : '-'),
+                                \Filament\Infolists\Components\TextEntry::make('review')
+                                    ->label('Ulasan')
+                                    ->placeholder('-'),
+                            ])
+                            ->columns(3)
+                            ->columnSpanFull(),
+                        \Filament\Infolists\Components\RepeatableEntry::make('vehicle_reviews')
+                            ->label('Ulasan Kendaraan')
+                            ->schema([
+                                \Filament\Infolists\Components\TextEntry::make('vehicle.name')
+                                    ->label('Kendaraan')
+                                    ->description(fn ($record): ?string => $record->vehicle?->license_plate),
+                                \Filament\Infolists\Components\TextEntry::make('rating')
+                                    ->label('Rating')
+                                    ->formatStateUsing(fn ($state): string => filled($state) ? "{$state} / 5" : '-'),
+                                \Filament\Infolists\Components\TextEntry::make('review')
+                                    ->label('Ulasan')
+                                    ->placeholder('-'),
+                            ])
+                            ->columns(3)
+                            ->columnSpanFull(),
                     ])
                     ->columns(2)
-                    ->visible(fn ($record) => filled($record->review)),
+                    ->visible(fn ($record): bool => filled($record->review)
+                        || $record->item_reviews->isNotEmpty()
+                        || $record->room_reviews->isNotEmpty()
+                        || $record->vehicle_reviews->isNotEmpty()),
             ]);
     }
 
@@ -390,36 +436,30 @@ class G004M008ActivityResource extends Resource
                     ->label('Beri Ulasan')
                     ->icon('heroicon-o-star')
                     ->color('primary')
-                    ->visible(fn (G004M008Activity $record) => Auth::user()?->belongsToUnit($record->g001_m001_unit_id)
-                        && $record->status === ReservationStatus::Returned->value)
-                    ->fillForm(fn (G004M008Activity $record): array => [
-                        'rating' => $record->review?->rating,
-                        'review' => $record->review?->review,
-                    ])
+                    ->visible(fn (G004M008Activity $record): bool => app(LoanReviewService::class)->canReview($record, Auth::user()))
+                    ->fillForm(fn (G004M008Activity $record): array => app(LoanReviewService::class)->formData($record))
                     ->form([
-                        Forms\Components\Select::make('rating')
-                            ->label('Rating')
-                            ->options([
-                                5 => '5 - Sangat Baik',
-                                4 => '4 - Baik',
-                                3 => '3 - Cukup',
-                                2 => '2 - Kurang',
-                                1 => '1 - Sangat Kurang',
-                            ])
-                            ->required(),
-                        Forms\Components\Textarea::make('review')
-                            ->label('Ulasan')
-                            ->maxLength(2000)
-                            ->columnSpanFull(),
+                        Forms\Components\Section::make('Pengalaman peminjaman secara keseluruhan')
+                            ->schema(static::reviewFields('overall'))
+                            ->columns(2),
+                        Forms\Components\Section::make('Barang yang digunakan')
+                            ->schema([static::assetReviewRepeater('items', includeItemInstance: true)])
+                            ->visible(fn (Forms\Get $get): bool => filled($get('items'))),
+                        Forms\Components\Section::make('Ruangan yang digunakan')
+                            ->schema([static::assetReviewRepeater('rooms')])
+                            ->visible(fn (Forms\Get $get): bool => filled($get('rooms'))),
+                        Forms\Components\Section::make('Kendaraan yang digunakan')
+                            ->schema([static::assetReviewRepeater('vehicles')])
+                            ->visible(fn (Forms\Get $get): bool => filled($get('vehicles'))),
                     ])
+                    ->modalWidth('5xl')
                     ->action(function (G004M008Activity $record, array $data): void {
-                        LoanRequestReview::query()->updateOrCreate(
-                            ['g004_m008_activity_id' => $record->id],
-                            ['user_id' => Auth::id(), 'rating' => $data['rating'], 'review' => $data['review'] ?? null],
-                        );
+                        $user = Auth::user();
+                        abort_unless($user, 403);
+                        app(LoanReviewService::class)->save($record, $user, $data);
                         Notification::make()
                             ->title('Terima kasih atas ulasan Anda')
-                            ->body("Penilaian {$data['rating']} dari 5 berhasil disimpan.")
+                            ->body('Ulasan peminjaman dan aset berhasil disimpan.')
                             ->success()
                             ->icon('heroicon-o-star')
                             ->seconds(6)
@@ -438,10 +478,63 @@ class G004M008ActivityResource extends Resource
         ];
     }
 
+    /** @return array<int, Forms\Components\Component> */
+    private static function reviewFields(string $prefix = ''): array
+    {
+        $field = fn (string $name): string => $prefix !== '' ? "{$prefix}.{$name}" : $name;
+
+        return [
+            Forms\Components\Select::make($field('rating'))
+                ->label('Rating (opsional)')
+                ->options([
+                    5 => '5 - Sangat Baik',
+                    4 => '4 - Baik',
+                    3 => '3 - Cukup',
+                    2 => '2 - Kurang',
+                    1 => '1 - Sangat Kurang',
+                ])
+                ->native(false),
+            Forms\Components\Textarea::make($field('review'))
+                ->label('Ulasan (opsional)')
+                ->maxLength(2000)
+                ->rows(3),
+        ];
+    }
+
+    private static function assetReviewRepeater(string $name, bool $includeItemInstance = false): Forms\Components\Repeater
+    {
+        $hiddenFields = [Forms\Components\Hidden::make('reservation_id')];
+        if ($includeItemInstance) {
+            $hiddenFields[] = Forms\Components\Hidden::make('item_instance_id');
+        }
+
+        return Forms\Components\Repeater::make($name)
+            ->label('')
+            ->schema([
+                ...$hiddenFields,
+                Forms\Components\TextInput::make('label')
+                    ->label('Aset')
+                    ->disabled()
+                    ->dehydrated(false),
+                ...static::reviewFields(),
+            ])
+            ->columns(3)
+            ->addable(false)
+            ->deletable(false)
+            ->reorderable(false)
+            ->defaultItems(0);
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
-            ->with(['return_checklist', 'review'])
+            ->with([
+                'return_checklist',
+                'review',
+                'item_reviews.item_instance',
+                'room_reviews.room',
+                'vehicle_reviews.vehicle',
+            ])
             ->withCount(['item_reservation', 'room_reservation', 'vehicle_reservation']);
 
         $user = auth()->user();

@@ -45,6 +45,9 @@ class G006M020VehicleReviewResource extends Resource
                     Infolists\Components\TextEntry::make('user.name')
                         ->label('Pemberi Ulasan')
                         ->placeholder('-'),
+                    Infolists\Components\TextEntry::make('vehicle_reservation.activity.name')
+                        ->label('Kegiatan / Peminjaman')
+                        ->placeholder('-'),
                 ])
                 ->columns(2),
             Infolists\Components\Section::make('Isi Ulasan')
@@ -76,6 +79,8 @@ class G006M020VehicleReviewResource extends Resource
                     ->getOptionLabelFromRecordUsing(fn ($record): string => "{$record->name} · {$record->license_plate}")
                     ->searchable(['name', 'license_plate'])
                     ->preload()
+                    ->disabled(fn ($record): bool => filled($record?->g004_m008_activity_id))
+                    ->dehydrated()
                     ->required(),
                 Forms\Components\Select::make('user_id')
                     ->label('Pemberi Ulasan')
@@ -83,6 +88,17 @@ class G006M020VehicleReviewResource extends Resource
                     ->searchable()
                     ->preload()
                     ->required(),
+                Forms\Components\Select::make('g005_m019_vehicle_reservation_id')
+                    ->label('Reservasi Kendaraan')
+                    ->relationship('vehicle_reservation', 'id')
+                    ->searchable()
+                    ->preload()
+                    ->disabled(fn ($record): bool => filled($record?->g004_m008_activity_id))
+                    ->dehydrated(),
+                Forms\Components\Placeholder::make('integrated_activity')
+                    ->label('Kegiatan terintegrasi')
+                    ->content(fn ($record): string => $record?->activity?->name ?? '-')
+                    ->visible(fn ($record): bool => filled($record?->g004_m008_activity_id)),
                 Forms\Components\Select::make('rating')
                     ->label('Penilaian')
                     ->options([
@@ -115,6 +131,10 @@ class G006M020VehicleReviewResource extends Resource
                     ->label('Pemberi Ulasan')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('activity.name')
+                    ->label('Kegiatan')
+                    ->placeholder('Standalone')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('rating')
                     ->label('Penilaian')
                     ->formatStateUsing(fn ($state): string => "{$state} / 5")

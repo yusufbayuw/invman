@@ -78,6 +78,8 @@ class G006M012RoomReviewResource extends Resource
                     ->relationship('room', 'name')
                     ->searchable()
                     ->preload()
+                    ->disabled(fn ($record): bool => filled($record?->g004_m008_activity_id))
+                    ->dehydrated()
                     ->required(),
                 Forms\Components\Select::make('user_id')
                     ->label('Pemberi Ulasan')
@@ -89,7 +91,13 @@ class G006M012RoomReviewResource extends Resource
                     ->label('Reservasi Ruangan')
                     ->relationship('room_reservation', 'id')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->disabled(fn ($record): bool => filled($record?->g004_m008_activity_id))
+                    ->dehydrated(),
+                Forms\Components\Placeholder::make('integrated_activity')
+                    ->label('Kegiatan terintegrasi')
+                    ->content(fn ($record): string => $record?->activity?->name ?? '-')
+                    ->visible(fn ($record): bool => filled($record?->g004_m008_activity_id)),
                 Forms\Components\Select::make('rating')
                     ->label('Penilaian')
                     ->options([1 => '1 · Sangat Buruk', 2 => '2 · Buruk', 3 => '3 · Cukup', 4 => '4 · Baik', 5 => '5 · Sangat Baik'])
@@ -116,6 +124,10 @@ class G006M012RoomReviewResource extends Resource
                     ->label('Pemberi Ulasan')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('activity.name')
+                    ->label('Kegiatan')
+                    ->placeholder('Standalone')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('rating')
                     ->label('Penilaian')
                     ->formatStateUsing(fn ($state): string => "{$state} / 5")

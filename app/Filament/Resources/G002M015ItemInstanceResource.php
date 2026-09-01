@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\G002M015ItemInstanceResource\Pages;
+use App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers\ItemChecklistRelationManager;
 use App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers\ItemHistoryRelationManager;
 use App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers\ItemReservationDetailRelationManager;
 use App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers\ItemReviewRelationManager;
@@ -49,8 +50,24 @@ class G002M015ItemInstanceResource extends Resource
                             ->label('Status Barang')
                             ->badge()
                             ->inlineLabel(),
+                        \Filament\Infolists\Components\IconEntry::make('is_available')
+                            ->label('Tersedia')
+                            ->boolean()
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\IconEntry::make('is_borrowable')
+                            ->label('Dapat Dipinjam')
+                            ->boolean()
+                            ->inlineLabel(),
                     ]),
                     \Filament\Infolists\Components\Section::make([
+                        \Filament\Infolists\Components\TextEntry::make('unit.name')
+                            ->label('Unit')
+                            ->placeholder('-')
+                            ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('room.name')
+                            ->label('Ruangan')
+                            ->placeholder('-')
+                            ->inlineLabel(),
                         \Filament\Infolists\Components\TextEntry::make('created_at')
                             ->label('Dibuat pada')
                             ->dateTime(),
@@ -70,12 +87,24 @@ class G002M015ItemInstanceResource extends Resource
                     ->relationship('item', 'name')
                     ->searchable()
                     ->required(),
-                Forms\Components\TextInput::make('name'),
-                Forms\Components\TextInput::make('code'),
-                Forms\Components\TextInput::make('status'),
+                Forms\Components\Select::make('g001_m001_unit_id')
+                    ->relationship('unit', 'name')
+                    ->label('Unit')
+                    ->searchable()
+                    ->preload(),
+                Forms\Components\Select::make('g003_m006_room_id')
+                    ->relationship('room', 'name')
+                    ->label('Ruangan')
+                    ->searchable()
+                    ->preload(),
+                Forms\Components\TextInput::make('name')->label('Nama Barang Satuan')->required(),
+                Forms\Components\TextInput::make('code')->label('Kode')->required(),
+                Forms\Components\TextInput::make('status')->label('Status'),
                 Forms\Components\Toggle::make('is_available')
+                    ->label('Tersedia')
                     ->default(true),
                 Forms\Components\Toggle::make('is_borrowable')
+                    ->label('Dapat Dipinjam')
                     ->default(true),
             ]);
     }
@@ -92,6 +121,14 @@ class G002M015ItemInstanceResource extends Resource
                     ->searchable()
                     ->label('Grup Barang')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('unit.name')
+                    ->label('Unit')
+                    ->placeholder('-')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('room.name')
+                    ->label('Ruangan')
+                    ->placeholder('-')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('code')
                     ->label('Kode Barang Satuan')
                     ->badge()
@@ -101,6 +138,10 @@ class G002M015ItemInstanceResource extends Resource
                     ->badge()
                     ->searchable(),
                 Tables\Columns\IconColumn::make('is_available')
+                    ->label('Tersedia')
+                    ->boolean(),
+                Tables\Columns\IconColumn::make('is_borrowable')
+                    ->label('Dapat Dipinjam')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -129,6 +170,7 @@ class G002M015ItemInstanceResource extends Resource
             ItemHistoryRelationManager::class,
             ItemReservationDetailRelationManager::class,
             ItemReviewRelationManager::class,
+            ItemChecklistRelationManager::class,
         ];
     }
 

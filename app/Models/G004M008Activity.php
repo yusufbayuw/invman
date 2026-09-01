@@ -78,4 +78,19 @@ class G004M008Activity extends Model
     {
         return $this->hasOne(LoanRequestReview::class, 'g004_m008_activity_id');
     }
+
+    public function item_reviews(): HasMany
+    {
+        return $this->hasMany(G006M011ItemReview::class, 'g004_m008_activity_id');
+    }
+
+    public function room_reviews(): HasMany
+    {
+        return $this->hasMany(G006M012RoomReview::class, 'g004_m008_activity_id');
+    }
+
+    public function vehicle_reviews(): HasMany
+    {
+        return $this->hasMany(G006M020VehicleReview::class, 'g004_m008_activity_id');
+    }
 }

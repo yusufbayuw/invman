@@ -35,4 +35,14 @@ class G002M015ItemInstance extends Model
     {
         return $this->belongsTo(G002M007Item::class, 'g002_m007_item_id');
     }
+
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(G003M006Room::class, 'g003_m006_room_id');
+    }
+
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(G001M001Unit::class, 'g001_m001_unit_id');
+    }
 }

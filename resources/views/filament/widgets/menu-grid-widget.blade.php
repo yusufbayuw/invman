@@ -22,7 +22,7 @@
                             <x-dynamic-component :component="$item['icon'] ?? 'heroicon-o-cube'" class="w-6 h-6 text-primary-600 mb-1" />
                             <span class="text-sm text-center">{{ $item['label'] }}</span>
                         </a>
-                        <button wire:click="togglePin('{{ $item['label'] }}', '{{ $item['url'] }}')"
+                        <button x-on:click="$wire.togglePin(@js($item['label']), @js($item['url']))"
                                 class="absolute px-3 top-1 right-1 text-lg text-primary-600 z-10" title="Unpin menu">×</button>
                     </div>
                     @endforeach
@@ -49,7 +49,7 @@
                     <div class="relative">
                         {{-- Bintang di pojok kanan atas --}}
                         <button
-                            wire:click.prevent="togglePin('{{ $item['label'] }}', '{{ $item['url'] }}', '{{ $item['icon'] }}')"
+                            x-on:click.prevent="$wire.togglePin(@js($item['label']), @js($item['url']), @js($item['icon']))"
                             class="absolute px-3 top-1 right-1 z-10 text-lg text-primary-600 hover:text-primary-500"
                             title="Pin menu">
                             @if (collect($pinnedMenus)->pluck('url')->contains($item['url']))

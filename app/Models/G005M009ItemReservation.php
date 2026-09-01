@@ -39,6 +39,11 @@ class G005M009ItemReservation extends Model
         return $this->belongsTo(G002M007Item::class, 'g002_m007_item_id');
     }
 
+    public function item_reviews(): HasMany
+    {
+        return $this->hasMany(G006M011ItemReview::class, 'g005_m009_item_reservation_id');
+    }
+
     public function decisionBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'decision_by');
