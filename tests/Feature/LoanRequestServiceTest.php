@@ -12,6 +12,7 @@ use App\Models\G008M017Vehicle;
 use App\Models\User;
 use App\Services\LoanAvailabilityService;
 use App\Services\LoanRequestService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
@@ -20,6 +21,18 @@ use Tests\TestCase;
 class LoanRequestServiceTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Carbon::setTestNow('2026-09-01 07:00:00');
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
 
     public function test_it_creates_one_activity_with_multiple_types_of_needs(): void
     {
@@ -73,9 +86,10 @@ class LoanRequestServiceTest extends TestCase
             'is_ok' => true,
             'notes' => 'Seluruh aset kembali dalam kondisi baik.',
         ]);
-        $service->processReservation('item', $itemReservation->id, ReservationStatus::Returned);
-        $service->processReservation('room', $roomReservation->id, ReservationStatus::Returned);
-        $service->processReservation('vehicle', $vehicleReservation->id, ReservationStatus::Returned);
+        $this->actAsSeparateManager($item);
+        $service->confirmReturn('item', $itemReservation->id);
+        $service->confirmReturn('room', $roomReservation->id);
+        $service->confirmReturn('vehicle', $vehicleReservation->id);
         $this->assertSame(ReservationStatus::Returned->value, $activity->fresh()->status);
         $this->assertSame(5, $item->item_instance()->where('is_available', true)->count());
         $this->assertTrue((bool) $room->fresh()->is_borrowable);
@@ -177,9 +191,10 @@ class LoanRequestServiceTest extends TestCase
             'is_ok' => false,
             'notes' => 'Lensa retak.',
         ]);
-        $service->processReservation('item', $itemReservation->id, ReservationStatus::Returned);
-        $service->processReservation('room', $roomReservation->id, ReservationStatus::Returned);
-        $service->processReservation('vehicle', $vehicleReservation->id, ReservationStatus::Returned);
+        $this->actAsSeparateManager($item);
+        $service->confirmReturn('item', $itemReservation->id);
+        $service->confirmReturn('room', $roomReservation->id);
+        $service->confirmReturn('vehicle', $vehicleReservation->id);
         $instance = $itemReservation->item_reservation_detail()->firstOrFail()->item_instance;
 
         $this->assertFalse((bool) $instance->is_available);
@@ -319,5 +334,15 @@ class LoanRequestServiceTest extends TestCase
         ]);
 
         return [$user, $item, $room, $vehicle];
+    }
+
+    private function actAsSeparateManager(G002M007Item $item): User
+    {
+        $manager = User::factory()->create();
+        G002M003ItemManagement::query()->findOrFail($item->g002_m003_item_management_id)
+            ->users()->attach($manager);
+        $this->actingAs($manager);
+
+        return $manager;
     }
 }

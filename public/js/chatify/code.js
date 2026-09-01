@@ -31,21 +31,30 @@ const setMessengerId = (id) => $("meta[name=id]").attr("content", id);
  *-------------------------------------------------------------
  */
 Pusher.logToConsole = chatify.pusher.debug;
-const pusher = new Pusher(chatify.pusher.key, {
+const pusherOptions = {
     encrypted: chatify.pusher.options.encrypted,
     cluster: chatify.pusher.options.cluster,
-    wsHost: chatify.pusher.options.host,
-    wsPort: chatify.pusher.options.port,
-    wssPort: chatify.pusher.options.port,
     forceTLS: chatify.pusher.options.useTLS,
-    enabledTransports: ["ws", "wss"],
     authEndpoint: chatify.pusherAuthEndpoint,
-  auth: {
+    auth: {
     headers: {
       "X-CSRF-TOKEN": csrfToken,
     },
   },
-});
+};
+
+// Hosted Pusher derives its WebSocket and HTTP fallback hosts from `cluster`.
+// Only force a host/port for Reverb or another self-hosted Pusher server.
+if (chatify.pusher.options.host) {
+  Object.assign(pusherOptions, {
+    wsHost: chatify.pusher.options.host,
+    wsPort: chatify.pusher.options.port,
+    wssPort: chatify.pusher.options.port,
+    enabledTransports: ["ws", "wss"],
+  });
+}
+
+const pusher = new Pusher(chatify.pusher.key, pusherOptions);
 /**
  *-------------------------------------------------------------
  * Re-usable methods

@@ -10,6 +10,7 @@ use App\Models\G005M010RoomReservation;
 use App\Models\G005M019VehicleReservation;
 use App\Models\LoanRequestNeed;
 use App\Services\LoanRequestService;
+use Filament\Forms;
 use Filament\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -137,9 +138,22 @@ class PeminjamanSaya extends Page implements HasTable
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state): string => ReservationStatus::tryFrom($state)?->label() ?? $state ?? '-')
-                    ->color(fn (?string $state): string => ReservationStatus::tryFrom($state)?->color() ?? 'gray')
+                    ->formatStateUsing(fn (?string $state, LoanRequestNeed $record): string => static::isOverdue($record)
+                        ? 'Terlambat'
+                        : (ReservationStatus::tryFrom($state)?->label() ?? $state ?? '-'))
+                    ->color(fn (?string $state, LoanRequestNeed $record): string => static::isOverdue($record)
+                        ? 'danger'
+                        : (ReservationStatus::tryFrom($state)?->color() ?? 'gray'))
                     ->sortable(),
+                TextColumn::make('receipt_number')
+                    ->label('No. Serah Terima')
+                    ->placeholder('-')
+                    ->copyable()
+                    ->toggleable(),
+                TextColumn::make('correction_count')
+                    ->label('Koreksi')
+                    ->badge()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('activity_id')
@@ -216,16 +230,60 @@ class PeminjamanSaya extends Page implements HasTable
                         ReservationStatus::CheckedOut,
                     )),
                 Tables\Actions\Action::make('confirm_return')
-                    ->label('Konfirmasi Pengembalian')
+                    ->label('Konfirmasi Serah Terima')
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->color('warning')
-                    ->visible(fn (LoanRequestNeed $record): bool => static::canManageNeed($record)
-                        && $record->status === ReservationStatus::ReturnRequested->value)
-                    ->action(fn (LoanRequestNeed $record) => app(LoanRequestService::class)->processReservation(
+                    ->visible(fn (LoanRequestNeed $record): bool => static::canConfirmNeed($record))
+                    ->requiresConfirmation()
+                    ->modalDescription('Konfirmasi ini melengkapi serah-terima dua pihak dan menyelesaikan pengembalian.')
+                    ->action(fn (LoanRequestNeed $record) => app(LoanRequestService::class)->confirmReturn(
                         $record->type,
                         $record->reservation_id,
-                        ReservationStatus::Returned,
                     )),
+                Tables\Actions\Action::make('managed_return')
+                    ->label('Catat Pengembalian')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->color('warning')
+                    ->visible(fn (LoanRequestNeed $record): bool => static::canManageNeed($record)
+                        && $record->status === ReservationStatus::CheckedOut->value)
+                    ->fillForm(fn (LoanRequestNeed $record): array => static::returnChecklistData($record))
+                    ->form(fn (LoanRequestNeed $record): array => static::returnChecklistForm($record))
+                    ->action(fn (LoanRequestNeed $record, array $data) => app(LoanRequestService::class)->completeManagedReturn(
+                        $record->type,
+                        $record->reservation_id,
+                        $data,
+                    )),
+                Tables\Actions\Action::make('correct_status')
+                    ->label('Koreksi Status')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('danger')
+                    ->visible(fn (LoanRequestNeed $record): bool => (auth()->user()?->isAdmin() ?? false)
+                        && in_array($record->status, [ReservationStatus::ReturnRequested->value, ReservationStatus::Returned->value], true))
+                    ->form([
+                        Forms\Components\Textarea::make('reason')
+                            ->label('Alasan koreksi')
+                            ->helperText('Status akan dibuka kembali menjadi Sedang Dipakai. Histori sebelumnya tetap disimpan.')
+                            ->required()
+                            ->maxLength(2000),
+                    ])
+                    ->requiresConfirmation()
+                    ->action(fn (LoanRequestNeed $record, array $data) => app(LoanRequestService::class)->correctReservationStatus(
+                        $record->type,
+                        $record->reservation_id,
+                        ReservationStatus::CheckedOut->value,
+                        $data['reason'],
+                    )),
+                Tables\Actions\Action::make('view_corrections')
+                    ->label('Riwayat Koreksi')
+                    ->icon('heroicon-o-clock')
+                    ->color('gray')
+                    ->visible(fn (LoanRequestNeed $record): bool => (int) $record->correction_count > 0)
+                    ->modalHeading('Riwayat Koreksi Administratif')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalContent(fn (LoanRequestNeed $record) => view('filament.components.loan-correction-history', [
+                        'corrections' => static::reservationForNeed($record)?->corrections()->with('correctedBy')->latest()->get() ?? collect(),
+                    ])),
                 Tables\Actions\Action::make('view')
                     ->label('Lihat Kegiatan')
                     ->icon('heroicon-o-eye')
@@ -287,34 +345,124 @@ class PeminjamanSaya extends Page implements HasTable
             ->leftJoin('g002_m007_items as need', 'need.id', '=', 'reservation.g002_m007_item_id')
             ->leftJoin('g001_m001_units as unit', 'unit.id', '=', 'activity.g001_m001_unit_id')
             ->tap($scope)
-            ->selectRaw("CONCAT('item:', reservation.id) as id, reservation.id as reservation_id, 'item' as type, need.name as need_name, activity.id as activity_id, activity.name as activity_name, activity.status as activity_status, unit.name as unit_name, reservation.start_time, reservation.end_time, reservation.returned_at, reservation.status, reservation.created_at");
+            ->selectRaw("CONCAT('item:', reservation.id) as id, reservation.id as reservation_id, 'item' as type, need.name as need_name, activity.id as activity_id, activity.name as activity_name, activity.status as activity_status, unit.name as unit_name, reservation.start_time, reservation.end_time, reservation.returned_at, reservation.status, reservation.created_at, (SELECT receipt_number FROM loan_handover_receipts WHERE reservation_type = 'item' AND reservation_id = reservation.id AND direction = 'return' ORDER BY created_at DESC LIMIT 1) as receipt_number, (SELECT COUNT(*) FROM loan_reservation_corrections WHERE reservation_type = 'item' AND reservation_id = reservation.id) as correction_count");
 
         $rooms = DB::table('g005_m010_room_reservations as reservation')
             ->join('g004_m008_activities as activity', 'activity.id', '=', 'reservation.g004_m008_activity_id')
             ->leftJoin('g003_m006_rooms as need', 'need.id', '=', 'reservation.g003_m006_room_id')
             ->leftJoin('g001_m001_units as unit', 'unit.id', '=', 'activity.g001_m001_unit_id')
             ->tap($scope)
-            ->selectRaw("CONCAT('room:', reservation.id) as id, reservation.id as reservation_id, 'room' as type, need.name as need_name, activity.id as activity_id, activity.name as activity_name, activity.status as activity_status, unit.name as unit_name, reservation.start_time, reservation.end_time, NULL as returned_at, reservation.status, reservation.created_at");
+            ->selectRaw("CONCAT('room:', reservation.id) as id, reservation.id as reservation_id, 'room' as type, need.name as need_name, activity.id as activity_id, activity.name as activity_name, activity.status as activity_status, unit.name as unit_name, reservation.start_time, reservation.end_time, reservation.returned_at, reservation.status, reservation.created_at, (SELECT receipt_number FROM loan_handover_receipts WHERE reservation_type = 'room' AND reservation_id = reservation.id AND direction = 'return' ORDER BY created_at DESC LIMIT 1) as receipt_number, (SELECT COUNT(*) FROM loan_reservation_corrections WHERE reservation_type = 'room' AND reservation_id = reservation.id) as correction_count");
 
         $vehicles = DB::table('g005_m019_vehicle_reservations as reservation')
             ->join('g004_m008_activities as activity', 'activity.id', '=', 'reservation.g004_m008_activity_id')
             ->leftJoin('g008_m017_vehicles as need', 'need.id', '=', 'reservation.g008_m017_vehicle_id')
             ->leftJoin('g001_m001_units as unit', 'unit.id', '=', 'activity.g001_m001_unit_id')
             ->tap($scope)
-            ->selectRaw("CONCAT('vehicle:', reservation.id) as id, reservation.id as reservation_id, 'vehicle' as type, need.name as need_name, activity.id as activity_id, activity.name as activity_name, activity.status as activity_status, unit.name as unit_name, reservation.start_time, reservation.end_time, NULL as returned_at, reservation.status, reservation.created_at");
+            ->selectRaw("CONCAT('vehicle:', reservation.id) as id, reservation.id as reservation_id, 'vehicle' as type, need.name as need_name, activity.id as activity_id, activity.name as activity_name, activity.status as activity_status, unit.name as unit_name, reservation.start_time, reservation.end_time, reservation.returned_at, reservation.status, reservation.created_at, (SELECT receipt_number FROM loan_handover_receipts WHERE reservation_type = 'vehicle' AND reservation_id = reservation.id AND direction = 'return' ORDER BY created_at DESC LIMIT 1) as receipt_number, (SELECT COUNT(*) FROM loan_reservation_corrections WHERE reservation_type = 'vehicle' AND reservation_id = reservation.id) as correction_count");
 
         return $items->unionAll($rooms)->unionAll($vehicles);
     }
 
     private static function canManageNeed(LoanRequestNeed $record): bool
     {
-        $reservation = match ($record->type) {
+        $reservation = static::reservationForNeed($record);
+
+        return $reservation && (auth()->user()?->managesReservation($reservation) ?? false);
+    }
+
+    private static function canConfirmNeed(LoanRequestNeed $record): bool
+    {
+        $reservation = static::reservationForNeed($record);
+
+        return $reservation && app(LoanRequestService::class)->canConfirmReturn($reservation);
+    }
+
+    private static function reservationForNeed(LoanRequestNeed $record): G005M009ItemReservation|G005M010RoomReservation|G005M019VehicleReservation|null
+    {
+        return match ($record->type) {
             'item' => G005M009ItemReservation::query()->with('item')->find($record->reservation_id),
             'room' => G005M010RoomReservation::query()->with('room')->find($record->reservation_id),
             'vehicle' => G005M019VehicleReservation::query()->with('vehicle')->find($record->reservation_id),
             default => null,
         };
+    }
 
-        return $reservation && (auth()->user()?->managesReservation($reservation) ?? false);
+    private static function isOverdue(LoanRequestNeed $record): bool
+    {
+        return in_array($record->status, [ReservationStatus::CheckedOut->value, ReservationStatus::ReturnRequested->value], true)
+            && $record->end_time?->isPast();
+    }
+
+    private static function returnChecklistData(LoanRequestNeed $record): array
+    {
+        if ($record->type !== 'item') {
+            return ['is_ok' => true];
+        }
+
+        $reservation = G005M009ItemReservation::query()->find($record->reservation_id);
+
+        return [
+            'instances' => $reservation?->item_reservation_detail()
+                ->with('item_instance')
+                ->get()
+                ->map(fn ($detail): array => [
+                    'item_instance_id' => $detail->g002_m015_item_instance_id,
+                    'instance_label' => $detail->item_instance?->code ?: ($detail->item_instance?->name ?? '#'.$detail->g002_m015_item_instance_id),
+                    'is_ok' => true,
+                ])->all() ?? [],
+        ];
+    }
+
+    private static function returnChecklistForm(LoanRequestNeed $record): array
+    {
+        $receiptFields = [
+            Forms\Components\FileUpload::make('proof_path')
+                ->label('Bukti serah-terima')
+                ->directory('loan-return-receipts')
+                ->maxSize(5120),
+            Forms\Components\Textarea::make('receipt_notes')
+                ->label('Catatan serah-terima')
+                ->columnSpanFull(),
+        ];
+
+        if ($record->type !== 'item') {
+            return [
+                Forms\Components\Toggle::make('is_ok')->label('Aset dalam kondisi baik')->default(true),
+                Forms\Components\Textarea::make('notes')
+                    ->label('Catatan kondisi')
+                    ->required(fn (Forms\Get $get): bool => ! $get('is_ok')),
+                Forms\Components\FileUpload::make('photo')
+                    ->label('Foto kondisi aset')
+                    ->directory('loan-return-checklists')
+                    ->image()
+                    ->maxSize(5120),
+                ...$receiptFields,
+            ];
+        }
+
+        return [
+            Forms\Components\Repeater::make('instances')
+                ->label('Kondisi setiap barang satuan')
+                ->schema([
+                    Forms\Components\Hidden::make('item_instance_id'),
+                    Forms\Components\TextInput::make('instance_label')->label('Kode / nama')->disabled()->dehydrated(false),
+                    Forms\Components\Toggle::make('is_ok')->label('Kondisi baik')->default(true)->live(),
+                    Forms\Components\Textarea::make('notes')
+                        ->label('Catatan kondisi')
+                        ->required(fn (Forms\Get $get): bool => ! $get('is_ok')),
+                    Forms\Components\FileUpload::make('photo')
+                        ->label('Foto kondisi')
+                        ->directory('loan-return-checklists')
+                        ->image()
+                        ->maxSize(5120),
+                ])
+                ->addable(false)
+                ->deletable(false)
+                ->reorderable(false)
+                ->columns(2)
+                ->columnSpanFull(),
+            ...$receiptFields,
+        ];
     }
 }

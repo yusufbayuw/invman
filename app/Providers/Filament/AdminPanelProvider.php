@@ -23,6 +23,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\MaxWidth;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -48,6 +49,10 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogoHeight('4rem')
             ->path('admin')
             ->favicon(asset(config('app.logo')))
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('pwa.meta'))
+            ->renderHook(PanelsRenderHook::BODY_END, fn () => view('pwa.client', [
+                'showBanner' => auth()->check(),
+            ]))
             ->login(Login::class)
             ->profile(EditProfile::class, isSimple: false)
             ->databaseNotifications()

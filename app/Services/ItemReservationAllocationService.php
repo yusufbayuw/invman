@@ -83,6 +83,18 @@ class ItemReservationAllocationService
 
     public function release(G005M009ItemReservation $reservation, bool $conditionIsGood): void
     {
+        $conditions = $reservation->item_reservation_detail()
+            ->pluck('g002_m015_item_instance_id')
+            ->filter()
+            ->mapWithKeys(fn ($id): array => [(int) $id => $conditionIsGood])
+            ->all();
+
+        $this->releaseByInstance($reservation, $conditions);
+    }
+
+    /** @param array<int, bool> $conditions */
+    public function releaseByInstance(G005M009ItemReservation $reservation, array $conditions): void
+    {
         $instanceIds = $reservation->item_reservation_detail()
             ->pluck('g002_m015_item_instance_id')
             ->filter();
@@ -91,7 +103,8 @@ class ItemReservationAllocationService
             ->whereKey($instanceIds)
             ->lockForUpdate()
             ->get()
-            ->each(function (G002M015ItemInstance $instance) use ($conditionIsGood): void {
+            ->each(function (G002M015ItemInstance $instance) use ($conditions): void {
+                $conditionIsGood = (bool) ($conditions[$instance->id] ?? false);
                 $borrowable = $conditionIsGood && (bool) $instance->is_borrowable;
 
                 $instance->update([

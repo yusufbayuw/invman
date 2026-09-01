@@ -11,9 +11,11 @@ use App\Filament\Resources\G005M019VehicleReservationResource;
 use App\Models\G001M001Unit;
 use App\Models\G002M003ItemManagement;
 use App\Models\G002M007Item;
+use App\Models\G002M015ItemInstance;
 use App\Models\G004M008Activity;
 use App\Models\G005M009ItemReservation;
 use App\Models\G005M010RoomReservation;
+use App\Models\G005M016ItemReservationDetail;
 use App\Models\G005M019VehicleReservation;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
@@ -151,6 +153,72 @@ class RoleAndUnitAccessTest extends TestCase
         $this->assertSame(ReservationStatus::Approved->value, $reservation->fresh()->status);
         $this->assertSame(ReservationStatus::Approved->value, $activity->fresh()->status);
         $this->assertSame($facility->id, $reservation->fresh()->decision_by);
+    }
+
+    public function test_assigned_manager_can_record_a_direct_return_from_activity_relation_table(): void
+    {
+        Role::query()->firstOrCreate(['name' => config('role.sarpras'), 'guard_name' => 'web']);
+        $manager = User::factory()->create();
+        $management = G002M003ItemManagement::query()->create(['name' => 'Elektronik']);
+        $management->users()->attach($manager);
+        $unit = G001M001Unit::query()->create(['name' => 'SMA']);
+        $activity = $this->activity($unit, ReservationStatus::CheckedOut);
+        $item = G002M007Item::query()->create([
+            'name' => 'Proyektor',
+            'g002_m003_item_management_id' => $management->id,
+        ]);
+        $reservation = $this->reservation($activity, $item);
+        $reservation->updateQuietly(['status' => ReservationStatus::CheckedOut->value]);
+        $instance = G002M015ItemInstance::query()->create([
+            'g002_m007_item_id' => $item->id,
+            'name' => 'Proyektor 01',
+            'code' => 'PRJ-01',
+            'status' => ReservationStatus::CheckedOut->value,
+            'is_available' => false,
+            'is_borrowable' => true,
+        ]);
+        G005M016ItemReservationDetail::query()->create([
+            'g005_m009_item_reservation_id' => $reservation->id,
+            'g002_m015_item_instance_id' => $instance->id,
+        ]);
+
+        Livewire::actingAs($manager)
+            ->test(ItemReservationRelationManager::class, [
+                'ownerRecord' => $activity,
+                'pageClass' => ViewG004M008Activity::class,
+            ])
+            ->assertTableActionVisible('catat_pengembalian', $reservation)
+            ->callTableAction('catat_pengembalian', $reservation, [
+                'is_ok' => true,
+                'notes' => 'Diterima langsung oleh pengelola.',
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame(ReservationStatus::ReturnRequested->value, $reservation->fresh()->status);
+        $this->assertSame(ReservationStatus::ReturnRequested->value, $activity->fresh()->status);
+        $this->assertDatabaseHas('loan_reservation_checklists', [
+            'g004_m008_activity_id' => $activity->id,
+            'reservation_type' => 'item',
+            'reservation_id' => $reservation->id,
+            'g002_m015_item_instance_id' => $instance->id,
+            'checked_by' => $manager->id,
+            'is_ok' => true,
+        ]);
+        $this->assertDatabaseHas('loan_handover_receipts', [
+            'reservation_type' => 'item',
+            'reservation_id' => $reservation->id,
+            'manager_confirmed_by' => $manager->id,
+            'borrower_confirmed_by' => null,
+        ]);
+
+        $borrower = User::factory()->create(['g001_m001_unit_id' => $unit->id]);
+        $borrower->assignRole(config('role.sarpras'));
+        $this->actingAs($borrower);
+        app(\App\Services\LoanRequestService::class)->confirmReturn('item', $reservation->id);
+
+        $this->assertSame(ReservationStatus::Returned->value, $reservation->fresh()->status);
+        $this->assertSame(ReservationStatus::Returned->value, $activity->fresh()->status);
+        $this->assertTrue((bool) $instance->fresh()->is_available);
     }
 
     public function test_manager_status_changes_record_actor_and_full_history(): void

@@ -220,8 +220,17 @@ class VehicleReservationRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => ReservationStatus::tryFrom($state)?->label() ?? $state)
-                    ->color(fn (?string $state) => ReservationStatus::tryFrom($state)?->color() ?? 'gray'),
+                    ->formatStateUsing(fn (?string $state, $record) => $record->isOverdue()
+                        ? 'Terlambat'
+                        : (ReservationStatus::tryFrom($state)?->label() ?? $state))
+                    ->color(fn (?string $state, $record) => $record->isOverdue()
+                        ? 'danger'
+                        : (ReservationStatus::tryFrom($state)?->color() ?? 'gray')),
+                Tables\Columns\TextColumn::make('returnReceipt.receipt_number')
+                    ->label('No. Serah Terima')
+                    ->placeholder('-')
+                    ->copyable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('rejection_reason')
                     ->label('Alasan Penolakan')
                     ->placeholder('-')
@@ -282,13 +291,73 @@ class VehicleReservationRelationManager extends RelationManager
                         'vehicle', $record->getKey(), ReservationStatus::CheckedOut,
                     )),
                 Tables\Actions\Action::make('return')
-                    ->label('Konfirmasi Pengembalian')
+                    ->label('Konfirmasi Serah Terima')
                     ->color('warning')
                     ->icon('heroicon-o-arrow-uturn-left')
-                    ->visible(fn ($record): bool => $record->status === ReservationStatus::ReturnRequested->value
+                    ->visible(fn ($record): bool => app(LoanRequestService::class)->canConfirmReturn($record))
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => app(LoanRequestService::class)->confirmReturn(
+                        'vehicle', $record->getKey(),
+                    )),
+                Tables\Actions\Action::make('catat_pengembalian')
+                    ->label('Catat Pengembalian')
+                    ->color('warning')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->visible(fn ($record): bool => $record->status === ReservationStatus::CheckedOut->value
                         && Auth::user()?->managesReservation($record))
-                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
-                        'vehicle', $record->getKey(), ReservationStatus::Returned,
+                    ->form([
+                        Forms\Components\Toggle::make('is_ok')
+                            ->label('Aset dalam kondisi baik')
+                            ->default(true),
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Catatan kondisi')
+                            ->required(fn (Forms\Get $get): bool => ! $get('is_ok')),
+                        Forms\Components\FileUpload::make('photo')
+                            ->label('Foto kondisi aset')
+                            ->directory('loan-return-checklists')
+                            ->image()
+                            ->maxSize(5120),
+                        Forms\Components\FileUpload::make('proof_path')
+                            ->label('Bukti serah-terima')
+                            ->directory('loan-return-receipts')
+                            ->maxSize(5120),
+                        Forms\Components\Textarea::make('receipt_notes')
+                            ->label('Catatan serah-terima'),
+                    ])
+                    ->action(fn ($record, array $data) => app(LoanRequestService::class)->completeManagedReturn(
+                        'vehicle', $record->getKey(), $data,
+                    )),
+                Tables\Actions\Action::make('ajukan_pengembalian')
+                    ->label('Ajukan Pengembalian')
+                    ->color('warning')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->visible(fn ($record): bool => $record->status === ReservationStatus::CheckedOut->value
+                        && Auth::user()?->belongsToUnit($record->activity?->g001_m001_unit_id))
+                    ->form([
+                        Forms\Components\Toggle::make('is_ok')->label('Aset dalam kondisi baik')->default(true),
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Catatan kondisi')
+                            ->required(fn (Forms\Get $get): bool => ! $get('is_ok')),
+                        Forms\Components\FileUpload::make('photo')
+                            ->label('Foto kondisi aset')
+                            ->directory('loan-return-checklists')->image()->maxSize(5120),
+                        Forms\Components\FileUpload::make('proof_path')
+                            ->label('Bukti serah-terima')
+                            ->directory('loan-return-receipts')->maxSize(5120),
+                    ])
+                    ->action(fn ($record, array $data) => app(LoanRequestService::class)->requestReservationReturn(
+                        'vehicle', $record->getKey(), $data,
+                    )),
+                Tables\Actions\Action::make('koreksi_status')
+                    ->label('Koreksi Status')
+                    ->color('danger')
+                    ->icon('heroicon-o-arrow-path')
+                    ->visible(fn ($record): bool => (Auth::user()?->isAdmin() ?? false)
+                        && in_array($record->status, [ReservationStatus::ReturnRequested->value, ReservationStatus::Returned->value], true))
+                    ->form([Forms\Components\Textarea::make('reason')->label('Alasan koreksi')->required()->maxLength(2000)])
+                    ->requiresConfirmation()
+                    ->action(fn ($record, array $data) => app(LoanRequestService::class)->correctReservationStatus(
+                        'vehicle', $record->getKey(), ReservationStatus::CheckedOut->value, $data['reason'],
                     )),
                 Tables\Actions\EditAction::make()
                     ->visible(fn () => Auth::user()?->isFacility()

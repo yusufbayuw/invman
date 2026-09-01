@@ -23,9 +23,9 @@ return [
     |-------------------------------------
     */
     'routes' => [
-        'custom' => env('CHATIFY_CUSTOM_ROUTES', false),
+        'custom' => env('CHATIFY_CUSTOM_ROUTES', true),
         'prefix' => env('CHATIFY_ROUTES_PREFIX', 'chatify'),
-        'middleware' => env('CHATIFY_ROUTES_MIDDLEWARE', ['web','auth']),
+        'middleware' => env('CHATIFY_ROUTES_MIDDLEWARE', ['web', 'auth']),
         'namespace' => env('CHATIFY_ROUTES_NAMESPACE', 'Chatify\Http\Controllers'),
     ],
     'api_routes' => [
@@ -44,14 +44,16 @@ return [
         'key' => env('PUSHER_APP_KEY'),
         'secret' => env('PUSHER_APP_SECRET'),
         'app_id' => env('PUSHER_APP_ID'),
-        'options' => [
+        'options' => array_filter([
             'cluster' => env('PUSHER_APP_CLUSTER', 'mt1'),
-            'host' => env('PUSHER_HOST') ?: 'api-'.env('PUSHER_APP_CLUSTER', 'mt1').'.pusher.com',
+            // Leave this unset for hosted Pusher Channels. A custom host is
+            // only needed for Reverb or another self-hosted Pusher server.
+            'host' => env('PUSHER_HOST'),
             'port' => env('PUSHER_PORT', 443),
             'scheme' => env('PUSHER_SCHEME', 'https'),
             'encrypted' => true,
             'useTLS' => env('PUSHER_SCHEME', 'https') === 'https',
-        ],
+        ], static fn ($value) => $value !== null && $value !== ''),
     ],
 
     /*
@@ -75,7 +77,7 @@ return [
     'gravatar' => [
         'enabled' => false,
         'image_size' => 200,
-        'imageset' => 'identicon'
+        'imageset' => 'identicon',
     ],
 
     /*
@@ -86,8 +88,8 @@ return [
     'attachments' => [
         'folder' => 'attachments',
         'download_route_name' => 'attachments.download',
-        'allowed_images' => (array) ['png','jpg','jpeg','gif'],
-        'allowed_files' => (array) ['zip','rar','txt'],
+        'allowed_images' => (array) ['png', 'jpg', 'jpeg', 'gif'],
+        'allowed_files' => (array) ['zip', 'rar', 'txt'],
         'max_upload_size' => env('CHATIFY_MAX_FILE_SIZE', 150), // MB
     ],
 
@@ -121,5 +123,5 @@ return [
         'enabled' => true,
         'public_path' => 'sounds/chatify',
         'new_message' => 'new-message-sound.mp3',
-    ]
+    ],
 ];

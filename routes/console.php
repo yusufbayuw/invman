@@ -75,7 +75,27 @@ Artisan::command('loans:expire-holds', function (LoanRequestService $service, Li
     return Command::SUCCESS;
 })->purpose('Melepaskan reservasi peminjaman yang melewati batas waktu persetujuan');
 
+Artisan::command('loans:notify-overdue', function (LoanRequestService $service, LicenseManager $licenses) {
+    $status = $licenses->validateAppUrl();
+
+    if (! $status->valid) {
+        $this->error("License check failed: {$status->code->value}");
+
+        return Command::FAILURE;
+    }
+
+    $count = $service->notifyOverdueLoans();
+    $this->info("{$count} pengingat peminjaman terlambat telah dikirim.");
+
+    return Command::SUCCESS;
+})->purpose('Mengirim pengingat peminjaman yang melewati batas pengembalian');
+
 Schedule::command('loans:expire-holds')
     ->everyMinute()
+    ->when(fn (LicenseManager $licenses): bool => $licenses->validateAppUrl()->valid)
+    ->withoutOverlapping();
+
+Schedule::command('loans:notify-overdue')
+    ->hourly()
     ->when(fn (LicenseManager $licenses): bool => $licenses->validateAppUrl()->valid)
     ->withoutOverlapping();

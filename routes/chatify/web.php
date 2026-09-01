@@ -1,4 +1,5 @@
 <?php
+
 /**
  * -----------------------------------------------------------------
  * NOTE : There is two routes has a name (user & group),
@@ -8,6 +9,7 @@
  * -----------------------------------------------------------------
  */
 
+use App\Http\Controllers\Chatify\MessagesController as AppMessagesController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -48,13 +50,12 @@ Route::post('/makeSeen', 'MessagesController@seen')->name('messages.seen');
 /**
  * Get contacts
  */
-Route::get('/getContacts', 'MessagesController@getContacts')->name('contacts.get');
+Route::get('/getContacts', [AppMessagesController::class, 'getContacts'])->name('contacts.get');
 
 /**
  * Update contact item data
  */
 Route::post('/updateContacts', 'MessagesController@updateContactItem')->name('contacts.update');
-
 
 /**
  * Star in favorite list
@@ -95,11 +96,6 @@ Route::post('/updateSettings', 'MessagesController@updateSettings')->name('avata
  * Set active status
  */
 Route::post('/setActiveStatus', 'MessagesController@setActiveStatus')->name('activeStatus.set');
-
-
-
-
-
 
 /*
 * [Group] view by id

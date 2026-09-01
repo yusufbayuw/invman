@@ -162,9 +162,18 @@ class RoomReservationRelationManager extends RelationManager
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => ReservationStatus::tryFrom($state)?->label() ?? $state)
-                    ->color(fn (?string $state) => ReservationStatus::tryFrom($state)?->color() ?? 'gray')
+                    ->formatStateUsing(fn (?string $state, $record) => $record->isOverdue()
+                        ? 'Terlambat'
+                        : (ReservationStatus::tryFrom($state)?->label() ?? $state))
+                    ->color(fn (?string $state, $record) => $record->isOverdue()
+                        ? 'danger'
+                        : (ReservationStatus::tryFrom($state)?->color() ?? 'gray'))
                     ->searchable(),
+                Tables\Columns\TextColumn::make('returnReceipt.receipt_number')
+                    ->label('No. Serah Terima')
+                    ->placeholder('-')
+                    ->copyable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('rejection_reason')
                     ->label('Alasan Penolakan')
                     ->placeholder('-')
@@ -231,13 +240,73 @@ class RoomReservationRelationManager extends RelationManager
                         'room', $record->getKey(), ReservationStatus::CheckedOut,
                     )),
                 Tables\Actions\Action::make('dikembalikan')
-                    ->label('Konfirmasi Pengembalian')
+                    ->label('Konfirmasi Serah Terima')
                     ->color('warning')
-                    ->visible(fn ($record): bool => $record->status === ReservationStatus::ReturnRequested->value
-                        && Auth::user()?->managesReservation($record))
+                    ->visible(fn ($record): bool => app(LoanRequestService::class)->canConfirmReturn($record))
                     ->icon('heroicon-o-arrow-uturn-left')
-                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
-                        'room', $record->getKey(), ReservationStatus::Returned,
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => app(LoanRequestService::class)->confirmReturn(
+                        'room', $record->getKey(),
+                    )),
+                Tables\Actions\Action::make('catat_pengembalian')
+                    ->label('Catat Pengembalian')
+                    ->color('warning')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->visible(fn ($record): bool => $record->status === ReservationStatus::CheckedOut->value
+                        && Auth::user()?->managesReservation($record))
+                    ->form([
+                        Forms\Components\Toggle::make('is_ok')
+                            ->label('Aset dalam kondisi baik')
+                            ->default(true),
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Catatan kondisi')
+                            ->required(fn (Forms\Get $get): bool => ! $get('is_ok')),
+                        Forms\Components\FileUpload::make('photo')
+                            ->label('Foto kondisi aset')
+                            ->directory('loan-return-checklists')
+                            ->image()
+                            ->maxSize(5120),
+                        Forms\Components\FileUpload::make('proof_path')
+                            ->label('Bukti serah-terima')
+                            ->directory('loan-return-receipts')
+                            ->maxSize(5120),
+                        Forms\Components\Textarea::make('receipt_notes')
+                            ->label('Catatan serah-terima'),
+                    ])
+                    ->action(fn ($record, array $data) => app(LoanRequestService::class)->completeManagedReturn(
+                        'room', $record->getKey(), $data,
+                    )),
+                Tables\Actions\Action::make('ajukan_pengembalian')
+                    ->label('Ajukan Pengembalian')
+                    ->color('warning')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->visible(fn ($record): bool => $record->status === ReservationStatus::CheckedOut->value
+                        && Auth::user()?->belongsToUnit($record->activity?->g001_m001_unit_id))
+                    ->form([
+                        Forms\Components\Toggle::make('is_ok')->label('Aset dalam kondisi baik')->default(true),
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Catatan kondisi')
+                            ->required(fn (Forms\Get $get): bool => ! $get('is_ok')),
+                        Forms\Components\FileUpload::make('photo')
+                            ->label('Foto kondisi aset')
+                            ->directory('loan-return-checklists')->image()->maxSize(5120),
+                        Forms\Components\FileUpload::make('proof_path')
+                            ->label('Bukti serah-terima')
+                            ->directory('loan-return-receipts')->maxSize(5120),
+                    ])
+                    ->action(fn ($record, array $data) => app(LoanRequestService::class)->requestReservationReturn(
+                        'room', $record->getKey(), $data,
+                    )),
+                Tables\Actions\Action::make('koreksi_status')
+                    ->label('Koreksi Status')
+                    ->color('danger')
+                    ->icon('heroicon-o-arrow-path')
+                    ->visible(fn ($record): bool => (Auth::user()?->isAdmin() ?? false)
+                        && in_array($record->status, [ReservationStatus::ReturnRequested->value, ReservationStatus::Returned->value], true))
+                    ->form([Forms\Components\Textarea::make('reason')->label('Alasan koreksi')->required()->maxLength(2000)])
+                    ->requiresConfirmation()
+                    ->action(fn ($record, array $data) => app(LoanRequestService::class)->correctReservationStatus(
+                        'room', $record->getKey(), ReservationStatus::CheckedOut->value, $data['reason'],
                     )),
                 Tables\Actions\EditAction::make()
                     ->visible(fn () => Auth::user()?->isFacility()

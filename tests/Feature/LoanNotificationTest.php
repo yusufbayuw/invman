@@ -4,17 +4,32 @@ namespace Tests\Feature;
 
 use App\Enums\ReservationStatus;
 use App\Models\G001M001Unit;
-use App\Models\G002M007Item;
 use App\Models\G002M003ItemManagement;
+use App\Models\G002M007Item;
 use App\Models\User;
+use App\Notifications\DevicePushNotification;
 use App\Services\LoanRequestService;
+use Carbon\Carbon;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class LoanNotificationTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Carbon::setTestNow('2026-09-01 07:00:00');
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
 
     public function test_submission_creates_actionable_database_notifications_for_requester_and_reviewers(): void
     {
@@ -59,6 +74,30 @@ class LoanNotificationTest extends TestCase
 
         $this->assertContains('Pengajuan dibatalkan', $requester->notifications()->get()->pluck('data.title'));
         $this->assertContains('Pengajuan dibatalkan pemohon', $reviewer->notifications()->get()->pluck('data.title'));
+    }
+
+    public function test_submission_queues_device_push_for_subscribed_requester_and_reviewer(): void
+    {
+        [$requester, $reviewer, $item] = $this->fixtures();
+        $requester->updatePushSubscription('https://push.example.test/requester', 'key', 'token', 'aes128gcm');
+        $reviewer->updatePushSubscription('https://push.example.test/reviewer', 'key', 'token', 'aes128gcm');
+        Notification::fake();
+
+        app(LoanRequestService::class)->submit($requester, $this->requestData($item));
+
+        Notification::assertSentTo(
+            $requester,
+            DevicePushNotification::class,
+            fn (DevicePushNotification $notification): bool => $notification->title === 'Pengajuan berhasil dikirim'
+                && $notification->type === 'loan'
+                && str_contains($notification->url, '/admin/activity/'),
+        );
+        Notification::assertSentTo(
+            $reviewer,
+            DevicePushNotification::class,
+            fn (DevicePushNotification $notification): bool => $notification->title === 'Pengajuan baru perlu ditinjau'
+                && $notification->type === 'loan',
+        );
     }
 
     private function fixtures(): array

@@ -6,9 +6,12 @@ use App\Enums\ReservationStatus;
 use App\Filament\Resources\G004M008ActivityResource;
 use App\Models\G004M008Activity;
 use App\Models\User;
+use App\Notifications\DevicePushNotification;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class LoanNotificationService
 {
@@ -36,13 +39,18 @@ class LoanNotificationService
         $activity->loadMissing(['user', 'unit']);
 
         if ($activity->user) {
+            $title = 'Pengajuan berhasil dikirim';
+            $body = "{$activity->name} telah masuk ke antrean. Aset ditahan hingga ".($activity->hold_expires_at?->translatedFormat('d M Y, H:i') ?? '-').'.';
+
             Notification::make()
-                ->title('Pengajuan berhasil dikirim')
-                ->body("{$activity->name} telah masuk ke antrean. Aset ditahan hingga " . ($activity->hold_expires_at?->translatedFormat('d M Y, H:i') ?? '-') . '.')
+                ->title($title)
+                ->body($body)
                 ->success()
                 ->icon('heroicon-o-paper-airplane')
                 ->actions([$this->viewAction($activity, 'Lihat pengajuan')])
                 ->sendToDatabase($activity->user);
+
+            $this->sendDevicePush($activity->user, $title, $body, $activity, 'submitted-requester');
         }
 
         $reviewers = $this->reviewers($activity, except: $activity->user);
@@ -55,13 +63,18 @@ class LoanNotificationService
         $schedule = $activity->start_time?->translatedFormat('d M Y, H:i') ?? '-';
         $deadline = $activity->hold_expires_at?->translatedFormat('d M Y, H:i') ?? '-';
 
+        $title = 'Pengajuan baru perlu ditinjau';
+        $body = "{$activity->user?->name} dari {$unit} mengajukan {$activity->name} untuk {$schedule}. Putuskan sebelum {$deadline}.";
+
         Notification::make()
-            ->title('Pengajuan baru perlu ditinjau')
-            ->body("{$activity->user?->name} dari {$unit} mengajukan {$activity->name} untuk {$schedule}. Putuskan sebelum {$deadline}.")
+            ->title($title)
+            ->body($body)
             ->warning()
             ->icon('heroicon-o-inbox-arrow-down')
             ->actions([$this->viewAction($activity, 'Tinjau sekarang', true)])
             ->sendToDatabase($reviewers);
+
+        $this->sendDevicePush($reviewers, $title, $body, $activity, 'submitted-reviewer');
     }
 
     public function statusChanged(
@@ -89,6 +102,8 @@ class LoanNotificationService
 
         $notification->{$status}()->sendToDatabase($activity->user);
 
+        $this->sendDevicePush($activity->user, $title, $body, $activity, $to->value);
+
         if ($to !== ReservationStatus::Cancelled) {
             return;
         }
@@ -96,13 +111,18 @@ class LoanNotificationService
         $reviewers = $this->reviewers($activity, except: $activity->user);
 
         if ($reviewers->isNotEmpty()) {
+            $reviewerTitle = 'Pengajuan dibatalkan pemohon';
+            $reviewerBody = "{$activity->name} tidak lagi memerlukan tindakan persetujuan.";
+
             Notification::make()
-                ->title('Pengajuan dibatalkan pemohon')
-                ->body("{$activity->name} tidak lagi memerlukan tindakan persetujuan.")
+                ->title($reviewerTitle)
+                ->body($reviewerBody)
                 ->warning()
                 ->icon('heroicon-o-x-circle')
                 ->actions([$this->viewAction($activity, 'Lihat detail', true)])
                 ->sendToDatabase($reviewers);
+
+            $this->sendDevicePush($reviewers, $reviewerTitle, $reviewerBody, $activity, 'cancelled-reviewer');
         }
     }
 
@@ -114,30 +134,105 @@ class LoanNotificationService
         $activity->loadMissing('user');
 
         if ($activity->user) {
+            $title = $to === ReservationStatus::PartiallyApproved
+                ? 'Sebagian hold pengajuan berakhir'
+                : 'Masa tahan pengajuan berakhir';
+            $body = $to === ReservationStatus::PartiallyApproved
+                ? "Kebutuhan {$activity->name} yang belum diputuskan telah dilepaskan. Kebutuhan yang disetujui tetap tercatat."
+                : "Pengajuan {$activity->name} tidak diproses dalam batas waktu dan aset telah tersedia kembali.";
+
             Notification::make()
-                ->title($to === ReservationStatus::PartiallyApproved
-                    ? 'Sebagian hold pengajuan berakhir'
-                    : 'Masa tahan pengajuan berakhir')
-                ->body($to === ReservationStatus::PartiallyApproved
-                    ? "Kebutuhan {$activity->name} yang belum diputuskan telah dilepaskan. Kebutuhan yang disetujui tetap tercatat."
-                    : "Pengajuan {$activity->name} tidak diproses dalam batas waktu dan aset telah tersedia kembali.")
+                ->title($title)
+                ->body($body)
                 ->warning()
                 ->icon('heroicon-o-clock')
                 ->actions([$this->viewAction($activity, 'Lihat detail', true)])
                 ->sendToDatabase($activity->user);
+
+            $this->sendDevicePush($activity->user, $title, $body, $activity, 'hold-expired-requester');
         }
 
         $reviewers = $this->reviewers($activity, except: $activity->user);
 
         if ($reviewers->isNotEmpty()) {
+            $title = 'Hold peminjaman kedaluwarsa';
+            $body = "Kebutuhan yang masih menunggu pada {$activity->name} telah dilepaskan otomatis.";
+
             Notification::make()
-                ->title('Hold peminjaman kedaluwarsa')
-                ->body("Kebutuhan yang masih menunggu pada {$activity->name} telah dilepaskan otomatis.")
+                ->title($title)
+                ->body($body)
                 ->warning()
                 ->icon('heroicon-o-clock')
                 ->actions([$this->viewAction($activity, 'Lihat detail', true)])
                 ->sendToDatabase($reviewers);
+
+            $this->sendDevicePush($reviewers, $title, $body, $activity, 'hold-expired-reviewer');
         }
+    }
+
+    public function overdue(string $type, Model $reservation): void
+    {
+        $activity = $reservation->activity;
+        if (! $activity) {
+            return;
+        }
+
+        $subject = match ($type) {
+            'item' => $reservation->item?->name ?? 'Barang',
+            'room' => $reservation->room?->name ?? 'Ruangan',
+            'vehicle' => $reservation->vehicle?->name ?? 'Kendaraan',
+            default => 'Aset',
+        };
+        $deadline = $reservation->end_time?->translatedFormat('d M Y, H:i') ?? '-';
+        $recipients = collect([$activity->user])
+            ->filter()
+            ->concat($this->reviewers($activity, except: $activity->user))
+            ->unique('id');
+
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
+        $title = 'Peminjaman terlambat dikembalikan';
+        $body = "{$subject} untuk {$activity->name} melewati batas pengembalian {$deadline}. Ajukan atau catat pengembalian sesuai kondisi fisik aset.";
+
+        Notification::make()
+            ->title($title)
+            ->body($body)
+            ->danger()
+            ->icon('heroicon-o-exclamation-triangle')
+            ->actions([$this->viewAction($activity, 'Proses pengembalian', true)])
+            ->sendToDatabase($recipients);
+
+        $this->sendDevicePush($recipients, $title, $body, $activity, "overdue-{$type}-{$reservation->getKey()}");
+    }
+
+    public function returnConfirmationRequired(G004M008Activity $activity, bool $forBorrower): void
+    {
+        $activity->loadMissing('user');
+        $recipients = $forBorrower
+            ? collect([$activity->user])->filter()
+            : $this->reviewers($activity, except: $activity->user);
+
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
+        $title = 'Konfirmasi serah-terima pengembalian diperlukan';
+        $body = $forBorrower
+            ? "Pengelola telah mencatat pengembalian fisik untuk {$activity->name}. Konfirmasikan bahwa serah-terima benar."
+            : "Pemohon telah mengajukan pengembalian untuk {$activity->name}. Periksa kondisi aset dan konfirmasikan serah-terima.";
+
+        Notification::make()
+            ->title($title)
+            ->body($body)
+            ->warning()
+            ->icon('heroicon-o-document-check')
+            ->actions([$this->viewAction($activity, 'Konfirmasi sekarang', true)])
+            ->sendToDatabase($recipients);
+
+        $audience = $forBorrower ? 'borrower' : 'reviewer';
+        $this->sendDevicePush($recipients, $title, $body, $activity, "return-confirmation-{$audience}");
     }
 
     /** @return array{string, string, string, string} */
@@ -208,6 +303,32 @@ class LoanNotificationService
             ->markAsRead();
 
         return $button ? $action->button() : $action;
+    }
+
+    /** @param User|Collection<int, User> $recipients */
+    private function sendDevicePush(
+        User | Collection $recipients,
+        string $title,
+        string $body,
+        G004M008Activity $activity,
+        string $tagSuffix,
+    ): void {
+        $users = $recipients instanceof User ? collect([$recipients]) : $recipients;
+        $subscribedUsers = $users->filter(
+            fn (User $user): bool => $user->pushSubscriptions()->exists(),
+        );
+
+        if ($subscribedUsers->isEmpty()) {
+            return;
+        }
+
+        NotificationFacade::send($subscribedUsers, new DevicePushNotification(
+            title: $title,
+            body: $body,
+            url: G004M008ActivityResource::getUrl('view', ['record' => $activity]),
+            type: 'loan',
+            tag: "loan-{$activity->getKey()}-{$tagSuffix}",
+        ));
     }
 
     /** @return Collection<int, User> */

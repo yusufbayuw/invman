@@ -11,6 +11,7 @@ use App\Models\G008M017Vehicle;
 use App\Models\User;
 use App\Services\LoanAvailabilityService;
 use App\Services\LoanRequestService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
@@ -19,6 +20,18 @@ use Tests\TestCase;
 class LoanBookingLifecycleTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Carbon::setTestNow('2026-09-01 07:00:00');
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
 
     public function test_active_submitted_hold_blocks_items_rooms_and_vehicles(): void
     {

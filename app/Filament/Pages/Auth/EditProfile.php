@@ -17,6 +17,8 @@ class EditProfile extends BaseEditProfile
     public function form(Form $form): Form
     {
         return $form->schema([
+            \Filament\Forms\Components\View::make('pwa.profile-notifications')
+                ->columnSpanFull(),
             FileUpload::make('avatar')
                 ->label('Foto profil')
                 ->avatar()

@@ -144,9 +144,18 @@ class ItemReservationRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->label('Status')
-                    ->formatStateUsing(fn (?string $state) => ReservationStatus::tryFrom($state)?->label() ?? $state)
-                    ->color(fn (?string $state) => ReservationStatus::tryFrom($state)?->color() ?? 'gray')
+                    ->formatStateUsing(fn (?string $state, $record) => $record->isOverdue()
+                        ? 'Terlambat'
+                        : (ReservationStatus::tryFrom($state)?->label() ?? $state))
+                    ->color(fn (?string $state, $record) => $record->isOverdue()
+                        ? 'danger'
+                        : (ReservationStatus::tryFrom($state)?->color() ?? 'gray'))
                     ->sortable(),
+                Tables\Columns\TextColumn::make('returnReceipt.receipt_number')
+                    ->label('No. Serah Terima')
+                    ->placeholder('-')
+                    ->copyable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('rejection_reason')
                     ->label('Alasan Penolakan')
                     ->placeholder('-')
@@ -213,13 +222,46 @@ class ItemReservationRelationManager extends RelationManager
                         'item', $record->getKey(), ReservationStatus::CheckedOut,
                     )),
                 Tables\Actions\Action::make('dikembalikan')
-                    ->label('Konfirmasi Pengembalian')
+                    ->label('Konfirmasi Serah Terima')
                     ->color('warning')
-                    ->visible(fn ($record): bool => $record->status === ReservationStatus::ReturnRequested->value
-                        && Auth::user()?->managesReservation($record))
+                    ->visible(fn ($record): bool => app(LoanRequestService::class)->canConfirmReturn($record))
                     ->icon('heroicon-o-arrow-uturn-left')
-                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
-                        'item', $record->getKey(), ReservationStatus::Returned,
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => app(LoanRequestService::class)->confirmReturn(
+                        'item', $record->getKey(),
+                    )),
+                Tables\Actions\Action::make('catat_pengembalian')
+                    ->label('Catat Pengembalian')
+                    ->color('warning')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->visible(fn ($record): bool => $record->status === ReservationStatus::CheckedOut->value
+                        && Auth::user()?->managesReservation($record))
+                    ->fillForm(fn (G005M009ItemReservation $record): array => $this->returnChecklistData($record))
+                    ->form($this->returnChecklistForm())
+                    ->action(fn ($record, array $data) => app(LoanRequestService::class)->completeManagedReturn(
+                        'item', $record->getKey(), $data,
+                    )),
+                Tables\Actions\Action::make('ajukan_pengembalian')
+                    ->label('Ajukan Pengembalian')
+                    ->color('warning')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->visible(fn ($record): bool => $record->status === ReservationStatus::CheckedOut->value
+                        && Auth::user()?->belongsToUnit($record->activity?->g001_m001_unit_id))
+                    ->fillForm(fn (G005M009ItemReservation $record): array => $this->returnChecklistData($record))
+                    ->form($this->returnChecklistForm())
+                    ->action(fn ($record, array $data) => app(LoanRequestService::class)->requestReservationReturn(
+                        'item', $record->getKey(), $data,
+                    )),
+                Tables\Actions\Action::make('koreksi_status')
+                    ->label('Koreksi Status')
+                    ->color('danger')
+                    ->icon('heroicon-o-arrow-path')
+                    ->visible(fn ($record): bool => (Auth::user()?->isAdmin() ?? false)
+                        && in_array($record->status, [ReservationStatus::ReturnRequested->value, ReservationStatus::Returned->value], true))
+                    ->form([Forms\Components\Textarea::make('reason')->label('Alasan koreksi')->required()->maxLength(2000)])
+                    ->requiresConfirmation()
+                    ->action(fn ($record, array $data) => app(LoanRequestService::class)->correctReservationStatus(
+                        'item', $record->getKey(), ReservationStatus::CheckedOut->value, $data['reason'],
                     )),
                 Tables\Actions\EditAction::make()
                     ->visible(fn () => Auth::user()?->isFacility()
@@ -234,5 +276,50 @@ class ItemReservationRelationManager extends RelationManager
                 ])->visible(fn () => Auth::user()?->isFacility()
                     && $this->ownerRecord->status === ReservationStatus::Draft->value),
             ]);
+    }
+
+    private function returnChecklistData(G005M009ItemReservation $record): array
+    {
+        return [
+            'instances' => $record->item_reservation_detail()
+                ->with('item_instance')
+                ->get()
+                ->map(fn ($detail): array => [
+                    'item_instance_id' => $detail->g002_m015_item_instance_id,
+                    'instance_label' => $detail->item_instance?->code ?: ($detail->item_instance?->name ?? '#'.$detail->g002_m015_item_instance_id),
+                    'is_ok' => true,
+                ])->all(),
+        ];
+    }
+
+    private function returnChecklistForm(): array
+    {
+        return [
+            Forms\Components\Repeater::make('instances')
+                ->label('Kondisi setiap barang satuan')
+                ->schema([
+                    Forms\Components\Hidden::make('item_instance_id'),
+                    Forms\Components\TextInput::make('instance_label')->label('Kode / nama')->disabled()->dehydrated(false),
+                    Forms\Components\Toggle::make('is_ok')->label('Kondisi baik')->default(true)->live(),
+                    Forms\Components\Textarea::make('notes')
+                        ->label('Catatan kondisi')
+                        ->required(fn (Forms\Get $get): bool => ! $get('is_ok')),
+                    Forms\Components\FileUpload::make('photo')
+                        ->label('Foto kondisi')
+                        ->directory('loan-return-checklists')
+                        ->image()
+                        ->maxSize(5120),
+                ])
+                ->addable(false)
+                ->deletable(false)
+                ->reorderable(false)
+                ->columns(2)
+                ->columnSpanFull(),
+            Forms\Components\FileUpload::make('proof_path')
+                ->label('Bukti serah-terima')
+                ->directory('loan-return-receipts')
+                ->maxSize(5120),
+            Forms\Components\Textarea::make('receipt_notes')->label('Catatan serah-terima'),
+        ];
     }
 }

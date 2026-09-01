@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\CustomChatifyPage;
 use App\Models\User;
+use Chatify\Facades\ChatifyMessenger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class BrandingAndAvatarTest extends TestCase
@@ -23,9 +26,13 @@ class BrandingAndAvatarTest extends TestCase
         $this->assertSame(config('app.logo'), config('chatify.logo'));
 
         $user = User::factory()->create();
+        $user->givePermissionTo(Permission::query()->create([
+            'name' => config('filament-shield.permission_prefixes.page').'_'.class_basename(CustomChatifyPage::class),
+            'guard_name' => 'web',
+        ]));
 
         $this->actingAs($user)
-            ->get('/admin/chatify')
+            ->get(CustomChatifyPage::getUrl())
             ->assertOk()
             ->assertSee('PESAN '.strtoupper(config('app.name')))
             ->assertSee('Semua Pesan')
@@ -70,5 +77,25 @@ class BrandingAndAvatarTest extends TestCase
         $user->avatar = asset('storage/users-avatar/avatar.png');
 
         $this->assertSame(asset('images/app/fav.png'), $user->getFilamentAvatarUrl());
+    }
+
+    public function test_chatify_uses_application_logo_for_default_avatar(): void
+    {
+        $user = User::factory()->create(['avatar' => 'avatar.png']);
+
+        $this->assertSame(
+            asset(config('app.logo')),
+            ChatifyMessenger::getUserWithAvatar($user)->avatar,
+        );
+    }
+
+    public function test_chatify_does_not_duplicate_the_avatar_folder(): void
+    {
+        $user = User::factory()->create(['avatar' => 'users-avatar/foto-pengguna.jpg']);
+
+        $this->assertStringEndsWith(
+            '/storage/users-avatar/foto-pengguna.jpg',
+            ChatifyMessenger::getUserWithAvatar($user)->avatar,
+        );
     }
 }
