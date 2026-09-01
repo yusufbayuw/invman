@@ -2,11 +2,12 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Monzer\FilamentChatifyIntegration\Pages\Chatify;
 
 class CustomChatifyPage extends Chatify
 {
+    use HasPageShield;
     protected static string $view = 'filament.pages.custom-chatify-page';
 
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-oval-left-ellipsis';

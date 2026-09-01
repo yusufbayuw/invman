@@ -38,6 +38,7 @@ const pusher = new Pusher(chatify.pusher.key, {
     wsPort: chatify.pusher.options.port,
     wssPort: chatify.pusher.options.port,
     forceTLS: chatify.pusher.options.useTLS,
+    enabledTransports: ["ws", "wss"],
     authEndpoint: chatify.pusherAuthEndpoint,
   auth: {
     headers: {
