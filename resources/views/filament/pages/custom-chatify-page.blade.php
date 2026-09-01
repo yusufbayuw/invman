@@ -15,11 +15,34 @@
     ])
 
 <style>
+    .chatify-page-active {
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    .chatify-page-active .fi-layout,
+    .chatify-page-active .fi-main-ctn {
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .chatify-page-active .fi-main {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        height: auto;
+        min-height: 0;
+        overflow: hidden;
+    }
+
     .chatify-page-shell {
         position: relative;
+        flex: 1 1 auto;
         width: 100%;
-        height: calc(100dvh - 8rem);
-        min-height: 20rem;
+        height: 100%;
+        min-height: 0;
         overflow: hidden;
         border: 1px solid rgb(229 231 235);
         border-radius: .75rem;
@@ -35,6 +58,7 @@
     }
 
     .chatify-page-shell .messenger-listView {
+        display: flex;
         overflow: hidden;
     }
 
@@ -60,7 +84,7 @@
 
     .chatify-page-shell .messenger-sendCard {
         flex: 0 0 auto;
-        margin-bottom: 10px;
+        margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     }
 
     .chatify-page-shell .avatar {
@@ -100,26 +124,4 @@
         }
     }
 </style>
-
-<script>
-    (() => {
-        const resizeChatifyPage = () => {
-            const shell = document.querySelector('.chatify-page-shell');
-
-            if (! shell) {
-                return;
-            }
-
-            const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
-            const availableHeight = viewportHeight - Math.max(shell.getBoundingClientRect().top, 0) - 16;
-
-            shell.style.height = `${Math.max(320, availableHeight)}px`;
-        };
-
-        requestAnimationFrame(resizeChatifyPage);
-        window.addEventListener('resize', resizeChatifyPage, { passive: true });
-        window.visualViewport?.addEventListener('resize', resizeChatifyPage, { passive: true });
-        document.addEventListener('livewire:navigated', resizeChatifyPage);
-    })();
-</script>
 </div>
