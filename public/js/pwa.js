@@ -193,7 +193,7 @@
         }
 
         if (isIos()) {
-            window.alert('Di Safari, ketuk tombol Bagikan lalu pilih “Tambahkan ke Layar Utama”. Setelah terpasang, buka PPAS dari ikon tersebut.');
+            window.alert('Di Safari, ketuk tombol Bagikan lalu pilih “Tambahkan ke Layar Utama”. Setelah terpasang, buka LIST dari ikon tersebut.');
         }
     };
 

@@ -1,4 +1,4 @@
-/* PPAS service worker: push delivery only; authenticated pages are never cached. */
+/* LIST service worker: push delivery only; authenticated pages are never cached. */
 self.addEventListener('install', (event) => {
     event.waitUntil(self.skipWaiting());
 });
@@ -18,7 +18,7 @@ self.addEventListener('push', (event) => {
 
     const data = payload.data && typeof payload.data === 'object' ? payload.data : {};
 
-    event.waitUntil(self.registration.showNotification(payload.title || 'PPAS', {
+    event.waitUntil(self.registration.showNotification(payload.title || 'LIST', {
         body: payload.body || 'Ada pembaruan baru.',
         icon: payload.icon || '/images/pwa/icon-192.png',
         badge: payload.badge || '/images/pwa/badge-96.png',

@@ -6,7 +6,7 @@ return [
     | Messenger display name
     |-------------------------------------
     */
-    'name' => env('APP_NAME', 'PPAS'),
+    'name' => env('APP_NAME', 'LIST'),
     'logo' => env('APP_LOGO', 'images/app/fav.png'),
 
     /*

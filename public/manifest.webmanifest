@@ -38,7 +38,7 @@
             "url": "/admin/peminjaman-saya"
         },
         {
-            "name": "Chat PPAS",
+            "name": "Chat LIST",
             "short_name": "Chat",
             "url": "/admin/chat"
         }

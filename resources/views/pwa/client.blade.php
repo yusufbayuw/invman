@@ -1,25 +1,47 @@
 @if ($showBanner)
     <aside id="pwa-onboarding" hidden aria-live="polite">
-        <button type="button" class="pwa-onboarding__close" data-pwa-dismiss aria-label="Tutup">&times;</button>
+        <button
+            type="button"
+            class="pwa-onboarding__close"
+            data-pwa-dismiss
+            aria-label="Tutup"
+        >&times;</button>
+
         <div class="pwa-onboarding__content">
-            <strong>Gunakan PPAS sebagai aplikasi</strong>
+            <strong>Gunakan LIST sebagai aplikasi</strong>
             <span data-pwa-status>Memeriksa dukungan perangkat…</span>
         </div>
+
         <div class="pwa-onboarding__actions">
-            <button type="button" data-pwa-install-button hidden>Install aplikasi</button>
-            <button type="button" data-pwa-enable-button hidden>Aktifkan notifikasi</button>
-            <button type="button" data-pwa-disable-button hidden>Nonaktifkan notifikasi</button>
+            <button type="button" data-pwa-install-button hidden>
+                Install aplikasi
+            </button>
+
+            <button type="button" data-pwa-enable-button hidden>
+                Aktifkan notifikasi
+            </button>
+
+            <button type="button" data-pwa-disable-button hidden>
+                Nonaktifkan notifikasi
+            </button>
         </div>
     </aside>
 @endif
 
-<script id="ppas-pwa-config" type="application/json">@json([
-    'authenticated' => auth()->check(),
-    'vapidUrl' => route('push.vapid-public-key'),
-    'subscribeUrl' => route('push.subscriptions.store'),
-    'unsubscribeUrl' => route('push.subscriptions.destroy'),
-    'serviceWorkerUrl' => asset('sw.js'),
-])</script>
+@php
+    $pwaConfig = [
+        'authenticated' => auth()->check(),
+        'vapidUrl' => route('push.vapid-public-key'),
+        'subscribeUrl' => route('push.subscriptions.store'),
+        'unsubscribeUrl' => route('push.subscriptions.destroy'),
+        'serviceWorkerUrl' => asset('sw.js'),
+    ];
+@endphp
+
+<script id="ppas-pwa-config" type="application/json">
+    @json($pwaConfig)
+</script>
+
 <script src="{{ asset('js/pwa.js') }}" defer></script>
 
 <style>
