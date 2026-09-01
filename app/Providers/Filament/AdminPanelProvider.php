@@ -12,6 +12,7 @@ use App\Filament\Widgets\LoanOperationsStats;
 use App\Filament\Widgets\LoanStatusChart;
 use App\Filament\Widgets\LoanUsageTrendChart;
 use App\Filament\Widgets\MenuGridWidget;
+use App\Filament\Widgets\QuickActionsWidget;
 use App\Filament\Widgets\RecentLoanRequests;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
@@ -85,9 +86,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             // ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                //Widgets\AccountWidget::class,
+                // Widgets\AccountWidget::class,
                 MenuGridWidget::class,
                 LoanOperationsStats::class,
+                QuickActionsWidget::class,
                 LoanStatusChart::class,
                 LoanUsageTrendChart::class,
                 RecentLoanRequests::class,

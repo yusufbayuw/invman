@@ -48,18 +48,15 @@ class ChatPushNotificationTest extends TestCase
             'attachment' => null,
         ]);
 
-        Notification::assertSentTo(
-            $recipient,
-            DevicePushNotification::class,
-            function (DevicePushNotification $notification) use ($sender): bool {
-                return $notification->title === 'Pesan baru dari Pengirim'
-                    && str_contains($notification->body, 'Pesan aman')
-                    && ! str_contains($notification->body, '<strong>')
-                    && mb_strlen($notification->body) <= 120
-                    && str_contains($notification->url, "/admin/chat?contact={$sender->getKey()}")
-                    && $notification->type === 'chat';
-            },
-        );
+        $notification = Notification::sent($recipient, DevicePushNotification::class)->first();
+
+        $this->assertInstanceOf(DevicePushNotification::class, $notification);
+        $this->assertSame('Pesan baru dari Pengirim', $notification->title);
+        $this->assertStringContainsString('Pesan aman', $notification->body);
+        $this->assertStringNotContainsString('<strong>', $notification->body);
+        $this->assertLessThanOrEqual(120, mb_strlen($notification->body));
+        $this->assertStringContainsString("/admin/chat?contact={$sender->getKey()}", $notification->url);
+        $this->assertSame('chat', $notification->type);
         Notification::assertNotSentTo($sender, DevicePushNotification::class);
     }
 

@@ -343,6 +343,66 @@ class LoanRequestService
                     && $receipt->manager_confirmed_by !== $user->id));
     }
 
+    public function canDecideReservation(Model $reservation, ?User $user = null): bool
+    {
+        $user ??= auth()->user();
+
+        return $reservation->status === ReservationStatus::Submitted->value
+            && (! $reservation->activity?->hold_expires_at || $reservation->activity->hold_expires_at->isFuture())
+            && ($user?->managesReservation($reservation) ?? false);
+    }
+
+    public function canCheckoutReservation(Model $reservation, ?User $user = null): bool
+    {
+        $user ??= auth()->user();
+
+        return $reservation->status === ReservationStatus::Approved->value
+            && ($user?->managesReservation($reservation) ?? false);
+    }
+
+    public function canRecordManagedReturn(Model $reservation, ?User $user = null): bool
+    {
+        $user ??= auth()->user();
+
+        return $reservation->status === ReservationStatus::CheckedOut->value
+            && ($user?->managesReservation($reservation) ?? false);
+    }
+
+    public function canRequestReservationReturn(Model $reservation, ?User $user = null): bool
+    {
+        $user ??= auth()->user();
+
+        return $reservation->status === ReservationStatus::CheckedOut->value
+            && ($user?->belongsToUnit($reservation->activity?->g001_m001_unit_id) ?? false);
+    }
+
+    /** @return list<string> */
+    public function availableQuickActions(Model $reservation, ?User $user = null): array
+    {
+        $user ??= auth()->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        if ($this->canConfirmReturn($reservation, $user)) {
+            return ['confirmReturn'];
+        }
+
+        if ($this->canDecideReservation($reservation, $user)) {
+            return ['approve', 'reject'];
+        }
+
+        if ($this->canCheckoutReservation($reservation, $user)) {
+            return ['checkout'];
+        }
+
+        return array_values(array_filter([
+            $this->canRecordManagedReturn($reservation, $user) ? 'recordReturn' : null,
+            $this->canRequestReservationReturn($reservation, $user) ? 'requestReturn' : null,
+        ]));
+    }
+
     public function processReservation(
         string $type,
         string $reservationId,

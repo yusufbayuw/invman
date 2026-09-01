@@ -2,11 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Models\G001M001Unit;
-use App\Models\G002M007Item;
-use App\Models\G004M008Activity;
-use App\Models\User;
+use App\Enums\ReservationStatus;
 use App\Filament\Pages\AjukanPeminjaman;
+use App\Filament\Pages\PeminjamanSaya;
+use App\Models\G001M001Unit;
+use App\Models\G002M003ItemManagement;
+use App\Models\G002M007Item;
+use App\Models\G003M006Room;
+use App\Models\G004M008Activity;
+use App\Models\G005M010RoomReservation;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
@@ -130,5 +135,79 @@ class UnitLoanPageTest extends TestCase
         $this->assertDatabaseMissing('g004_m008_activities', [
             'name' => 'Jadwal tidak valid',
         ]);
+    }
+
+    public function test_unified_loan_page_shows_return_actions_for_the_correct_role(): void
+    {
+        $unit = G001M001Unit::query()->create(['name' => 'Unit Pengujian']);
+        $borrower = User::factory()->create(['g001_m001_unit_id' => $unit->id]);
+        Role::query()->create(['name' => config('role.unit'), 'guard_name' => 'web']);
+        $borrower->assignRole(config('role.unit'));
+        $manager = User::factory()->create();
+        $management = G002M003ItemManagement::query()->create(['name' => 'Pengelola Ruangan']);
+        $management->users()->attach($manager);
+        $room = G003M006Room::query()->create([
+            'name' => 'Aula',
+            'g001_m001_unit_id' => $unit->id,
+            'g002_m003_item_management_id' => $management->id,
+            'is_borrowable' => true,
+        ]);
+        $activity = G004M008Activity::query()->create([
+            'user_id' => $borrower->id,
+            'g001_m001_unit_id' => $unit->id,
+            'name' => 'Kegiatan Berjalan',
+            'start_time' => now()->subHour(),
+            'end_time' => now()->addHour(),
+            'status' => ReservationStatus::CheckedOut->value,
+        ]);
+        $reservation = G005M010RoomReservation::query()->create([
+            'g004_m008_activity_id' => $activity->id,
+            'g003_m006_room_id' => $room->id,
+            'start_time' => $activity->start_time,
+            'end_time' => $activity->end_time,
+            'status' => ReservationStatus::CheckedOut->value,
+        ]);
+        $otherManagement = G002M003ItemManagement::query()->create(['name' => 'Pengelola Lain']);
+        $otherRoom = G003M006Room::query()->create([
+            'name' => 'Ruang Pengelola Lain',
+            'g001_m001_unit_id' => $unit->id,
+            'g002_m003_item_management_id' => $otherManagement->id,
+            'is_borrowable' => true,
+        ]);
+        G005M010RoomReservation::query()->create([
+            'g004_m008_activity_id' => $activity->id,
+            'g003_m006_room_id' => $otherRoom->id,
+            'start_time' => $activity->start_time,
+            'end_time' => $activity->end_time,
+            'status' => ReservationStatus::CheckedOut->value,
+        ]);
+
+        $borrowerComponent = Livewire::actingAs($borrower)->test(PeminjamanSaya::class);
+        $borrowerRecord = $borrowerComponent->instance()->getTableRecords()->firstWhere('need_name', 'Aula');
+        $borrowerComponent
+            ->assertTableActionVisible('request_return', $borrowerRecord)
+            ->assertTableActionHidden('managed_return', $borrowerRecord);
+
+        $managerComponent = Livewire::actingAs($manager)->test(PeminjamanSaya::class);
+        $this->assertCount(1, $managerComponent->instance()->getTableRecords());
+        $managerRecord = $managerComponent->instance()->getTableRecords()->firstWhere('need_name', 'Aula');
+        $managerComponent
+            ->assertTableActionVisible('managed_return', $managerRecord)
+            ->assertTableActionHidden('request_return', $managerRecord);
+
+        $borrowerActionComponent = Livewire::actingAs($borrower)->test(PeminjamanSaya::class);
+        $borrowerActionRecord = $borrowerActionComponent->instance()->getTableRecords()->firstWhere('need_name', 'Aula');
+        $borrowerActionComponent
+            ->callTableAction('request_return', $borrowerActionRecord, [
+                'is_ok' => true,
+                'notes' => 'Ruangan telah selesai digunakan.',
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame(ReservationStatus::ReturnRequested->value, $reservation->fresh()->status);
+
+        $managerConfirmation = Livewire::actingAs($manager)->test(PeminjamanSaya::class);
+        $confirmationRecord = $managerConfirmation->instance()->getTableRecords()->firstWhere('need_name', 'Aula');
+        $managerConfirmation->assertTableActionVisible('confirm_return', $confirmationRecord);
     }
 }

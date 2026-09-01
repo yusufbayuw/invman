@@ -201,12 +201,7 @@ class RoomReservationRelationManager extends RelationManager
                 Tables\Actions\Action::make('konfirmasi')
                     ->label('Setujui')
                     ->color('success')
-                    ->hidden(fn ($record): bool => ! (
-                        $record->status === ReservationStatus::Submitted->value
-                        && (! $record->activity?->hold_expires_at || $record->activity->hold_expires_at->isFuture())
-                        && Auth::user()
-                        && Auth::user()->managesReservation($record)
-                    ))
+                    ->hidden(fn ($record): bool => ! app(LoanRequestService::class)->canDecideReservation($record))
                     ->icon('heroicon-o-check-circle')
                     ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
                         'room', $record->getKey(), ReservationStatus::Approved,
@@ -220,12 +215,7 @@ class RoomReservationRelationManager extends RelationManager
                             ->required()
                             ->maxLength(2000),
                     ])
-                    ->hidden(fn ($record): bool => ! (
-                        $record->status === ReservationStatus::Submitted->value
-                        && (! $record->activity?->hold_expires_at || $record->activity->hold_expires_at->isFuture())
-                        && Auth::user()
-                        && Auth::user()->managesReservation($record)
-                    ))
+                    ->hidden(fn ($record): bool => ! app(LoanRequestService::class)->canDecideReservation($record))
                     ->icon('heroicon-o-x-circle')
                     ->action(fn ($record, array $data) => app(LoanRequestService::class)->processReservation(
                         'room', $record->getKey(), ReservationStatus::Rejected, $data['rejection_reason'],
@@ -234,8 +224,7 @@ class RoomReservationRelationManager extends RelationManager
                     ->label('Pinjamkan')
                     ->color('info')
                     ->icon('heroicon-o-arrow-right-circle')
-                    ->visible(fn ($record): bool => $record->status === ReservationStatus::Approved->value
-                        && Auth::user()?->managesReservation($record))
+                    ->visible(fn ($record): bool => app(LoanRequestService::class)->canCheckoutReservation($record))
                     ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
                         'room', $record->getKey(), ReservationStatus::CheckedOut,
                     )),
@@ -252,8 +241,7 @@ class RoomReservationRelationManager extends RelationManager
                     ->label('Catat Pengembalian')
                     ->color('warning')
                     ->icon('heroicon-o-clipboard-document-check')
-                    ->visible(fn ($record): bool => $record->status === ReservationStatus::CheckedOut->value
-                        && Auth::user()?->managesReservation($record))
+                    ->visible(fn ($record): bool => app(LoanRequestService::class)->canRecordManagedReturn($record))
                     ->form([
                         Forms\Components\Toggle::make('is_ok')
                             ->label('Aset dalam kondisi baik')
@@ -280,8 +268,7 @@ class RoomReservationRelationManager extends RelationManager
                     ->label('Ajukan Pengembalian')
                     ->color('warning')
                     ->icon('heroicon-o-arrow-uturn-left')
-                    ->visible(fn ($record): bool => $record->status === ReservationStatus::CheckedOut->value
-                        && Auth::user()?->belongsToUnit($record->activity?->g001_m001_unit_id))
+                    ->visible(fn ($record): bool => app(LoanRequestService::class)->canRequestReservationReturn($record))
                     ->form([
                         Forms\Components\Toggle::make('is_ok')->label('Aset dalam kondisi baik')->default(true),
                         Forms\Components\Textarea::make('notes')

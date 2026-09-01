@@ -3,16 +3,14 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
 
-class DevicePushNotification extends Notification implements ShouldQueue
+class DevicePushNotification extends Notification implements ShouldQueueAfterCommit
 {
     use Queueable;
-
-    public bool $afterCommit = true;
 
     public int $tries = 3;
 
@@ -31,8 +29,10 @@ class DevicePushNotification extends Notification implements ShouldQueue
         return [WebPushChannel::class];
     }
 
-    public function toWebPush(object $notifiable, Notification $notification): WebPushMessage
-    {
+    public function toWebPush(
+        object $notifiable,
+        Notification $notification
+    ): WebPushMessage {
         return (new WebPushMessage)
             ->title($this->title)
             ->body($this->body)
@@ -46,7 +46,9 @@ class DevicePushNotification extends Notification implements ShouldQueue
             ])
             ->options([
                 'TTL' => $this->ttl,
-                'urgency' => $this->type === 'chat' ? 'high' : 'normal',
+                'urgency' => $this->type === 'chat'
+                    ? 'high'
+                    : 'normal',
             ]);
     }
 }

@@ -193,8 +193,7 @@ class PeminjamanSaya extends Page implements HasTable
                     ->label('Setujui')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn (LoanRequestNeed $record): bool => static::canManageNeed($record)
-                        && $record->status === ReservationStatus::Submitted->value)
+                    ->visible(fn (LoanRequestNeed $record): bool => static::canDecideNeed($record))
                     ->action(fn (LoanRequestNeed $record) => app(LoanRequestService::class)->processReservation(
                         $record->type,
                         $record->reservation_id,
@@ -204,8 +203,7 @@ class PeminjamanSaya extends Page implements HasTable
                     ->label('Tolak')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn (LoanRequestNeed $record): bool => static::canManageNeed($record)
-                        && $record->status === ReservationStatus::Submitted->value)
+                    ->visible(fn (LoanRequestNeed $record): bool => static::canDecideNeed($record))
                     ->form([
                         \Filament\Forms\Components\Textarea::make('rejection_reason')
                             ->label('Alasan penolakan')
@@ -249,6 +247,18 @@ class PeminjamanSaya extends Page implements HasTable
                     ->fillForm(fn (LoanRequestNeed $record): array => static::returnChecklistData($record))
                     ->form(fn (LoanRequestNeed $record): array => static::returnChecklistForm($record))
                     ->action(fn (LoanRequestNeed $record, array $data) => app(LoanRequestService::class)->completeManagedReturn(
+                        $record->type,
+                        $record->reservation_id,
+                        $data,
+                    )),
+                Tables\Actions\Action::make('request_return')
+                    ->label('Ajukan Pengembalian')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->color('warning')
+                    ->visible(fn (LoanRequestNeed $record): bool => static::canRequestReturnNeed($record))
+                    ->fillForm(fn (LoanRequestNeed $record): array => static::returnChecklistData($record))
+                    ->form(fn (LoanRequestNeed $record): array => static::returnChecklistForm($record))
+                    ->action(fn (LoanRequestNeed $record, array $data) => app(LoanRequestService::class)->requestReservationReturn(
                         $record->type,
                         $record->reservation_id,
                         $data,
@@ -369,6 +379,25 @@ class PeminjamanSaya extends Page implements HasTable
         $reservation = static::reservationForNeed($record);
 
         return $reservation && (auth()->user()?->managesReservation($reservation) ?? false);
+    }
+
+    private static function canDecideNeed(LoanRequestNeed $record): bool
+    {
+        $reservation = static::reservationForNeed($record);
+
+        return $reservation
+            && $reservation->status === ReservationStatus::Submitted->value
+            && (! $reservation->activity?->hold_expires_at || $reservation->activity->hold_expires_at->isFuture())
+            && (auth()->user()?->managesReservation($reservation) ?? false);
+    }
+
+    private static function canRequestReturnNeed(LoanRequestNeed $record): bool
+    {
+        $reservation = static::reservationForNeed($record);
+
+        return $reservation
+            && $reservation->status === ReservationStatus::CheckedOut->value
+            && (auth()->user()?->belongsToUnit($reservation->activity?->g001_m001_unit_id) ?? false);
     }
 
     private static function canConfirmNeed(LoanRequestNeed $record): bool

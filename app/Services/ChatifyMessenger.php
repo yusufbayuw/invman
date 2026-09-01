@@ -35,7 +35,7 @@ class ChatifyMessenger extends BaseChatifyMessenger
 
         $recipient->notify(new DevicePushNotification(
             title: "Pesan baru dari {$sender->name}",
-            body: Str::limit($preview, 120),
+            body: Str::limit($preview, 119, '…'),
             url: url("/admin/chat?contact={$sender->getKey()}"),
             type: 'chat',
             tag: "chat-{$message->getKey()}",

@@ -259,9 +259,7 @@ class VehicleReservationRelationManager extends RelationManager
                     ->label('Setujui')
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
-                    ->visible(fn ($record): bool => $record->status === ReservationStatus::Submitted->value
-                        && (! $record->activity?->hold_expires_at || $record->activity->hold_expires_at->isFuture())
-                        && Auth::user()?->managesReservation($record))
+                    ->visible(fn ($record): bool => app(LoanRequestService::class)->canDecideReservation($record))
                     ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
                         'vehicle', $record->getKey(), ReservationStatus::Approved,
                     )),
@@ -275,9 +273,7 @@ class VehicleReservationRelationManager extends RelationManager
                             ->required()
                             ->maxLength(2000),
                     ])
-                    ->visible(fn ($record): bool => $record->status === ReservationStatus::Submitted->value
-                        && (! $record->activity?->hold_expires_at || $record->activity->hold_expires_at->isFuture())
-                        && Auth::user()?->managesReservation($record))
+                    ->visible(fn ($record): bool => app(LoanRequestService::class)->canDecideReservation($record))
                     ->action(fn ($record, array $data) => app(LoanRequestService::class)->processReservation(
                         'vehicle', $record->getKey(), ReservationStatus::Rejected, $data['rejection_reason'],
                     )),
@@ -285,8 +281,7 @@ class VehicleReservationRelationManager extends RelationManager
                     ->label('Pinjamkan')
                     ->color('info')
                     ->icon('heroicon-o-arrow-right-circle')
-                    ->visible(fn ($record): bool => $record->status === ReservationStatus::Approved->value
-                        && Auth::user()?->managesReservation($record))
+                    ->visible(fn ($record): bool => app(LoanRequestService::class)->canCheckoutReservation($record))
                     ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
                         'vehicle', $record->getKey(), ReservationStatus::CheckedOut,
                     )),
@@ -303,8 +298,7 @@ class VehicleReservationRelationManager extends RelationManager
                     ->label('Catat Pengembalian')
                     ->color('warning')
                     ->icon('heroicon-o-clipboard-document-check')
-                    ->visible(fn ($record): bool => $record->status === ReservationStatus::CheckedOut->value
-                        && Auth::user()?->managesReservation($record))
+                    ->visible(fn ($record): bool => app(LoanRequestService::class)->canRecordManagedReturn($record))
                     ->form([
                         Forms\Components\Toggle::make('is_ok')
                             ->label('Aset dalam kondisi baik')
@@ -331,8 +325,7 @@ class VehicleReservationRelationManager extends RelationManager
                     ->label('Ajukan Pengembalian')
                     ->color('warning')
                     ->icon('heroicon-o-arrow-uturn-left')
-                    ->visible(fn ($record): bool => $record->status === ReservationStatus::CheckedOut->value
-                        && Auth::user()?->belongsToUnit($record->activity?->g001_m001_unit_id))
+                    ->visible(fn ($record): bool => app(LoanRequestService::class)->canRequestReservationReturn($record))
                     ->form([
                         Forms\Components\Toggle::make('is_ok')->label('Aset dalam kondisi baik')->default(true),
                         Forms\Components\Textarea::make('notes')
