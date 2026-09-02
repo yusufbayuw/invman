@@ -3,7 +3,10 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Resources\G004M008ActivityResource;
+use App\Models\G002M007Item;
+use App\Models\G003M006Room;
 use App\Models\G004M008Activity;
+use App\Models\G008M017Vehicle;
 use App\Services\LoanAvailabilityService;
 use App\Services\LoanRequestService;
 use App\Services\LoanSettings;
@@ -48,17 +51,15 @@ class AjukanPeminjaman extends Page implements HasForms
     {
         abort_unless(static::canAccess(), 403);
 
+        $record ??= request()->query('record');
+
         if ($record) {
             $this->draftId = $record;
             $draft = G004M008Activity::query()
                 ->with(['item_reservation', 'room_reservation', 'vehicle_reservation'])
                 ->findOrFail($record);
 
-            abort_unless(
-                auth()->user()?->belongsToUnit($draft->g001_m001_unit_id)
-                && $draft->status === \App\Enums\ReservationStatus::Draft->value,
-                403,
-            );
+            abort_unless(auth()->user()?->can('update', $draft), 403);
 
             $this->form->fill([
                 'name' => $draft->name,
@@ -184,16 +185,14 @@ class AjukanPeminjaman extends Page implements HasForms
                                     ->label('Jumlah')
                                     ->numeric()
                                     ->minValue(1)
-                                    ->maxValue(fn (Get $get): ?int => filled($get('item_id'))
-                                        ? $this->itemAvailableQuantity($get('item_id'))
-                                        : null)
                                     ->default(1)
                                     ->live(onBlur: true)
                                     ->visible(fn (Get $get) => $get('type') === 'item')
                                     ->required(fn (Get $get) => $get('type') === 'item')
-                                    ->helperText(fn (Get $get): string => filled($get('item_id'))
-                                        ? $this->itemAvailableQuantity($get('item_id')) . ' unit tersedia pada jadwal ini.'
-                                        : 'Pilih barang untuk melihat stok tersedia.'),
+                                    ->helperText(fn (Get $get): string => $this->itemAvailabilityMessage(
+                                        $get('item_id'),
+                                        $get('quantity'),
+                                    )),
                                 Select::make('room_id')
                                     ->label('Ruangan / Tempat')
                                     ->options(fn (Get $get) => $this->availableOptions('room', 'room_id', $get('room_id')))
@@ -202,7 +201,7 @@ class AjukanPeminjaman extends Page implements HasForms
                                     ->live()
                                     ->visible(fn (Get $get) => $get('type') === 'room')
                                     ->required(fn (Get $get) => $get('type') === 'room')
-                                    ->helperText('Aula, lapangan, dan ruang bersama dikelola sebagai Ruangan / Tempat.'),
+                                    ->helperText(fn (Get $get): string => $this->assetAvailabilityMessage('room', $get('room_id'))),
                                 Select::make('vehicle_id')
                                     ->label('Kendaraan')
                                     ->options(fn (Get $get) => $this->availableOptions('vehicle', 'vehicle_id', $get('vehicle_id')))
@@ -211,7 +210,7 @@ class AjukanPeminjaman extends Page implements HasForms
                                     ->live()
                                     ->visible(fn (Get $get) => $get('type') === 'vehicle')
                                     ->required(fn (Get $get) => $get('type') === 'vehicle')
-                                    ->helperText('Pengemudi akan ditentukan oleh pengelola kendaraan setelah pengajuan disetujui.'),
+                                    ->helperText(fn (Get $get): string => $this->assetAvailabilityMessage('vehicle', $get('vehicle_id'))),
                             ])
                             ->columns(3)
                             ->minItems(1)
@@ -278,9 +277,19 @@ class AjukanPeminjaman extends Page implements HasForms
             ->map(fn ($id) => (string) $id)
             ->all();
 
-        return collect($options)
+        $options = collect($options)
             ->reject(fn ($label, $id) => in_array((string) $id, $selectedElsewhere, true))
             ->all();
+
+        if (filled($currentId) && ! array_key_exists($currentId, $options)) {
+            $currentLabel = $this->currentAssetLabel($type, $currentId);
+
+            if ($currentLabel) {
+                $options[$currentId] = $currentLabel.' · Tidak tersedia pada jadwal ini';
+            }
+        }
+
+        return $options;
     }
 
     private function itemAvailableQuantity(mixed $itemId): int
@@ -292,16 +301,68 @@ class AjukanPeminjaman extends Page implements HasForms
         );
     }
 
+    private function itemAvailabilityMessage(mixed $itemId, mixed $requestedQuantity): string
+    {
+        if (blank($itemId)) {
+            return 'Pilih barang untuk melihat stok tersedia.';
+        }
+
+        $available = $this->itemAvailableQuantity($itemId);
+        $requested = max(1, (int) $requestedQuantity);
+
+        return $available >= $requested
+            ? "Tersedia: {$available} unit pada jadwal ini."
+            : "Tidak mencukupi: {$available} unit tersedia, sedangkan draf meminta {$requested}. Ubah aset, jumlah, atau jadwal sebelum mengajukan.";
+    }
+
+    private function assetAvailabilityMessage(string $type, mixed $assetId): string
+    {
+        if (blank($assetId)) {
+            return $type === 'room'
+                ? 'Pilih ruangan / tempat untuk melihat ketersediaan.'
+                : 'Pilih kendaraan untuk melihat ketersediaan.';
+        }
+
+        $start = $this->data['start_time'] ?? null;
+        $end = $this->data['end_time'] ?? null;
+        $availability = app(LoanAvailabilityService::class);
+        $available = match ($type) {
+            'room' => array_key_exists($assetId, $availability->roomOptions($start, $end)),
+            'vehicle' => array_key_exists($assetId, $availability->vehicleOptions($start, $end)),
+        };
+
+        return $available
+            ? 'Tersedia pada jadwal ini.'
+            : 'Tidak tersedia pada jadwal ini karena aset tidak dapat dipinjam atau sudah ditahan pengajuan lain. Ubah aset atau jadwal sebelum mengajukan.';
+    }
+
+    private function currentAssetLabel(string $type, mixed $assetId): ?string
+    {
+        return match ($type) {
+            'item' => G002M007Item::query()->find($assetId)?->name,
+            'room' => G003M006Room::query()->find($assetId)?->name,
+            'vehicle' => G008M017Vehicle::query()->find($assetId)?->name,
+        };
+    }
+
     public function submit(): void
     {
         $draft = $this->currentDraft();
         $activity = $draft
-            ? app(LoanRequestService::class)->submitDraft(auth()->user(), app(LoanRequestService::class)->saveDraft(auth()->user(), $this->form->getState(), $draft))
+            ? app(LoanRequestService::class)->submitDraft(
+                auth()->user(),
+                app(LoanRequestService::class)->saveDraft(
+                    auth()->user(),
+                    $this->form->getState(),
+                    $draft,
+                    validateAvailability: true,
+                ),
+            )
             : app(LoanRequestService::class)->submit(auth()->user(), $this->form->getState());
 
         Notification::make()
             ->title('Pengajuan berhasil dikirim')
-            ->body('Aset ditahan sementara selama ' . app(LoanSettings::class)->holdHours() . ' jam sambil menunggu keputusan pengelola aset.')
+            ->body('Aset ditahan sementara selama '.app(LoanSettings::class)->holdHours().' jam sambil menunggu keputusan pengelola aset.')
             ->success()
             ->icon('heroicon-o-paper-airplane')
             ->seconds(8)

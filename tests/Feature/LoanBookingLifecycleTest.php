@@ -58,6 +58,48 @@ class LoanBookingLifecycleTest extends TestCase
         $this->assertTrue($availability->vehicleIsAvailable($vehicle->id, now()->parse('2026-09-01 10:00'), now()->parse('2026-09-01 11:00')));
     }
 
+    public function test_unavailable_assets_can_remain_in_a_draft_but_cannot_be_submitted(): void
+    {
+        [$user, $item] = $this->fixtures();
+        $service = app(LoanRequestService::class);
+        $draftData = [
+            'name' => 'Draf sebelum bentrok',
+            'description' => 'Draf ini belum menahan stok.',
+            'start_time' => '2026-09-01 10:00:00',
+            'end_time' => '2026-09-01 11:00:00',
+            'needs' => [
+                ['type' => 'item', 'item_id' => $item->id, 'quantity' => 4],
+            ],
+        ];
+        $draft = $service->saveDraft($user, $draftData);
+
+        $service->submit($user, [
+            'name' => 'Pengajuan yang menahan stok',
+            'description' => 'Pengajuan lain masuk setelah draf disimpan.',
+            'start_time' => '2026-09-01 10:00:00',
+            'end_time' => '2026-09-01 11:00:00',
+            'needs' => [
+                ['type' => 'item', 'item_id' => $item->id, 'quantity' => 3],
+            ],
+        ]);
+
+        $draftData['description'] = 'Draf masih dapat diperbarui meskipun stok berubah.';
+        $updatedDraft = $service->saveDraft($user, $draftData, $draft);
+
+        $this->assertSame(ReservationStatus::Draft->value, $updatedDraft->status);
+        $this->assertSame('Draf masih dapat diperbarui meskipun stok berubah.', $updatedDraft->description);
+        $this->assertSame(4, $updatedDraft->item_reservation()->value('quantity'));
+
+        try {
+            $service->submitDraft($user, $updatedDraft);
+            $this->fail('Expected the unavailable draft to be rejected on submit.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('status', $exception->errors());
+        }
+
+        $this->assertSame(ReservationStatus::Draft->value, $updatedDraft->fresh()->status);
+    }
+
     public function test_expiry_releases_all_pending_needs_and_marks_the_activity_expired(): void
     {
         [$user, $item, $room, $vehicle] = $this->fixtures();

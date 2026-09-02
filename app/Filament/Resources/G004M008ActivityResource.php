@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\ReservationStatus;
+use App\Filament\Pages\AjukanPeminjaman;
 use App\Filament\Resources\G004M008ActivityResource\Pages;
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers\ItemReservationRelationManager;
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers\RoomReservationRelationManager;
@@ -178,7 +179,7 @@ class G004M008ActivityResource extends Resource
                             ->schema([
                                 \Filament\Infolists\Components\TextEntry::make('item_instance.name')
                                     ->label('Barang satuan')
-                                    ->description(fn ($record): ?string => $record->item_instance?->code),
+                                    ->hint(fn ($record): ?string => $record->item_instance?->code),
                                 \Filament\Infolists\Components\TextEntry::make('rating')
                                     ->label('Rating')
                                     ->formatStateUsing(fn ($state): string => filled($state) ? "{$state} / 5" : '-'),
@@ -206,7 +207,7 @@ class G004M008ActivityResource extends Resource
                             ->schema([
                                 \Filament\Infolists\Components\TextEntry::make('vehicle.name')
                                     ->label('Kendaraan')
-                                    ->description(fn ($record): ?string => $record->vehicle?->license_plate),
+                                    ->hint(fn ($record): ?string => $record->vehicle?->license_plate),
                                 \Filament\Infolists\Components\TextEntry::make('rating')
                                     ->label('Rating')
                                     ->formatStateUsing(fn ($state): string => filled($state) ? "{$state} / 5" : '-'),
@@ -376,6 +377,7 @@ class G004M008ActivityResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
+                    ->url(fn (G004M008Activity $record): string => AjukanPeminjaman::getUrl(['record' => $record->id]))
                     ->visible(fn (G004M008Activity $record) => Auth::user()?->can('update', $record)),
                 Tables\Actions\Action::make('cancel')
                     ->label('Batalkan')

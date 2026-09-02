@@ -32,13 +32,17 @@ class LoanRequestService
 
     public function submit(User $user, array $data): G004M008Activity
     {
-        $draft = $this->saveDraft($user, $data);
+        $draft = $this->saveDraft($user, $data, validateAvailability: true);
 
         return $this->submitDraft($user, $draft);
     }
 
-    public function saveDraft(User $user, array $data, ?G004M008Activity $activity = null): G004M008Activity
-    {
+    public function saveDraft(
+        User $user,
+        array $data,
+        ?G004M008Activity $activity = null,
+        bool $validateAvailability = false,
+    ): G004M008Activity {
         if (! $user->g001_m001_unit_id) {
             throw ValidationException::withMessages([
                 'data.requester' => 'Akun Anda belum terhubung ke unit. Hubungi admin sebelum mengajukan peminjaman.',
@@ -65,7 +69,7 @@ class LoanRequestService
             throw ValidationException::withMessages(['status' => 'Hanya draf milik unit Anda yang dapat diubah.']);
         }
 
-        return DB::transaction(function () use ($user, $data, $start, $end, $activity) {
+        return DB::transaction(function () use ($user, $data, $start, $end, $activity, $validateAvailability) {
             $attributes = [
                 'user_id' => $user->id,
                 'g001_m001_unit_id' => $user->g001_m001_unit_id,
@@ -90,9 +94,9 @@ class LoanRequestService
 
             foreach (array_values($data['needs'] ?? []) as $index => $need) {
                 match ($need['type'] ?? null) {
-                    'item' => $this->createItemReservation($activity, $need, $index, $start, $end, ReservationStatus::Draft),
-                    'room' => $this->createRoomReservation($activity, $need, $index, $start, $end, ReservationStatus::Draft),
-                    'vehicle' => $this->createVehicleReservation($activity, $need, $index, $start, $end, ReservationStatus::Draft),
+                    'item' => $this->createItemReservation($activity, $need, $index, $start, $end, ReservationStatus::Draft, $validateAvailability),
+                    'room' => $this->createRoomReservation($activity, $need, $index, $start, $end, ReservationStatus::Draft, $validateAvailability),
+                    'vehicle' => $this->createVehicleReservation($activity, $need, $index, $start, $end, ReservationStatus::Draft, $validateAvailability),
                     default => throw ValidationException::withMessages([
                         "data.needs.{$index}.type" => 'Pilih jenis kebutuhan yang valid.',
                     ]),
@@ -886,8 +890,15 @@ class LoanRequestService
         }
     }
 
-    private function createItemReservation(G004M008Activity $activity, array $need, int $index, Carbon $start, Carbon $end, ReservationStatus $status): void
-    {
+    private function createItemReservation(
+        G004M008Activity $activity,
+        array $need,
+        int $index,
+        Carbon $start,
+        Carbon $end,
+        ReservationStatus $status,
+        bool $validateAvailability = true,
+    ): void {
         $itemId = (int) ($need['item_id'] ?? 0);
         $quantity = (int) ($need['quantity'] ?? 0);
         $item = G002M007Item::query()->lockForUpdate()->find($itemId);
@@ -900,7 +911,7 @@ class LoanRequestService
 
         $available = $this->availability->availableItemQuantity($itemId, $start, $end);
 
-        if ($quantity > $available) {
+        if ($validateAvailability && $quantity > $available) {
             throw ValidationException::withMessages([
                 "data.needs.{$index}.quantity" => "Stok {$item->name} yang tersedia pada jadwal ini hanya {$available}.",
             ]);
@@ -916,12 +927,19 @@ class LoanRequestService
         ]);
     }
 
-    private function createRoomReservation(G004M008Activity $activity, array $need, int $index, Carbon $start, Carbon $end, ReservationStatus $status): void
-    {
+    private function createRoomReservation(
+        G004M008Activity $activity,
+        array $need,
+        int $index,
+        Carbon $start,
+        Carbon $end,
+        ReservationStatus $status,
+        bool $validateAvailability = true,
+    ): void {
         $roomId = (int) ($need['room_id'] ?? 0);
         $room = G003M006Room::query()->lockForUpdate()->find($roomId);
 
-        if (! $room || ! $room->is_borrowable || ! $this->availability->roomIsAvailable($roomId, $start, $end)) {
+        if (! $room || ! $room->is_borrowable || ($validateAvailability && ! $this->availability->roomIsAvailable($roomId, $start, $end))) {
             throw ValidationException::withMessages([
                 "data.needs.{$index}.room_id" => 'Ruangan / tempat tidak tersedia pada jadwal yang dipilih.',
             ]);
@@ -966,12 +984,19 @@ class LoanRequestService
         }
     }
 
-    private function createVehicleReservation(G004M008Activity $activity, array $need, int $index, Carbon $start, Carbon $end, ReservationStatus $status): void
-    {
+    private function createVehicleReservation(
+        G004M008Activity $activity,
+        array $need,
+        int $index,
+        Carbon $start,
+        Carbon $end,
+        ReservationStatus $status,
+        bool $validateAvailability = true,
+    ): void {
         $vehicleId = (int) ($need['vehicle_id'] ?? 0);
         $vehicle = G008M017Vehicle::query()->lockForUpdate()->find($vehicleId);
 
-        if (! $vehicle || ! $vehicle->is_borrowable || ! $this->availability->vehicleIsAvailable($vehicleId, $start, $end)) {
+        if (! $vehicle || ! $vehicle->is_borrowable || ($validateAvailability && ! $this->availability->vehicleIsAvailable($vehicleId, $start, $end))) {
             throw ValidationException::withMessages([
                 "data.needs.{$index}.vehicle_id" => 'Kendaraan tidak tersedia pada jadwal yang dipilih.',
             ]);

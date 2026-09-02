@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\ReservationStatus;
 use App\Filament\Pages\AjukanPeminjaman;
 use App\Filament\Pages\PeminjamanSaya;
+use App\Filament\Resources\G004M008ActivityResource;
 use App\Models\G001M001Unit;
 use App\Models\G002M003ItemManagement;
 use App\Models\G002M007Item;
@@ -12,6 +13,7 @@ use App\Models\G003M006Room;
 use App\Models\G004M008Activity;
 use App\Models\G005M010RoomReservation;
 use App\Models\User;
+use App\Services\LoanRequestService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
@@ -135,6 +137,71 @@ class UnitLoanPageTest extends TestCase
         $this->assertDatabaseMissing('g004_m008_activities', [
             'name' => 'Jadwal tidak valid',
         ]);
+    }
+
+    public function test_draft_owner_can_reopen_complete_form_and_see_stale_asset_availability(): void
+    {
+        $unit = G001M001Unit::query()->create(['name' => 'Unit Pengujian']);
+        $user = User::factory()->create(['g001_m001_unit_id' => $unit->id]);
+        Role::query()->create(['name' => config('role.unit'), 'guard_name' => 'web']);
+        $user->assignRole(config('role.unit'));
+        $item = G002M007Item::query()->create([
+            'g001_m001_unit_id' => $unit->id,
+            'name' => 'Proyektor Tunggal',
+            'is_borrowable' => true,
+            'quantity' => 1,
+            'available_quantity' => 1,
+        ]);
+        $start = now()->addDay()->startOfHour();
+        $end = $start->copy()->addHours(2);
+        $service = app(LoanRequestService::class);
+        $draft = $service->saveDraft($user, [
+            'name' => 'Kegiatan dalam draf',
+            'description' => 'Deskripsi kegiatan tetap harus tampil.',
+            'start_time' => $start,
+            'end_time' => $end,
+            'needs' => [
+                ['type' => 'item', 'item_id' => $item->id, 'quantity' => 1],
+            ],
+        ]);
+        $service->submit($user, [
+            'name' => 'Pengajuan lain',
+            'description' => 'Menahan barang pada jadwal yang sama.',
+            'start_time' => $start,
+            'end_time' => $end,
+            'needs' => [
+                ['type' => 'item', 'item_id' => $item->id, 'quantity' => 1],
+            ],
+        ]);
+
+        $component = Livewire::withQueryParams(['record' => $draft->id])
+            ->actingAs($user)
+            ->test(AjukanPeminjaman::class)
+            ->assertSet('draftId', $draft->id)
+            ->assertFormSet([
+                'name' => 'Kegiatan dalam draf',
+                'description' => 'Deskripsi kegiatan tetap harus tampil.',
+            ])
+            ->assertSee('Tidak mencukupi: 0 unit tersedia');
+
+        $needs = array_values($component->get('data.needs'));
+        $this->assertSame($item->id, $needs[0]['item_id']);
+        $this->assertStringContainsString('Tidak tersedia', $component->html());
+
+        $component
+            ->set('data.description', 'Kegiatan diperbarui meskipun aset sedang tidak tersedia.')
+            ->call('saveDraft')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('g004_m008_activities', [
+            'id' => $draft->id,
+            'description' => 'Kegiatan diperbarui meskipun aset sedang tidak tersedia.',
+            'status' => ReservationStatus::Draft->value,
+        ]);
+
+        $this->actingAs($user)
+            ->get(G004M008ActivityResource::getUrl('view', ['record' => $draft]))
+            ->assertOk();
     }
 
     public function test_unified_loan_page_shows_return_actions_for_the_correct_role(): void
