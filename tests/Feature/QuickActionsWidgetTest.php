@@ -103,6 +103,8 @@ class QuickActionsWidgetTest extends TestCase
             ->assertSee('Tindakan Cepat')
             ->assertSee('Proyektor')
             ->assertDontSee('Kamera')
+            ->assertDontSee('@js(', escape: false)
+            ->assertSee('wire:click="mountAction(', escape: false)
             ->callAction('approve', arguments: [
                 'type' => 'item',
                 'reservation_id' => $approvedThroughWidget->id,

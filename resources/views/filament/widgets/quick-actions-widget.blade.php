@@ -52,12 +52,22 @@
                                     <td class="px-4 py-3">
                                         <div class="flex justify-end gap-2">
                                             @foreach ($row['actions'] as $action)
-                                                @php($presentation = $this->actionPresentation($action))
+                                                @php
+                                                    $presentation = $this->actionPresentation($action);
+                                                    $mountAction = 'mountAction('
+                                                        .\Illuminate\Support\Js::from($action)
+                                                        .', '
+                                                        .\Illuminate\Support\Js::from([
+                                                            'type' => $row['type'],
+                                                            'reservation_id' => $row['reservation_id'],
+                                                        ])
+                                                        .')';
+                                                @endphp
                                                 <x-filament::button
                                                     size="xs"
                                                     :color="$presentation['color']"
                                                     :icon="$presentation['icon']"
-                                                    x-on:click="$wire.mountAction(@js($action), @js(['type' => $row['type'], 'reservation_id' => $row['reservation_id']]))"
+                                                    wire:click="{{ $mountAction }}"
                                                     wire:loading.attr="disabled"
                                                 >
                                                     {{ $presentation['label'] }}
@@ -90,12 +100,22 @@
                             </div>
                             <div class="flex flex-wrap gap-2">
                                 @foreach ($row['actions'] as $action)
-                                    @php($presentation = $this->actionPresentation($action))
+                                    @php
+                                        $presentation = $this->actionPresentation($action);
+                                        $mountAction = 'mountAction('
+                                            .\Illuminate\Support\Js::from($action)
+                                            .', '
+                                            .\Illuminate\Support\Js::from([
+                                                'type' => $row['type'],
+                                                'reservation_id' => $row['reservation_id'],
+                                            ])
+                                            .')';
+                                    @endphp
                                     <x-filament::button
                                         size="xs"
                                         :color="$presentation['color']"
                                         :icon="$presentation['icon']"
-                                        x-on:click="$wire.mountAction(@js($action), @js(['type' => $row['type'], 'reservation_id' => $row['reservation_id']]))"
+                                        wire:click="{{ $mountAction }}"
                                         wire:loading.attr="disabled"
                                     >
                                         {{ $presentation['label'] }}
