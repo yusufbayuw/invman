@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\ReservationStatus;
+use App\Filament\Support\VehicleAssignmentForm;
 use App\Models\G005M009ItemReservation;
 use App\Models\G005M010RoomReservation;
 use App\Models\G005M019VehicleReservation;
@@ -71,12 +72,17 @@ class QuickActionsWidget extends Widget implements HasActions, HasForms
     public function approveAction(): Action
     {
         return Action::make('approve')
-            ->action(function (array $arguments): void {
+            ->form(fn (array $arguments): array => ($arguments['type'] ?? null) === 'vehicle'
+                ? VehicleAssignmentForm::fields($this->reservation($arguments))
+                : [])
+            ->action(function (array $arguments, array $data): void {
                 $reservation = $this->authorizedReservation($arguments, 'canDecideReservation');
                 app(LoanRequestService::class)->processReservation(
                     $arguments['type'],
                     (string) $reservation->getKey(),
                     ReservationStatus::Approved,
+                    null,
+                    $data,
                 );
                 $this->success('Reservasi disetujui', 'Reservasi siap memasuki proses penyerahan.');
             });
