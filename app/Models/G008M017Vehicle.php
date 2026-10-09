@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G008M017Vehicle extends Model
 {
+    protected $guarded = ['id'];
+
     protected $casts = [
         'stnk_date' => 'date',
         'kir_date' => 'date',
