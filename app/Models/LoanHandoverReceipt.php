@@ -12,6 +12,7 @@ class LoanHandoverReceipt extends Model
 
     /** Explicit mass-assignment allowlist: writes require authorized service flow. */
     protected $fillable = [
+        'receipt_number',
         'reservation_type',
         'reservation_id',
         'g004_m008_activity_id',
