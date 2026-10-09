@@ -134,3 +134,7 @@ Panduan provisioning admin, seeder aman, mass assignment, dan proxy tepercaya: [
 ## Mass Assignment Hardening
 
 Whitelist atribut Eloquent, proteksi audit append-only, dan panduan pengujian ada di [docs/MASS-ASSIGNMENT-HARDENING.md](docs/MASS-ASSIGNMENT-HARDENING.md).
+
+## Peminjaman Cepat
+
+Alur sederhana satu aset dengan alasan singkat: [docs/QUICK-LOAN-UX.md](docs/QUICK-LOAN-UX.md).

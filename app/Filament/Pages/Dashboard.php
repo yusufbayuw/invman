@@ -67,10 +67,31 @@ class Dashboard extends BaseDashboard
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('ajukanPeminjaman')
-                ->label('Ajukan Peminjaman')
-                ->icon('heroicon-o-plus-circle')
+            Action::make('pinjamBarang')
+                ->label('Pinjam Barang')
+                ->icon('heroicon-o-cube')
                 ->color('primary')
+                ->visible(fn (): bool => PeminjamanCepat::canAccess())
+                ->url(PeminjamanCepat::getUrl(['type' => 'item'])),
+
+            Action::make('pinjamKendaraan')
+                ->label('Pinjam Kendaraan')
+                ->icon('heroicon-o-truck')
+                ->color('primary')
+                ->visible(fn (): bool => PeminjamanCepat::canAccess())
+                ->url(PeminjamanCepat::getUrl(['type' => 'vehicle'])),
+
+            Action::make('pinjamRuangan')
+                ->label('Pinjam Ruangan')
+                ->icon('heroicon-o-building-office')
+                ->color('gray')
+                ->visible(fn (): bool => PeminjamanCepat::canAccess())
+                ->url(PeminjamanCepat::getUrl(['type' => 'room'])),
+
+            Action::make('ajukanPeminjamanLengkap')
+                ->label('Pengajuan Lengkap')
+                ->icon('heroicon-o-rectangle-stack')
+                ->color('gray')
                 ->visible(fn (): bool => AjukanPeminjaman::canAccess())
                 ->url(AjukanPeminjaman::getUrl()),
 
