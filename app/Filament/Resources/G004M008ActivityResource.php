@@ -112,7 +112,8 @@ class G004M008ActivityResource extends Resource
                             ->visible(fn (G004M008Activity $record): bool => static::canViewFullActivity($record)),
                         \Filament\Infolists\Components\TextEntry::make('notes')
                             ->label('Catatan')
-                            ->placeholder('-'),
+                            ->placeholder('-')
+                            ->visible(fn (G004M008Activity $record): bool => static::canViewFullActivity($record)),
                         \Filament\Infolists\Components\TextEntry::make('status')
                             ->label('Status Pengajuan')
                             ->badge()
