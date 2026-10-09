@@ -104,7 +104,7 @@ class PeminjamanCepat extends Page implements HasForms
                         TextInput::make('quantity')
                             ->label('Jumlah barang')
                             ->numeric()
-                            ->integer()
+                            ->rules(['integer'])
                             ->minValue(1)
                             ->default(1)
                             ->required(fn (Get $get): bool => $get('type') === 'item')
