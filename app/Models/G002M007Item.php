@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[ObservedBy(G002M007ItemObserver::class)]
 class G002M007Item extends Model
 {
+    // Controlled request validation determines writable business fields; primary keys stay guarded.
+    protected $guarded = ['id'];
+
     public function item_reservation(): HasMany
     {
         return $this->hasMany(G005M009ItemReservation::class, 'g002_m007_item_id');

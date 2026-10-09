@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G003M005Floor extends Model
 {
+    // Controlled request validation determines writable business fields; primary keys stay guarded.
+    protected $guarded = ['id'];
+
     public function room(): HasMany
     {
         return $this->hasMany(G003M006Room::class, 'g003_m005_floor_id');

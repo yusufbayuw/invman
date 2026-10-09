@@ -30,6 +30,17 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate --force --no-interaction
+      - name: Audit safe production configuration
+        env:
+          APP_ENV: production
+          APP_DEBUG: 'false'
+          APP_URL: https://invman.test
+          SESSION_SECURE_COOKIE: 'true'
+          SESSION_HTTP_ONLY: 'true'
+          SESSION_SAME_SITE: lax
+          TRUSTED_PROXIES: 127.0.0.1,::1
+          SEED_DEMO_USERS: 'false'
+        run: php artisan invman:security-audit
       - name: Lint application and test PHP
         run: |
           find app database tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null

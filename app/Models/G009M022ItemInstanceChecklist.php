@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[ObservedBy(G009M022ItemInstanceChecklistObserver::class)]
 class G009M022ItemInstanceChecklist extends Model
 {
+    protected $guarded = ['id'];
+
     protected $casts = [
         'date' => 'date',
         'checklist_date' => 'datetime',

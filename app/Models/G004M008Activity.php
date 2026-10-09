@@ -11,6 +11,9 @@ use Illuminate\Validation\ValidationException;
 
 class G004M008Activity extends Model
 {
+    // Controlled request validation determines writable business fields; primary keys stay guarded.
+    protected $guarded = ['id'];
+
     use HasUuids;
 
     protected $casts = [

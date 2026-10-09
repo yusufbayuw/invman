@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class G002M002ItemType extends Model
 {
+    // Controlled request validation determines writable business fields; primary keys stay guarded.
+    protected $guarded = ['id'];
+
     public function item(): HasMany
     {
         return $this->hasMany(G002M007Item::class, 'g002_m002_item_type_id');

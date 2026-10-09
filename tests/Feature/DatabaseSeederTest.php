@@ -19,13 +19,15 @@ class DatabaseSeederTest extends TestCase
 
     public function test_database_seeder_creates_reference_data_and_is_idempotent(): void
     {
+        config()->set('security.seed_demo_users', true);
+        config()->set('security.seed_demo_password', 'DemoPass!2026#Secure');
         $this->seed(DatabaseSeeder::class);
         $this->seed(DatabaseSeeder::class);
 
         $this->assertSame(7, G001M001Unit::query()->count());
         $this->assertSame(8, User::query()->count());
-        $this->assertTrue(Hash::check('password', User::query()->where('username', 'admin')->firstOrFail()->password));
-        $this->assertTrue(Hash::check('password', User::query()->where('username', 'sarpras.sd')->firstOrFail()->password));
+        $this->assertTrue(Hash::check('DemoPass!2026#Secure', User::query()->where('username', 'admin')->firstOrFail()->password));
+        $this->assertTrue(Hash::check('DemoPass!2026#Secure', User::query()->where('username', 'sarpras.sd')->firstOrFail()->password));
         $this->assertSame(0, G002M007Item::query()->count());
         $this->assertSame(0, G002M015ItemInstance::query()->count());
         $this->assertSame(7, G008M017Vehicle::query()->count());

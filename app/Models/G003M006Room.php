@@ -10,6 +10,9 @@ use Illuminate\Support\Str;
 
 class G003M006Room extends Model
 {
+    // Controlled request validation determines writable business fields; primary keys stay guarded.
+    protected $guarded = ['id'];
+
     protected static function booted(): void
     {
         static::creating(function (self $room): void {

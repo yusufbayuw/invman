@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G007M013ItemHistory extends Model
 {
+    protected $guarded = ['id'];
+
     public function item_instance(): BelongsTo
     {
         return $this->belongsTo(G002M015ItemInstance::class, 'g002_m015_item_instance_id');

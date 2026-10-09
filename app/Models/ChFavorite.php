@@ -7,5 +7,7 @@ use Chatify\Traits\UUID;
 
 class ChFavorite extends Model
 {
+    protected $guarded = ['id'];
+
     use UUID;
 }

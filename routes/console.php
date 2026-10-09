@@ -99,3 +99,55 @@ Schedule::command('loans:notify-overdue')
     ->hourly()
     ->when(fn (LicenseManager $licenses): bool => $licenses->validateAppUrl()->valid)
     ->withoutOverlapping();
+
+Artisan::command('invman:provision-admin {username} {email}', function (\App\Services\AdminProvisioner $provisioner) {
+    if (! $this->input->isInteractive()) {
+        $this->error('Provisioning admin memerlukan terminal interaktif agar password tidak bocor ke history/log.');
+
+        return Command::FAILURE;
+    }
+
+    $password = $this->secret('Kata sandi baru (minimal 16 karakter, huruf besar/kecil, angka, simbol)');
+    $confirmation = $this->secret('Konfirmasi kata sandi');
+
+    if (! is_string($password) || $password !== $confirmation) {
+        $this->error('Konfirmasi password tidak cocok.');
+
+        return Command::FAILURE;
+    }
+
+    try {
+        $user = $provisioner->provision(
+            (string) $this->argument('username'),
+            (string) $this->argument('email'),
+            $password,
+        );
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        foreach ($e->errors() as $errors) {
+            foreach ($errors as $message) {
+                $this->error($message);
+            }
+        }
+
+        return Command::FAILURE;
+    }
+
+    $this->info("Administrator {$user->username} berhasil dibuat. Password tidak ditampilkan atau disimpan dalam log.");
+
+    return Command::SUCCESS;
+})->purpose('Create an admin securely; never reset existing credentials');
+
+Artisan::command('invman:security-audit', function (\App\Services\ProductionSecurityAudit $audit) {
+    $issues = $audit->findings();
+    if ($issues === []) {
+        $this->info('Konfigurasi keamanan dasar valid.');
+
+        return Command::SUCCESS;
+    }
+
+    foreach ($issues as $issue) {
+        $this->error($issue);
+    }
+
+    return Command::FAILURE;
+})->purpose('Check production security configuration without exposing secrets');

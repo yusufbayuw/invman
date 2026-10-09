@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G006M020VehicleReview extends Model
 {
+    protected $guarded = ['id'];
+
     public function activity(): BelongsTo
     {
         return $this->belongsTo(G004M008Activity::class, 'g004_m008_activity_id');

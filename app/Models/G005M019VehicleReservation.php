@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[ObservedBy(G005M019VehicleReservationObserver::class)]
 class G005M019VehicleReservation extends Model
 {
+    protected $guarded = ['id'];
+
     use HasLoanReturnControls, HasUuids;
 
     protected $casts = [

@@ -27,8 +27,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Model::unguard();
-        if (env('APP_ENV') === 'production') {
+        // Never disable Eloquent mass-assignment safeguards globally.
+        Model::preventSilentlyDiscardingAttributes(! $this->app->isProduction());
+        if (config('app.env') === 'production' && parse_url((string) config('app.url'), PHP_URL_SCHEME) === 'https') {
             URL::forceScheme('https');
         }
     }
