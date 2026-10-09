@@ -10,7 +10,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[ObservedBy(G009M022ItemInstanceChecklistObserver::class)]
 class G009M022ItemInstanceChecklist extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit mass-assignment allowlist: writes require authorized service flow. */
+    protected $fillable = [
+        'g002_m015_item_instance_id',
+        'user_id',
+        'date',
+        'notes',
+        'photo',
+        'checklist_date',
+        'is_ok',
+    ];
 
     protected $casts = [
         'date' => 'date',
