@@ -13,8 +13,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[ObservedBy(G005M009ItemReservationObserver::class)]
 class G005M009ItemReservation extends Model
 {
-    // Controlled request validation determines writable business fields; primary keys stay guarded.
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'g004_m008_activity_id',
+        'g002_m007_item_id',
+        'quantity',
+        'start_time',
+        'end_time',
+        'returned_at',
+        'status',
+        'rejection_reason',
+    ];
 
     use HasLoanReturnControls, HasUuids;
 
