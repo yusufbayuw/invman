@@ -1061,19 +1061,19 @@ class LoanRequestService
     private function validateDraftAvailability(G004M008Activity $activity): void
     {
         foreach ($activity->item_reservation as $reservation) {
-            if ($this->availability->availableItemQuantity($reservation->g002_m007_item_id, $activity->start_time, $activity->end_time) < $reservation->quantity) {
+            if ($this->availability->availableItemQuantity($reservation->g002_m007_item_id, $activity->start_time, $activity->end_time, locking: true) < $reservation->quantity) {
                 throw ValidationException::withMessages(['status' => "Stok {$reservation->item?->name} tidak lagi mencukupi untuk jadwal ini."]);
             }
         }
 
         foreach ($activity->room_reservation as $reservation) {
-            if (! $this->availability->roomIsAvailable($reservation->g003_m006_room_id, $activity->start_time, $activity->end_time)) {
+            if (! $this->availability->roomIsAvailable($reservation->g003_m006_room_id, $activity->start_time, $activity->end_time, locking: true)) {
                 throw ValidationException::withMessages(['status' => "{$reservation->room?->name} tidak lagi tersedia untuk jadwal ini."]);
             }
         }
 
         foreach ($activity->vehicle_reservation as $reservation) {
-            if (! $this->availability->vehicleIsAvailable($reservation->g008_m017_vehicle_id, $activity->start_time, $activity->end_time)) {
+            if (! $this->availability->vehicleIsAvailable($reservation->g008_m017_vehicle_id, $activity->start_time, $activity->end_time, locking: true)) {
                 throw ValidationException::withMessages(['status' => "{$reservation->vehicle?->name} tidak lagi tersedia untuk jadwal ini."]);
             }
         }
