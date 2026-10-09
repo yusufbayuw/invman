@@ -6,24 +6,29 @@ use App\Models\G001M001Unit;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $password = env('SEEDED_USER_PASSWORD', 'password');
+        if (app()->environment('production')) {
+            $this->command?->warn('Production: akun contoh tidak dibuat atau diubah. Gunakan invman:provision-admin.');
 
-        $admin = User::query()->firstOrNew(['username' => 'admin']);
-        $admin->fill([
-            'name' => $admin->exists ? $admin->name : 'Administrator',
-            'email' => $admin->exists ? $admin->email : 'admin@invman.local',
-            'email_verified_at' => $admin->email_verified_at ?? now(),
-            'g001_m001_unit_id' => null,
-        ]);
-        $admin->password = Hash::make($password);
-        $admin->save();
-        $admin->syncRoles([config('role.admin')]);
+            return;
+        }
 
+        if (! config('security.seed_demo_users')) {
+            return;
+        }
+
+        $password = config('security.seed_demo_password');
+        Validator::make(['password' => $password], [
+            'password' => ['required', 'string', Password::min(16)->mixedCase()->numbers()->symbols()],
+        ])->validate();
+
+        $this->createAccount('admin', 'Administrator', config('role.admin'), $password);
         $this->createAccount('fasilitas', 'Admin Fasilitas', config('role.fasilitas'), $password);
 
         foreach ([
@@ -46,15 +51,19 @@ class UserSeeder extends Seeder
         string $password,
         ?int $unitId = null,
     ): void {
-        $user = User::query()->firstOrNew(['username' => $username]);
-        $user->fill([
+        // Existing credentials, roles, names and units are never reset by seeders.
+        if (User::query()->where('username', $username)->exists()) {
+            return;
+        }
+
+        $user = User::query()->create([
+            'username' => $username,
             'name' => $name,
             'email' => "{$username}@invman.local",
-            'email_verified_at' => $user->email_verified_at ?? now(),
+            'email_verified_at' => now(),
             'g001_m001_unit_id' => $unitId,
+            'password' => Hash::make($password),
         ]);
-        $user->password = Hash::make($password);
-        $user->save();
-        $user->syncRoles([$role]);
+        $user->assignRole($role);
     }
 }
