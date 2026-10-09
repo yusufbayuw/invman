@@ -140,6 +140,8 @@ class RoomReservationRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => app(\App\Services\LoanVisibility::class)
+                ->reservations($query, auth()->user(), 'room'))
             ->recordTitleAttribute('id')
             ->columns([
                 Tables\Columns\TextColumn::make('room.name')
