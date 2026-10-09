@@ -140,20 +140,20 @@ class LoanAvailabilityService
 
     public function roomIsAvailable(int $roomId, Carbon $start, Carbon $end): bool
     {
-        return ! G005M010RoomReservation::query()
+        return G005M010RoomReservation::query()
             ->where('g003_m006_room_id', $roomId)
             ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
             ->lockForUpdate()
-            ->first(['id']) !== null;
+            ->first(['id']) === null;
     }
 
     public function vehicleIsAvailable(int $vehicleId, Carbon $start, Carbon $end): bool
     {
-        return ! G005M019VehicleReservation::query()
+        return G005M019VehicleReservation::query()
             ->where('g008_m017_vehicle_id', $vehicleId)
             ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
             ->lockForUpdate()
-            ->first(['id']) !== null;
+            ->first(['id']) === null;
     }
 
     public function driverIsAvailable(int $driverId, Carbon $start, Carbon $end, ?string $exceptReservationId = null): bool
