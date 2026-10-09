@@ -13,7 +13,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[ObservedBy(G005M010RoomReservationObserver::class)]
 class G005M010RoomReservation extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'g004_m008_activity_id',
+        'g003_m006_room_id',
+        'start_time',
+        'end_time',
+        'status',
+        'returned_at',
+        'rejection_reason',
+    ];
 
     use HasLoanReturnControls, HasUuids;
 
