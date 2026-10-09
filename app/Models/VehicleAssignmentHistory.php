@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VehicleAssignmentHistory extends Model
 {
+    protected $guarded = [];
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(G005M019VehicleReservation::class, 'vehicle_reservation_id');
