@@ -7,7 +7,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LoanReservationStatusHistory extends Model
 {
-    protected $guarded = [];
+    /** Explicit mass-assignment allowlist: writes require authorized service flow. */
+    protected $fillable = [
+        'reservation_type',
+        'reservation_id',
+        'g004_m008_activity_id',
+        'from_status',
+        'to_status',
+        'changed_by',
+        'notes',
+    ];
 
     public function changedBy(): BelongsTo
     {
