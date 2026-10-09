@@ -152,20 +152,20 @@ class LoanAvailabilityService
 
     public function driverIsAvailable(int $driverId, Carbon $start, Carbon $end, ?string $exceptReservationId = null): bool
     {
-        return ! G005M019VehicleReservation::query()
+        return G005M019VehicleReservation::query()
             ->where('g008_m018_driver_id', $driverId)
             ->when($exceptReservationId, fn (Builder $query) => $query->whereKeyNot($exceptReservationId))
             ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
-            ->exists();
+            ->lockForUpdate()->first(['id']) === null;
     }
 
     public function assistantIsAvailable(int $assistantId, Carbon $start, Carbon $end, ?string $exceptReservationId = null): bool
     {
-        return ! G005M019VehicleReservation::query()
+        return G005M019VehicleReservation::query()
             ->where('vehicle_assistant_id', $assistantId)
             ->when($exceptReservationId, fn (Builder $query) => $query->whereKeyNot($exceptReservationId))
             ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
-            ->exists();
+            ->lockForUpdate()->first(['id']) === null;
     }
 
     private function overlap(Builder $query, Carbon $start, Carbon $end): Builder
