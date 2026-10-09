@@ -10,7 +10,21 @@ class LoanHandoverReceipt extends Model
 {
     use HasUuids;
 
-    protected $guarded = [];
+    /** Explicit mass-assignment allowlist: writes require authorized service flow. */
+    protected $fillable = [
+        'reservation_type',
+        'reservation_id',
+        'g004_m008_activity_id',
+        'direction',
+        'initiated_by',
+        'borrower_confirmed_by',
+        'borrower_confirmed_at',
+        'manager_confirmed_by',
+        'manager_confirmed_at',
+        'proof_path',
+        'notes',
+        'completed_at',
+    ];
 
     protected $casts = [
         'borrower_confirmed_at' => 'datetime',
