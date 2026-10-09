@@ -130,3 +130,7 @@ Pembatasan kegiatan berdasarkan peran/unit/pengelola serta foreign key `RESTRICT
 ## Hardening Produksi
 
 Panduan provisioning admin, seeder aman, mass assignment, dan proxy tepercaya: [docs/PRODUCTION-HARDENING.md](docs/PRODUCTION-HARDENING.md).
+
+## Mass Assignment Hardening
+
+Whitelist atribut Eloquent, proteksi audit append-only, dan panduan pengujian ada di [docs/MASS-ASSIGNMENT-HARDENING.md](docs/MASS-ASSIGNMENT-HARDENING.md).
