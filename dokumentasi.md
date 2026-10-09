@@ -126,3 +126,7 @@ Ketentuan pengemudi default, kenek bus, penugasan dan pergantian personel, audit
 ## Akses Privat dan Retensi Histori
 
 Pembatasan kegiatan berdasarkan peran/unit/pengelola serta foreign key `RESTRICT` untuk melindungi transaksi dijelaskan di [docs/LOAN-ACCESS-RETENTION.md](docs/LOAN-ACCESS-RETENTION.md).
+
+## Hardening Produksi
+
+Panduan provisioning admin, seeder aman, mass assignment, dan proxy tepercaya: [docs/PRODUCTION-HARDENING.md](docs/PRODUCTION-HARDENING.md).
