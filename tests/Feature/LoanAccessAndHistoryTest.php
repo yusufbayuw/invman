@@ -94,6 +94,10 @@ class LoanAccessAndHistoryTest extends TestCase
 
     public function test_database_rejects_deleting_actors_units_or_assets_that_have_loan_history(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            $this->markTestSkipped('SQLite tidak mendukung migrasi DROP FK; dijalankan oleh MySQL CI.');
+        }
+
         [$unitA, , $sarprasA, , $facility] = $this->setupActors();
         $this->actingAs($facility);
         $activity = $this->activity($unitA, $sarprasA, 'Audit tetap tersimpan');
