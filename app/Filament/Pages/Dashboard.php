@@ -71,6 +71,7 @@ class Dashboard extends BaseDashboard
                 ->label('Ajukan Peminjaman')
                 ->icon('heroicon-o-plus-circle')
                 ->color('primary')
+                ->visible(fn (): bool => AjukanPeminjaman::canAccess())
                 ->url(AjukanPeminjaman::getUrl()),
 
             Action::make('peminjamanSaya')
@@ -84,6 +85,7 @@ class Dashboard extends BaseDashboard
                 ->label('Lihat Rekapan')
                 ->icon('heroicon-o-chart-bar-square')
                 ->color('gray')
+                ->visible(fn (): bool => RekapanPenggunaan::canAccess())
                 ->url(RekapanPenggunaan::getUrl()),
         ];
     }
