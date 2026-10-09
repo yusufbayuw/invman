@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G007M014RoomHistory extends Model
 {
+    protected $guarded = ['id'];
+
     public function room(): BelongsTo
     {
         return $this->belongsTo(G003M006Room::class, 'g003_m006_room_id');
