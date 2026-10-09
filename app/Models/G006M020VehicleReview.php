@@ -7,7 +7,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G006M020VehicleReview extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'g004_m008_activity_id',
+        'g005_m019_vehicle_reservation_id',
+        'g008_m017_vehicle_id',
+        'user_id',
+        'rating',
+        'review',
+    ];
 
     public function activity(): BelongsTo
     {
