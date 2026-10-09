@@ -40,12 +40,9 @@ class G008M018DriverResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required(),
-                        Forms\Components\Select::make('vehicle_default')
-                            ->label('Kendaraan Utama')
-                            ->relationship('defaultVehicle', 'name')
-                            ->getOptionLabelFromRecordUsing(fn ($record): string => "{$record->name} · {$record->license_plate}")
-                            ->searchable(['name', 'license_plate'])
-                            ->preload(),
+                        Forms\Components\Placeholder::make('default_assignment_notice')
+                            ->label('Kendaraan Default')
+                            ->content('Tetapkan pengemudi default pada master Kendaraan. Relasi lama dipertahankan untuk kompatibilitas.'),
                         Forms\Components\TextInput::make('sim_number')
                             ->label('Nomor SIM')
                             ->required()
@@ -84,11 +81,9 @@ class G008M018DriverResource extends Resource
                     ->label('Jenis SIM')
                     ->badge()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('defaultVehicle.name')
-                    ->label('Kendaraan Utama')
-                    ->description(fn (G008M018Driver $record): ?string => $record->defaultVehicle?->license_plate)
-                    ->searchable()
-                    ->sortable()
+                Tables\Columns\TextColumn::make('defaultVehicles.name')
+                    ->label('Kendaraan Default')
+                    ->listWithLineBreaks()
                     ->placeholder('Belum ditentukan'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -110,11 +105,7 @@ class G008M018DriverResource extends Resource
                         'B2' => 'SIM B2',
                         'B2 Umum' => 'SIM B2 Umum',
                     ]),
-                Tables\Filters\SelectFilter::make('vehicle_default')
-                    ->label('Kendaraan Utama')
-                    ->relationship('defaultVehicle', 'name')
-                    ->searchable()
-                    ->preload(),
+
             ])
             ->defaultSort('user.name')
             ->actions([
