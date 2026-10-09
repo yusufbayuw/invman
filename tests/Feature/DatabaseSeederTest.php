@@ -27,7 +27,7 @@ class DatabaseSeederTest extends TestCase
         $this->assertSame(7, G001M001Unit::query()->count());
         $this->assertSame(8, User::query()->count());
         $this->assertTrue(Hash::check('DemoPass!2026#Secure', User::query()->where('username', 'admin')->firstOrFail()->password));
-        $this->assertTrue(Hash::check('password', User::query()->where('username', 'sarpras.sd')->firstOrFail()->password));
+        $this->assertTrue(Hash::check('DemoPass!2026#Secure', User::query()->where('username', 'sarpras.sd')->firstOrFail()->password));
         $this->assertSame(0, G002M007Item::query()->count());
         $this->assertSame(0, G002M015ItemInstance::query()->count());
         $this->assertSame(7, G008M017Vehicle::query()->count());
