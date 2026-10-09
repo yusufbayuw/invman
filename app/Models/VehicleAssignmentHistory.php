@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\HasImmutableAuditRecord;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VehicleAssignmentHistory extends Model
 {
+    use HasImmutableAuditRecord;
+
     /** Explicit mass-assignment allowlist. */
     protected $fillable = [
         'vehicle_reservation_id',
