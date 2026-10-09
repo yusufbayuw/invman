@@ -56,6 +56,15 @@ return new class extends Migration
                 ->on('g008_m018_drivers')->restrictOnDelete();
         });
 
+        // Retain reservations when a vehicle is archived/retired: no cascading delete.
+        Schema::table('g005_m019_vehicle_reservations', function (Blueprint $table): void {
+            $table->dropForeign(['g008_m017_vehicle_id']);
+        });
+        Schema::table('g005_m019_vehicle_reservations', function (Blueprint $table): void {
+            $table->foreign('g008_m017_vehicle_id')->references('id')
+                ->on('g008_m017_vehicles')->restrictOnDelete();
+        });
+
         Schema::create('vehicle_assignment_histories', function (Blueprint $table): void {
             $table->id();
             $table->foreignUuid('vehicle_reservation_id')
@@ -74,22 +83,26 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Do not leave a half-rolled-back schema if a nullable draft still exists.
+        if (DB::table('g005_m019_vehicle_reservations')->whereNull('g008_m018_driver_id')->exists()) {
+            throw new \RuntimeException('Tidak dapat rollback: reservasi tanpa pengemudi masih ada.');
+        }
+
         Schema::dropIfExists('vehicle_assignment_histories');
         Schema::table('g005_m019_vehicle_reservations', function (Blueprint $table): void {
             $table->dropConstrainedForeignId('vehicle_assistant_id');
             $table->dropForeign(['g008_m018_driver_id']);
         });
 
-        // Existing draft submissions can legitimately have no assigned driver.
-        // Refuse a destructive rollback instead of corrupting such reservations.
-        if (DB::table('g005_m019_vehicle_reservations')->whereNull('g008_m018_driver_id')->exists()) {
-            throw new \RuntimeException('Tidak dapat rollback: reservasi tanpa pengemudi masih ada.');
-        }
-
         Schema::table('g005_m019_vehicle_reservations', function (Blueprint $table): void {
             $table->unsignedBigInteger('g008_m018_driver_id')->nullable(false)->change();
             $table->foreign('g008_m018_driver_id')->references('id')
                 ->on('g008_m018_drivers')->cascadeOnDelete();
+        });
+        Schema::table('g005_m019_vehicle_reservations', function (Blueprint $table): void {
+            $table->dropForeign(['g008_m017_vehicle_id']);
+            $table->foreign('g008_m017_vehicle_id')->references('id')
+                ->on('g008_m017_vehicles')->cascadeOnDelete();
         });
         Schema::dropIfExists('vehicle_assistants');
         Schema::table('g008_m017_vehicles', function (Blueprint $table): void {
