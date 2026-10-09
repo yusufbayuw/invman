@@ -9,8 +9,13 @@ final class ProductionSecurityAudit
     {
         $issues = [];
 
-        if (! config('app.key')) {
-            $issues[] = 'APP_KEY belum diatur.';
+        $key = (string) config('app.key');
+        $decodedKey = str_starts_with($key, 'base64:')
+            ? base64_decode(substr($key, 7), true)
+            : $key;
+
+        if (! is_string($decodedKey) || strlen($decodedKey) !== 32) {
+            $issues[] = 'APP_KEY harus merupakan kunci enkripsi acak 32-byte yang valid.';
         }
 
         if (config('app.env') !== 'production') {
@@ -38,7 +43,8 @@ final class ProductionSecurityAudit
         }
 
         $proxies = trim((string) config('security.trusted_proxies'));
-        if ($proxies === '*' || str_contains($proxies, '0.0.0.0/0') || str_contains($proxies, '::/0')) {
+        $proxyList = array_map('trim', explode(',', $proxies));
+        if (array_intersect($proxyList, ['*', '0.0.0.0/0', '::/0']) !== []) {
             $issues[] = 'TRUSTED_PROXIES tidak boleh mengizinkan semua alamat.';
         }
 
