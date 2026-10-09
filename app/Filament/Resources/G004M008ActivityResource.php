@@ -10,6 +10,7 @@ use App\Filament\Resources\G004M008ActivityResource\RelationManagers\RoomReserva
 use App\Filament\Resources\G004M008ActivityResource\RelationManagers\VehicleReservationRelationManager;
 use App\Models\G004M008Activity;
 use App\Services\LoanRequestService;
+use App\Services\LoanVisibility;
 use App\Services\LoanReviewService;
 use Coolsam\Flatpickr\Forms\Components\Flatpickr;
 use Filament\Forms;
@@ -58,7 +59,7 @@ class G004M008ActivityResource extends Resource
 
     public static function getGlobalSearchEloquentQuery(): Builder
     {
-        return parent::getGlobalSearchEloquentQuery()->with(['user', 'unit']);
+        return app(LoanVisibility::class)->activities(parent::getGlobalSearchEloquentQuery()->with(['user', 'unit']), auth()->user());
     }
 
     public static function getNavigationBadge(): ?string
@@ -539,30 +540,7 @@ class G004M008ActivityResource extends Resource
             ])
             ->withCount(['item_reservation', 'room_reservation', 'vehicle_reservation']);
 
-        $user = auth()->user();
-
-        if ($user && ! $user->isFacility()) {
-            $managementIds = $user->itemManagements()->pluck('g002_m003_item_management.id');
-
-            if (! $user->isSarpras() && $managementIds->isEmpty()) {
-                return $query->whereRaw('1 = 0');
-            }
-
-            $query->where(function (Builder $query) use ($user, $managementIds): void {
-                if ($user->belongsToUnit($user->g001_m001_unit_id)) {
-                    $query->orWhere('g001_m001_unit_id', $user->g001_m001_unit_id);
-                }
-
-                if ($managementIds->isNotEmpty()) {
-                    $query
-                        ->orWhereHas('item_reservation.item', fn (Builder $query) => $query->whereIn('g002_m003_item_management_id', $managementIds))
-                        ->orWhereHas('room_reservation.room', fn (Builder $query) => $query->whereIn('g002_m003_item_management_id', $managementIds))
-                        ->orWhereHas('vehicle_reservation.vehicle', fn (Builder $query) => $query->whereIn('g002_m003_item_management_id', $managementIds));
-                }
-            });
-        }
-
-        return $query;
+        return app(LoanVisibility::class)->activities($query, auth()->user());
     }
 
     public static function getPages(): array
