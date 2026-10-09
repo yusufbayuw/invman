@@ -35,9 +35,9 @@ class AjukanPeminjaman extends Page implements HasForms
 
     protected static ?string $navigationGroup = 'Peminjaman';
 
-    protected static ?string $navigationLabel = 'Ajukan Peminjaman';
+    protected static ?string $navigationLabel = 'Pengajuan Lengkap';
 
-    protected static ?string $title = 'Ajukan Peminjaman';
+    protected static ?string $title = 'Ajukan Peminjaman Lengkap';
 
     protected static ?int $navigationSort = -10;
 
