@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\HasImmutableAuditRecord;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LoanReservationStatusHistory extends Model
 {
+    use HasImmutableAuditRecord;
+
     /** Explicit mass-assignment allowlist: writes require authorized service flow. */
     protected $fillable = [
         'reservation_type',
