@@ -105,3 +105,16 @@ Scheduler Laravel wajib aktif di produksi agar status dan notifikasi kedaluwarsa
 - Konfigurasikan queue, mail, storage publik, serta Reverb/Chatify jika fitur percakapan real-time digunakan.
 - Pastikan Laravel scheduler aktif untuk memproses hold peminjaman yang kedaluwarsa.
 - Jalankan `php artisan test` dan `npm run build` sebelum rilis.
+
+
+## Integrasi jaringan / MikroTik
+
+Integrasi MikroTik Hotspot/captive portal tidak lagi menjadi bagian operasional
+InvMan. Controller, route publik, dan view percobaan telah dipisahkan dari
+aplikasi ini. Integrasi tersebut sekarang dikembangkan pada repository
+`yusufbayuw/dokumentasi` sebagai modul tersendiri yang **nonaktif secara
+default**, dengan RouterOS v7 REST HTTPS. Rujuk panduan
+`docs/MIKROTIK-HOTSPOT.md` di repository Dokumentasi.
+
+InvMan berfokus pada inventaris dan peminjaman; otorisasi jaringan, pengaturan
+router, dan captive portal tidak boleh diaktifkan kembali melalui InvMan.
