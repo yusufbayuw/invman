@@ -48,7 +48,7 @@ class G005M019VehicleReservationPolicy
      */
     public function delete(User $user, G005M019VehicleReservation $g005M019VehicleReservation): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin() && $g005M019VehicleReservation->status === \App\Enums\ReservationStatus::Draft->value;
     }
 
     /**
@@ -56,7 +56,7 @@ class G005M019VehicleReservationPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->isAdmin();
+        return false;
     }
 
     /**
@@ -64,7 +64,7 @@ class G005M019VehicleReservationPolicy
      */
     public function forceDelete(User $user, G005M019VehicleReservation $g005M019VehicleReservation): bool
     {
-        return $user->can('force_delete_g005::m019::vehicle::reservation');
+        return false;
     }
 
     /**
@@ -72,7 +72,7 @@ class G005M019VehicleReservationPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_g005::m019::vehicle::reservation');
+        return false;
     }
 
     /**
