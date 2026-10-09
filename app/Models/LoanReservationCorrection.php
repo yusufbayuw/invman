@@ -7,7 +7,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LoanReservationCorrection extends Model
 {
-    protected $guarded = [];
+    /** Explicit mass-assignment allowlist: writes require authorized service flow. */
+    protected $fillable = [
+        'reservation_type',
+        'reservation_id',
+        'g004_m008_activity_id',
+        'field',
+        'old_value',
+        'new_value',
+        'reason',
+        'corrected_by',
+    ];
 
     public function correctedBy(): BelongsTo
     {
