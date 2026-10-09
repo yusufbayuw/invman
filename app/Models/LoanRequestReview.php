@@ -8,7 +8,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LoanRequestReview extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit mass-assignment allowlist: writes require authorized service flow. */
+    protected $fillable = [
+        'g004_m008_activity_id',
+        'user_id',
+        'rating',
+        'review',
+    ];
 
     use HasUuids;
 
