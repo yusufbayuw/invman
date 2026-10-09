@@ -265,11 +265,11 @@ class LoanRequestService
             ])->save();
 
             $previous = $reservation->status;
-            $reservation->updateQuietly([
+            $reservation->forceFill([
                 'status' => ReservationStatus::ReturnRequested->value,
                 'status_changed_by' => auth()->id(),
                 'status_changed_at' => now(),
-            ]);
+            ])->saveQuietly();
             $this->createStatusHistory($reservation, $previous, ReservationStatus::ReturnRequested->value, auth()->id(), 'Pengembalian fisik dicatat oleh pengelola; menunggu konfirmasi peminjam.');
             $this->syncStatus($reservation->activity->fresh(), notify: false);
 
@@ -663,12 +663,12 @@ class LoanRequestService
                 'corrected_by' => $user->id,
             ]);
 
-            $reservation->updateQuietly([
+            $reservation->forceFill([
                 'status' => $targetStatus,
                 'returned_at' => null,
                 'status_changed_by' => $user->id,
                 'status_changed_at' => now(),
-            ]);
+            ])->saveQuietly();
             $this->createStatusHistory($reservation, $from, $targetStatus, $user->id, '[KOREKSI ADMIN] '.$reason);
 
             if ($reservation instanceof G005M009ItemReservation) {
