@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\G004M008Activity;
+use App\Services\LoanVisibility;
 use Illuminate\Database\Eloquent\Model;
 use Saade\FilamentFullCalendar\Actions\ViewAction;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
@@ -41,6 +42,7 @@ class CalendarWidget extends FullCalendarWidget
             ->icon('heroicon-o-eye')
             ->color('primary')
             ->modalHeading(fn() => 'Kegiatan: ' . $this->record->name)
+            ->authorize(fn (): bool => app(LoanVisibility::class)->canViewActivity(auth()->user(), $this->record))
             ->modalWidth('2xl')
             ->infolist([
                 \Filament\Infolists\Components\Section::make([
@@ -126,11 +128,7 @@ class CalendarWidget extends FullCalendarWidget
 
     public function fetchEvents(array $fetchInfo): array
     {
-        $query = G004M008Activity::query();
-
-        if (auth()->user()?->isSarpras()) {
-            $query->where('g001_m001_unit_id', auth()->user()->g001_m001_unit_id);
-        }
+        $query = app(LoanVisibility::class)->activities(G004M008Activity::query(), auth()->user());
 
         return $query->where('start_time', '<', $fetchInfo['end'])
             ->where('end_time', '>', $fetchInfo['start'])
@@ -148,6 +146,6 @@ class CalendarWidget extends FullCalendarWidget
 
     public static function canView(): bool
     {
-        return auth()->check();
+        return auth()->user()?->isFacility() || auth()->user()?->isSarpras() || auth()->user()?->isAssetManager() ?: false;
     }
 }
