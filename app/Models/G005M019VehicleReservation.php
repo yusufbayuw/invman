@@ -13,7 +13,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[ObservedBy(G005M019VehicleReservationObserver::class)]
 class G005M019VehicleReservation extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'g004_m008_activity_id',
+        'g008_m017_vehicle_id',
+        'g008_m018_driver_id',
+        'vehicle_assistant_id',
+        'start_time',
+        'end_time',
+        'returned_at',
+        'status',
+        'rejection_reason',
+    ];
 
     use HasLoanReturnControls, HasUuids;
 
