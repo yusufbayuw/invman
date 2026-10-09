@@ -35,6 +35,8 @@ class RoleAndUnitAccessTest extends TestCase
     {
         $this->seed(UnitSeeder::class);
         $this->seed(RoleSeeder::class);
+        config()->set('security.seed_demo_users', true);
+        config()->set('security.seed_demo_password', 'DemoPass!2026#Secure');
         $this->seed(UserSeeder::class);
 
         $this->assertSame(7, G001M001Unit::query()->count());
