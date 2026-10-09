@@ -7,7 +7,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G006M012RoomReview extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'g004_m008_activity_id',
+        'g005_m010_room_reservation_id',
+        'g003_m006_room_id',
+        'user_id',
+        'rating',
+        'review',
+    ];
 
     public function activity(): BelongsTo
     {

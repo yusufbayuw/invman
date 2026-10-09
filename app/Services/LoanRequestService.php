@@ -265,11 +265,11 @@ class LoanRequestService
             ])->save();
 
             $previous = $reservation->status;
-            $reservation->updateQuietly([
+            $reservation->forceFill([
                 'status' => ReservationStatus::ReturnRequested->value,
                 'status_changed_by' => auth()->id(),
                 'status_changed_at' => now(),
-            ]);
+            ])->saveQuietly();
             $this->createStatusHistory($reservation, $previous, ReservationStatus::ReturnRequested->value, auth()->id(), 'Pengembalian fisik dicatat oleh pengelola; menunggu konfirmasi peminjam.');
             $this->syncStatus($reservation->activity->fresh(), notify: false);
 
@@ -623,7 +623,7 @@ class LoanRequestService
                 ->chunkById(100, function ($reservations) use (&$notified, $type): void {
                     foreach ($reservations as $reservation) {
                         $this->notifications->overdue($type, $reservation);
-                        $reservation->updateQuietly(['overdue_notified_at' => now()]);
+                        $reservation->forceFill(['overdue_notified_at' => now()])->saveQuietly();
                         $notified++;
                     }
                 });
@@ -663,12 +663,12 @@ class LoanRequestService
                 'corrected_by' => $user->id,
             ]);
 
-            $reservation->updateQuietly([
+            $reservation->forceFill([
                 'status' => $targetStatus,
                 'returned_at' => null,
                 'status_changed_by' => $user->id,
                 'status_changed_at' => now(),
-            ]);
+            ])->saveQuietly();
             $this->createStatusHistory($reservation, $from, $targetStatus, $user->id, '[KOREKSI ADMIN] '.$reason);
 
             if ($reservation instanceof G005M009ItemReservation) {
@@ -906,11 +906,11 @@ class LoanRequestService
         foreach (['item_reservation', 'room_reservation', 'vehicle_reservation'] as $relation) {
             foreach ($activity->{$relation}()->whereIn('status', $fromValues)->get() as $reservation) {
                 $previous = $reservation->status;
-                $reservation->updateQuietly([
+                $reservation->forceFill([
                     'status' => $to->value,
                     'status_changed_by' => $user?->id,
                     'status_changed_at' => now(),
-                ]);
+                ])->saveQuietly();
                 $this->createStatusHistory($reservation, $previous, $to->value, $user?->id);
                 $changed++;
             }

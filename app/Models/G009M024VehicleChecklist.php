@@ -7,7 +7,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G009M024VehicleChecklist extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit mass-assignment allowlist: writes require authorized service flow. */
+    protected $fillable = [
+        'g008_m017_vehicle_id',
+        'user_id',
+        'date',
+        'is_ok',
+        'notes',
+        'checklist_date',
+        'photo',
+    ];
 
     protected $casts = [
         'date' => 'date',

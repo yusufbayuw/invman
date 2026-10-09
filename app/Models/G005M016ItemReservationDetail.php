@@ -7,7 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G005M016ItemReservationDetail extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'g005_m009_item_reservation_id',
+        'g002_m015_item_instance_id',
+    ];
 
     public function item_reservation(): BelongsTo
     {

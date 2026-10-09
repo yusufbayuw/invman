@@ -8,7 +8,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G008M017Vehicle extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'g001_m001_unit_id',
+        'g002_m003_item_management_id',
+        'default_driver_id',
+        'requires_assistant',
+        'name',
+        'license_plate',
+        'stnk_date',
+        'kir_date',
+        'capacity',
+        'is_borrowable',
+        'status',
+    ];
 
     protected $casts = [
         'stnk_date' => 'date',

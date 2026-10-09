@@ -7,8 +7,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class G002M002ItemType extends Model
 {
-    // Controlled request validation determines writable business fields; primary keys stay guarded.
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'name',
+        'description',
+    ];
 
     public function item(): HasMany
     {

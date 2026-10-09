@@ -7,7 +7,11 @@ use Chatify\Traits\UUID;
 
 class ChFavorite extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit mass-assignment allowlist. */
+    protected $fillable = [
+        'user_id',
+        'favorite_id',
+    ];
 
     use UUID;
 }

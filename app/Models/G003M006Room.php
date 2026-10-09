@@ -10,8 +10,19 @@ use Illuminate\Support\Str;
 
 class G003M006Room extends Model
 {
-    // Controlled request validation determines writable business fields; primary keys stay guarded.
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'g003_m005_floor_id',
+        'g001_m001_unit_id',
+        'g002_m003_item_management_id',
+        'name',
+        'is_borrowable',
+        'capacity',
+        'status',
+        'photo',
+        'qrcode',
+        'qr_uuid',
+    ];
 
     protected static function booted(): void
     {

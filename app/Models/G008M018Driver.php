@@ -8,7 +8,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G008M018Driver extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit mass-assignment allowlist: writes require authorized service flow. */
+    protected $fillable = [
+        'user_id',
+        'sim_number',
+        'sim_type',
+        'vehicle_default',
+    ];
 
     public function defaultVehicles(): HasMany
     {

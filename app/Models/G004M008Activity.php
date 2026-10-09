@@ -11,8 +11,21 @@ use Illuminate\Validation\ValidationException;
 
 class G004M008Activity extends Model
 {
-    // Controlled request validation determines writable business fields; primary keys stay guarded.
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'user_id',
+        'g001_m001_unit_id',
+        'name',
+        'description',
+        'notes',
+        'start_time',
+        'end_time',
+        'attachment',
+        'status',
+        'hold_expires_at',
+        'expired_at',
+        'cancelled_at',
+    ];
 
     use HasUuids;
 

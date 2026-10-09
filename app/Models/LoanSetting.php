@@ -6,5 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class LoanSetting extends Model
 {
-    protected $fillable = ['key', 'value'];
+    /** Explicit mass-assignment allowlist. */
+    protected $fillable = [
+        'key',
+        'value',
+    ];
 }

@@ -7,7 +7,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G009M023RoomChecklist extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit mass-assignment allowlist: writes require authorized service flow. */
+    protected $fillable = [
+        'g003_m006_room_id',
+        'user_id',
+        'date',
+        'is_ok',
+        'notes',
+        'checklist_date',
+        'photo',
+    ];
 
     protected $casts = [
         'date' => 'date',

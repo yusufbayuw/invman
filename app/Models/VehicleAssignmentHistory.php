@@ -3,11 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\HasImmutableAuditRecord;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VehicleAssignmentHistory extends Model
 {
-    protected $guarded = [];
+    use HasImmutableAuditRecord;
+
+    /** Explicit mass-assignment allowlist. */
+    protected $fillable = [
+        'vehicle_reservation_id',
+        'old_driver_id',
+        'new_driver_id',
+        'old_assistant_id',
+        'new_assistant_id',
+        'changed_by',
+        'changed_by_name',
+        'reason',
+    ];
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(G005M019VehicleReservation::class, 'vehicle_reservation_id');

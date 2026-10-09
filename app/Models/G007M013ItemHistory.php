@@ -7,7 +7,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G007M013ItemHistory extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'g002_m015_item_instance_id',
+        'user_id',
+        'action',
+        'notes',
+        'photo',
+    ];
 
     public function item_instance(): BelongsTo
     {

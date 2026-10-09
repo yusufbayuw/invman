@@ -6,7 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class PinnedMenu extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit mass-assignment allowlist. */
+    protected $fillable = [
+        'user_id',
+        'label',
+        'url',
+        'icon',
+    ];
 
     //
 }

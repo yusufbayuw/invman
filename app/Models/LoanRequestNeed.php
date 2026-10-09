@@ -17,7 +17,8 @@ class LoanRequestNeed extends Model
 
     protected $keyType = 'string';
 
-    protected $guarded = [];
+    // This synthetic UNION result is hydrated from the database, never mass assigned.
+    protected $guarded = ['*'];
 
     protected function casts(): array
     {
