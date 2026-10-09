@@ -126,6 +126,8 @@ class ItemReservationRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => app(\App\Services\LoanVisibility::class)
+                ->reservations($query, auth()->user(), 'item'))
             ->recordTitleAttribute('id')
             ->columns([
                 Tables\Columns\TextColumn::make('item.name')
