@@ -13,7 +13,7 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        if (app()->environment('production')) {
+        if (app()->environment('production') || config('app.env') === 'production') {
             $this->command?->warn('Production: akun contoh tidak dibuat atau diubah. Gunakan invman:provision-admin.');
 
             return;
