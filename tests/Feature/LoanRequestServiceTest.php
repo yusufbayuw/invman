@@ -9,6 +9,7 @@ use App\Models\G002M007Item;
 use App\Models\G003M006Room;
 use App\Models\G005M009ItemReservation;
 use App\Models\G008M017Vehicle;
+use App\Models\G008M018Driver;
 use App\Models\User;
 use App\Services\LoanAvailabilityService;
 use App\Services\LoanRequestService;
@@ -332,6 +333,13 @@ class LoanRequestServiceTest extends TestCase
             'is_borrowable' => true,
             'status' => 'tersedia',
         ]);
+
+        $driver = G008M018Driver::query()->create([
+            'user_id' => $user->id,
+            'sim_number' => 'SIM-TEST',
+            'sim_type' => 'B1',
+        ]);
+        $vehicle->update(['default_driver_id' => $driver->id]);
 
         return [$user, $item, $room, $vehicle];
     }
