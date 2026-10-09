@@ -7,7 +7,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G007M014RoomHistory extends Model
 {
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'g003_m006_room_id',
+        'user_id',
+        'action',
+        'notes',
+        'photo',
+    ];
 
     public function room(): BelongsTo
     {
