@@ -102,9 +102,13 @@ class LoanAvailabilityService
 
     public function reservedItemQuantity(int $itemId, Carbon $start, Carbon $end): int
     {
+        // Locking read returns the latest committed rows even with an earlier
+        // InnoDB REPEATABLE READ snapshot in this request's transaction.
         return (int) G005M009ItemReservation::query()
             ->where('g002_m007_item_id', $itemId)
             ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
+            ->lockForUpdate()
+            ->get(['quantity'])
             ->sum('quantity');
     }
 
@@ -139,7 +143,8 @@ class LoanAvailabilityService
         return ! G005M010RoomReservation::query()
             ->where('g003_m006_room_id', $roomId)
             ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
-            ->exists();
+            ->lockForUpdate()
+            ->first(['id']) !== null;
     }
 
     public function vehicleIsAvailable(int $vehicleId, Carbon $start, Carbon $end): bool
@@ -147,7 +152,8 @@ class LoanAvailabilityService
         return ! G005M019VehicleReservation::query()
             ->where('g008_m017_vehicle_id', $vehicleId)
             ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
-            ->exists();
+            ->lockForUpdate()
+            ->first(['id']) !== null;
     }
 
     public function driverIsAvailable(int $driverId, Carbon $start, Carbon $end, ?string $exceptReservationId = null): bool
