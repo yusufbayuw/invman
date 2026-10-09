@@ -11,7 +11,7 @@ termasuk draf, lampiran, dan beberapa jenis kebutuhan sekaligus.
    Jenis aset otomatis dipilih dari tombol yang diklik.
 2. Pilih aset yang tersedia. Untuk barang jumlah otomatis 1 dan bisa diubah.
 3. Gunakan jadwal bawaan satu jam atau ubah mulai dan selesai.
-4. Isi **satu alasan singkat**, kemudian klik **Ajukan Sekarang**.
+4. Pilih **Buat kegiatan baru** (default) dan isi **satu alasan singkat**, atau pilih **Kegiatan yang sudah ada** dari unit Anda. Catatan peminjaman khusus aset bersifat opsional. Klik **Ajukan Sekarang**.
 
 Pemohon dan unit otomatis dari akun, tidak ada field pengemudi maupun kenek.
 Bagi bus, kru tetap ditentukan secara internal oleh pengelola ketika menyetujui
@@ -34,7 +34,7 @@ di semua perangkat). Pilihan tanggal memakai date-time picker.
 - Form memanggil `LoanRequestService::submit()` yang sama seperti pengajuan
   lengkap, sehingga pemeriksaan unit, jenis aset, stok/jadwal, penguncian
   transaksi, masa hold, histori dan notifikasi tetap berlaku.
-- Alasan singkat dipetakan ke `name` **dan** `description` untuk menjaga
+- Pilihan kegiatan yang sudah ada membuat pengajuan baru yang terhubung melalui `related_activity_id`, bukan memasukkan aset ke transaksi induk. Persetujuan, hold, pengembalian dan audit setiap pengajuan tetap independen.\n- Hanya kegiatan induk berstatus layak dari unit pemohon yang dapat dipilih; daftar dan service sama-sama memvalidasi unit pemiliknya. Kegiatan lama tetap bisa menjadi induk tanpa backfill.\n- Halaman detail kegiatan menampilkan relasi kegiatan induk serta daftar pengajuan terkait, dan Rekapan Penggunaan memiliki filter Kegiatan Bersama.\n- Alasan singkat dipetakan ke `name` **dan** `description` untuk menjaga
   format kegiatan lama tanpa meminta dua informasi berulang.
 - Payload tidak diteruskan mentah ke database. Service membangun pemohon dan
   unit dari user terotentikasi, status awal ditetapkan sistem.
@@ -52,6 +52,6 @@ php artisan test --filter=QuickLoanRequestTest
 php artisan test
 ```
 
-Test mencakup barang, ruangan, kendaraan tanpa memilih kru, validasi duplikasi
+Test tambahan `GroupedLoanActivityTest` memverifikasi relasi lintas pengajuan, penolakan kegiatan milik unit lain dan filtrasi laporan.\n\nTest mencakup barang, ruangan, kendaraan tanpa memilih kru, validasi duplikasi
 aset, akses tidak sah, pemalsuan user/unit/status, tanggal invalid,
 navigasi dashboard dan keberadaan jalur pengajuan lengkap.

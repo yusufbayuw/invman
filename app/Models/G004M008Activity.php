@@ -15,6 +15,7 @@ class G004M008Activity extends Model
     protected $fillable = [
         'user_id',
         'g001_m001_unit_id',
+        'related_activity_id',
         'name',
         'description',
         'notes',
@@ -57,6 +58,23 @@ class G004M008Activity extends Model
                 ]);
             }
         });
+    }
+
+    /** Canonical activity shared by related, independently processed requests. */
+    public function groupParent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'related_activity_id');
+    }
+
+    /** Independent requests referring back to this canonical activity. */
+    public function linkedRequests(): HasMany
+    {
+        return $this->hasMany(self::class, 'related_activity_id');
+    }
+
+    public function groupRootId(): string
+    {
+        return $this->related_activity_id ?: $this->getKey();
     }
 
     public function item_reservation(): HasMany

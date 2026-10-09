@@ -69,7 +69,13 @@ class LoanRequestService
             throw ValidationException::withMessages(['status' => 'Hanya draf milik unit Anda yang dapat diubah.']);
         }
 
-        return DB::transaction(function () use ($user, $data, $start, $end, $activity, $validateAvailability) {
+        // Never accept a cross-unit or nested activity reference, even from a
+        // forged Livewire payload or a direct service invocation.
+        $relatedActivity = filled($data['related_activity_id'] ?? null)
+            ? app(LoanActivityGrouping::class)->resolve($user, $data['related_activity_id'])
+            : null;
+
+        return DB::transaction(function () use ($user, $data, $start, $end, $activity, $validateAvailability, $relatedActivity) {
             $attributes = [
                 'user_id' => $user->id,
                 'g001_m001_unit_id' => $user->g001_m001_unit_id,
@@ -82,6 +88,10 @@ class LoanRequestService
                 'status' => ReservationStatus::Draft->value,
                 'hold_expires_at' => null,
             ];
+
+            if ($relatedActivity) {
+                $attributes['related_activity_id'] = $relatedActivity->getKey();
+            }
 
             if ($activity) {
                 $activity->update($attributes);

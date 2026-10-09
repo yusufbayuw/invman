@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Resources\G004M008ActivityResource;
+use App\Services\LoanActivityGrouping;
 use App\Services\LoanAvailabilityService;
 use App\Services\LoanRequestService;
 use App\Services\LoanSettings;
@@ -11,6 +12,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -63,6 +65,7 @@ class PeminjamanCepat extends Page implements HasForms
         $this->form->fill([
             'type' => $type,
             'quantity' => 1,
+            'activity_mode' => 'new',
             'start_time' => $start,
             'end_time' => $start->copy()->addHour(),
         ]);
@@ -139,13 +142,44 @@ class PeminjamanCepat extends Page implements HasForms
                     ])
                     ->columns(2),
 
-                Section::make('3. Tulis alasan singkat')
+                Section::make('3. Kegiatan dan alasan peminjaman')
+                    ->description('Gunakan satu kegiatan yang sama untuk menelusuri beberapa pengajuan terpisah.')
                     ->schema([
+                        Select::make('activity_mode')
+                            ->label('Kegiatan')
+                            ->options([
+                                'new' => 'Buat kegiatan baru',
+                                'existing' => 'Pilih kegiatan yang sudah ada',
+                            ])
+                            ->native(false)
+                            ->default('new')
+                            ->live()
+                            ->required()
+                            ->afterStateUpdated(function (Set $set): void {
+                                $set('purpose', null);
+                                $set('existing_activity_id', null);
+                            }),
+                        Select::make('existing_activity_id')
+                            ->label('Kegiatan yang sudah ada (unit Anda)')
+                            ->options(fn (): array => app(LoanActivityGrouping::class)->options(auth()->user()))
+                            ->searchable()
+                            ->preload()
+                            ->required(fn (Get $get): bool => $get('activity_mode') === 'existing')
+                            ->visible(fn (Get $get): bool => $get('activity_mode') === 'existing')
+                            ->helperText('Hanya kegiatan induk dari unit Anda. Setiap pengajuan tetap memiliki jadwal, persetujuan dan histori terpisah.'),
                         TextInput::make('purpose')
-                            ->label('Untuk keperluan apa?')
+                            ->label('Nama / alasan kegiatan baru')
                             ->placeholder('Contoh: Rapat guru / antar siswa ke kegiatan')
                             ->maxLength(255)
-                            ->required()
+                            ->required(fn (Get $get): bool => $get('activity_mode') !== 'existing')
+                            ->visible(fn (Get $get): bool => $get('activity_mode') !== 'existing')
+                            ->columnSpanFull(),
+                        Textarea::make('asset_note')
+                            ->label('Catatan khusus peminjaman ini (opsional)')
+                            ->placeholder('Misal: Proyektor untuk presentasi materi pembukaan')
+                            ->maxLength(2000)
+                            ->rows(2)
+                            ->visible(fn (Get $get): bool => $get('activity_mode') === 'existing')
                             ->columnSpanFull(),
                         Placeholder::make('requester')
                             ->label('Pemohon')
@@ -197,19 +231,35 @@ class PeminjamanCepat extends Page implements HasForms
             'vehicle' => ['type' => 'vehicle', 'vehicle_id' => (int) $assetId],
         };
 
-        $purpose = trim((string) ($data['purpose'] ?? ''));
+        $mode = $data['activity_mode'] ?? 'new';
+
+        if (! in_array($mode, ['new', 'existing'], true)) {
+            throw ValidationException::withMessages(['data.activity_mode' => 'Pilihan kegiatan tidak valid.']);
+        }
+
+        $root = $mode === 'existing'
+            ? app(LoanActivityGrouping::class)->resolve(auth()->user(), $data['existing_activity_id'] ?? null)
+            : null;
+        $purpose = $root?->name ?? trim((string) ($data['purpose'] ?? ''));
 
         if ($purpose === '') {
             throw ValidationException::withMessages(['data.purpose' => 'Alasan peminjaman wajib diisi.']);
         }
 
-        $activity = app(LoanRequestService::class)->submit(auth()->user(), [
+        $payload = [
             'name' => $purpose,
-            'description' => $purpose,
+            'description' => $root?->description ?: $purpose,
+            'notes' => $root ? ($data['asset_note'] ?? null) : null,
             'start_time' => $data['start_time'],
             'end_time' => $data['end_time'],
             'needs' => [$need],
-        ]);
+        ];
+
+        if ($root) {
+            $payload['related_activity_id'] = $root->id;
+        }
+
+        $activity = app(LoanRequestService::class)->submit(auth()->user(), $payload);
 
         Notification::make()
             ->title('Peminjaman berhasil diajukan')

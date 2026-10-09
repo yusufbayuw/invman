@@ -106,6 +106,14 @@ class G004M008ActivityResource extends Resource
                             ->label('Nama Kegiatan')
                             ->weight('bold')
                             ->size('lg'),
+                        \Filament\Infolists\Components\TextEntry::make('groupParent.name')
+                            ->label('Terkait Kegiatan Induk')
+                            ->icon('heroicon-o-link')
+                            ->url(fn (G004M008Activity $record): ?string => $record->related_activity_id
+                                ? static::getUrl('view', ['record' => $record->related_activity_id])
+                                : null)
+                            ->visible(fn (G004M008Activity $record): bool => filled($record->related_activity_id)
+                                && static::canViewFullActivity($record)),
                         \Filament\Infolists\Components\TextEntry::make('description')
                             ->label('Deskripsi')
                             ->size('md')
@@ -156,6 +164,31 @@ class G004M008ActivityResource extends Resource
                             ->dateTime(),
                     ]),
                 ])->from('md')->columnSpanFull(),
+                \Filament\Infolists\Components\Section::make('Pengajuan Lain untuk Kegiatan Ini')
+                    ->description('Semua pengajuan tetap memiliki jadwal, keputusan pengelola dan histori masing-masing.')
+                    ->schema([
+                        \Filament\Infolists\Components\RepeatableEntry::make('linkedRequests')
+                            ->hiddenLabel()
+                            ->schema([
+                                \Filament\Infolists\Components\TextEntry::make('name')
+                                    ->label('Kegiatan')
+                                    ->url(fn (G004M008Activity $record): string => static::getUrl('view', ['record' => $record])),
+                                \Filament\Infolists\Components\TextEntry::make('status')
+                                    ->label('Status Pengajuan')
+                                    ->badge()
+                                    ->formatStateUsing(fn (?string $state): string => ReservationStatus::tryFrom($state)?->label() ?? $state ?? '-'),
+                                \Filament\Infolists\Components\TextEntry::make('start_time')
+                                    ->label('Jadwal Mulai')
+                                    ->dateTime('d M Y H:i'),
+                                \Filament\Infolists\Components\TextEntry::make('notes')
+                                    ->label('Catatan Khusus')
+                                    ->placeholder('-'),
+                            ])
+                            ->columns(4),
+                    ])
+                    ->visible(fn (G004M008Activity $record): bool => ! $record->related_activity_id
+                        && static::canViewFullActivity($record)
+                        && $record->linkedRequests()->exists()),
                 \Filament\Infolists\Components\Section::make('Checklist Pengembalian')
                     ->schema([
                         \Filament\Infolists\Components\IconEntry::make('return_checklist.is_ok')
@@ -545,6 +578,8 @@ class G004M008ActivityResource extends Resource
         $query = parent::getEloquentQuery()
             ->with([
                 'return_checklist',
+                'groupParent',
+                'linkedRequests',
                 'review',
                 'item_reviews.item_instance',
                 'room_reviews.room',
