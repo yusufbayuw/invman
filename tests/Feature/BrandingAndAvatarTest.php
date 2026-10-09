@@ -31,6 +31,9 @@ class BrandingAndAvatarTest extends TestCase
             'guard_name' => 'web',
         ]));
 
+        \Spatie\Permission\Models\Role::query()->firstOrCreate(['name' => config('role.sarpras'), 'guard_name' => 'web']);
+        $user->assignRole(config('role.sarpras'));
+
         $this->actingAs($user)
             ->get(CustomChatifyPage::getUrl())
             ->assertOk()
