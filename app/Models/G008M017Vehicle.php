@@ -12,7 +12,13 @@ class G008M017Vehicle extends Model
         'stnk_date' => 'date',
         'kir_date' => 'date',
         'is_borrowable' => 'boolean',
+        'requires_assistant' => 'boolean',
     ];
+
+    public function defaultDriver(): BelongsTo
+    {
+        return $this->belongsTo(G008M018Driver::class, 'default_driver_id');
+    }
 
     public function vehicle_reservation(): HasMany
     {

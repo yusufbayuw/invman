@@ -113,19 +113,36 @@ class LoanRequestService
 
     public function submitDraft(User $user, G004M008Activity $activity): G004M008Activity
     {
-        if (! $user->belongsToUnit($activity->g001_m001_unit_id) || $activity->status !== ReservationStatus::Draft->value) {
-            throw ValidationException::withMessages(['status' => 'Hanya draf milik unit Anda yang dapat diajukan.']);
-        }
+        // Acquire locks and recheck availability in ONE transaction. Drafts do not
+        // reserve assets, so a pre-transaction availability check is insufficient.
+        DB::transaction(function () use ($user, $activity): void {
+            $locked = G004M008Activity::query()->lockForUpdate()->findOrFail($activity->getKey());
+            if (! $user->belongsToUnit($locked->g001_m001_unit_id)
+                || $locked->status !== ReservationStatus::Draft->value) {
+                throw ValidationException::withMessages(['status' => 'Hanya draf milik unit Anda yang dapat diajukan.']);
+            }
 
-        $this->validateDraftAvailability($activity);
-        $holdExpiresAt = $this->holdExpiresAt($activity->start_time);
+            // Lock asset rows in a stable order across concurrent submissions.
+            // Concurrent requests for any of the same assets now serialize.
+            foreach ([
+                [G002M007Item::class, $locked->item_reservation()->lockForUpdate()->pluck('g002_m007_item_id')],
+                [G003M006Room::class, $locked->room_reservation()->lockForUpdate()->pluck('g003_m006_room_id')],
+                [G008M017Vehicle::class, $locked->vehicle_reservation()->lockForUpdate()->pluck('g008_m017_vehicle_id')],
+            ] as [$modelClass, $ids]) {
+                $ids = $ids->filter()->unique()->sort()->values()->all();
+                if ($ids !== []) {
+                    $modelClass::query()->whereKey($ids)->orderBy('id')->lockForUpdate()->get();
+                }
+            }
 
-        DB::transaction(function () use ($user, $activity, $holdExpiresAt) {
-            $activity->update([
+            $locked->load(['item_reservation.item', 'room_reservation.room', 'vehicle_reservation.vehicle']);
+            $this->validateDraftAvailability($locked);
+
+            $locked->update([
                 'status' => ReservationStatus::Submitted->value,
-                'hold_expires_at' => $holdExpiresAt,
+                'hold_expires_at' => $this->holdExpiresAt($locked->start_time),
             ]);
-            $this->transitionReservations($activity, [ReservationStatus::Draft], ReservationStatus::Submitted, $user);
+            $this->transitionReservations($locked, [ReservationStatus::Draft], ReservationStatus::Submitted, $user);
         }, 3);
 
         $fresh = $activity->fresh();
@@ -412,6 +429,7 @@ class LoanRequestService
         string $reservationId,
         ReservationStatus $status,
         ?string $rejectionReason = null,
+        array $assignment = [],
     ): void {
         $modelClass = match ($type) {
             'item' => G005M009ItemReservation::class,
@@ -424,7 +442,7 @@ class LoanRequestService
             ->whereKey($reservationId)
             ->value('g004_m008_activity_id');
 
-        $name = DB::transaction(function () use ($activityId, $modelClass, $rejectionReason, $reservationId, $status, $type): string {
+        $name = DB::transaction(function () use ($activityId, $assignment, $modelClass, $rejectionReason, $reservationId, $status, $type): string {
             if ($activityId) {
                 G004M008Activity::query()->lockForUpdate()->findOrFail($activityId);
             }
@@ -445,6 +463,27 @@ class LoanRequestService
                 throw ValidationException::withMessages([
                     'status' => 'Hanya user yang ditetapkan pada Pengelola Barang aset ini yang dapat memproses peminjaman.',
                 ]);
+            }
+
+            if ($reservation instanceof G005M019VehicleReservation
+                && in_array($status, [ReservationStatus::Approved, ReservationStatus::CheckedOut], true)) {
+                $vehicle = $reservation->vehicle;
+                $driverId = array_key_exists('driver_id', $assignment)
+                    ? (filled($assignment['driver_id']) ? (int) $assignment['driver_id'] : null)
+                    : ($reservation->g008_m018_driver_id ?: $vehicle?->default_driver_id);
+                $assistantId = array_key_exists('assistant_id', $assignment)
+                    ? (filled($assignment['assistant_id']) ? (int) $assignment['assistant_id'] : null)
+                    : $reservation->vehicle_assistant_id;
+
+                app(VehicleAssignmentService::class)->assign(
+                    $reservation,
+                    $driverId ? (int) $driverId : null,
+                    $assistantId ? (int) $assistantId : null,
+                    $status === ReservationStatus::Approved
+                        ? 'Penugasan pada persetujuan reservasi'
+                        : 'Validasi personel sebelum pemberangkatan',
+                    auth()->user(),
+                );
             }
 
             $reservation->status = $status->value;
@@ -1022,19 +1061,19 @@ class LoanRequestService
     private function validateDraftAvailability(G004M008Activity $activity): void
     {
         foreach ($activity->item_reservation as $reservation) {
-            if ($this->availability->availableItemQuantity($reservation->g002_m007_item_id, $activity->start_time, $activity->end_time) < $reservation->quantity) {
+            if ($this->availability->availableItemQuantity($reservation->g002_m007_item_id, $activity->start_time, $activity->end_time, locking: true) < $reservation->quantity) {
                 throw ValidationException::withMessages(['status' => "Stok {$reservation->item?->name} tidak lagi mencukupi untuk jadwal ini."]);
             }
         }
 
         foreach ($activity->room_reservation as $reservation) {
-            if (! $this->availability->roomIsAvailable($reservation->g003_m006_room_id, $activity->start_time, $activity->end_time)) {
+            if (! $this->availability->roomIsAvailable($reservation->g003_m006_room_id, $activity->start_time, $activity->end_time, locking: true)) {
                 throw ValidationException::withMessages(['status' => "{$reservation->room?->name} tidak lagi tersedia untuk jadwal ini."]);
             }
         }
 
         foreach ($activity->vehicle_reservation as $reservation) {
-            if (! $this->availability->vehicleIsAvailable($reservation->g008_m017_vehicle_id, $activity->start_time, $activity->end_time)) {
+            if (! $this->availability->vehicleIsAvailable($reservation->g008_m017_vehicle_id, $activity->start_time, $activity->end_time, locking: true)) {
                 throw ValidationException::withMessages(['status' => "{$reservation->vehicle?->name} tidak lagi tersedia untuk jadwal ini."]);
             }
         }

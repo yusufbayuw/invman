@@ -77,6 +77,17 @@ class G008M017VehicleResource extends Resource
                             ->placeholder('Contoh: D 1234 ABC')
                             ->required()
                             ->maxLength(20),
+                        Forms\Components\Select::make('default_driver_id')
+                            ->label('Pengemudi Default')
+                            ->relationship('defaultDriver', 'id')
+                            ->getOptionLabelFromRecordUsing(fn ($record): string => $record->user?->name ?? 'Pengemudi #'.$record->id)
+                            ->searchable()
+                            ->preload()
+                            ->helperText('Pengemudi otomatis disarankan setiap kali kendaraan disetujui.'),
+                        Forms\Components\Toggle::make('requires_assistant')
+                            ->label('Bus: wajib kenek')
+                            ->default(false)
+                            ->helperText('Penugasan kenek dikelola internal saat persetujuan, tidak ditampilkan ke pemohon.'),
                         Forms\Components\TextInput::make('capacity')
                             ->label('Kapasitas Penumpang')
                             ->numeric()
@@ -132,6 +143,12 @@ class G008M017VehicleResource extends Resource
                     ->label('Pengelola Flow')
                     ->badge()
                     ->placeholder('Belum ditetapkan'),
+                Tables\Columns\TextColumn::make('defaultDriver.user.name')
+                    ->label('Pengemudi Default')
+                    ->placeholder('Belum ditentukan'),
+                Tables\Columns\IconColumn::make('requires_assistant')
+                    ->label('Wajib Kenek')
+                    ->boolean(),
                 Tables\Columns\TextColumn::make('capacity')
                     ->label('Kapasitas')
                     ->suffix(' orang')
@@ -199,11 +216,7 @@ class G008M017VehicleResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array

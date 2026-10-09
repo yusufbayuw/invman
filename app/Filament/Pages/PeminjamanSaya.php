@@ -3,6 +3,8 @@
 namespace App\Filament\Pages;
 
 use App\Enums\ReservationStatus;
+use App\Filament\Support\VehicleAssignmentForm;
+use App\Services\VehicleAssignmentService;
 use App\Filament\Resources\G004M008ActivityResource;
 use App\Models\G004M008Activity;
 use App\Models\G005M009ItemReservation;
@@ -194,11 +196,30 @@ class PeminjamanSaya extends Page implements HasTable
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn (LoanRequestNeed $record): bool => static::canDecideNeed($record))
-                    ->action(fn (LoanRequestNeed $record) => app(LoanRequestService::class)->processReservation(
+                    ->form(fn (LoanRequestNeed $record): array => $record->type === 'vehicle'
+                        ? VehicleAssignmentForm::fields(G005M019VehicleReservation::query()
+                            ->with('vehicle')->findOrFail($record->reservation_id))
+                        : [])
+                    ->action(fn (LoanRequestNeed $record, array $data) => app(LoanRequestService::class)->processReservation(
                         $record->type,
                         $record->reservation_id,
                         ReservationStatus::Approved,
+                        null,
+                        $data,
                     )),
+                Tables\Actions\Action::make('change_vehicle_crew')
+                    ->label('Ganti Penugasan')
+                    ->icon('heroicon-o-user-group')
+                    ->color('gray')
+                    ->visible(fn (LoanRequestNeed $record): bool => $record->type === 'vehicle'
+                        && static::canManageNeed($record)
+                        && in_array($record->status, [ReservationStatus::Approved->value, ReservationStatus::CheckedOut->value], true))
+                    ->form(fn (LoanRequestNeed $record): array => VehicleAssignmentForm::fields(
+                        G005M019VehicleReservation::query()->with('vehicle')->findOrFail($record->reservation_id),
+                        changing: true
+                    ))
+                    ->action(fn (LoanRequestNeed $record, array $data) => app(VehicleAssignmentService::class)
+                        ->change((string) $record->reservation_id, auth()->user(), $data)),
                 Tables\Actions\Action::make('reject')
                     ->label('Tolak')
                     ->icon('heroicon-o-x-circle')

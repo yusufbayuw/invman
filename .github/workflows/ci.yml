@@ -1,0 +1,86 @@
+name: InvMan Quality Guard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  php-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, sodium, gd, zip, intl, fileinfo, bcmath
+          coverage: none
+          tools: composer:v2
+      - name: Validate dependencies
+        run: composer validate --no-check-publish
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Generate CI-only encryption key
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force --no-interaction
+      - name: Lint application and test PHP
+        run: |
+          find app database tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Build Vite assets
+        run: npm run build
+      - name: Run Laravel tests
+        run: php artisan test --no-ansi
+
+  mysql-migration-smoke:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: invman_ci
+          MYSQL_USER: invman
+          MYSQL_PASSWORD: local-ci-only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, mysqli, sodium, gd, zip, intl, fileinfo, bcmath
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Generate isolated APP_KEY
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force --no-interaction
+      - name: Validate full MySQL schema
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: invman_ci
+          DB_USERNAME: invman
+          DB_PASSWORD: local-ci-only
+        run: php artisan migrate:fresh --force --no-interaction

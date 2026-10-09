@@ -14,7 +14,6 @@ class EditG008M017Vehicle extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
-            Actions\DeleteAction::make(),
         ];
     }
 }

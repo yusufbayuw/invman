@@ -50,6 +50,7 @@ class VehicleSeeder extends Seeder
             'kir_date' => null,
             'capacity' => null,
             'is_borrowable' => true,
+            'requires_assistant' => in_array($name, ['BUS 01', 'BUS 02', 'BUS 03'], true),
             'status' => 'tersedia',
         ]);
         $vehicle->save();

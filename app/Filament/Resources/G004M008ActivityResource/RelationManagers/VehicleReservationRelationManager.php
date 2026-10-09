@@ -6,6 +6,8 @@ use App\Enums\ReservationStatus;
 use App\Models\G005M019VehicleReservation;
 use App\Services\LoanAvailabilityService;
 use App\Services\LoanRequestService;
+use App\Services\VehicleAssignmentService;
+use App\Filament\Support\VehicleAssignmentForm;
 use Coolsam\Flatpickr\Forms\Components\Flatpickr;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -211,6 +213,10 @@ class VehicleReservationRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('driver.user.name')
                     ->label('Pengemudi')
                     ->placeholder('Belum ditentukan'),
+                Tables\Columns\TextColumn::make('assistant.name')
+                    ->label('Kenek (Internal)')
+                    ->visible(fn (): bool => Auth::user()?->isFacility() ?? false)
+                    ->placeholder('-'),
                 Tables\Columns\TextColumn::make('start_time')
                     ->label('Mulai')
                     ->dateTime(),
@@ -260,8 +266,9 @@ class VehicleReservationRelationManager extends RelationManager
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->visible(fn ($record): bool => app(LoanRequestService::class)->canDecideReservation($record))
-                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
-                        'vehicle', $record->getKey(), ReservationStatus::Approved,
+                    ->form(fn (G005M019VehicleReservation $record): array => VehicleAssignmentForm::fields($record))
+                    ->action(fn ($record, array $data) => app(LoanRequestService::class)->processReservation(
+                        'vehicle', $record->getKey(), ReservationStatus::Approved, null, $data,
                     )),
                 Tables\Actions\Action::make('reject')
                     ->label('Tolak')
@@ -285,6 +292,16 @@ class VehicleReservationRelationManager extends RelationManager
                     ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
                         'vehicle', $record->getKey(), ReservationStatus::CheckedOut,
                     )),
+                Tables\Actions\Action::make('change_vehicle_crew')
+                    ->label('Ganti Penugasan')
+                    ->icon('heroicon-o-user-group')
+                    ->color('gray')
+                    ->visible(fn (G005M019VehicleReservation $record): bool =>
+                        (Auth::user()?->managesReservation($record) ?? false)
+                        && in_array($record->status, [ReservationStatus::Approved->value, ReservationStatus::CheckedOut->value], true))
+                    ->form(fn (G005M019VehicleReservation $record): array => VehicleAssignmentForm::fields($record, changing: true))
+                    ->action(fn (G005M019VehicleReservation $record, array $data) => app(VehicleAssignmentService::class)
+                        ->change($record->getKey(), Auth::user(), $data)),
                 Tables\Actions\Action::make('return')
                     ->label('Konfirmasi Serah Terima')
                     ->color('warning')

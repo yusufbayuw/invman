@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\ReservationStatus;
+use App\Filament\Resources\G005M019VehicleReservationResource\RelationManagers\AssignmentHistoriesRelationManager;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Forms\Form;
@@ -98,6 +99,9 @@ class G005M019VehicleReservationResource extends Resource
                     ->label('Pengemudi')
                     ->searchable()
                     ->placeholder('-'),
+                Tables\Columns\TextColumn::make('assistant.name')
+                    ->label('Kenek (Internal)')
+                    ->placeholder('-'),
                 Tables\Columns\TextColumn::make('start_time')
                     ->label('Mulai')
                     ->dateTime('d M Y H:i')
@@ -153,9 +157,7 @@ class G005M019VehicleReservationResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [AssignmentHistoriesRelationManager::class];
     }
 
     public static function getEloquentQuery(): Builder
