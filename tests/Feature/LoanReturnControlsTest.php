@@ -47,7 +47,7 @@ class LoanReturnControlsTest extends TestCase
         $this->assertContains('Peminjaman terlambat dikembalikan', $manager->notifications()->get()->pluck('data.title'));
         $this->assertNotNull($reservation->fresh()->overdue_notified_at);
 
-        $reservation->updateQuietly(['overdue_notified_at' => now()->subDays(2)]);
+        $reservation->forceFill(['overdue_notified_at' => now()->subDays(2)])->saveQuietly();
         $this->assertSame(1, $service->notifyOverdueLoans());
     }
 
