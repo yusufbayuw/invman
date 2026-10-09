@@ -29,7 +29,9 @@ class RoomReservationRelationManager extends RelationManager
 
     public static function getBadge(Model $ownerRecord, string $pageClass): ?string
     {
-        return (string) $ownerRecord->room_reservation()->count();
+        return (string) app(\App\Services\LoanVisibility::class)
+            ->reservations($ownerRecord->room_reservation()->getQuery(), auth()->user(), 'room')
+            ->count();
     }
 
     public function form(Form $form): Form
