@@ -340,10 +340,7 @@ class RekapanPenggunaan extends Page implements HasTable
 
     private static function baseQuery(): Builder
     {
-        return G004M008Activity::query()
-            ->when(
-                auth()->user()?->isSarpras(),
-                fn (Builder $query): Builder => $query->where('g001_m001_unit_id', auth()->user()->g001_m001_unit_id),
-            );
+        return app(\App\Services\LoanVisibility::class)
+            ->activities(G004M008Activity::query(), auth()->user());
     }
 }

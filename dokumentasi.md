@@ -122,3 +122,7 @@ router, dan captive portal tidak boleh diaktifkan kembali melalui InvMan.
 ## Pengelolaan Kendaraan dan Penugasan Personel
 
 Ketentuan pengemudi default, kenek bus, penugasan dan pergantian personel, audit, serta pengamanan double booking tersedia di [docs/VEHICLE-OPERATIONS.md](docs/VEHICLE-OPERATIONS.md).
+
+## Akses Privat dan Retensi Histori
+
+Pembatasan kegiatan berdasarkan peran/unit/pengelola serta foreign key `RESTRICT` untuk melindungi transaksi dijelaskan di [docs/LOAN-ACCESS-RETENTION.md](docs/LOAN-ACCESS-RETENTION.md).

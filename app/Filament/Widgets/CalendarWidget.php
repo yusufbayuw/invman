@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\G004M008Activity;
+use App\Services\LoanVisibility;
 use Illuminate\Database\Eloquent\Model;
 use Saade\FilamentFullCalendar\Actions\ViewAction;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
@@ -41,6 +42,8 @@ class CalendarWidget extends FullCalendarWidget
             ->icon('heroicon-o-eye')
             ->color('primary')
             ->modalHeading(fn() => 'Kegiatan: ' . $this->record->name)
+            ->authorize(fn (): bool => $this->record instanceof G004M008Activity
+                && app(LoanVisibility::class)->canViewActivity(auth()->user(), $this->record))
             ->modalWidth('2xl')
             ->infolist([
                 \Filament\Infolists\Components\Section::make([
@@ -51,7 +54,8 @@ class CalendarWidget extends FullCalendarWidget
                         ->size('md'),
                     \Filament\Infolists\Components\TextEntry::make('description')
                         ->label('Deskripsi')
-                        ->size('sm'),
+                        ->size('sm')
+                        ->visible(fn (): bool => $this->canViewFullEvent()),
                 ])
                     ->columnSpanFull()
                     ->compact(),
@@ -75,7 +79,8 @@ class CalendarWidget extends FullCalendarWidget
                         ->inlineLabel(),
                     \Filament\Infolists\Components\TextEntry::make('attachment')
                         ->label('Lampiran')
-                        ->inlineLabel(),
+                        ->inlineLabel()
+                        ->visible(fn (): bool => $this->canViewFullEvent()),
                 ]), 
             ])->from('md'),
                 \Filament\Infolists\Components\Tabs::make('Tabs')
@@ -119,18 +124,24 @@ class CalendarWidget extends FullCalendarWidget
                                             ->inlineLabel(),
                                     ]),
                             ]),
-                    ])->columnSpanFull(),
+                    ])->columnSpanFull()->visible(fn (): bool => $this->canViewFullEvent()),
             ])
             ->action(fn() => $this->record);
     }
 
+    private function canViewFullEvent(): bool
+    {
+        $user = auth()->user();
+        $record = $this->record;
+
+        return $record instanceof G004M008Activity
+            && $user
+            && ($user->isFacility() || $user->belongsToUnit($record->g001_m001_unit_id));
+    }
+
     public function fetchEvents(array $fetchInfo): array
     {
-        $query = G004M008Activity::query();
-
-        if (auth()->user()?->isSarpras()) {
-            $query->where('g001_m001_unit_id', auth()->user()->g001_m001_unit_id);
-        }
+        $query = app(LoanVisibility::class)->activities(G004M008Activity::query(), auth()->user());
 
         return $query->where('start_time', '<', $fetchInfo['end'])
             ->where('end_time', '>', $fetchInfo['start'])
@@ -148,6 +159,8 @@ class CalendarWidget extends FullCalendarWidget
 
     public static function canView(): bool
     {
-        return auth()->check();
+        $user = auth()->user();
+
+        return $user !== null && ($user->isFacility() || $user->isSarpras() || $user->isAssetManager());
     }
 }

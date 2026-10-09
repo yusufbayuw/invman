@@ -48,7 +48,7 @@ class G005M010RoomReservationPolicy
      */
     public function delete(User $user, G005M010RoomReservation $g005M010RoomReservation): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin() && $g005M010RoomReservation->status === \App\Enums\ReservationStatus::Draft->value;
     }
 
     /**
@@ -56,7 +56,7 @@ class G005M010RoomReservationPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->isAdmin();
+        return false;
     }
 
     /**
@@ -64,7 +64,7 @@ class G005M010RoomReservationPolicy
      */
     public function forceDelete(User $user, G005M010RoomReservation $g005M010RoomReservation): bool
     {
-        return $user->can('force_delete_g005::m010::room::reservation');
+        return false;
     }
 
     /**
@@ -72,7 +72,7 @@ class G005M010RoomReservationPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_g005::m010::room::reservation');
+        return false;
     }
 
     /**

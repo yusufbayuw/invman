@@ -178,14 +178,8 @@ class G005M009ItemReservationResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
-
-        if (auth()->user()?->isSarpras()) {
-            $query->whereHas('activity', fn (Builder $activity) => $activity
-                ->where('g001_m001_unit_id', auth()->user()->g001_m001_unit_id));
-        }
-
-        return $query;
+        return app(\App\Services\LoanVisibility::class)
+            ->reservations(parent::getEloquentQuery(), auth()->user(), 'item');
     }
 
     public static function getPages(): array

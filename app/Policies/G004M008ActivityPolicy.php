@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\G004M008Activity;
 use App\Models\User;
+use App\Services\LoanVisibility;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class G004M008ActivityPolicy
@@ -15,11 +16,7 @@ class G004M008ActivityPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin()
-            || $user->isFacility()
-            || $user->isSarpras()
-            || $user->isAssetManager()
-            || $user->can('view_any_g004::m008::activity');
+        return $user->isFacility() || $user->isSarpras() || $user->isAssetManager();
     }
 
     /**
@@ -27,11 +24,7 @@ class G004M008ActivityPolicy
      */
     public function view(User $user, G004M008Activity $g004M008Activity): bool
     {
-        return $user->belongsToUnit($g004M008Activity->g001_m001_unit_id)
-            || $user->isAdmin()
-            || $user->isFacility()
-            || $user->managesActivity($g004M008Activity)
-            || $user->can('view_g004::m008::activity');
+        return app(LoanVisibility::class)->canViewActivity($user, $g004M008Activity);
     }
 
     /**
@@ -73,7 +66,7 @@ class G004M008ActivityPolicy
      */
     public function forceDelete(User $user, G004M008Activity $g004M008Activity): bool
     {
-        return $user->can('force_delete_g004::m008::activity');
+        return false;
     }
 
     /**
@@ -81,7 +74,7 @@ class G004M008ActivityPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_g004::m008::activity');
+        return false;
     }
 
     /**
