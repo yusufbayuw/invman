@@ -30,7 +30,7 @@ class LoanActivityGrouping
     /** @return array<string, string> */
     public function options(User $user): array
     {
-        if (! $user->g001_m001_unit_id || ! $user->isSarpras()) {
+        if (! $user->g001_m001_unit_id || ! ($user->isSarpras() || $user->isFacility())) {
             return [];
         }
 
@@ -46,7 +46,7 @@ class LoanActivityGrouping
 
     public function resolve(User $user, mixed $rootId): G004M008Activity
     {
-        if (! $user->g001_m001_unit_id || ! $user->isSarpras()
+        if (! $user->g001_m001_unit_id || ! ($user->isSarpras() || $user->isFacility())
             || ! is_string($rootId) || ! \Illuminate\Support\Str::isUuid($rootId)) {
             throw ValidationException::withMessages([
                 'data.existing_activity_id' => 'Pilih kegiatan yang valid dari unit Anda.',
