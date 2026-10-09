@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\ReservationStatus;
 use App\Filament\Resources\G004M008ActivityResource;
+use App\Filament\Resources\G005M009ItemReservationResource;
 use App\Filament\Widgets\CalendarWidget;
 use App\Filament\Widgets\Concerns\InteractsWithLoanDashboardFilters;
 use App\Models\G001M001Unit;
@@ -47,6 +48,27 @@ class LoanAccessAndHistoryTest extends TestCase
             'end_time' => $activityB->end_time,
             'status' => ReservationStatus::Submitted->value,
         ]);
+
+        // One activity can combine assets managed by different teams.
+        // An asset manager may see the activity context, NOT the other team's need.
+        $outsideItem = G002M007Item::query()->create([
+            'name' => 'Kamera bukan tanggung jawab IT',
+            'g001_m001_unit_id' => $unitB->id,
+            'is_borrowable' => true,
+            'quantity' => 1,
+        ]);
+        G005M009ItemReservation::query()->create([
+            'g004_m008_activity_id' => $activityB->id,
+            'g002_m007_item_id' => $outsideItem->id,
+            'quantity' => 1,
+            'start_time' => $activityB->start_time,
+            'end_time' => $activityB->end_time,
+            'status' => ReservationStatus::Submitted->value,
+        ]);
+
+        $this->actingAs($manager);
+        $managerNeeds = G005M009ItemReservationResource::getEloquentQuery()->pluck('g002_m007_item_id')->all();
+        $this->assertEqualsCanonicalizing([$item->id], $managerNeeds);
 
         $visibility = app(LoanVisibility::class);
         foreach ([
