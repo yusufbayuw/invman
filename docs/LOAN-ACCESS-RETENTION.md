@@ -20,7 +20,9 @@ Untuk tindakan operasional pada reservasi tertentu, gunakan otorisasi
 
 Kegiatan lintas unit yang menampung beberapa kebutuhan dapat muncul pada
 statistik kegiatan pengelola yang terlibat. Aksi persetujuan dan serah-terima
-tetap dibatasi pada kebutuhan yang benar-benar dikelolanya.
+tetap dibatasi pada kebutuhan yang benar-benar dikelolanya. Relation manager,
+penghitung reservasi, dan detail review/checklist/lampiran pada kegiatan lintas
+unit juga disaring agar pengelola tidak bisa mengakses kebutuhan tim lain.
 
 ## Perlindungan retensi
 
