@@ -119,7 +119,7 @@ class RekapanPenggunaan extends Page implements HasTable
     public function getTableQuery(): Builder
     {
         return static::baseQuery()
-            ->with(['user', 'unit', 'review', 'return_checklist'])
+            ->with(['user', 'unit', 'groupParent', 'review', 'return_checklist'])
             ->withCount(['item_reservation', 'room_reservation', 'vehicle_reservation'])
             ->withSum('item_reservation as item_quantity', 'quantity');
     }
@@ -140,6 +140,14 @@ class RekapanPenggunaan extends Page implements HasTable
                     ->sortable()
                     ->wrap()
                     ->summarize(Tables\Columns\Summarizers\Count::make()->label('Jumlah pengajuan')),
+                TextColumn::make('group_name')
+                    ->label('Kegiatan Bersama')
+                    ->state(fn (G004M008Activity $record): string => $record->groupParent?->name ?? $record->name)
+                    ->description(fn (G004M008Activity $record): ?string => $record->related_activity_id
+                        ? 'Bagian dari kegiatan yang sama'
+                        : null)
+                    ->wrap()
+                    ->toggleable(),
                 TextColumn::make('unit.name')
                     ->label('Unit')
                     ->badge()
@@ -244,6 +252,20 @@ class RekapanPenggunaan extends Page implements HasTable
                     ->searchable()
                     ->preload()
                     ->visible(fn (): bool => auth()->user()->isFacility()),
+                SelectFilter::make('activity_group')
+                    ->label('Kegiatan Bersama')
+                    ->options(fn (): array => static::baseQuery()
+                        ->whereNull('related_activity_id')
+                        ->orderByDesc('created_at')
+                        ->limit(200)
+                        ->pluck('name', 'id')
+                        ->all())
+                    ->searchable()
+                    ->query(fn (Builder $query, array $data): Builder => $query
+                        ->when($data['value'] ?? null, fn (Builder $query, $id): Builder => $query
+                            ->where(fn (Builder $query): Builder => $query
+                                ->whereKey($id)
+                                ->orWhere('related_activity_id', $id)))),
                 SelectFilter::make('status')
                     ->label('Status')
                     ->options(ReservationStatus::options())
