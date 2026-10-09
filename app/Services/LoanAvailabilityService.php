@@ -100,19 +100,20 @@ class LoanAvailabilityService
             ->all();
     }
 
-    public function reservedItemQuantity(int $itemId, Carbon $start, Carbon $end): int
+    public function reservedItemQuantity(int $itemId, Carbon $start, Carbon $end, bool $locking = false): int
     {
-        // Locking read returns the latest committed rows even with an earlier
-        // InnoDB REPEATABLE READ snapshot in this request's transaction.
-        return (int) G005M009ItemReservation::query()
+        $query = G005M009ItemReservation::query()
             ->where('g002_m007_item_id', $itemId)
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
-            ->lockForUpdate()
-            ->get(['quantity'])
-            ->sum('quantity');
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
+
+        // Only transactional acceptance needs locking reads. UI queries retain
+        // the original database-side SUM for constant-memory reporting.
+        return $locking
+            ? (int) $query->lockForUpdate()->get(['quantity'])->sum('quantity')
+            : (int) $query->sum('quantity');
     }
 
-    public function availableItemQuantity(int|string|null $itemId, Carbon|string|null $startTime, Carbon|string|null $endTime): int
+    public function availableItemQuantity(int|string|null $itemId, Carbon|string|null $startTime, Carbon|string|null $endTime, bool $locking = false): int
     {
         if (! $itemId || ! $period = $this->period($startTime, $endTime)) {
             return 0;
@@ -135,25 +136,25 @@ class LoanAvailabilityService
             ? (int) $item->borrowable_instance_count
             : (int) ($item->quantity ?? 0);
 
-        return max(0, $stock - $this->reservedItemQuantity((int) $item->id, $start, $end));
+        return max(0, $stock - $this->reservedItemQuantity((int) $item->id, $start, $end, $locking));
     }
 
-    public function roomIsAvailable(int $roomId, Carbon $start, Carbon $end): bool
+    public function roomIsAvailable(int $roomId, Carbon $start, Carbon $end, bool $locking = false): bool
     {
-        return G005M010RoomReservation::query()
+        $query = G005M010RoomReservation::query()
             ->where('g003_m006_room_id', $roomId)
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
-            ->lockForUpdate()
-            ->first(['id']) === null;
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
+
+        return $locking ? $query->lockForUpdate()->first(['id']) === null : ! $query->exists();
     }
 
-    public function vehicleIsAvailable(int $vehicleId, Carbon $start, Carbon $end): bool
+    public function vehicleIsAvailable(int $vehicleId, Carbon $start, Carbon $end, bool $locking = false): bool
     {
-        return G005M019VehicleReservation::query()
+        $query = G005M019VehicleReservation::query()
             ->where('g008_m017_vehicle_id', $vehicleId)
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
-            ->lockForUpdate()
-            ->first(['id']) === null;
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
+
+        return $locking ? $query->lockForUpdate()->first(['id']) === null : ! $query->exists();
     }
 
     public function driverIsAvailable(int $driverId, Carbon $start, Carbon $end, ?string $exceptReservationId = null): bool
