@@ -48,6 +48,13 @@ return new class extends Migration
 
     private function apply(string $onDelete): void
     {
+        // SQLite cannot DROP an existing named FK in-place. Production
+        // MySQL/MariaDB uses the restricted constraints; local SQLite uses
+        // application guards and the MySQL CI integration test.
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         foreach (self::PROTECTED_KEYS as $table => $columns) {
             $constraints = collect(Schema::getForeignKeys($table))
                 ->filter(fn (array $key): bool => count($key['columns'] ?? []) === 1
