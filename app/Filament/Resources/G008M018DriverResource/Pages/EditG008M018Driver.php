@@ -14,7 +14,6 @@ class EditG008M018Driver extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
-            Actions\DeleteAction::make(),
         ];
     }
 }
