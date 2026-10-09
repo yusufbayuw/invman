@@ -125,9 +125,9 @@ class LoanRequestService
             // Lock asset rows in a stable order across concurrent submissions.
             // Concurrent requests for any of the same assets now serialize.
             foreach ([
-                [G002M007Item::class, $locked->item_reservation()->pluck('g002_m007_item_id')],
-                [G003M006Room::class, $locked->room_reservation()->pluck('g003_m006_room_id')],
-                [G008M017Vehicle::class, $locked->vehicle_reservation()->pluck('g008_m017_vehicle_id')],
+                [G002M007Item::class, $locked->item_reservation()->lockForUpdate()->pluck('g002_m007_item_id')],
+                [G003M006Room::class, $locked->room_reservation()->lockForUpdate()->pluck('g003_m006_room_id')],
+                [G008M017Vehicle::class, $locked->vehicle_reservation()->lockForUpdate()->pluck('g008_m017_vehicle_id')],
             ] as [$modelClass, $ids]) {
                 $ids = $ids->filter()->unique()->sort()->values()->all();
                 if ($ids !== []) {
@@ -479,7 +479,7 @@ class LoanRequestService
                     $reservation,
                     $driverId ? (int) $driverId : null,
                     $assistantId ? (int) $assistantId : null,
-                    $status === ReservationStatus::Approved->value
+                    $status === ReservationStatus::Approved
                         ? 'Penugasan pada persetujuan reservasi'
                         : 'Validasi personel sebelum pemberangkatan',
                     auth()->user(),
