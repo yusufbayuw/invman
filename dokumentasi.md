@@ -118,3 +118,7 @@ default**, dengan RouterOS v7 REST HTTPS. Rujuk panduan
 
 InvMan berfokus pada inventaris dan peminjaman; otorisasi jaringan, pengaturan
 router, dan captive portal tidak boleh diaktifkan kembali melalui InvMan.
+
+## Pengelolaan Kendaraan dan Penugasan Personel
+
+Ketentuan pengemudi default, kenek bus, penugasan dan pergantian personel, audit, serta pengamanan double booking tersedia di [docs/VEHICLE-OPERATIONS.md](docs/VEHICLE-OPERATIONS.md).
