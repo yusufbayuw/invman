@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G009M024VehicleChecklist extends Model
 {
+    protected $guarded = ['id'];
+
     protected $casts = [
         'date' => 'date',
         'checklist_date' => 'datetime',
