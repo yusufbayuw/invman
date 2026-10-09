@@ -108,7 +108,8 @@ class G004M008ActivityResource extends Resource
                             ->size('lg'),
                         \Filament\Infolists\Components\TextEntry::make('description')
                             ->label('Deskripsi')
-                            ->size('md'),
+                            ->size('md')
+                            ->visible(fn (G004M008Activity $record): bool => static::canViewFullActivity($record)),
                         \Filament\Infolists\Components\TextEntry::make('notes')
                             ->label('Catatan')
                             ->placeholder('-'),
@@ -142,7 +143,8 @@ class G004M008ActivityResource extends Resource
                             ->inlineLabel(),
                         \Filament\Infolists\Components\TextEntry::make('attachment')
                             ->label('Lampiran')
-                            ->inlineLabel(),
+                            ->inlineLabel()
+                            ->visible(fn (G004M008Activity $record): bool => static::canViewFullActivity($record)),
                     ]),
                     \Filament\Infolists\Components\Section::make([
                         \Filament\Infolists\Components\TextEntry::make('created_at')
@@ -166,7 +168,8 @@ class G004M008ActivityResource extends Resource
                             ->dateTime(),
                     ])
                     ->columns(3)
-                    ->visible(fn ($record) => filled($record->return_checklist)),
+                    ->visible(fn (G004M008Activity $record): bool => static::canViewFullActivity($record)
+                        && filled($record->return_checklist)),
                 \Filament\Infolists\Components\Section::make('Ulasan Pemohon')
                     ->schema([
                         \Filament\Infolists\Components\TextEntry::make('review.rating')
@@ -220,10 +223,11 @@ class G004M008ActivityResource extends Resource
                             ->columnSpanFull(),
                     ])
                     ->columns(2)
-                    ->visible(fn ($record): bool => filled($record->review)
-                        || $record->item_reviews->isNotEmpty()
-                        || $record->room_reviews->isNotEmpty()
-                        || $record->vehicle_reviews->isNotEmpty()),
+                    ->visible(fn (G004M008Activity $record): bool => static::canViewFullActivity($record)
+                        && (filled($record->review)
+                            || $record->item_reviews->isNotEmpty()
+                            || $record->room_reviews->isNotEmpty()
+                            || $record->vehicle_reviews->isNotEmpty())),
             ]);
     }
 
@@ -526,6 +530,13 @@ class G004M008ActivityResource extends Resource
             ->deletable(false)
             ->reorderable(false)
             ->defaultItems(0);
+    }
+
+    private static function canViewFullActivity(G004M008Activity $activity): bool
+    {
+        $user = auth()->user();
+
+        return $user && ($user->isFacility() || $user->belongsToUnit($activity->g001_m001_unit_id));
     }
 
     public static function getEloquentQuery(): Builder
