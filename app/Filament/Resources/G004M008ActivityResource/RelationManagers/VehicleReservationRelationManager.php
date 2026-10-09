@@ -31,7 +31,9 @@ class VehicleReservationRelationManager extends RelationManager
 
     public static function getBadge(Model $ownerRecord, string $pageClass): ?string
     {
-        return (string) $ownerRecord->vehicle_reservation()->count();
+        return (string) app(\App\Services\LoanVisibility::class)
+            ->reservations($ownerRecord->vehicle_reservation()->getQuery(), auth()->user(), 'vehicle')
+            ->count();
     }
 
     public function form(Form $form): Form
