@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G008M018Driver extends Model
 {
+    protected $guarded = ['id'];
+
     public function defaultVehicles(): HasMany
     {
         return $this->hasMany(G008M017Vehicle::class, 'default_driver_id');
