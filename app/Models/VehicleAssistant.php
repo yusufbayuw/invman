@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class VehicleAssistant extends Model
 {
+    protected $guarded = [];
     protected $casts = ['is_active' => 'boolean'];
 
     public function reservations(): HasMany
