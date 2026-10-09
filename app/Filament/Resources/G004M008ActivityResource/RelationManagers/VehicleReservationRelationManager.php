@@ -203,6 +203,8 @@ class VehicleReservationRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => app(\App\Services\LoanVisibility::class)
+                ->reservations($query, auth()->user(), 'vehicle'))
             ->recordTitle(fn ($record): string => $record->vehicle?->name ?? 'Reservasi Kendaraan')
             ->columns([
                 Tables\Columns\TextColumn::make('vehicle.name')
