@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets\Concerns;
 
 use App\Models\G004M008Activity;
+use App\Services\LoanVisibility;
 use Illuminate\Database\Eloquent\Builder;
 
 trait InteractsWithLoanDashboardFilters
@@ -16,7 +17,7 @@ trait InteractsWithLoanDashboardFilters
             ? auth()->user()->g001_m001_unit_id
             : ($this->filters['unit_id'] ?? null);
 
-        return G004M008Activity::query()
+        return app(LoanVisibility::class)->activities(G004M008Activity::query(), auth()->user())
             ->when($unitId, fn (Builder $query, $unitId): Builder => $query->where('g001_m001_unit_id', $unitId))
             ->when($status, fn (Builder $query, $status): Builder => $query->where('status', $status))
             ->when($startDate, fn (Builder $query, $date): Builder => $query->whereDate('end_time', '>=', $date))
