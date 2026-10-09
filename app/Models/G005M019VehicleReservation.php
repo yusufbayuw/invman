@@ -34,6 +34,16 @@ class G005M019VehicleReservation extends Model
         return $this->belongsTo(G008M018Driver::class, 'g008_m018_driver_id');
     }
 
+    public function assistant(): BelongsTo
+    {
+        return $this->belongsTo(VehicleAssistant::class, 'vehicle_assistant_id');
+    }
+
+    public function assignmentHistories(): HasMany
+    {
+        return $this->hasMany(VehicleAssignmentHistory::class, 'vehicle_reservation_id');
+    }
+
     public function vehicle_reviews(): HasMany
     {
         return $this->hasMany(G006M020VehicleReview::class, 'g005_m019_vehicle_reservation_id');
