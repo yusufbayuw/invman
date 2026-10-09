@@ -33,5 +33,14 @@ jobs:
       - name: Lint application and test PHP
         run: |
           find app database tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Build Vite assets
+        run: npm run build
       - name: Run Laravel tests
         run: php artisan test --no-ansi
