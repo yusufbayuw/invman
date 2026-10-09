@@ -8,8 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G003M005Floor extends Model
 {
-    // Controlled request validation determines writable business fields; primary keys stay guarded.
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'g003_m004_building_id',
+        'name',
+        'map',
+    ];
 
     public function room(): HasMany
     {
