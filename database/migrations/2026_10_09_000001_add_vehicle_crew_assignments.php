@@ -28,6 +28,11 @@ return new class extends Migration
                 ->update(['default_driver_id' => $driver->id]);
         }
 
+        // Only explicitly known internal buses are flagged during migration.
+        DB::table('g008_m017_vehicles')
+            ->whereIn('name', ['BUS 01', 'BUS 02', 'BUS 03'])
+            ->update(['requires_assistant' => true]);
+
         Schema::create('vehicle_assistants', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
