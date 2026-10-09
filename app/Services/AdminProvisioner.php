@@ -14,7 +14,7 @@ final class AdminProvisioner
     public function provision(string $username, string $email, string $password): User
     {
         Validator::make(compact('username', 'email', 'password'), [
-            'username' => ['required', 'alpha_dash', 'min:3', 'max:100', 'unique:users,username'],
+            'username' => ['required', 'string', 'min:3', 'max:100', 'regex:/^[A-Za-z0-9._-]+$/', 'unique:users,username'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', Password::min(16)->mixedCase()->numbers()->symbols()],
         ])->validate();
