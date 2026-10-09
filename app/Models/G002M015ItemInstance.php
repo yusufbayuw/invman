@@ -11,8 +11,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[ObservedBy(G002M015ItemInstanceObserver::class)]
 class G002M015ItemInstance extends Model
 {
-    // Controlled request validation determines writable business fields; primary keys stay guarded.
-    protected $guarded = ['id'];
+    /** Explicit, audited mass-assignment allowlist. */
+    protected $fillable = [
+        'name',
+        'g002_m007_item_id',
+        'g003_m006_room_id',
+        'g001_m001_unit_id',
+        'code',
+        'status',
+        'is_available',
+        'is_borrowable',
+    ];
 
     public function item_review(): HasMany
     {
