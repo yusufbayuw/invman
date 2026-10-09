@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G005M016ItemReservationDetail extends Model
 {
+    protected $guarded = ['id'];
+
     public function item_reservation(): BelongsTo
     {
         return $this->belongsTo(G005M009ItemReservation::class, 'g005_m009_item_reservation_id');
