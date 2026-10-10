@@ -48,6 +48,16 @@ class TicketResource extends Resource
         return app(TicketVisibility::class)->query(auth()->user());
     }
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'title'];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return static::getEloquentQuery();
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -135,7 +145,7 @@ class TicketResource extends Resource
             Infolists\Components\Section::make('Aset terkait')->schema([
                 Infolists\Components\RepeatableEntry::make('assets')->hiddenLabel()->schema([
                     Infolists\Components\TextEntry::make('asset_type')->label('Jenis'),
-                    Infolists\Components\TextEntry::make('asset_id')->label('ID aset'),
+                    Infolists\Components\TextEntry::make('asset_name')->label('Nama aset'),
                 ])->columns(2),
             ])->collapsible(),
             Infolists\Components\Section::make('Percakapan')->schema([
@@ -148,7 +158,7 @@ class TicketResource extends Resource
                     ])->columns(2),
             ])->collapsible(),
             Infolists\Components\Section::make('Lampiran')->schema([
-                Infolists\Components\RepeatableEntry::make('attachments')->hiddenLabel()->schema([
+                Infolists\Components\RepeatableEntry::make('visibleAttachments')->hiddenLabel()->schema([
                     Infolists\Components\TextEntry::make('original_name')->label('Dokumen')
                         ->url(fn (\App\Models\TicketAttachment $record): string => route('tickets.attachment', ['attachment' => $record->id]))
                         ->openUrlInNewTab(),
