@@ -38,11 +38,11 @@ class ViewTicket extends ViewRecord
                         ->visible(fn (): bool => app(TicketVisibility::class)->canManage(auth()->user(), $this->getRecord())),
                 ])
                 ->action(function (array $data): void {
-                    app(TicketService::class)->comment(
+                    $comment = app(TicketService::class)->comment(
                         $this->getRecord(), auth()->user(), $data['body'], (bool) ($data['internal'] ?? false),
                     );
                     if (filled($data['files'] ?? [])) {
-                        app(TicketService::class)->attach($this->getRecord(), auth()->user(), array_values($data['files']));
+                        app(TicketService::class)->attach($this->getRecord(), auth()->user(), array_values($data['files']), $comment);
                     }
                     Notification::make()->title('Komentar ditambahkan')->success()->send();
                 }),
