@@ -4,9 +4,15 @@ use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\PublicRoomScheduleController;
 use App\Http\Controllers\RoomQrCodePdfController;
 use App\Http\Controllers\LoanHandoverPdfController;
+use App\Http\Controllers\TicketAttachmentController;
 use App\Services\LoanHandoverQrService;
 use App\Filament\Pages\PeminjamanSerahTerima;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/tiket/lampiran/{attachment}', TicketAttachmentController::class)
+    ->middleware(['auth', 'throttle:30,1'])
+    ->whereUuid('attachment')
+    ->name('tickets.attachment');
 
 Route::get('/pinjam/bukti/{type}/{reservation}/pdf', LoanHandoverPdfController::class)
     ->middleware(['auth', 'throttle:20,1'])

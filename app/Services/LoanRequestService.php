@@ -580,6 +580,10 @@ class LoanRequestService
                         'status' => 'perlu_perbaikan',
                     ]);
                 }
+
+                // Ticketing is a separate workflow: a damaged asset remains blocked
+                // until physical checks authorize its return to inventory.
+                app(TicketService::class)->damagedReturn($type, $reservation);
             }
 
             return match ($type) {
