@@ -103,16 +103,15 @@ class LoanEventMasterTest extends TestCase
         ]);
         $item = $this->item();
 
-        Livewire::actingAs($user)->test(AjukanPeminjaman::class)
+        $component = Livewire::actingAs($user)->test(AjukanPeminjaman::class)
             ->fillForm([
                 'loan_event_id' => $event->id,
                 'name' => 'Simposium Fisika',
                 'description' => 'Rangkaian simposium',
                 ...$this->window(),
-            ])
-            ->set('data.needs.'.array_key_first(
-                Livewire::actingAs($user)->test(AjukanPeminjaman::class)->get('data.needs')
-            ).'.item_id', $item->id)
+            ]);
+        $needKey = array_key_first($component->get('data.needs'));
+        $component->set("data.needs.{$needKey}.item_id", $item->id)
             ->call('submit')
             ->assertHasNoFormErrors();
 
