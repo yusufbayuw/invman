@@ -21,7 +21,8 @@ trait HasLoanReturnControls
         return $this->hasOne(LoanHandoverReceipt::class, 'reservation_id')
             ->where('reservation_type', $this->loanReservationType())
             ->where('direction', 'checkout')
-            ->latestOfMany('created_at');
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
     }
 
     public function outboundChecklists(): HasMany
@@ -35,7 +36,8 @@ trait HasLoanReturnControls
         return $this->hasOne(LoanHandoverReceipt::class, 'reservation_id')
             ->where('reservation_type', $this->loanReservationType())
             ->where('direction', 'return')
-            ->latestOfMany('created_at');
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
     }
 
     public function corrections(): HasMany

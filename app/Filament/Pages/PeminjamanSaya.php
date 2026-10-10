@@ -329,6 +329,22 @@ class PeminjamanSaya extends Page implements HasTable
                         'type' => $record->type,
                         'reservation' => $record->reservation_id,
                     ])),
+                Tables\Actions\Action::make('download_handover_pdf')
+                    ->label('Bukti PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('gray')
+                    ->visible(fn (LoanRequestNeed $record): bool => in_array($record->status, [
+                        ReservationStatus::Approved->value,
+                        ReservationStatus::CheckedOut->value,
+                        ReservationStatus::ReturnRequested->value,
+                        ReservationStatus::Returned->value,
+                    ], true) && app(\App\Services\LoanHandoverQrService::class)
+                        ->canView(auth()->user(), static::reservationForNeed($record)))
+                    ->url(fn (LoanRequestNeed $record): string => route('loans.handover.pdf', [
+                        'type' => $record->type,
+                        'reservation' => $record->reservation_id,
+                    ]))
+                    ->openUrlInNewTab(),
                 Tables\Actions\Action::make('view')
                     ->label('Lihat Kegiatan')
                     ->icon('heroicon-o-eye')

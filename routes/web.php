@@ -3,9 +3,16 @@
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\PublicRoomScheduleController;
 use App\Http\Controllers\RoomQrCodePdfController;
+use App\Http\Controllers\LoanHandoverPdfController;
 use App\Services\LoanHandoverQrService;
 use App\Filament\Pages\PeminjamanSerahTerima;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/pinjam/bukti/{type}/{reservation}/pdf', LoanHandoverPdfController::class)
+    ->middleware(['auth', 'throttle:20,1'])
+    ->whereIn('type', ['item', 'room', 'vehicle'])
+    ->whereUuid('reservation')
+    ->name('loans.handover.pdf');
 
 Route::get('/pinjam/scan/{type}/{reservation}', function (string $type, string $reservation) {
     $qr = app(LoanHandoverQrService::class);
