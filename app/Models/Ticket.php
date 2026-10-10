@@ -44,5 +44,16 @@ class Ticket extends Model
         }
         return $query;
     }
+    public function visibleAttachments(): HasMany
+    {
+        $query = $this->attachments()->with('comment')->oldest('created_at');
+        if (! app(\App\Services\TicketVisibility::class)->canManage(auth()->user(), $this)) {
+            $query->where(function ($filter): void {
+                $filter->whereNull('ticket_comment_id')
+                    ->orWhereHas('comment', fn ($comment) => $comment->where('is_internal', false));
+            });
+        }
+        return $query;
+    }
     public function events(): HasMany { return $this->hasMany(TicketEvent::class); }
 }
