@@ -3,7 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Resources\G004M008ActivityResource;
-use App\Services\LoanActivityGrouping;
+use App\Services\LoanEventService;
 use App\Services\LoanAvailabilityService;
 use App\Services\LoanRequestService;
 use App\Services\LoanSettings;
@@ -161,12 +161,12 @@ class PeminjamanCepat extends Page implements HasForms
                             }),
                         Select::make('existing_activity_id')
                             ->label('Kegiatan yang sudah ada (unit Anda)')
-                            ->options(fn (): array => app(LoanActivityGrouping::class)->options(auth()->user()))
+                            ->options(fn (): array => app(LoanEventService::class)->options(auth()->user()))
                             ->searchable()
                             ->preload()
                             ->required(fn (Get $get): bool => $get('activity_mode') === 'existing')
                             ->visible(fn (Get $get): bool => $get('activity_mode') === 'existing')
-                            ->helperText('Hanya kegiatan induk dari unit Anda. Setiap pengajuan tetap memiliki jadwal, persetujuan dan histori terpisah.'),
+                            ->helperText('Kegiatan master tetap tersedia meskipun pengajuan sebelumnya sudah selesai atau dibatalkan.'),
                         TextInput::make('purpose')
                             ->label('Nama / alasan kegiatan baru')
                             ->placeholder('Contoh: Rapat guru / antar siswa ke kegiatan')
@@ -237,10 +237,10 @@ class PeminjamanCepat extends Page implements HasForms
             throw ValidationException::withMessages(['data.activity_mode' => 'Pilihan kegiatan tidak valid.']);
         }
 
-        $root = $mode === 'existing'
-            ? app(LoanActivityGrouping::class)->resolve(auth()->user(), $data['existing_activity_id'] ?? null)
-            : null;
-        $purpose = $root?->name ?? trim((string) ($data['purpose'] ?? ''));
+        [$event, $legacyRoot] = $mode === 'existing'
+            ? app(LoanEventService::class)->resolveSelection(auth()->user(), $data['existing_activity_id'] ?? null)
+            : [null, null];
+        $purpose = $event?->name ?? trim((string) ($data['purpose'] ?? ''));
 
         if ($purpose === '') {
             throw ValidationException::withMessages(['data.purpose' => 'Alasan peminjaman wajib diisi.']);
@@ -248,15 +248,18 @@ class PeminjamanCepat extends Page implements HasForms
 
         $payload = [
             'name' => $purpose,
-            'description' => $root?->description ?: $purpose,
-            'notes' => $root ? ($data['asset_note'] ?? null) : null,
+            'description' => $event?->description ?: $purpose,
+            'notes' => $event ? ($data['asset_note'] ?? null) : null,
             'start_time' => $data['start_time'],
             'end_time' => $data['end_time'],
             'needs' => [$need],
         ];
 
-        if ($root) {
-            $payload['related_activity_id'] = $root->id;
+        if ($event) {
+            $payload['loan_event_id'] = $event->id;
+        }
+        if ($legacyRoot) {
+            $payload['related_activity_id'] = $legacyRoot->id;
         }
 
         $activity = app(LoanRequestService::class)->submit(auth()->user(), $payload);
