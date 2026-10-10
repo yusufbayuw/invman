@@ -15,6 +15,19 @@
                         <div><dt class="text-gray-500">Mulai</dt><dd class="font-medium">{{ $record->start_time?->format('d M Y H:i') ?? '-' }}</dd></div>
                         <div><dt class="text-gray-500">Selesai</dt><dd class="font-medium">{{ $record->end_time?->format('d M Y H:i') ?? '-' }}</dd></div>
                     </dl>
+                    @if($outboundReceipt)
+                        <div class="rounded-lg bg-gray-50 p-3 dark:bg-white/5">
+                            <p class="font-semibold">Bukti penyerahan awal: {{ $outboundReceipt->receipt_number }}</p>
+                            <p class="text-xs text-gray-500">Pengelola: {{ $outboundReceipt->manager_confirmed_at?->format('d M Y H:i') ?? 'Belum konfirmasi' }}</p>
+                            <p class="text-xs text-gray-500">Peminjam: {{ $outboundReceipt->borrower_confirmed_at?->format('d M Y H:i') ?? 'Belum konfirmasi' }}</p>
+                            @if($outboundReceipt->checkout_odometer !== null)
+                                <p class="text-xs text-gray-500">Kilometer awal: {{ number_format($outboundReceipt->checkout_odometer) }} km</p>
+                            @endif
+                            @if($outboundReceipt->fallback_reason)
+                                <p class="text-xs font-medium text-amber-700 dark:text-amber-400">Pengecualian tercatat: {{ $outboundReceipt->fallback_reason }}</p>
+                            @endif
+                        </div>
+                    @endif
                     @if($record->returnReceipt)
                         <div class="rounded-lg bg-gray-50 p-3 dark:bg-white/5">
                             <p class="font-semibold">Bukti pengembalian: {{ $record->returnReceipt->receipt_number }}</p>
@@ -25,20 +38,32 @@
                 </div>
             </x-filament::section>
 
-            @if ($canBeginReturn)
-                <form wire:submit="submitReturn" class="space-y-4">
+            @if ($canBeginCheckout || $canBeginReturn)
+                <form wire:submit="{{ $canBeginCheckout ? 'submitCheckout' : 'submitReturn' }}" class="space-y-4">
                     {{ $this->form }}
                     <div class="flex justify-end">
-                        <x-filament::button type="submit" size="lg" icon="heroicon-o-clipboard-document-check" wire:loading.attr="disabled" wire:target="submitReturn">
-                            Catat Pengembalian
-                        </x-filament::button>
+                        @if($canBeginCheckout)
+                            <x-filament::button type="submit" size="lg" icon="heroicon-o-clipboard-document-check" wire:loading.attr="disabled" wire:target="submitCheckout">
+                                Catat Kondisi Awal & Serahkan
+                            </x-filament::button>
+                        @else
+                            <x-filament::button type="submit" size="lg" icon="heroicon-o-clipboard-document-check" wire:loading.attr="disabled" wire:target="submitReturn">
+                                Catat Pengembalian
+                            </x-filament::button>
+                        @endif
                     </div>
                 </form>
             @else
                 <x-filament::section>
                     <p class="text-sm text-gray-600 dark:text-gray-300">
                         @if($record->status === 'approved')
-                            Pengelola dapat menekan <strong>Pinjamkan</strong> setelah memastikan aset diserahkan.
+                            @if($outboundReceipt && !$outboundReceipt->completed_at)
+                                Pengelola sudah mencatat kondisi awal. Peminjam dapat membuka QR dan menekan <strong>Konfirmasi Penerimaan</strong>.
+                            @elseif(!$outboundReceipt)
+                                Pengelola mencatat kondisi awal sebelum memulai serah-terima. Pengguna tanpa kewenangan tidak dapat menyerahkan aset.
+                            @else
+                                Penyerahan telah tercatat.
+                            @endif
                         @elseif($record->status === 'return_requested')
                             Pengembalian telah diajukan. Pihak kedua yang berwenang dapat menggunakan <strong>Konfirmasi Pengembalian</strong> di bagian atas.
                         @elseif($record->status === 'returned')
