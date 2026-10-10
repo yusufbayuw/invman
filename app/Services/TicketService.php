@@ -177,6 +177,26 @@ class TicketService
         }, 3);
     }
 
+    public function availableTransitions(Ticket $ticket, User $actor): array
+    {
+        if (! $this->visibility->canView($actor, $ticket)) {
+            return [];
+        }
+        $manager = $this->visibility->canManage($actor, $ticket);
+        $reporter = $ticket->reporter_id === $actor->id;
+        return collect(self::TRANSITIONS[$ticket->status] ?? [])
+            ->filter(fn (string $to): bool => $manager
+                ? in_array($to, ['triaged','in_progress','waiting_requester','waiting_parts','resolved','closed','cancelled','reopened'], true)
+                : $reporter && in_array($to, ['closed','reopened'], true))
+            ->mapWithKeys(fn (string $to): array => [$to => match ($to) {
+                'triaged' => 'Ditinjau', 'in_progress' => 'Dikerjakan',
+                'waiting_requester' => 'Menunggu Pelapor', 'waiting_parts' => 'Menunggu Suku Cadang',
+                'resolved' => 'Selesai Dikerjakan', 'closed' => 'Ditutup',
+                'reopened' => 'Dibuka Kembali', 'cancelled' => 'Dibatalkan',
+                default => $to,
+            }])->all();
+    }
+
     public function assign(Ticket $ticket, User $actor, ?int $userId, ?string $priority = null): Ticket
     {
         return DB::transaction(function () use ($ticket, $actor, $userId, $priority): Ticket {
