@@ -106,6 +106,14 @@ class G004M008ActivityResource extends Resource
                             ->label('Nama Kegiatan')
                             ->weight('bold')
                             ->size('lg'),
+                        \Filament\Infolists\Components\TextEntry::make('loanEvent.name')
+                            ->label('Kegiatan Master')
+                            ->icon('heroicon-o-calendar-days')
+                            ->url(fn (G004M008Activity $record): ?string => $record->loan_event_id
+                                ? \App\Filament\Resources\LoanEventResource::getUrl('view', ['record' => $record->loan_event_id])
+                                : null)
+                            ->visible(fn (G004M008Activity $record): bool => filled($record->loan_event_id)
+                                && static::canViewFullActivity($record)),
                         \Filament\Infolists\Components\TextEntry::make('groupParent.name')
                             ->label('Terkait Kegiatan Induk')
                             ->icon('heroicon-o-link')
@@ -579,6 +587,7 @@ class G004M008ActivityResource extends Resource
             ->with([
                 'return_checklist',
                 'groupParent',
+                'loanEvent',
                 'linkedRequests',
                 'review',
                 'item_reviews.item_instance',
