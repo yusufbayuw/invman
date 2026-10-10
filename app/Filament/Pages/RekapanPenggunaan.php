@@ -6,6 +6,7 @@ use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
 use App\Enums\ReservationStatus;
 use App\Filament\Resources\G004M008ActivityResource;
 use App\Models\G004M008Activity;
+use App\Models\LoanEvent;
 use App\Models\LoanRequestReview;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -119,7 +120,7 @@ class RekapanPenggunaan extends Page implements HasTable
     public function getTableQuery(): Builder
     {
         return static::baseQuery()
-            ->with(['user', 'unit', 'groupParent', 'review', 'return_checklist'])
+            ->with(['user', 'unit', 'loanEvent', 'groupParent', 'review', 'return_checklist'])
             ->withCount(['item_reservation', 'room_reservation', 'vehicle_reservation'])
             ->withSum('item_reservation as item_quantity', 'quantity');
     }
@@ -142,9 +143,9 @@ class RekapanPenggunaan extends Page implements HasTable
                     ->summarize(Tables\Columns\Summarizers\Count::make()->label('Jumlah pengajuan')),
                 TextColumn::make('group_name')
                     ->label('Kegiatan Bersama')
-                    ->state(fn (G004M008Activity $record): string => $record->groupParent?->name ?? $record->name)
-                    ->description(fn (G004M008Activity $record): ?string => $record->related_activity_id
-                        ? 'Bagian dari kegiatan yang sama'
+                    ->state(fn (G004M008Activity $record): string => $record->loanEvent?->name ?? $record->groupParent?->name ?? $record->name)
+                    ->description(fn (G004M008Activity $record): ?string => $record->loan_event_id
+                        ? 'Kegiatan master (status mandiri)'
                         : null)
                     ->wrap()
                     ->toggleable(),
@@ -254,17 +255,20 @@ class RekapanPenggunaan extends Page implements HasTable
                     ->visible(fn (): bool => auth()->user()->isFacility()),
                 SelectFilter::make('activity_group')
                     ->label('Kegiatan Bersama')
-                    ->options(fn (): array => static::baseQuery()
-                        ->whereNull('related_activity_id')
+                    ->options(fn (): array => LoanEvent::query()
+                        ->when(auth()->user()?->isSarpras(), fn (Builder $query): Builder => $query
+                            ->where('g001_m001_unit_id', auth()->user()->g001_m001_unit_id))
                         ->orderByDesc('created_at')
                         ->limit(200)
-                        ->pluck('name', 'id')
-                        ->all())
+                        ->pluck('name', 'id')->all()
+                        + static::baseQuery()->whereNull('related_activity_id')
+                            ->orderByDesc('created_at')->limit(200)->pluck('name', 'id')->all())
                     ->searchable()
                     ->query(fn (Builder $query, array $data): Builder => $query
                         ->when($data['value'] ?? null, fn (Builder $query, $id): Builder => $query
                             ->where(fn (Builder $query): Builder => $query
-                                ->whereKey($id)
+                                ->where('loan_event_id', $id)
+                                ->orWhereKey($id)
                                 ->orWhere('related_activity_id', $id)))),
                 SelectFilter::make('status')
                     ->label('Status')
