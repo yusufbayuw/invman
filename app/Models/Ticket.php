@@ -36,5 +36,13 @@ class Ticket extends Model
     public function assets(): HasMany { return $this->hasMany(TicketAssetLink::class); }
     public function comments(): HasMany { return $this->hasMany(TicketComment::class); }
     public function attachments(): HasMany { return $this->hasMany(TicketAttachment::class); }
+    public function visibleComments(): HasMany
+    {
+        $query = $this->comments()->with('author')->oldest('created_at');
+        if (! app(\\App\\Services\\TicketVisibility::class)->canManage(auth()->user(), $this)) {
+            $query->where('is_internal', false);
+        }
+        return $query;
+    }
     public function events(): HasMany { return $this->hasMany(TicketEvent::class); }
 }
