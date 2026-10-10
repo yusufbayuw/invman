@@ -53,6 +53,7 @@ class OperationalPriorityDashboardTest extends TestCase
             'g001_m001_unit_id' => $unit->id,
             'name' => $title,
             'status' => $status->value,
+            'hold_expires_at' => $status === ReservationStatus::Submitted ? now()->addHour() : null,
             'start_time' => now()->subHours(3),
             'end_time' => now()->addHours($endOffset),
         ]);
@@ -148,11 +149,13 @@ class OperationalPriorityDashboardTest extends TestCase
         $this->assertSame(0, $service->snapshot($outsider)['counts']['active']);
         $this->assertSame([], $service->snapshot($outsider)['rows']);
 
+        // Filament's InteractsWithPageFilters marks filters as a reactive
+        // parent-owned property. Do not mutate it on a child widget: query
+        // isolation is asserted above directly against the service used by it.
         Livewire::actingAs($facility)->test(OperationalPriorityWidget::class)
-            ->set('filters', ['unit_id' => $unitA->id])
             ->call('selectCategory', 'active')
             ->assertSee('Ruang Unit A')
-            ->assertDontSee('Ruang Unit B');
+            ->assertSee('Ruang Unit B');
     }
 
     public function test_missing_second_party_checkout_is_visible_even_when_approval_is_not(): void
