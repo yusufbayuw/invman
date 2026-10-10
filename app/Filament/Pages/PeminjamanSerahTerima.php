@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\ReservationStatus;
 use App\Models\G005M009ItemReservation;
 use App\Services\LoanHandoverQrService;
+use App\Services\LoanCheckoutService;
 use App\Services\LoanRequestService;
 use Filament\Actions;
 use Filament\Forms;
@@ -53,7 +54,7 @@ class PeminjamanSerahTerima extends Page implements HasForms
         $this->reservationId = is_string(request()->query('reservation')) ? request()->query('reservation') : '';
 
         $reservation = $this->reservation();
-        $this->form->fill($this->initialChecklist($reservation));
+        $this->form->fill($this->initialCheckoutOrReturn($reservation));
     }
 
     private function reservation(): Model
@@ -69,6 +70,11 @@ class PeminjamanSerahTerima extends Page implements HasForms
     public function form(Form $form): Form
     {
         return $form->schema([
+            Forms\Components\Section::make('Pemeriksaan Awal saat Penyerahan')
+                ->description('Pengelola mencatat kondisi sebelum aset dipinjam. Peminjam mengonfirmasi penerimaan melalui QR.')
+                ->schema($this->checkoutFields())
+                ->visible(fn (): bool => $this->canBeginCheckout())
+                ->columns(2),
             Forms\Components\Section::make('Kondisi saat pengembalian')
                 ->description('Periksa kondisi fisik; informasi ini tersimpan dalam histori serah-terima.')
                 ->schema($this->returnFields())
@@ -126,6 +132,91 @@ class PeminjamanSerahTerima extends Page implements HasForms
         ];
     }
 
+    /** @return array<int, Forms\Components\Component> */
+    private function checkoutFields(): array
+    {
+        $common = [
+            Forms\Components\FileUpload::make('proof_path')
+                ->label('Bukti kondisi/serah-terima (opsional)')
+                ->directory('loan-checkout-receipts')->maxSize(5120),
+            Forms\Components\Textarea::make('receipt_notes')
+                ->label('Catatan penyerahan awal')->maxLength(2000)->columnSpanFull(),
+        ];
+
+        if ($this->type === 'item') {
+            return [
+                Forms\Components\Repeater::make('instances')
+                    ->label('Kondisi setiap barang satuan')
+                    ->schema([
+                        Forms\Components\Hidden::make('item_instance_id'),
+                        Forms\Components\TextInput::make('instance_label')
+                            ->label('Kode / nama')->disabled()->dehydrated(false),
+                        Forms\Components\Toggle::make('is_ok')
+                            ->label('Kondisi baik')->default(true)->live(),
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Catatan kondisi')
+                            ->required(fn (Forms\Get $get): bool => ! $get('is_ok')),
+                        Forms\Components\FileUpload::make('photo')
+                            ->label('Foto kondisi')->image()
+                            ->directory('loan-checkout-checklists')->maxSize(5120),
+                    ])
+                    ->addable(false)->deletable(false)->reorderable(false)
+                    ->columns(2)->columnSpanFull(),
+                ...$common,
+            ];
+        }
+
+        return [
+            Forms\Components\Toggle::make('is_ok')
+                ->label('Aset dalam kondisi baik')->default(true)->live(),
+            Forms\Components\Textarea::make('notes')
+                ->label('Catatan kondisi awal')
+                ->required(fn (Forms\Get $get): bool => ! $get('is_ok')),
+            Forms\Components\FileUpload::make('photo')
+                ->label('Foto kondisi awal')->image()
+                ->directory('loan-checkout-checklists')->maxSize(5120),
+            ...($this->type === 'vehicle' ? [
+                Forms\Components\TextInput::make('checkout_odometer')
+                    ->label('Kilometer awal (opsional)')
+                    ->integer()->minValue(0),
+            ] : []),
+            ...$common,
+        ];
+    }
+
+    private function initialCheckoutOrReturn(Model $reservation): array
+    {
+        if ($reservation->status === ReservationStatus::Approved->value) {
+            return $reservation instanceof G005M009ItemReservation
+                ? ['instances' => app(LoanCheckoutService::class)->instanceOptions($reservation)]
+                : ['is_ok' => true];
+        }
+
+        return $this->initialChecklist($reservation);
+    }
+
+    private function canBeginCheckout(): bool
+    {
+        $reservation = $this->reservation();
+
+        return $reservation->status === ReservationStatus::Approved->value
+            && auth()->user()?->managesReservation($reservation)
+            && ! $reservation->outboundReceipt()->exists();
+    }
+
+    public function submitCheckout(): void
+    {
+        abort_unless($this->canBeginCheckout(), 403);
+
+        app(LoanCheckoutService::class)->begin(
+            $this->type, $this->reservationId, $this->form->getState(),
+        );
+
+        Notification::make()
+            ->title('Kondisi awal dicatat; menunggu peminjam menerima')
+            ->success()->send();
+    }
+
     /** @return array<string, mixed> */
     private function initialChecklist(Model $reservation): array
     {
@@ -152,23 +243,35 @@ class PeminjamanSerahTerima extends Page implements HasForms
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('checkout')
-                ->label('Pinjamkan')
-                ->icon('heroicon-o-arrow-right-circle')
+            Actions\Action::make('confirmCheckout')
+                ->label('Konfirmasi Penerimaan')
+                ->icon('heroicon-o-check-badge')
                 ->color('success')
-                ->visible(fn (): bool => app(LoanRequestService::class)
-                    ->canCheckoutReservation($this->reservation()))
+                ->visible(fn (): bool => app(LoanCheckoutService::class)
+                    ->canConfirm($this->reservation()))
                 ->requiresConfirmation()
-                ->modalDescription('Pastikan aset dan penerima sudah sesuai sebelum mencatat penyerahan.')
+                ->modalDescription('Saya telah menerima dan memeriksa aset sesuai kondisi awal yang dicatat pengelola.')
                 ->action(function (): void {
-                    $reservation = $this->reservation();
-                    app(LoanRequestService::class)->processReservation(
-                        $this->type,
-                        (string) $reservation->getKey(),
-                        ReservationStatus::CheckedOut,
-                    );
-                    Notification::make()->title('Aset telah diserahkan')->success()->send();
-                    $this->form->fill($this->initialChecklist($this->reservation()));
+                    app(LoanCheckoutService::class)->confirm($this->type, $this->reservationId);
+                    Notification::make()->title('Aset telah diterima; status Sedang Dipakai')->success()->send();
+                    $this->form->fill($this->initialCheckoutOrReturn($this->reservation()));
+                }),
+            Actions\Action::make('checkoutFallback')
+                ->label('Penyerahan Khusus')
+                ->icon('heroicon-o-exclamation-triangle')
+                ->color('warning')
+                ->visible(fn (): bool => $this->reservation()->status === ReservationStatus::Approved->value
+                    && (auth()->user()?->managesReservation($this->reservation()) ?? false))
+                ->requiresConfirmation()
+                ->modalDescription('Hanya untuk kondisi khusus saat peminjam tidak dapat mengonfirmasi. Alasan akan disimpan permanen dalam bukti penyerahan.')
+                ->form([
+                    Forms\Components\Textarea::make('reason')
+                        ->label('Alasan pengecualian')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(function (array $data): void {
+                    app(LoanCheckoutService::class)->fallback($this->type, $this->reservationId, $data);
+                    Notification::make()->title('Penyerahan khusus dicatat dengan alasan')->warning()->send();
                 }),
             Actions\Action::make('confirmReturn')
                 ->label('Konfirmasi Pengembalian')
@@ -215,6 +318,8 @@ class PeminjamanSerahTerima extends Page implements HasForms
             'qrImage' => $qr->pngDataUri($this->type, $reservation),
             'scanUrl' => $qr->signedScanUrl($this->type, $reservation),
             'canBeginReturn' => $this->canBeginReturn(),
+            'canBeginCheckout' => $this->canBeginCheckout(),
+            'outboundReceipt' => $reservation->outboundReceipt,
             'statusLabel' => ReservationStatus::tryFrom($reservation->status)?->label() ?? $reservation->status,
         ];
     }
