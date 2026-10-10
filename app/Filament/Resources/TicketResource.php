@@ -76,6 +76,11 @@ class TicketResource extends Resource
                 Forms\Components\Textarea::make('description')
                     ->label('Jelaskan masalah, lokasi dan dampaknya')
                     ->required()->minLength(10)->maxLength(10000)->rows(5)->columnSpanFull(),
+                Forms\Components\FileUpload::make('files')->label('Foto/PDF (opsional)')
+                    ->multiple()->maxFiles(3)->maxSize(5120)
+                    ->acceptedFileTypes(['image/jpeg','image/png','application/pdf'])
+                    ->disk('local')->directory('tickets/attachments')->visibility('private')
+                    ->columnSpanFull(),
             ])->columns(2),
         ]);
     }
@@ -142,6 +147,15 @@ class TicketResource extends Resource
                         Infolists\Components\IconEntry::make('is_internal')->label('Internal')->boolean(),
                     ])->columns(2),
             ])->collapsible(),
+            Infolists\Components\Section::make('Lampiran')->schema([
+                Infolists\Components\RepeatableEntry::make('attachments')->hiddenLabel()->schema([
+                    Infolists\Components\TextEntry::make('original_name')->label('Dokumen')
+                        ->url(fn (\App\Models\TicketAttachment $record): string => route('tickets.attachment', ['attachment' => $record->id]))
+                        ->openUrlInNewTab(),
+                    Infolists\Components\TextEntry::make('mime_type')->label('Format'),
+                    Infolists\Components\TextEntry::make('created_at')->dateTime('d M Y H:i')->label('Diunggah'),
+                ])->columns(3),
+            ])->collapsed(),
             Infolists\Components\Section::make('Audit perubahan')->schema([
                 Infolists\Components\RepeatableEntry::make('events')->hiddenLabel()->schema([
                     Infolists\Components\TextEntry::make('action')->label('Aksi'),
