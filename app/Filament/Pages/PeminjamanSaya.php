@@ -315,6 +315,21 @@ class PeminjamanSaya extends Page implements HasTable
                     ->modalContent(fn (LoanRequestNeed $record) => view('filament.components.loan-correction-history', [
                         'corrections' => static::reservationForNeed($record)?->corrections()->with('correctedBy')->latest()->get() ?? collect(),
                     ])),
+                Tables\Actions\Action::make('handover_qr')
+                    ->label('QR Serah Terima')
+                    ->icon('heroicon-o-qr-code')
+                    ->color('primary')
+                    ->visible(fn (LoanRequestNeed $record): bool => in_array($record->status, [
+                        ReservationStatus::Approved->value,
+                        ReservationStatus::CheckedOut->value,
+                        ReservationStatus::ReturnRequested->value,
+                        ReservationStatus::Returned->value,
+                    ], true) && app(\App\Services\LoanHandoverQrService::class)
+                        ->canView(auth()->user(), static::reservationForNeed($record)))
+                    ->url(fn (LoanRequestNeed $record): string => PeminjamanSerahTerima::getUrl([
+                        'type' => $record->type,
+                        'reservation' => $record->reservation_id,
+                    ])),
                 Tables\Actions\Action::make('view')
                     ->label('Lihat Kegiatan')
                     ->icon('heroicon-o-eye')

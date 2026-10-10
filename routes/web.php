@@ -3,7 +3,25 @@
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\PublicRoomScheduleController;
 use App\Http\Controllers\RoomQrCodePdfController;
+use App\Services\LoanHandoverQrService;
+use App\Filament\Pages\PeminjamanSerahTerima;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/pinjam/scan/{type}/{reservation}', function (string $type, string $reservation) {
+    $qr = app(LoanHandoverQrService::class);
+    $record = $qr->resolve($type, $reservation);
+
+    // Never reveal an unowned or unrelated reservation via QR scanning.
+    abort_unless($qr->canView(auth()->user(), $record), 404);
+
+    return redirect(PeminjamanSerahTerima::getUrl([
+        'type' => $type,
+        'reservation' => $reservation,
+    ]));
+})->middleware(['auth', 'signed', 'throttle:20,1'])
+    ->whereIn('type', ['item', 'room', 'vehicle'])
+    ->whereUuid('reservation')
+    ->name('loans.handover.scan');
 
 Route::middleware(['auth', 'throttle:30,1'])
     ->prefix('push')
