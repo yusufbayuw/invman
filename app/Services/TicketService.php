@@ -16,6 +16,7 @@ use App\Models\User;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -235,6 +236,48 @@ class TicketService
         DB::transaction(function () use ($ticket, $actor, $text, $internal): void {
             $ticket->comments()->create(['user_id' => $actor->id, 'body' => $text, 'is_internal' => $internal]);
             $this->event($ticket, $actor->id, $internal ? 'internal_note' : 'comment', null, null);
+        });
+    }
+
+    /** Files are stored on the private local disk, never on /storage public links. */
+    public function attach(Ticket $ticket, User $actor, array $paths): void
+    {
+        if (! $this->visibility->canView($actor, $ticket) || count($paths) > 3) {
+            throw ValidationException::withMessages(['files' => 'Tidak diizinkan atau maksimal tiga lampiran.']);
+        }
+
+        $disk = Storage::disk('local');
+        $validated = [];
+        foreach ($paths as $path) {
+            if (! is_string($path) || ! str_starts_with($path, 'tickets/attachments/')
+                || str_contains($path, '..') || str_contains($path, '\\')
+                || ! preg_match('#^tickets/attachments/[A-Za-z0-9_.\\-/]+$#', $path)
+                || ! $disk->exists($path)) {
+                throw ValidationException::withMessages(['files' => 'Lampiran tidak valid.']);
+            }
+            $mime = $disk->mimeType($path);
+            $size = $disk->size($path);
+            if (! in_array($mime, ['application/pdf','image/png','image/jpeg'], true)
+                || $size > 5242880) {
+                throw ValidationException::withMessages(['files' => 'Hanya PDF/JPG/PNG maksimal 5 MB.']);
+            }
+            $validated[] = compact('path','mime','size');
+        }
+
+        DB::transaction(function () use ($ticket, $actor, $validated): void {
+            foreach ($validated as $file) {
+                $ticket->attachments()->create([
+                    'uploaded_by' => $actor->id,
+                    'disk' => 'local',
+                    'path' => $file['path'],
+                    'original_name' => basename($file['path']),
+                    'mime_type' => $file['mime'],
+                    'size' => $file['size'],
+                ]);
+            }
+            if ($validated !== []) {
+                $this->event($ticket, $actor->id, 'attachment', null, (string) count($validated));
+            }
         });
     }
 
