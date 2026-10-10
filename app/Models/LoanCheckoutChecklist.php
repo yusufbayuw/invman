@@ -10,7 +10,18 @@ class LoanCheckoutChecklist extends Model
 {
     use HasUuids;
 
-    protected $guarded = ['*'];
+    /** Explicit allowlist. Only the authorized checkout service persists rows. */
+    protected $fillable = [
+        'reservation_type',
+        'reservation_id',
+        'g004_m008_activity_id',
+        'g002_m015_item_instance_id',
+        'checked_by',
+        'is_ok',
+        'notes',
+        'photo',
+        'checked_at',
+    ];
 
     protected $casts = [
         'is_ok' => 'boolean',
