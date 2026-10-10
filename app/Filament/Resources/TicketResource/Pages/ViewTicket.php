@@ -30,6 +30,10 @@ class ViewTicket extends ViewRecord
                 ->label('Tambah Komentar')->icon('heroicon-o-chat-bubble-left-right')
                 ->form([
                     Forms\Components\Textarea::make('body')->label('Komentar')->required()->minLength(2)->maxLength(10000),
+                    Forms\Components\FileUpload::make('files')->label('Foto/PDF (opsional)')
+                        ->multiple()->maxFiles(3)->maxSize(5120)
+                        ->acceptedFileTypes(['image/jpeg','image/png','application/pdf'])
+                        ->disk('local')->directory('tickets/attachments')->visibility('private'),
                     Forms\Components\Toggle::make('internal')->label('Catatan khusus pengelola')
                         ->visible(fn (): bool => app(TicketVisibility::class)->canManage(auth()->user(), $this->getRecord())),
                 ])
@@ -37,6 +41,9 @@ class ViewTicket extends ViewRecord
                     app(TicketService::class)->comment(
                         $this->getRecord(), auth()->user(), $data['body'], (bool) ($data['internal'] ?? false),
                     );
+                    if (filled($data['files'] ?? [])) {
+                        app(TicketService::class)->attach($this->getRecord(), auth()->user(), array_values($data['files']));
+                    }
                     Notification::make()->title('Komentar ditambahkan')->success()->send();
                 }),
             Actions\Action::make('assign')
