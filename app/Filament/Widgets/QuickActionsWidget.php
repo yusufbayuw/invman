@@ -117,12 +117,10 @@ class QuickActionsWidget extends Widget implements HasActions, HasForms
         return Action::make('checkout')
             ->action(function (array $arguments): void {
                 $reservation = $this->authorizedReservation($arguments, 'canCheckoutReservation');
-                app(LoanRequestService::class)->processReservation(
-                    $arguments['type'],
-                    (string) $reservation->getKey(),
-                    ReservationStatus::CheckedOut,
-                );
-                $this->success('Aset dipinjamkan', 'Serah-terima peminjaman berhasil dicatat.');
+                $this->redirect(\App\Filament\Pages\PeminjamanSerahTerima::getUrl([
+                    'type' => $arguments['type'],
+                    'reservation' => (string) $reservation->getKey(),
+                ]));
             });
     }
 
