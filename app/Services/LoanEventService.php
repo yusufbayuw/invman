@@ -32,8 +32,14 @@ class LoanEventService
     public function resolve(User $user, mixed $id): LoanEvent
     {
         if (! $user->g001_m001_unit_id || ! ($user->isFacility() || $user->isSarpras())
-            || ! is_string($id) || ! Str::isUuid($id)
-            || ! $event = $this->accessible($user)->whereKey($id)->first()) {
+            || ! is_string($id) || ! Str::isUuid($id)) {
+            throw ValidationException::withMessages([
+                'data.loan_event_id' => 'Kegiatan tidak tersedia atau bukan milik unit Anda.',
+            ]);
+        }
+
+        $event = $this->accessible($user)->whereKey($id)->first();
+        if (! $event) {
             throw ValidationException::withMessages([
                 'data.loan_event_id' => 'Kegiatan tidak tersedia atau bukan milik unit Anda.',
             ]);
