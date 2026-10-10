@@ -29,17 +29,12 @@ return new class extends Migration
         Schema::table('loan_handover_receipts', function (Blueprint $table): void {
             $table->unsignedBigInteger('checkout_odometer')->nullable();
             $table->text('fallback_reason')->nullable();
-            $table->unique(
-                ['reservation_type', 'reservation_id', 'direction'],
-                'loan_receipt_one_per_direction',
-            );
         });
     }
 
     public function down(): void
     {
         Schema::table('loan_handover_receipts', function (Blueprint $table): void {
-            $table->dropUnique('loan_receipt_one_per_direction');
             $table->dropColumn(['checkout_odometer', 'fallback_reason']);
         });
         Schema::dropIfExists('loan_checkout_checklists');
