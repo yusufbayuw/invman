@@ -138,3 +138,7 @@ Whitelist atribut Eloquent, proteksi audit append-only, dan panduan pengujian ad
 ## Peminjaman Cepat
 
 Alur sederhana satu aset dengan alasan singkat: [docs/QUICK-LOAN-UX.md](docs/QUICK-LOAN-UX.md).
+
+## Kegiatan Master V2
+
+Pemisahan master kegiatan dan transaksi peminjaman beserta backfill histori: [docs/LOAN-EVENT-MASTER-V2.md](docs/LOAN-EVENT-MASTER-V2.md).
