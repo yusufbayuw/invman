@@ -160,7 +160,7 @@ class QrHandoverFlowTest extends TestCase
 
         Livewire::withQueryParams($q)->actingAs($borrower)
             ->test(PeminjamanSerahTerima::class)
-            ->callAction('checkout')->assertHasNoActionErrors();
+            ->assertActionHidden('checkout');
         $this->assertSame(ReservationStatus::Approved->value, $reservation->fresh()->status);
 
         $this->actingAs($outsider)
