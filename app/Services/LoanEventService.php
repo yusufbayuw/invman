@@ -66,8 +66,11 @@ class LoanEventService
      */
     public function resolveSelection(User $user, mixed $id): array
     {
-        if (is_string($id) && Str::isUuid($id) && $event = $this->accessible($user)->whereKey($id)->first()) {
-            return [$event, null];
+        if (is_string($id) && Str::isUuid($id)) {
+            $event = $this->accessible($user)->whereKey($id)->first();
+            if ($event && ($user->isSarpras() || $user->isFacility())) {
+                return [$event, null];
+            }
         }
 
         $legacy = app(LoanActivityGrouping::class)->resolve($user, $id);
