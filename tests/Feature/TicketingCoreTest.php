@@ -179,9 +179,11 @@ class TicketingCoreTest extends TestCase
 
         $url = route('tickets.attachment', ['attachment' => $attachment->id]);
         $this->actingAs($reporter)->get($url)->assertNotFound();
+        $this->assertSame(0, $ticket->visibleAttachments()->count());
         $this->actingAs($outsider)->get($url)->assertNotFound();
         $this->actingAs($manager)->get($url)->assertOk()
             ->assertHeader('Content-Disposition');
+        $this->assertSame(1, $ticket->visibleAttachments()->count());
         $this->assertDatabaseHas('ticket_attachments', [
             'ticket_id' => $ticket->id, 'ticket_comment_id' => $privateComment->id, 'disk' => 'local',
         ]);
