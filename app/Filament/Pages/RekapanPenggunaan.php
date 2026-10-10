@@ -268,7 +268,7 @@ class RekapanPenggunaan extends Page implements HasTable
                         ->when($data['value'] ?? null, fn (Builder $query, $id): Builder => $query
                             ->where(fn (Builder $query): Builder => $query
                                 ->where('loan_event_id', $id)
-                                ->orWhereKey($id)
+                                ->orWhere('g004_m008_activities.id', $id)
                                 ->orWhere('related_activity_id', $id)))),
                 SelectFilter::make('status')
                     ->label('Status')
