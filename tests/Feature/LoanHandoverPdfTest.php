@@ -288,9 +288,9 @@ class LoanHandoverPdfTest extends TestCase
     public function test_visible_unit_can_find_pdf_action_in_familiar_loan_pages(): void
     {
         [$borrower, , , $reservation] = $this->room(ReservationStatus::CheckedOut->value);
-        Livewire::actingAs($borrower)->test(PeminjamanSerahTerima::class, [
-            // Filament page takes identifiers from the URL query.
-        ])->assertSee('Bukti PDF');
+        Livewire::withQueryParams(['type' => 'room', 'reservation' => $reservation->id])
+            ->actingAs($borrower)->test(PeminjamanSerahTerima::class)
+            ->assertSee('Bukti PDF');
 
         $component = Livewire::actingAs($borrower)->test(PeminjamanSaya::class);
         $record = $component->instance()->getTableRecords()
