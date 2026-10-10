@@ -39,7 +39,7 @@ class Ticket extends Model
     public function visibleComments(): HasMany
     {
         $query = $this->comments()->with('author')->oldest('created_at');
-        if (! app(\\App\\Services\\TicketVisibility::class)->canManage(auth()->user(), $this)) {
+        if (! app(\App\Services\TicketVisibility::class)->canManage(auth()->user(), $this)) {
             $query->where('is_internal', false);
         }
         return $query;
