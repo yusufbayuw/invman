@@ -13,4 +13,5 @@ class TicketAttachment extends Model
 
     public function ticket(): BelongsTo { return $this->belongsTo(Ticket::class); }
     public function uploader(): BelongsTo { return $this->belongsTo(User::class, 'uploaded_by'); }
+    public function comment(): BelongsTo { return $this->belongsTo(TicketComment::class, 'ticket_comment_id'); }
 }
