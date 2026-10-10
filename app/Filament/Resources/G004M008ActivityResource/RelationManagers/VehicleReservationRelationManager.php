@@ -293,9 +293,9 @@ class VehicleReservationRelationManager extends RelationManager
                     ->color('info')
                     ->icon('heroicon-o-arrow-right-circle')
                     ->visible(fn ($record): bool => app(LoanRequestService::class)->canCheckoutReservation($record))
-                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
-                        'vehicle', $record->getKey(), ReservationStatus::CheckedOut,
-                    )),
+                    ->url(fn ($record): string => \App\Filament\Pages\PeminjamanSerahTerima::getUrl([
+                        'type' => 'vehicle', 'reservation' => $record->getKey(),
+                    ])),
                 Tables\Actions\Action::make('change_vehicle_crew')
                     ->label('Ganti Penugasan')
                     ->icon('heroicon-o-user-group')
