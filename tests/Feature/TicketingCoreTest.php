@@ -6,6 +6,7 @@ use App\Enums\ReservationStatus;
 use App\Filament\Resources\TicketResource;
 use App\Filament\Resources\TicketResource\Pages\CreateTicket;
 use App\Filament\Resources\TicketResource\Pages\ListTickets;
+use App\Filament\Resources\TicketResource\Pages\ViewTicket;
 use App\Models\G001M001Unit;
 use App\Models\G002M003ItemManagement;
 use App\Models\G003M006Room;
@@ -227,6 +228,10 @@ class TicketingCoreTest extends TestCase
         Livewire::actingAs($reporter)->test(ListTickets::class)
             ->assertSee($ticket->number)
             ->assertSee('AC ruangan rusak');
+        Livewire::actingAs($reporter)->test(ViewTicket::class, ['record' => $ticket->id])
+            ->assertSee($ticket->number)
+            ->assertSee('Ruang Seminar')
+            ->assertSee('Tambah Komentar');
 
         Livewire::actingAs($outsider)->test(ListTickets::class)
             ->assertDontSee($ticket->number);
