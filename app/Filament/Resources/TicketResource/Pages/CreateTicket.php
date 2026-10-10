@@ -13,6 +13,10 @@ class CreateTicket extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
-        return app(TicketService::class)->open(auth()->user(), $data);
+        $ticket = app(TicketService::class)->open(auth()->user(), $data);
+        if (filled($data['files'] ?? [])) {
+            app(TicketService::class)->attach($ticket, auth()->user(), array_values($data['files']));
+        }
+        return $ticket;
     }
 }
