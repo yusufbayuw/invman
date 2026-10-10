@@ -483,13 +483,27 @@ class LoanRequestService
                 ]);
             }
 
+            $borrowerCompletingCheckout = $status === ReservationStatus::CheckedOut
+                && auth()->user()?->belongsToUnit($reservation->activity?->g001_m001_unit_id)
+                && $reservation->outboundReceipt?->completed_at
+                && $reservation->outboundReceipt?->borrower_confirmed_by === auth()->id()
+                && $reservation->outboundReceipt?->manager_confirmed_by !== auth()->id();
+
             $borrowerCompletingReturn = $status === ReservationStatus::Returned
                 && auth()->user()?->belongsToUnit($reservation->activity?->g001_m001_unit_id)
                 && $reservation->returnReceipt?->completed_at;
 
-            if (! auth()->user()?->managesReservation($reservation) && ! $borrowerCompletingReturn) {
+            if (! auth()->user()?->managesReservation($reservation) && ! $borrowerCompletingReturn && ! $borrowerCompletingCheckout) {
                 throw ValidationException::withMessages([
                     'status' => 'Hanya user yang ditetapkan pada Pengelola Barang aset ini yang dapat memproses peminjaman.',
+                ]);
+            }
+
+            if ($status === ReservationStatus::CheckedOut
+                && $reservation->outboundReceipt
+                && ! $reservation->outboundReceipt->completed_at) {
+                throw ValidationException::withMessages([
+                    'status' => 'Serah-terima awal belum dikonfirmasi oleh peminjam.',
                 ]);
             }
 
@@ -801,11 +815,17 @@ class LoanRequestService
             return;
         }
 
+        $borrowerCompletingCheckout = $to === ReservationStatus::CheckedOut
+            && $reservation->outboundReceipt?->completed_at
+            && $reservation->outboundReceipt?->borrower_confirmed_by === $user?->id
+            && $reservation->outboundReceipt?->manager_confirmed_by !== $user?->id
+            && $user?->belongsToUnit($reservation->activity?->g001_m001_unit_id);
+
         $borrowerCompletingReturn = $to === ReservationStatus::Returned
             && $reservation->returnReceipt?->completed_at
             && $user?->belongsToUnit($reservation->activity?->g001_m001_unit_id);
 
-        if (! $user?->managesReservation($reservation) && ! $borrowerCompletingReturn) {
+        if (! $user?->managesReservation($reservation) && ! $borrowerCompletingReturn && ! $borrowerCompletingCheckout) {
             throw ValidationException::withMessages([
                 'status' => 'Hanya user yang ditetapkan pada Pengelola Barang aset ini yang dapat memproses status peminjaman.',
             ]);
