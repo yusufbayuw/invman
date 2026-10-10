@@ -544,6 +544,24 @@ class LoanRequestService
 
             $reservation->save();
 
+            if ($status === ReservationStatus::CheckedOut && ! $reservation->outboundReceipt()->exists()) {
+                // Programmatic/legacy clients may still call processReservation directly.
+                // Explicitly mark this as an unverified historical compatibility path,
+                // never impersonate a borrower or fabricate a condition checklist.
+                LoanHandoverReceipt::query()->create([
+                    'receipt_number' => 'OUT-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
+                    'reservation_type' => $type,
+                    'reservation_id' => $reservationId,
+                    'g004_m008_activity_id' => $reservation->g004_m008_activity_id,
+                    'direction' => 'checkout',
+                    'initiated_by' => auth()->id(),
+                    'manager_confirmed_by' => auth()->id(),
+                    'manager_confirmed_at' => now(),
+                    'fallback_reason' => 'Jalur kompatibilitas legacy tanpa konfirmasi peminjam; perlu verifikasi manual.',
+                    'completed_at' => now(),
+                ]);
+            }
+
             if ($status === ReservationStatus::Returned) {
                 if ($reservation instanceof G005M009ItemReservation) {
                     $conditions = $reservation->returnChecklists()
