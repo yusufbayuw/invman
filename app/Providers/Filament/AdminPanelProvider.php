@@ -9,6 +9,7 @@ use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\RekapanPenggunaan;
 use App\Filament\Widgets\CalendarWidget;
 use App\Filament\Widgets\LoanOperationsStats;
+use App\Filament\Widgets\OperationalPriorityWidget;
 use App\Filament\Widgets\LoanStatusChart;
 use App\Filament\Widgets\LoanUsageTrendChart;
 use App\Filament\Widgets\MenuGridWidget;
@@ -89,6 +90,7 @@ class AdminPanelProvider extends PanelProvider
                 // Widgets\AccountWidget::class,
                 MenuGridWidget::class,
                 LoanOperationsStats::class,
+                OperationalPriorityWidget::class,
                 QuickActionsWidget::class,
                 LoanStatusChart::class,
                 LoanUsageTrendChart::class,
