@@ -243,11 +243,10 @@ class PeminjamanSaya extends Page implements HasTable
                     ->color('info')
                     ->visible(fn (LoanRequestNeed $record): bool => static::canManageNeed($record)
                         && $record->status === ReservationStatus::Approved->value)
-                    ->action(fn (LoanRequestNeed $record) => app(LoanRequestService::class)->processReservation(
-                        $record->type,
-                        $record->reservation_id,
-                        ReservationStatus::CheckedOut,
-                    )),
+                    ->url(fn (LoanRequestNeed $record): string => PeminjamanSerahTerima::getUrl([
+                        'type' => $record->type,
+                        'reservation' => $record->reservation_id,
+                    ])),
                 Tables\Actions\Action::make('confirm_return')
                     ->label('Konfirmasi Serah Terima')
                     ->icon('heroicon-o-arrow-uturn-left')

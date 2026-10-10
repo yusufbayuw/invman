@@ -211,9 +211,9 @@ class ItemReservationRelationManager extends RelationManager
                     ->color('info')
                     ->icon('heroicon-o-arrow-right-circle')
                     ->visible(fn ($record): bool => app(LoanRequestService::class)->canCheckoutReservation($record))
-                    ->action(fn ($record) => app(LoanRequestService::class)->processReservation(
-                        'item', $record->getKey(), ReservationStatus::CheckedOut,
-                    )),
+                    ->url(fn ($record): string => \App\Filament\Pages\PeminjamanSerahTerima::getUrl([
+                        'type' => 'item', 'reservation' => $record->getKey(),
+                    ])),
                 Tables\Actions\Action::make('dikembalikan')
                     ->label('Konfirmasi Serah Terima')
                     ->color('warning')

@@ -25,6 +25,8 @@ class LoanHandoverReceipt extends Model
         'proof_path',
         'notes',
         'completed_at',
+        'checkout_odometer',
+        'fallback_reason',
     ];
 
     protected $casts = [

@@ -101,10 +101,20 @@ class QrHandoverFlowTest extends TestCase
             ->test(PeminjamanSerahTerima::class)
             ->assertSee('Aula Besar')
             ->assertSee('Pelatihan Guru')
-            ->callAction('checkout')
+            ->fillForm(['is_ok' => true, 'notes' => 'Kondisi awal baik'])
+            ->call('submitCheckout')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame(ReservationStatus::Approved->value, $reservation->fresh()->status);
+        $this->assertNotNull($reservation->fresh()->outboundReceipt?->manager_confirmed_at);
+
+        Livewire::withQueryParams($q)->actingAs($borrower)
+            ->test(PeminjamanSerahTerima::class)
+            ->callAction('confirmCheckout')
             ->assertHasNoActionErrors();
 
         $this->assertSame(ReservationStatus::CheckedOut->value, $reservation->fresh()->status);
+        $this->assertNotNull($reservation->fresh()->outboundReceipt?->borrower_confirmed_at);
 
         Livewire::withQueryParams($q)->actingAs($borrower)
             ->test(PeminjamanSerahTerima::class)
@@ -160,7 +170,8 @@ class QrHandoverFlowTest extends TestCase
 
         Livewire::withQueryParams($q)->actingAs($borrower)
             ->test(PeminjamanSerahTerima::class)
-            ->assertActionHidden('checkout');
+            ->assertActionHidden('checkoutFallback')
+            ->assertActionHidden('confirmCheckout');
         $this->assertSame(ReservationStatus::Approved->value, $reservation->fresh()->status);
 
         $this->actingAs($outsider)

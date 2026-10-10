@@ -16,6 +16,20 @@ trait HasLoanReturnControls
             ->where('reservation_type', $this->loanReservationType());
     }
 
+    public function outboundReceipt(): HasOne
+    {
+        return $this->hasOne(LoanHandoverReceipt::class, 'reservation_id')
+            ->where('reservation_type', $this->loanReservationType())
+            ->where('direction', 'checkout')
+            ->latestOfMany('created_at');
+    }
+
+    public function outboundChecklists(): HasMany
+    {
+        return $this->hasMany(\App\Models\LoanCheckoutChecklist::class, 'reservation_id')
+            ->where('reservation_type', $this->loanReservationType());
+    }
+
     public function returnReceipt(): HasOne
     {
         return $this->hasOne(LoanHandoverReceipt::class, 'reservation_id')

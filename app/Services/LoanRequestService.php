@@ -483,13 +483,27 @@ class LoanRequestService
                 ]);
             }
 
+            $borrowerCompletingCheckout = $status === ReservationStatus::CheckedOut
+                && auth()->user()?->belongsToUnit($reservation->activity?->g001_m001_unit_id)
+                && $reservation->outboundReceipt?->completed_at
+                && $reservation->outboundReceipt?->borrower_confirmed_by === auth()->id()
+                && $reservation->outboundReceipt?->manager_confirmed_by !== auth()->id();
+
             $borrowerCompletingReturn = $status === ReservationStatus::Returned
                 && auth()->user()?->belongsToUnit($reservation->activity?->g001_m001_unit_id)
                 && $reservation->returnReceipt?->completed_at;
 
-            if (! auth()->user()?->managesReservation($reservation) && ! $borrowerCompletingReturn) {
+            if (! auth()->user()?->managesReservation($reservation) && ! $borrowerCompletingReturn && ! $borrowerCompletingCheckout) {
                 throw ValidationException::withMessages([
                     'status' => 'Hanya user yang ditetapkan pada Pengelola Barang aset ini yang dapat memproses peminjaman.',
+                ]);
+            }
+
+            if ($status === ReservationStatus::CheckedOut
+                && $reservation->outboundReceipt
+                && ! $reservation->outboundReceipt->completed_at) {
+                throw ValidationException::withMessages([
+                    'status' => 'Serah-terima awal belum dikonfirmasi oleh peminjam.',
                 ]);
             }
 
@@ -529,6 +543,24 @@ class LoanRequestService
             }
 
             $reservation->save();
+
+            if ($status === ReservationStatus::CheckedOut && ! $reservation->outboundReceipt()->exists()) {
+                // Programmatic/legacy clients may still call processReservation directly.
+                // Explicitly mark this as an unverified historical compatibility path,
+                // never impersonate a borrower or fabricate a condition checklist.
+                LoanHandoverReceipt::query()->create([
+                    'receipt_number' => 'OUT-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
+                    'reservation_type' => $type,
+                    'reservation_id' => $reservationId,
+                    'g004_m008_activity_id' => $reservation->g004_m008_activity_id,
+                    'direction' => 'checkout',
+                    'initiated_by' => auth()->id(),
+                    'manager_confirmed_by' => auth()->id(),
+                    'manager_confirmed_at' => now(),
+                    'fallback_reason' => 'Jalur kompatibilitas legacy tanpa konfirmasi peminjam; perlu verifikasi manual.',
+                    'completed_at' => now(),
+                ]);
+            }
 
             if ($status === ReservationStatus::Returned) {
                 if ($reservation instanceof G005M009ItemReservation) {
@@ -801,11 +833,17 @@ class LoanRequestService
             return;
         }
 
+        $borrowerCompletingCheckout = $to === ReservationStatus::CheckedOut
+            && $reservation->outboundReceipt?->completed_at
+            && $reservation->outboundReceipt?->borrower_confirmed_by === $user?->id
+            && $reservation->outboundReceipt?->manager_confirmed_by !== $user?->id
+            && $user?->belongsToUnit($reservation->activity?->g001_m001_unit_id);
+
         $borrowerCompletingReturn = $to === ReservationStatus::Returned
             && $reservation->returnReceipt?->completed_at
             && $user?->belongsToUnit($reservation->activity?->g001_m001_unit_id);
 
-        if (! $user?->managesReservation($reservation) && ! $borrowerCompletingReturn) {
+        if (! $user?->managesReservation($reservation) && ! $borrowerCompletingReturn && ! $borrowerCompletingCheckout) {
             throw ValidationException::withMessages([
                 'status' => 'Hanya user yang ditetapkan pada Pengelola Barang aset ini yang dapat memproses status peminjaman.',
             ]);

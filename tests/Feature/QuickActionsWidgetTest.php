@@ -175,6 +175,21 @@ class QuickActionsWidgetTest extends TestCase
         Livewire::actingAs($manager)
             ->test(QuickActionsWidget::class)
             ->callAction('checkout', arguments: $arguments)
+            ->assertRedirect(\App\Filament\Pages\PeminjamanSerahTerima::getUrl([
+                'type' => 'room', 'reservation' => $reservation->id,
+            ]));
+
+        $this->assertSame(ReservationStatus::Approved->value, $reservation->fresh()->status);
+
+        $scan = ['type' => 'room', 'reservation' => $reservation->id];
+        Livewire::withQueryParams($scan)->actingAs($manager)
+            ->test(\App\Filament\Pages\PeminjamanSerahTerima::class)
+            ->fillForm(['is_ok' => true])
+            ->call('submitCheckout')
+            ->assertHasNoFormErrors();
+        Livewire::withQueryParams($scan)->actingAs($sarpras)
+            ->test(\App\Filament\Pages\PeminjamanSerahTerima::class)
+            ->callAction('confirmCheckout')
             ->assertHasNoActionErrors();
 
         $this->assertSame(ReservationStatus::CheckedOut->value, $reservation->fresh()->status);
