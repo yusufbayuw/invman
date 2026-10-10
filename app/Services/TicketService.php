@@ -11,6 +11,7 @@ use App\Models\G005M009ItemReservation;
 use App\Models\G005M010RoomReservation;
 use App\Models\G005M019VehicleReservation;
 use App\Models\Ticket;
+use App\Models\TicketComment;
 use App\Models\TicketCategory;
 use App\Models\User;
 use Filament\Notifications\Notification;
@@ -48,16 +49,43 @@ class TicketService
         return (bool) ($user && ($user->isSarpras() || $user->isFacility() || $user->isAssetManager()));
     }
 
-    public function assetOptions(string $type): array
+    public function assetOptions(string $type, ?User $user = null): array
     {
+        $user ??= auth()->user();
         $class = self::ASSETS[$type] ?? null;
-        if (! $class) {
+        if (! $class || ! $user) {
             return [];
         }
-        $query = $class::query()->orderBy('name')->limit(250);
-        return $query->get()->mapWithKeys(fn ($asset): array => [
-            $asset->id => $asset->name.($asset->code ? ' · '.$asset->code : ''),
-        ])->all();
+
+        $query = $class::query();
+        if (! $user->isFacility()) {
+            $unitId = $user->isSarpras() ? $user->g001_m001_unit_id : null;
+            $managementIds = $user->itemManagements()->pluck('g002_m003_item_management.id');
+            $query->where(function ($visible) use ($unitId, $managementIds, $type): void {
+                if ($type === 'item_instance') {
+                    if ($unitId) {
+                        $visible->orWhereHas('item', fn ($q) => $q->where('g001_m001_unit_id', $unitId));
+                        $visible->orWhere('g001_m001_unit_id', $unitId);
+                    }
+                    if ($managementIds->isNotEmpty()) {
+                        $visible->orWhereHas('item', fn ($q) => $q->whereIn('g002_m003_item_management_id', $managementIds));
+                    }
+                } else {
+                    if ($unitId) { $visible->orWhere('g001_m001_unit_id', $unitId); }
+                    if ($managementIds->isNotEmpty()) {
+                        $visible->orWhereIn('g002_m003_item_management_id', $managementIds);
+                    }
+                }
+                if (! $unitId && $managementIds->isEmpty()) {
+                    $visible->whereRaw('1=0');
+                }
+            });
+        }
+
+        return $query->orderBy('name')->limit(250)->get()
+            ->mapWithKeys(fn ($asset): array => [
+                $asset->id => $asset->name.(filled($asset->code) ? ' · '.$asset->code : ''),
+            ])->all();
     }
 
     private function resolveAsset(?string $type, $id, ?User $user): ?array
@@ -224,7 +252,7 @@ class TicketService
         }, 3);
     }
 
-    public function comment(Ticket $ticket, User $actor, string $body, bool $internal = false): void
+    public function comment(Ticket $ticket, User $actor, string $body, bool $internal = false): TicketComment
     {
         $text = trim($body);
         if (mb_strlen($text) < 2 || mb_strlen($text) > 10000
@@ -233,16 +261,19 @@ class TicketService
             throw ValidationException::withMessages(['body' => 'Komentar tidak valid atau akses ditolak.']);
         }
 
-        DB::transaction(function () use ($ticket, $actor, $text, $internal): void {
-            $ticket->comments()->create(['user_id' => $actor->id, 'body' => $text, 'is_internal' => $internal]);
+        return DB::transaction(function () use ($ticket, $actor, $text, $internal): TicketComment {
+            $comment = $ticket->comments()->create(['user_id' => $actor->id, 'body' => $text, 'is_internal' => $internal]);
             $this->event($ticket, $actor->id, $internal ? 'internal_note' : 'comment', null, null);
+            return $comment;
         });
     }
 
     /** Files are stored on the private local disk, never on /storage public links. */
-    public function attach(Ticket $ticket, User $actor, array $paths): void
+    public function attach(Ticket $ticket, User $actor, array $paths, ?TicketComment $comment = null): void
     {
-        if (! $this->visibility->canView($actor, $ticket) || count($paths) > 3) {
+        if (! $this->visibility->canView($actor, $ticket) || count($paths) > 3
+            || ($comment && ($comment->ticket_id !== $ticket->id
+                || ($comment->is_internal && ! $this->visibility->canManage($actor, $ticket))))) {
             throw ValidationException::withMessages(['files' => 'Tidak diizinkan atau maksimal tiga lampiran.']);
         }
 
@@ -264,10 +295,11 @@ class TicketService
             $validated[] = compact('path','mime','size');
         }
 
-        DB::transaction(function () use ($ticket, $actor, $validated): void {
+        DB::transaction(function () use ($ticket, $actor, $validated, $comment): void {
             foreach ($validated as $file) {
                 $ticket->attachments()->create([
                     'uploaded_by' => $actor->id,
+                    'ticket_comment_id' => $comment?->id,
                     'disk' => 'local',
                     'path' => $file['path'],
                     'original_name' => basename($file['path']),
