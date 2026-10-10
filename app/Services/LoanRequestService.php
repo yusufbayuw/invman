@@ -74,8 +74,18 @@ class LoanRequestService
         $relatedActivity = filled($data['related_activity_id'] ?? null)
             ? app(LoanActivityGrouping::class)->resolve($user, $data['related_activity_id'])
             : null;
+        $event = filled($data['loan_event_id'] ?? null)
+            ? app(LoanEventService::class)->resolve($user, $data['loan_event_id'])
+            : null;
+        if ($relatedActivity && $event && $relatedActivity->loan_event_id !== $event->id) {
+            throw ValidationException::withMessages([
+                'data.loan_event_id' => 'Referensi kegiatan tidak konsisten.',
+            ]);
+        }
 
-        return DB::transaction(function () use ($user, $data, $start, $end, $activity, $validateAvailability, $relatedActivity) {
+        $eventId = $event?->id ?: $relatedActivity?->loan_event_id ?: $activity?->loan_event_id;
+
+        return DB::transaction(function () use ($user, $data, $start, $end, $activity, $validateAvailability, $relatedActivity, $eventId) {
             $attributes = [
                 'user_id' => $user->id,
                 'g001_m001_unit_id' => $user->g001_m001_unit_id,
@@ -94,12 +104,20 @@ class LoanRequestService
             }
 
             if ($activity) {
-                $activity->update($attributes);
+                if ($eventId) {
+                    $activity->forceFill(['loan_event_id' => $eventId]);
+                }
+                $activity->fill($attributes)->save();
                 $activity->item_reservation()->delete();
                 $activity->room_reservation()->delete();
                 $activity->vehicle_reservation()->delete();
             } else {
-                $activity = G004M008Activity::query()->create($attributes);
+                $activity = new G004M008Activity($attributes);
+                // Do not put loan_event_id in the public Eloquent fillable list.
+                if ($eventId) {
+                    $activity->loan_event_id = $eventId;
+                }
+                $activity->save();
             }
 
             foreach (array_values($data['needs'] ?? []) as $index => $need) {
