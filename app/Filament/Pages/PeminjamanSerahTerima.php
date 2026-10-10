@@ -243,6 +243,15 @@ class PeminjamanSerahTerima extends Page implements HasForms
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('downloadHandoverPdf')
+                ->label('Unduh Bukti PDF')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('gray')
+                ->url(fn (): string => route('loans.handover.pdf', [
+                    'type' => $this->type,
+                    'reservation' => $this->reservation()->getKey(),
+                ]))
+                ->openUrlInNewTab(),
             Actions\Action::make('confirmCheckout')
                 ->label('Konfirmasi Penerimaan')
                 ->icon('heroicon-o-check-badge')
