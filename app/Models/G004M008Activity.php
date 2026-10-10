@@ -41,6 +41,23 @@ class G004M008Activity extends Model
     protected static function booted(): void
     {
         static::creating(function (self $activity): void {
+            if (! $activity->loan_event_id) {
+                // Also covers legacy Filament resource creation and seed/imports.
+                // The event remains valid after an individual request is cancelled.
+                $parentEventId = $activity->related_activity_id
+                    ? self::query()->whereKey($activity->related_activity_id)->value('loan_event_id')
+                    : null;
+                $event = $parentEventId ?: LoanEvent::query()->create([
+                    'g001_m001_unit_id' => $activity->g001_m001_unit_id,
+                    'created_by' => $activity->user_id,
+                    'name' => $activity->name ?: 'Kegiatan tanpa nama',
+                    'description' => $activity->description,
+                    'start_time' => $activity->start_time,
+                    'end_time' => $activity->end_time,
+                ])->id;
+                $activity->loan_event_id = $event;
+            }
+
             $status = $activity->status ?: \App\Enums\ReservationStatus::Submitted->value;
 
             if ($status === \App\Enums\ReservationStatus::Submitted->value && ! $activity->hold_expires_at) {
@@ -58,6 +75,12 @@ class G004M008Activity extends Model
                 ]);
             }
         });
+    }
+
+    /** Independent master event, shared by any number of loan requests. */
+    public function loanEvent(): BelongsTo
+    {
+        return $this->belongsTo(LoanEvent::class, 'loan_event_id');
     }
 
     /** Canonical activity shared by related, independently processed requests. */

@@ -8,6 +8,7 @@ use App\Models\G003M006Room;
 use App\Models\G004M008Activity;
 use App\Models\G008M017Vehicle;
 use App\Services\LoanAvailabilityService;
+use App\Services\LoanEventService;
 use App\Services\LoanRequestService;
 use App\Services\LoanSettings;
 use Filament\Forms\Components\DateTimePicker;
@@ -62,6 +63,7 @@ class AjukanPeminjaman extends Page implements HasForms
             abort_unless(auth()->user()?->can('update', $draft), 403);
 
             $this->form->fill([
+                'loan_event_id' => $draft->loan_event_id,
                 'name' => $draft->name,
                 'description' => $draft->description,
                 'notes' => $draft->notes,
@@ -116,6 +118,21 @@ class AjukanPeminjaman extends Page implements HasForms
 
                 Section::make('Keperluan dan Jadwal')
                     ->schema([
+                        Select::make('loan_event_id')
+                            ->label('Gunakan kegiatan master (opsional)')
+                            ->options(fn (): array => app(LoanEventService::class)->options(auth()->user()))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->helperText('Kosongkan untuk membuat kegiatan master baru otomatis. Pilihan tidak tergantung status pengajuan sebelumnya.')
+                            ->afterStateUpdated(function ($state, Set $set): void {
+                                if ($state) {
+                                    $event = app(LoanEventService::class)->resolve(auth()->user(), $state);
+                                    $set('name', $event->name);
+                                    $set('description', $event->description ?: $event->name);
+                                }
+                            })
+                            ->columnSpanFull(),
                         TextInput::make('name')
                             ->label('Nama kegiatan / keperluan')
                             ->placeholder('Contoh: Rapat koordinasi bulanan')
