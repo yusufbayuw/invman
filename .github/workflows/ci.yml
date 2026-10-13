@@ -55,6 +55,22 @@ jobs:
           cache: npm
       - name: Install frontend dependencies
         run: npm ci
+      - name: Verify patched PostCSS selector parser
+        run: |
+          node -e '
+            const lock = require("./package-lock.json");
+            const paths = Object.keys(lock.packages || {}).filter((path) => path.endsWith("node_modules/postcss-selector-parser"));
+            const isPatched = (v) => {
+              const [major, minor, patch] = v.split(".").map(Number);
+              return major > 7 || (major === 7 && (minor > 1 || (minor === 1 && patch >= 6)));
+            };
+            const bad = paths.filter((path) => !isPatched(lock.packages[path].version));
+            if (!paths.length || bad.length) {
+              console.error("Unpatched or missing postcss-selector-parser", bad);
+              process.exit(1);
+            }
+            console.log("Patched postcss-selector-parser:", paths.map((path) => lock.packages[path].version).join(", "));
+          '
       - name: Audit production Node dependencies
         run: npm audit --omit=dev --audit-level=high
       # Development build tooling still has upstream advisories. Preserve a
