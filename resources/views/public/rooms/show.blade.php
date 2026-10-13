@@ -62,6 +62,8 @@
         </section>
     @endif
 
+    <p style="margin:0 0 24px"><a href="{{ route('tickets.report.room', ['room' => $room->qr_uuid]) }}" style="display:inline-block;background:#4f46e5;color:white;border-radius:12px;padding:12px 18px;font-weight:700;text-decoration:none">Laporkan Kerusakan Ruangan</a></p>
+
     <section class="panel">
         <div class="panel-head"><h2>Daftar Peminjaman</h2><p>Pemakaian yang sedang berlangsung dan jadwal berikutnya.</p></div>
         <div class="table-wrap">

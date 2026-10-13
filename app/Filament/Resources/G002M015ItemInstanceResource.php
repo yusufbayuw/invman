@@ -156,6 +156,26 @@ class G002M015ItemInstanceResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('laporkanKerusakan')
+                    ->label('Laporkan Kerusakan')
+                    ->icon('heroicon-o-ticket')
+                    ->url(fn (G002M015ItemInstance $record): string =>
+                        \App\Filament\Resources\TicketResource::getUrl('create', [
+                            'asset_type' => 'item_instance', 'asset_id' => $record->id,
+                            'location' => $record->room?->name ?: $record->name,
+                        ]))
+                    ->visible(fn (G002M015ItemInstance $record): bool =>
+                        \App\Filament\Resources\TicketResource::canCreate()
+                        && app(\App\Services\TicketService::class)->assetOptionLabel('item_instance', $record->id) !== null),
+                Tables\Actions\Action::make('qrKerusakan')
+                    ->label('QR Laporan')
+                    ->icon('heroicon-o-qr-code')
+                    ->url(fn (G002M015ItemInstance $record): string =>
+                        route('tickets.report.item.qr', ['item' => $record->id]))
+                    ->openUrlInNewTab()
+                    ->visible(fn (G002M015ItemInstance $record): bool =>
+                        \App\Filament\Resources\TicketResource::canCreate()
+                        && app(\App\Services\TicketService::class)->assetOptionLabel('item_instance', $record->id) !== null),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])

@@ -46,6 +46,18 @@ class ViewTicket extends ViewRecord
                     }
                     Notification::make()->title('Komentar ditambahkan')->success()->send();
                 }),
+            Actions\Action::make('linkAsset')
+                ->label('Hubungkan Inventaris')->icon('heroicon-o-link')
+                ->visible(fn (): bool => app(TicketVisibility::class)->canManage(auth()->user(), $this->getRecord())
+                    && ! in_array($this->getRecord()->status, ['closed', 'cancelled'], true)
+                    && ! $this->getRecord()->assets()->exists())
+                ->form(TicketResource::assetSearchFields())
+                ->action(function (array $data): void {
+                    app(TicketService::class)->linkAsset(
+                        $this->getRecord(), auth()->user(), $data['asset_type'], $data['asset_id'],
+                    );
+                    Notification::make()->title('Inventaris berhasil dihubungkan')->success()->send();
+                }),
             Actions\Action::make('assign')
                 ->label('Tugaskan')->icon('heroicon-o-user-plus')
                 ->visible(fn (): bool => app(TicketVisibility::class)->canManage(auth()->user(), $this->getRecord()))

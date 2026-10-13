@@ -49,11 +49,15 @@ class TicketService
         return (bool) ($user && ($user->isSarpras() || $user->isFacility() || $user->isAssetManager()));
     }
 
-    public function assetOptions(string $type, ?User $user = null): array
+    /**
+     * Server-side, permission-scoped search. Never preload hundreds of inventory records.
+     * Room filters are optional refinements and never grant additional visibility.
+     */
+    public function searchAssets(string $type, string $search = '', ?int $roomId = null, ?User $user = null): array
     {
         $user ??= auth()->user();
         $class = self::ASSETS[$type] ?? null;
-        if (! $class || ! $user) {
+        if (! $class || ! $user || mb_strlen($search) > 100) {
             return [];
         }
 
@@ -61,17 +65,19 @@ class TicketService
         if (! $user->isFacility()) {
             $unitId = $user->isSarpras() ? $user->g001_m001_unit_id : null;
             $managementIds = $user->itemManagements()->pluck('g002_m003_item_management.id');
-            $query->where(function ($visible) use ($unitId, $managementIds, $type): void {
+            $query->where(function ($visible) use ($type, $unitId, $managementIds): void {
                 if ($type === 'item_instance') {
                     if ($unitId) {
-                        $visible->orWhereHas('item', fn ($q) => $q->where('g001_m001_unit_id', $unitId));
-                        $visible->orWhere('g001_m001_unit_id', $unitId);
+                        $visible->orWhere('g001_m001_unit_id', $unitId)
+                            ->orWhereHas('item', fn ($q) => $q->where('g001_m001_unit_id', $unitId));
                     }
                     if ($managementIds->isNotEmpty()) {
                         $visible->orWhereHas('item', fn ($q) => $q->whereIn('g002_m003_item_management_id', $managementIds));
                     }
                 } else {
-                    if ($unitId) { $visible->orWhere('g001_m001_unit_id', $unitId); }
+                    if ($unitId) {
+                        $visible->orWhere('g001_m001_unit_id', $unitId);
+                    }
                     if ($managementIds->isNotEmpty()) {
                         $visible->orWhereIn('g002_m003_item_management_id', $managementIds);
                     }
@@ -82,10 +88,82 @@ class TicketService
             });
         }
 
-        return $query->orderBy('name')->limit(250)->get()
+        if ($roomId && in_array($type, ['item', 'item_instance'], true)) {
+            $query->where('g003_m006_room_id', $roomId);
+        }
+
+        $search = trim($search);
+        if ($search !== '') {
+            $query->where(function ($q) use ($search, $type): void {
+                $q->where('name', 'like', '%'.$search.'%');
+                $q->orWhere($type === 'vehicle' ? 'license_plate' : 'code', 'like', '%'.$search.'%');
+            });
+        }
+
+        return $query->orderBy('name')->limit(25)->get()
             ->mapWithKeys(fn ($asset): array => [
-                $asset->id => $asset->name.(filled($asset->code) ? ' · '.$asset->code : ''),
+                $asset->id => $asset->name.(filled($type === 'vehicle' ? $asset->license_plate : $asset->code)
+                    ? ' · '.($type === 'vehicle' ? $asset->license_plate : $asset->code) : ''),
             ])->all();
+    }
+
+    /** Kept as a limited compatibility entry point for other callers. */
+    public function assetOptions(string $type, ?User $user = null): array
+    {
+        return $this->searchAssets($type, '', null, $user);
+    }
+
+    public function assetOptionLabel(string $type, $id, ?User $user = null): ?string
+    {
+        try {
+            return $this->resolveAsset($type, $id, $user ?? auth()->user())['name'] ?? null;
+        } catch (ValidationException) {
+            return null;
+        }
+    }
+
+    public function searchRooms(string $search = '', ?User $user = null): array
+    {
+        $user ??= auth()->user();
+        if (! $user || mb_strlen($search) > 100) {
+            return [];
+        }
+        $query = G003M006Room::query();
+        if (! $user->isFacility()) {
+            $unit = $user->isSarpras() ? $user->g001_m001_unit_id : null;
+            $managers = $user->itemManagements()->pluck('g002_m003_item_management.id');
+            $query->where(function ($q) use ($unit, $managers): void {
+                if ($unit) {
+                    $q->orWhere('g001_m001_unit_id', $unit);
+                }
+                if ($managers->isNotEmpty()) {
+                    $q->orWhereIn('g002_m003_item_management_id', $managers);
+                }
+                if (! $unit && $managers->isEmpty()) {
+                    $q->whereRaw('1=0');
+                }
+            });
+        }
+        if (trim($search) !== '') {
+            $query->where('name', 'like', '%'.trim($search).'%');
+        }
+        return $query->orderBy('name')->limit(25)->pluck('name', 'id')->all();
+    }
+
+    public function roomOptionLabel($id, ?User $user = null): ?string
+    {
+        $user ??= auth()->user();
+        if (! $user || ! is_numeric($id)) {
+            return null;
+        }
+        $room = G003M006Room::query()->find((int) $id);
+        if (! $room || (! $user->isFacility()
+            && ! $user->belongsToUnit($room->g001_m001_unit_id)
+            && ! ($room->g002_m003_item_management_id
+                && $user->itemManagements()->whereKey($room->g002_m003_item_management_id)->exists()))) {
+            return null;
+        }
+        return $room->name;
     }
 
     private function resolveAsset(?string $type, $id, ?User $user): ?array
@@ -126,7 +204,18 @@ class TicketService
         if (! $category) {
             throw ValidationException::withMessages(['ticket_category_id' => 'Kategori tiket tidak aktif atau tidak valid.']);
         }
+        $location = trim((string) ($data['location'] ?? ''));
+        if (mb_strlen($location) > 255) {
+            throw ValidationException::withMessages(['location' => 'Lokasi maksimal 255 karakter.']);
+        }
+        $urgency = $data['reported_urgency'] ?? 'normal';
+        if (! in_array($urgency, ['normal', 'urgent', 'emergency'], true)) {
+            throw ValidationException::withMessages(['reported_urgency' => 'Tingkat urgensi tidak valid.']);
+        }
         $title = trim((string) ($data['title'] ?? ''));
+        if ($title === '' && $location !== '') {
+            $title = mb_substr($category->name.' - '.$location, 0, 255);
+        }
         $description = trim((string) ($data['description'] ?? ''));
         if (mb_strlen($title) < 5 || mb_strlen($title) > 255 || mb_strlen($description) < 10 || mb_strlen($description) > 10000) {
             throw ValidationException::withMessages(['title' => 'Judul 5–255 karakter dan deskripsi 10–10.000 karakter wajib diisi.']);
@@ -151,7 +240,7 @@ class TicketService
         $priority = $actor->isFacility() && in_array(($data['priority'] ?? ''), ['low','normal','high','critical'], true)
             ? $data['priority'] : 'normal';
 
-        $ticket = DB::transaction(function () use ($actor, $category, $asset, $activity, $title, $description, $priority, $unitId): Ticket {
+        $ticket = DB::transaction(function () use ($actor, $category, $asset, $activity, $title, $description, $priority, $unitId, $location, $urgency): Ticket {
             $ticket = Ticket::query()->create([
                 'number' => 'TKT-'.now()->format('Y').'-'.Str::upper(Str::random(12)),
                 'ticket_category_id' => $category->id,
@@ -161,6 +250,8 @@ class TicketService
                 'g004_m008_activity_id' => $activity?->id,
                 'title' => $title,
                 'description' => $description,
+                'location' => $location ?: null,
+                'reported_urgency' => $urgency,
                 'priority' => $priority,
                 'status' => 'open',
             ]);
@@ -174,6 +265,35 @@ class TicketService
         $this->notifyTeam($ticket);
 
         return $ticket;
+    }
+
+    /** Link a previously unknown inventory asset without changing its availability. */
+    public function linkAsset(Ticket $ticket, User $actor, string $type, $id): Ticket
+    {
+        if (! $this->visibility->canManage($actor, $ticket)) {
+            throw ValidationException::withMessages(['asset_id' => 'Tidak berwenang mengaitkan inventaris.']);
+        }
+        $asset = $this->resolveAsset($type, $id, $actor);
+        if ($ticket->g001_m001_unit_id && $asset['unit']
+            && $ticket->g001_m001_unit_id !== $asset['unit']) {
+            throw ValidationException::withMessages(['asset_id' => 'Inventaris berada di unit yang berbeda.']);
+        }
+        $record = DB::transaction(function () use ($ticket, $actor, $asset): Ticket {
+            $locked = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
+            if (! $this->visibility->canManage($actor, $locked)
+                || in_array($locked->status, ['closed', 'cancelled'], true)
+                || $locked->assets()->exists()) {
+                throw ValidationException::withMessages(['asset_id' => 'Tiket tidak dapat ditautkan ke aset lain.']);
+            }
+            $locked->assets()->create(['asset_type' => $asset['type'], 'asset_id' => $asset['id']]);
+            if (! $locked->g002_m003_item_management_id && $asset['management']) {
+                $locked->forceFill(['g002_m003_item_management_id' => $asset['management']])->save();
+            }
+            $this->event($locked, $actor->id, 'asset_linked', null, $asset['type'].':'.$asset['id']);
+            return $locked;
+        }, 3);
+        $this->notifyTeam($record);
+        return $record;
     }
 
     public function transition(Ticket $ticket, User $actor, string $to, ?string $notes = null): Ticket

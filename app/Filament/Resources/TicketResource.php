@@ -58,40 +58,81 @@ class TicketResource extends Resource
         return static::getEloquentQuery();
     }
 
+    /** Seven reporting categories; legacy ticket categories remain valid in stored history. */
+    public static function reportingCategoryOptions(): array
+    {
+        return TicketCategory::query()->where('is_active', true)->where('reporting_enabled', true)
+            ->orderBy('id')->pluck('name', 'id')->all();
+    }
+
+    public static function assetSearchFields(): array
+    {
+        return [
+            Forms\Components\Select::make('asset_type')->label('Jenis inventaris')
+                ->options(['item' => 'Jenis Barang', 'item_instance' => 'Barang Satuan', 'room' => 'Ruangan', 'vehicle' => 'Kendaraan'])
+                ->default(fn () => in_array(request()->query('asset_type'), ['item','item_instance','room','vehicle'], true)
+                    ? request()->query('asset_type') : null)
+                ->live()->required()
+                ->afterStateUpdated(fn (Forms\Set $set) => $set('asset_id', null)),
+            Forms\Components\Select::make('room_filter')->label('Saring berdasarkan ruangan (opsional)')
+                ->searchable()->getSearchResultsUsing(fn (string $search): array => app(TicketService::class)->searchRooms($search))
+                ->getOptionLabelUsing(fn ($value): ?string => app(TicketService::class)->roomOptionLabel($value))
+                ->visible(fn (Forms\Get $get): bool => in_array($get('asset_type'), ['item', 'item_instance'], true))
+                ->afterStateUpdated(fn (Forms\Set $set) => $set('asset_id', null))
+                ->live()->dehydrated(false),
+            Forms\Components\Select::make('asset_id')->label('Cari nama atau kode inventaris')
+                ->searchable()
+                ->getSearchResultsUsing(fn (string $search, Forms\Get $get): array =>
+                    app(TicketService::class)->searchAssets(
+                        (string) $get('asset_type'), $search, $get('room_filter') ? (int) $get('room_filter') : null,
+                    ))
+                ->getOptionLabelUsing(fn ($value, Forms\Get $get): ?string =>
+                    app(TicketService::class)->assetOptionLabel((string) $get('asset_type'), $value))
+                ->default(fn () => is_numeric(request()->query('asset_id')) ? request()->query('asset_id') : null)
+                ->helperText('Hanya hasil yang diizinkan; ketik nama atau kode, bukan memuat seluruh inventaris.')
+                ->required(),
+        ];
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Section::make('Laporan Baru')->schema([
-                Forms\Components\Select::make('ticket_category_id')
-                    ->label('Jenis laporan')
-                    ->options(fn (): array => TicketCategory::query()->where('is_active', true)
-                        ->orderBy('name')->pluck('name','id')->all())
-                    ->required()->searchable(),
-                Forms\Components\Select::make('asset_type')
-                    ->label('Terkait aset (opsional)')
-                    ->options([
-                        'item' => 'Barang (jenis)',
-                        'item_instance' => 'Barang satuan / kode inventaris',
-                        'room' => 'Ruangan',
-                        'vehicle' => 'Kendaraan',
-                    ])->live(),
-                Forms\Components\Select::make('asset_id')
-                    ->label('Nama aset')
-                    ->options(fn (Forms\Get $get): array => app(TicketService::class)
-                        ->assetOptions((string) ($get('asset_type') ?? '')))
-                    ->searchable()->visible(fn (Forms\Get $get): bool => filled($get('asset_type')))
-                    ->required(fn (Forms\Get $get): bool => filled($get('asset_type'))),
-                Forms\Components\TextInput::make('title')
-                    ->label('Judul masalah / permintaan')->required()->minLength(5)->maxLength(255)->columnSpanFull(),
-                Forms\Components\Textarea::make('description')
-                    ->label('Jelaskan masalah, lokasi dan dampaknya')
-                    ->required()->minLength(10)->maxLength(10000)->rows(5)->columnSpanFull(),
-                Forms\Components\FileUpload::make('files')->label('Foto/PDF (opsional)')
-                    ->multiple()->maxFiles(3)->maxSize(5120)
-                    ->acceptedFileTypes(['image/jpeg','image/png','application/pdf'])
-                    ->disk('local')->directory('tickets/attachments')->visibility('private')
-                    ->columnSpanFull(),
-            ])->columns(2),
+            Forms\Components\Section::make('Lapor Kerusakan')
+                ->description('Nama, unit, tanggal dan nomor tiket terisi otomatis. Tidak perlu mengetahui kode inventaris.')
+                ->schema([
+                    Forms\Components\Select::make('ticket_category_id')->label('Apa yang rusak?')
+                        ->options(fn (): array => static::reportingCategoryOptions())
+                        ->default(fn () => request()->query('asset_type') === 'room'
+                            ? TicketCategory::query()->where('slug', 'maintenance_building')->value('id') : null)
+                        ->required()->native(false),
+                    Forms\Components\TextInput::make('location')->label('Lokasi kerusakan')
+                        ->placeholder('Contoh: Gedung B, ruang rapat lantai 2')
+                        ->default(fn () => mb_substr((string) request()->query('location'), 0, 255))
+                        ->required()->maxLength(255),
+                    Forms\Components\Textarea::make('description')->label('Apa masalahnya?')
+                        ->placeholder('Jelaskan kondisi dan dampaknya secara singkat')
+                        ->required()->minLength(10)->maxLength(10000)->rows(3)->columnSpanFull(),
+                    Forms\Components\Radio::make('reported_urgency')->label('Seberapa mendesak?')
+                        ->options([
+                            'normal' => 'Biasa — tidak mengganggu kegiatan utama',
+                            'urgent' => 'Penting — perlu segera ditangani',
+                            'emergency' => 'Darurat — berbahaya atau mengganggu operasional utama',
+                        ])->default('normal')->required()->columnSpanFull(),
+                    Forms\Components\Toggle::make('link_asset')
+                        ->label('Saya mengetahui barang/ruangan yang terdaftar di inventaris')
+                        ->helperText('Opsional. Jika tidak tahu, laporkan saja; pengelola dapat mengaitkannya nanti.')
+                        ->default(fn () => request()->has('asset_id'))->live()->columnSpanFull(),
+                    Forms\Components\Group::make(static::assetSearchFields())
+                        ->visible(fn (Forms\Get $get): bool => (bool) $get('link_asset'))
+                        ->dehydrated(fn (Forms\Get $get): bool => (bool) $get('link_asset'))
+                        ->columns(2)->columnSpanFull(),
+                    Forms\Components\Hidden::make('title'),
+                    Forms\Components\FileUpload::make('files')->label('Foto kerusakan (opsional)')
+                        ->multiple()->maxFiles(3)->maxSize(5120)
+                        ->acceptedFileTypes(['image/jpeg','image/png','application/pdf'])
+                        ->disk('local')->directory('tickets/attachments')->visibility('private')
+                        ->columnSpanFull(),
+                ])->columns(2),
         ]);
     }
 
@@ -101,6 +142,7 @@ class TicketResource extends Resource
             Tables\Columns\TextColumn::make('number')->label('Tiket')->searchable()->copyable(),
             Tables\Columns\TextColumn::make('title')->label('Masalah')->searchable()->limit(55)->wrap(),
             Tables\Columns\TextColumn::make('category.name')->label('Kategori'),
+            Tables\Columns\TextColumn::make('location')->label('Lokasi')->limit(40)->toggleable(),
             Tables\Columns\TextColumn::make('status')->label('Status')->badge(),
             Tables\Columns\TextColumn::make('priority')->label('Prioritas')->badge()
                 ->color(fn (string $state): string => match ($state) {
@@ -135,6 +177,8 @@ class TicketResource extends Resource
                 Infolists\Components\TextEntry::make('category.name')->label('Kategori'),
                 Infolists\Components\TextEntry::make('title')->label('Judul')->columnSpanFull(),
                 Infolists\Components\TextEntry::make('description')->label('Laporan')->columnSpanFull(),
+                Infolists\Components\TextEntry::make('location')->label('Lokasi')->placeholder('-'),
+                Infolists\Components\TextEntry::make('reported_urgency')->label('Urgensi pelapor')->badge()->placeholder('-'),
                 Infolists\Components\TextEntry::make('reporter.name')->label('Pelapor'),
                 Infolists\Components\TextEntry::make('unit.name')->label('Unit')->placeholder('-'),
                 Infolists\Components\TextEntry::make('management.name')->label('Pengelola')->placeholder('-'),
