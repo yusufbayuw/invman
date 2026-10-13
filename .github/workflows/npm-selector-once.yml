@@ -1,0 +1,70 @@
+name: One-time npm selector remediation
+
+on:
+  push:
+    branches:
+      - security/npm-selector-parser-remediation-20261013
+
+permissions:
+  contents: write
+
+jobs:
+  resolve-and-compare:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          extensions: mbstring, pdo_sqlite, sqlite3, sodium, gd, zip, intl, fileinfo, bcmath
+          coverage: none
+      - name: Install framework dependencies for Filament Tailwind preset
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Resolve npm lockfile with targeted parser override
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci
+          npm run build
+      - name: Compare bundled CSS with baseline main
+        run: |
+          mkdir -p /tmp/invman-old
+          git worktree add --detach /tmp/invman-old origin/main
+          ln -s "$GITHUB_WORKSPACE/vendor" /tmp/invman-old/vendor
+          (
+            cd /tmp/invman-old
+            npm ci
+            npm run build
+          )
+          current_css="$(find public/build/assets -maxdepth 1 -name '*.css' -type f | head -n 1)"
+          old_css="$(find /tmp/invman-old/public/build/assets -maxdepth 1 -name '*.css' -type f | head -n 1)"
+          echo "Current CSS: $current_css"
+          echo "Baseline CSS: $old_css"
+          sha256sum "$current_css" "$old_css"
+          cmp "$current_css" "$old_css" || {
+            echo "::error::CSS output changed from base branch; manual review required"
+            exit 1
+          }
+          echo "Bundled CSS is byte-for-byte identical to main."
+      - name: Collect dependency audit without hiding unresolved advisories
+        run: |
+          npm audit --audit-level=high || true
+      - name: Commit and push lockfile only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "build(security): resolve fixed selector parser lockfile"
+            git push origin HEAD:security/npm-selector-parser-remediation-20261013
+          else
+            echo "No lockfile changes"
+          fi
