@@ -92,19 +92,30 @@ class TicketService
             $query->where('g003_m006_room_id', $roomId);
         }
 
+        // Not every inventory table has a code column. Rooms are searched
+        // and displayed by name only; vehicles use their license plate.
+        $identifierColumn = match ($type) {
+            'item', 'item_instance' => 'code',
+            'vehicle' => 'license_plate',
+            default => null,
+        };
+
         $search = trim($search);
         if ($search !== '') {
-            $query->where(function ($q) use ($search, $type): void {
+            $query->where(function ($q) use ($search, $identifierColumn): void {
                 $q->where('name', 'like', '%'.$search.'%');
-                $q->orWhere($type === 'vehicle' ? 'license_plate' : 'code', 'like', '%'.$search.'%');
+                if ($identifierColumn !== null) {
+                    $q->orWhere($identifierColumn, 'like', '%'.$search.'%');
+                }
             });
         }
 
         return $query->orderBy('name')->limit(25)->get()
-            ->mapWithKeys(fn ($asset): array => [
-                $asset->id => $asset->name.(filled($type === 'vehicle' ? $asset->license_plate : $asset->code)
-                    ? ' · '.($type === 'vehicle' ? $asset->license_plate : $asset->code) : ''),
-            ])->all();
+            ->mapWithKeys(function ($asset) use ($identifierColumn): array {
+                $identifier = $identifierColumn !== null ? $asset->{$identifierColumn} : null;
+
+                return [$asset->id => $asset->name.(filled($identifier) ? ' · '.$identifier : '')];
+            })->all();
     }
 
     /** Kept as a limited compatibility entry point for other callers. */
