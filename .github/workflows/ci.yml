@@ -26,19 +26,10 @@ jobs:
         run: composer validate --no-check-publish
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
-      # Existing composer.lock has published advisories. Surface them on every
-      # run without disabling functional regression tests; track remediation
-      # separately and promote updated locks only after compatibility testing.
-      - name: Audit production PHP dependencies (existing advisory baseline)
-        id: composer_audit
-        continue-on-error: true
+      # Laravel 12 remediation cleared the previous production PHP advisories.
+      # Fail closed if a subsequent lockfile introduces a published advisory.
+      - name: Audit production PHP dependencies (required)
         run: composer audit --locked --no-dev --abandoned=ignore --format=table
-      - name: Flag outstanding PHP vulnerability findings
-        if: ${{ steps.composer_audit.outcome == 'failure' }}
-        run: |
-          echo "::warning::Existing composer.lock contains vulnerable packages. Review the audit report and security remediation issue."
-          echo "### ⚠️ Dependency security debt" >> "$GITHUB_STEP_SUMMARY"
-          echo "Composer audit found published advisories in the current lockfile. This check is advisory while dependency upgrades and compatibility testing are pending. **Do not interpret green tests as a clean dependency audit.**" >> "$GITHUB_STEP_SUMMARY"
       - name: Generate CI-only encryption key
         run: |
           cp .env.example .env
