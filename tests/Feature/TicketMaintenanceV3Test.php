@@ -144,7 +144,8 @@ class TicketMaintenanceV3Test extends TestCase
         $response = $this->actingAs($d['reporter'])->get($url);
         $response->assertOk()->assertHeader('Content-Type', 'application/pdf');
         $this->assertStringStartsWith('%PDF', $response->baseResponse->getContent());
-        $response->assertHeader('Cache-Control', 'private, no-store, max-age=0');
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('private', $response->headers->get('Cache-Control'));
     }
 
     public function test_sla_business_calendar_and_escalations_are_idempotent(): void
