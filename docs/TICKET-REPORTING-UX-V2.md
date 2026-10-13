@@ -8,6 +8,8 @@ Jika identitas inventaris tidak diketahui, buat tiket tanpa aset. Pengelola yang
 
 QR jadwal ruangan yang sudah ada tetap membuka halaman jadwal publik. Tombol Laporkan Kerusakan Ruangan mengarahkan ke halaman tiket setelah login. Jika pemindai tidak berhak mengakses inventaris ruangan, hanya lokasi yang diprefill.
 
+Kategori awal dapat diaktifkan/nonaktifkan melalui menu admin **Kategori Laporan**. Pengubahan kode kategori lama dan penghapusan kategori ditutup agar relasi dan otomatisasi lama tetap aman. Kategori yang ditambah admin dapat tampil tanpa perubahan kode.
+
 Kategori tiket sebelumnya tetap disimpan untuk tiket/otomatisasi lama. Kolom tickets.location dan tickets.reported_urgency nullable. Urgensi pelapor tidak mengubah prioritas internal sampai triase dilakukan.
 
 Untuk **Barang Satuan**, gunakan aksi **QR Laporan** untuk membuka kode QR PNG sesuai barang tersebut; ketika dipindai oleh akun berwenang, form tiket terbuka dengan inventaris dan lokasi terisi. File QR dibuat saat diminta dan tidak disimpan ribuan salinan. Aksi **Laporkan Kerusakan** tersedia langsung di baris barang.

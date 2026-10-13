@@ -51,6 +51,12 @@ class TicketReportingUxTest extends TestCase
     {
         $f = $this->fixture();
         $category = TicketCategory::query()->where('slug', 'maintenance_hvac')->firstOrFail();
+        $this->assertCount(7, TicketResource::reportingCategoryOptions());
+        $newCategory = TicketCategory::query()->create([
+            'name' => 'Rambu dan Marka', 'slug' => 'maintenance_signage',
+            'is_active' => true, 'reporting_enabled' => true,
+        ]);
+        $this->assertArrayHasKey($newCategory->id, TicketResource::reportingCategoryOptions());
         $service = app(TicketService::class);
         $ticket = $service->open($f['reporter'], [
             'ticket_category_id' => $category->id,

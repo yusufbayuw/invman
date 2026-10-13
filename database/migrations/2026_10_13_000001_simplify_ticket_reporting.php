@@ -14,6 +14,10 @@ return new class extends Migration
             $table->string('reported_urgency', 16)->nullable()->after('location');
         });
 
+        Schema::table('ticket_categories', function (Blueprint $table): void {
+            $table->boolean('reporting_enabled')->default(false)->after('is_active');
+        });
+
         // Preserve legacy business categories and historical tickets.
         foreach ([
             'Bangunan & Interior' => 'maintenance_building',
@@ -28,6 +32,7 @@ return new class extends Migration
                 'name' => $name,
                 'slug' => $slug,
                 'is_active' => true,
+                'reporting_enabled' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -38,6 +43,9 @@ return new class extends Migration
     {
         Schema::table('tickets', function (Blueprint $table): void {
             $table->dropColumn(['location', 'reported_urgency']);
+        });
+        Schema::table('ticket_categories', function (Blueprint $table): void {
+            $table->dropColumn('reporting_enabled');
         });
         // Do not delete categories: they may be referenced by persisted tickets.
     }

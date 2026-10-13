@@ -61,10 +61,8 @@ class TicketResource extends Resource
     /** Seven reporting categories; legacy ticket categories remain valid in stored history. */
     public static function reportingCategoryOptions(): array
     {
-        return TicketCategory::query()->where('is_active', true)->whereIn('slug', [
-            'maintenance_building', 'maintenance_electrical', 'maintenance_hvac',
-            'maintenance_plumbing', 'maintenance_equipment', 'maintenance_vehicle', 'maintenance_other',
-        ])->orderBy('id')->pluck('name', 'id')->all();
+        return TicketCategory::query()->where('is_active', true)->where('reporting_enabled', true)
+            ->orderBy('id')->pluck('name', 'id')->all();
     }
 
     public static function assetSearchFields(): array
