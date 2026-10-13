@@ -25,6 +25,12 @@ class ItemReservationAllocationService
             ]);
         }
 
+        $safety = app(TicketAssetSafetyService::class);
+        if ($safety->isBlocked('item', (int) $reservation->g002_m007_item_id)
+            || $allocatedIds->intersect($safety->blockedItemInstanceIds((int) $reservation->g002_m007_item_id))->isNotEmpty()) {
+            throw ValidationException::withMessages(['status' => 'Barang sedang ditahan untuk pemeriksaan/perbaikan.']);
+        }
+
         if ($allocatedIds->isNotEmpty()) {
             $invalidAllocation = G002M015ItemInstance::query()
                 ->whereKey($allocatedIds)
@@ -51,6 +57,7 @@ class ItemReservationAllocationService
                 ->where('is_borrowable', true)
                 ->where('is_available', true)
                 ->whereNotIn('id', $allocatedIds)
+                ->whereNotIn('id', $safety->blockedItemInstanceIds((int) $reservation->g002_m007_item_id))
                 ->orderBy('id')
                 ->lockForUpdate()
                 ->limit($remaining)

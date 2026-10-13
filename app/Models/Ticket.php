@@ -33,6 +33,7 @@ class Ticket extends Model
     public function management(): BelongsTo { return $this->belongsTo(G002M003ItemManagement::class, 'g002_m003_item_management_id'); }
     public function assignee(): BelongsTo { return $this->belongsTo(User::class, 'assigned_to'); }
     public function activity(): BelongsTo { return $this->belongsTo(G004M008Activity::class, 'g004_m008_activity_id'); }
+    public function maintenance(): \Illuminate\Database\Eloquent\Relations\HasOne { return $this->hasOne(TicketMaintenanceCase::class, 'ticket_id'); }
     public function assets(): HasMany { return $this->hasMany(TicketAssetLink::class); }
     public function comments(): HasMany { return $this->hasMany(TicketComment::class); }
     public function attachments(): HasMany { return $this->hasMany(TicketAttachment::class); }

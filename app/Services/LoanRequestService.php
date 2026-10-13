@@ -507,6 +507,26 @@ class LoanRequestService
                 ]);
             }
 
+            // A previously approved reservation must not bypass a newly raised
+            // maintenance safety hold at the moment of actual handover.
+            if (in_array($status, [ReservationStatus::Approved, ReservationStatus::CheckedOut], true)) {
+                $safety = app(TicketAssetSafetyService::class);
+                $blocked = match (true) {
+                    $reservation instanceof G005M009ItemReservation =>
+                        $safety->isBlocked('item', (int) $reservation->g002_m007_item_id),
+                    $reservation instanceof G005M010RoomReservation =>
+                        $safety->isBlocked('room', (int) $reservation->g003_m006_room_id),
+                    $reservation instanceof G005M019VehicleReservation =>
+                        $safety->isBlocked('vehicle', (int) $reservation->g008_m017_vehicle_id),
+                    default => false,
+                };
+                if ($blocked) {
+                    throw ValidationException::withMessages([
+                        'status' => 'Aset sedang ditahan karena laporan kerusakan. Serah-terima/persetujuan diblokir.',
+                    ]);
+                }
+            }
+
             if ($reservation instanceof G005M019VehicleReservation
                 && in_array($status, [ReservationStatus::Approved, ReservationStatus::CheckedOut], true)) {
                 $vehicle = $reservation->vehicle;

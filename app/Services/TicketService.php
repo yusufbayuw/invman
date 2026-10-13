@@ -259,6 +259,9 @@ class TicketService
                 $ticket->assets()->create(['asset_type' => $asset['type'], 'asset_id' => $asset['id']]);
             }
             $this->event($ticket, $actor->id, 'created', null, 'open');
+            if ($category->reporting_enabled) {
+                app(TicketMaintenanceService::class)->initialize($ticket);
+            }
             return $ticket;
         }, 3);
 
@@ -289,6 +292,9 @@ class TicketService
             if (! $locked->g002_m003_item_management_id && $asset['management']) {
                 $locked->forceFill(['g002_m003_item_management_id' => $asset['management']])->save();
             }
+            if ($locked->maintenance && ! $locked->maintenance->asset_hold_at) {
+                $locked->maintenance->forceFill(['asset_hold_at' => now()])->save();
+            }
             $this->event($locked, $actor->id, 'asset_linked', null, $asset['type'].':'.$asset['id']);
             return $locked;
         }, 3);
@@ -300,6 +306,9 @@ class TicketService
     {
         return DB::transaction(function () use ($ticket, $actor, $to, $notes): Ticket {
             $record = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
+            if ($record->maintenance()->exists()) {
+                throw ValidationException::withMessages(['status' => 'Gunakan langkah perawatan V3 untuk tiket ini.']);
+            }
             if (! $this->visibility->canView($actor, $record)
                 || ! in_array($to, self::TRANSITIONS[$record->status] ?? [], true)) {
                 throw ValidationException::withMessages(['status' => 'Perubahan status tiket tidak diizinkan.']);
@@ -328,7 +337,8 @@ class TicketService
 
     public function availableTransitions(Ticket $ticket, User $actor): array
     {
-        if (! $this->visibility->canView($actor, $ticket)) {
+        if (! $this->visibility->canView($actor, $ticket)
+            || $ticket->maintenance()->exists()) {
             return [];
         }
         $manager = $this->visibility->canManage($actor, $ticket);
@@ -350,6 +360,9 @@ class TicketService
     {
         return DB::transaction(function () use ($ticket, $actor, $userId, $priority): Ticket {
             $record = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
+            if ($record->maintenance()->exists()) {
+                throw ValidationException::withMessages(['assigned_to' => 'Persetujuan dan penugasan ditangani workflow perawatan V3.']);
+            }
             if (! $this->visibility->canManage($actor, $record) || in_array($record->status, ['closed','cancelled'], true)) {
                 throw ValidationException::withMessages(['assigned_to' => 'Penugasan tidak diizinkan.']);
             }
@@ -478,6 +491,7 @@ class TicketService
             ]);
             $ticket->assets()->create(['asset_type' => $assetType, 'asset_id' => $assetId]);
             $this->event($ticket, auth()->id(), 'created_from_return', null, 'open', $sourceKey);
+            app(TicketMaintenanceService::class)->initialize($ticket);
             DB::afterCommit(fn () => $this->notifyTeam($ticket));
         }
     }
