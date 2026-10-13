@@ -4,7 +4,8 @@ use App\Http\Middleware\EnsureApplicationIsLicensed;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
+use App\Http\Middleware\ConfigureTrustedProxies;
+use Illuminate\Http\Middleware\TrustProxies;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,15 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Restrict X-Forwarded-* headers to explicitly trusted reverse proxies.
-        $trustedProxies = array_values(array_filter(array_map('trim', explode(',', (string) config('security.trusted_proxies', '')))));
-        $middleware->trustProxies(
-            at: $trustedProxies,
-            headers: Request::HEADER_X_FORWARDED_FOR
-                | Request::HEADER_X_FORWARDED_PORT
-                | Request::HEADER_X_FORWARDED_PROTO
-                | Request::HEADER_X_FORWARDED_PREFIX,
-        );
+        // The HTTP kernel is resolved before the config repository is bootstrapped.
+        // Read security.trusted_proxies at request-time, not in this callback.
+        $middleware->replace(TrustProxies::class, ConfigureTrustedProxies::class);
         $middleware->prepend(EnsureApplicationIsLicensed::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
