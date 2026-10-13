@@ -208,12 +208,31 @@ class TicketService
 
     public function open(User $actor, array $data): Ticket
     {
+        return $this->createTicket($actor, $data, false);
+    }
+
+    /**
+     * Explicit compatibility entry point for historical V1 integrations only.
+     * New interactive reporting must use open(), which enforces V3 categories.
+     */
+    public function openLegacy(User $actor, array $data): Ticket
+    {
+        return $this->createTicket($actor, $data, true);
+    }
+
+    private function createTicket(User $actor, array $data, bool $allowLegacy): Ticket
+    {
         if (! $this->canCreate($actor)) {
             throw ValidationException::withMessages(['ticket' => 'Akun tidak berwenang membuat tiket.']);
         }
         $category = TicketCategory::query()->where('is_active', true)->find($data['ticket_category_id'] ?? null);
         if (! $category) {
             throw ValidationException::withMessages(['ticket_category_id' => 'Kategori tiket tidak aktif atau tidak valid.']);
+        }
+        if (! $allowLegacy && ! $category->reporting_enabled) {
+            throw ValidationException::withMessages([
+                'ticket_category_id' => 'Kategori lama hanya untuk kompatibilitas tiket V1. Pilih kategori laporan perawatan yang aktif.',
+            ]);
         }
         $location = trim((string) ($data['location'] ?? ''));
         if (mb_strlen($location) > 255) {

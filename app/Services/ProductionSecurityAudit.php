@@ -48,6 +48,10 @@ final class ProductionSecurityAudit
             $issues[] = 'TRUSTED_PROXIES tidak boleh mengizinkan semua alamat.';
         }
 
+        if (config('loans.allow_legacy_direct_checkout')) {
+            $issues[] = 'LOAN_ALLOW_LEGACY_DIRECT_CHECKOUT harus false di production.';
+        }
+
         if (config('security.seed_demo_users')) {
             $issues[] = 'SEED_DEMO_USERS harus false di production.';
         }

@@ -50,6 +50,7 @@ class Login extends BaseAuth
         return [
             $login_type => $data['email'],
             'password'  => $data['password'],
+            'is_enabled' => true,
         ];
     }
 

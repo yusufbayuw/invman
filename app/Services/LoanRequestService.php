@@ -500,6 +500,14 @@ class LoanRequestService
             }
 
             if ($status === ReservationStatus::CheckedOut
+                && ! $reservation->outboundReceipt
+                && ! config('loans.allow_legacy_direct_checkout', false)) {
+                throw ValidationException::withMessages([
+                    'status' => 'Serah-terima wajib menggunakan konfirmasi dua pihak atau Penyerahan Khusus dengan alasan yang tercatat.',
+                ]);
+            }
+
+            if ($status === ReservationStatus::CheckedOut
                 && $reservation->outboundReceipt
                 && ! $reservation->outboundReceipt->completed_at) {
                 throw ValidationException::withMessages([

@@ -141,6 +141,7 @@ class ProductionHardeningTest extends TestCase
         config()->set('security.trusted_proxies', '127.0.0.1,::1');
         config()->set('security.seed_demo_users', false);
         config()->set('security.seed_demo_password', null);
+        config()->set('loans.allow_legacy_direct_checkout', false);
         $this->assertSame([], app(ProductionSecurityAudit::class)->findings());
     }
 }

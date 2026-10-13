@@ -6,6 +6,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
 use Filament\Pages\Auth\EditProfile as BaseEditProfile;
 use Illuminate\Support\Str;
+use App\Support\AccountPasswordPolicy;
 
 class EditProfile extends BaseEditProfile
 {
@@ -35,7 +36,8 @@ class EditProfile extends BaseEditProfile
             $this->getEmailFormComponent()
                 ->label('Email'),
             $this->getPasswordFormComponent()
-                ->label('Kata sandi baru'),
+                ->label('Kata sandi baru')
+                ->rules([AccountPasswordPolicy::rule()]),
             $this->getPasswordConfirmationFormComponent()
                 ->label('Konfirmasi kata sandi baru'),
         ]);

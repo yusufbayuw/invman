@@ -218,7 +218,7 @@ class TicketMaintenanceV3Test extends TestCase
     {
         $d = $this->context();
         $category = TicketCategory::query()->where('slug', 'damage_room')->firstOrFail();
-        $legacy = app(TicketService::class)->open($d['reporter'], [
+        $legacy = app(TicketService::class)->openLegacy($d['reporter'], [
             'ticket_category_id' => $category->id,
             'title' => 'Kerusakan pintu',
             'description' => 'Engsel pintu rusak dan sulit dibuka.',
