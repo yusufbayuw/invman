@@ -37,7 +37,7 @@ php artisan serve
 
 Do not treat the example environment as a production-ready configuration.
 Never publish `.env` or live license tokens. License details:
-[offline license documentation](docs/LICENSE-ENFORCEMENT.md).
+[offline license documentation](docs/LISENSI.md).
 
 ## Initial admin and operations
 
