@@ -7,7 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "alperenersoy/filament-export": "*",
+        "alperenersoy/filament-export": "^3.0",
         "bezhansalleh/filament-shield": "^3.3",
         "coderflex/filament-turnstile": "^2.2",
         "coolsam/flatpickr": "^4.1",
