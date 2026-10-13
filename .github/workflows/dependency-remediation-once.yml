@@ -25,8 +25,8 @@ jobs:
           extensions: mbstring, pdo_sqlite, sqlite3, sodium, gd, zip, intl, fileinfo, bcmath, xml, dom, simplexml
       - name: Resolve latest compatible Composer packages
         run: |
-          composer validate --no-check-publish
           composer update --with-all-dependencies --no-interaction --prefer-dist --no-progress
+          composer validate --no-check-publish
       - name: Check remaining Composer advisories
         run: composer audit --locked --no-dev --abandoned=ignore --format=summary || true
       - uses: actions/setup-node@v4
