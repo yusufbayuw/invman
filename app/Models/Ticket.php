@@ -15,7 +15,7 @@ class Ticket extends Model
     protected $fillable = [
         'number', 'ticket_category_id', 'reporter_id', 'g001_m001_unit_id',
         'g002_m003_item_management_id', 'assigned_to', 'g004_m008_activity_id',
-        'source_key', 'title', 'description', 'priority', 'status', 'resolved_at', 'closed_at',
+        'source_key', 'title', 'description', 'location', 'reported_urgency', 'priority', 'status', 'resolved_at', 'closed_at',
     ];
 
     protected $casts = ['resolved_at' => 'datetime', 'closed_at' => 'datetime'];
