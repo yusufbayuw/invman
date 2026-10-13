@@ -27,35 +27,46 @@ class LoanAvailabilityService
             ->groupBy('g002_m007_item_id')
             ->pluck('reserved_quantity', 'g002_m007_item_id');
 
-        return G002M007Item::query()
+        $options = [];
+        $safety = app(TicketAssetSafetyService::class);
+
+        // Eager-load inventory counts and check safety holds in batches.
+        // Never perform one or two hold queries for *each* item row.
+        G002M007Item::query()
             ->where('is_borrowable', true)
             ->with('unit')
             ->withCount([
                 'item_instance',
                 'item_instance as borrowable_instance_count' => fn (Builder $query) => $query->where('is_borrowable', true),
             ])
-            ->orderBy('name')
-            ->get()
-            ->mapWithKeys(function (G002M007Item $item) use ($reserved) {
-                $safety = app(TicketAssetSafetyService::class);
-                if ($safety->isBlocked('item', (int) $item->id)) {
-                    return [];
+            ->orderBy('name')->orderBy('id')
+            ->chunk(200, function ($items) use (&$options, $reserved, $safety): void {
+                $ids = $items->modelKeys();
+                $blocked = array_fill_keys($safety->blockedAssetIds('item', $ids), true);
+                $blockedQuantities = $safety->blockedBorrowableItemQuantities($ids);
+
+                foreach ($items as $item) {
+                    if (isset($blocked[$item->id])) {
+                        continue;
+                    }
+
+                    $stock = $item->item_instance_count > 0
+                        ? (int) $item->borrowable_instance_count
+                        : (int) ($item->quantity ?? 0);
+                    $available = max(0, $stock
+                        - (int) ($blockedQuantities[$item->id] ?? 0)
+                        - (int) ($reserved[$item->id] ?? 0));
+
+                    if ($available < 1) {
+                        continue;
+                    }
+
+                    $unit = $item->unit?->name ? " · {$item->unit->name}" : '';
+                    $options[$item->id] = "{$item->name}{$unit} · {$available} tersedia";
                 }
-                $stock = $item->item_instance_count > 0
-                    ? (int) $item->borrowable_instance_count
-                    : (int) ($item->quantity ?? 0);
-                $available = max(0, $stock - $safety->blockedItemQuantity((int) $item->id)
-                    - (int) ($reserved[$item->id] ?? 0));
+            });
 
-                if ($available < 1) {
-                    return [];
-                }
-
-                $unit = $item->unit?->name ? " · {$item->unit->name}" : '';
-
-                return [$item->id => "{$item->name}{$unit} · {$available} tersedia"];
-            })
-            ->all();
+        return $options;
     }
 
     public function roomOptions(Carbon|string|null $startTime, Carbon|string|null $endTime): array
@@ -65,25 +76,32 @@ class LoanAvailabilityService
         }
 
         [$start, $end] = $period;
+        $options = [];
+        $safety = app(TicketAssetSafetyService::class);
 
-        return G003M006Room::query()
+        G003M006Room::query()
             ->where('is_borrowable', true)
             ->whereDoesntHave('room_reservation', fn (Builder $query) => $this->overlap($query, $start, $end))
             ->with(['floor.building', 'unit'])
-            ->orderBy('name')
-            ->get()
-            ->mapWithKeys(function (G003M006Room $room) {
-                if (app(TicketAssetSafetyService::class)->isBlocked('room', (int) $room->id)) {
-                    return [];
-                }
-                $location = collect([
-                    $room->floor?->building?->name,
-                    $room->floor?->name,
-                ])->filter()->implode(' · ');
+            ->orderBy('name')->orderBy('id')
+            ->chunk(200, function ($rooms) use (&$options, $safety): void {
+                $blocked = array_fill_keys($safety->blockedAssetIds('room', $rooms->modelKeys()), true);
 
-                return [$room->id => trim("{$room->name} · {$location}", ' ·')];
-            })
-            ->all();
+                foreach ($rooms as $room) {
+                    if (isset($blocked[$room->id])) {
+                        continue;
+                    }
+
+                    $location = collect([
+                        $room->floor?->building?->name,
+                        $room->floor?->name,
+                    ])->filter()->implode(' · ');
+
+                    $options[$room->id] = trim("{$room->name} · {$location}", ' ·');
+                }
+            });
+
+        return $options;
     }
 
     public function vehicleOptions(Carbon|string|null $startTime, Carbon|string|null $endTime): array
@@ -93,22 +111,28 @@ class LoanAvailabilityService
         }
 
         [$start, $end] = $period;
+        $options = [];
+        $safety = app(TicketAssetSafetyService::class);
 
-        return G008M017Vehicle::query()
+        G008M017Vehicle::query()
             ->where('is_borrowable', true)
             ->whereDoesntHave('vehicle_reservation', fn (Builder $query) => $this->overlap($query, $start, $end))
             ->with('unit')
-            ->orderBy('name')
-            ->get()
-            ->mapWithKeys(function (G008M017Vehicle $vehicle) {
-                if (app(TicketAssetSafetyService::class)->isBlocked('vehicle', (int) $vehicle->id)) {
-                    return [];
-                }
-                $plate = $vehicle->license_plate ? " · {$vehicle->license_plate}" : '';
+            ->orderBy('name')->orderBy('id')
+            ->chunk(200, function ($vehicles) use (&$options, $safety): void {
+                $blocked = array_fill_keys($safety->blockedAssetIds('vehicle', $vehicles->modelKeys()), true);
 
-                return [$vehicle->id => "{$vehicle->name}{$plate}"];
-            })
-            ->all();
+                foreach ($vehicles as $vehicle) {
+                    if (isset($blocked[$vehicle->id])) {
+                        continue;
+                    }
+
+                    $plate = $vehicle->license_plate ? " · {$vehicle->license_plate}" : '';
+                    $options[$vehicle->id] = "{$vehicle->name}{$plate}";
+                }
+            });
+
+        return $options;
     }
 
     public function reservedItemQuantity(int $itemId, Carbon $start, Carbon $end, bool $locking = false): int

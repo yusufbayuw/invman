@@ -26,6 +26,8 @@ jobs:
         run: composer validate --no-check-publish
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Audit production PHP dependencies (lockfile)
+        run: composer audit --locked --no-dev --abandoned=ignore
       - name: Generate CI-only encryption key
         run: |
           cp .env.example .env
@@ -51,6 +53,8 @@ jobs:
           cache: npm
       - name: Install frontend dependencies
         run: npm ci
+      - name: Audit production Node dependencies
+        run: npm audit --omit=dev --audit-level=high
       - name: Build Vite assets
         run: npm run build
       - name: Run Laravel tests

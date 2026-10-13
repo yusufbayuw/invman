@@ -1,66 +1,120 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# InvMan — LIST: Inventory, Loans, Facilities & Ticketing
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+[![InvMan Quality Guard](https://github.com/yusufbayuw/invman/actions/workflows/ci.yml/badge.svg)](https://github.com/yusufbayuw/invman/actions/workflows/ci.yml)
 
-## About Laravel
+A Laravel 11 + Filament 3 system for facility and asset inventory, requests/loans,
+vehicle crews, QR-based handover, maintenance/ticketing, and audit history.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Item master + instance inventory; rooms, units, floors, buildings and vehicles.
+- Full and quick loan requests; availability, scheduled holds, approvals, borrower/manager handover and returns.
+- Vehicle driver assignment and internal assistant/kenek.
+- Private ticket attachments and PDF handover/maintenance evidence, with permission-scoped access.
+- V3 maintenance: approval, technician acceptance, diagnostics, materials, requester verification, facility signoff, SLA escalation and asset safety holds.
+- Historical V1 tickets are preserved. New reports use enabled V3 categories.
+- Database/push notifications, Chatify, Filament access roles and offline license checks.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Stack and prerequisites
 
-## Learning Laravel
+- PHP **8.2+** with extensions appropriate for Composer/Laravel (CI: PHP 8.3).
+- Composer 2, Node.js 22 and npm.
+- MySQL 8 for production (CI tests SQLite and checks MySQL migration/foreign keys).
+- A working Laravel **queue worker and scheduler**, plus valid application license.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Local setup
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+# Configure DB_*, APP_URL, LICENSE_* and other relevant variables in .env.
+php artisan migrate
+npm ci
+npm run build
+php artisan serve
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Do not treat the example environment as a production-ready configuration.
+Never publish `.env` or live license tokens. License details:
+[offline license documentation](docs/LICENSE-ENFORCEMENT.md).
 
-## Laravel Sponsors
+## Initial admin and operations
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- For live environments provision an admin interactively:
+  `php artisan invman:provision-admin USERNAME EMAIL`.
+  The command prompts for a strong password without printing it.
+- `php artisan db:seed` is a **no-op in production**. Run only
+  reviewed, explicitly named reference seeders after a database backup;
+  do not seed demonstration vehicles/rooms/users into a populated production database.
+- Keep `APP_DEBUG=false`, `APP_URL=https://...`,
+  `SESSION_SECURE_COOKIE=true` and narrowly scoped `TRUSTED_PROXIES`.
+- Keep `LOAN_ALLOW_LEGACY_DIRECT_CHECKOUT=false` in production.
+- Run `php artisan invman:security-audit` before go-live.
 
-### Premium Partners
+## Queue worker, scheduler, and deployment
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+**Both** a long-running queue worker and scheduler are required. A queue worker
+by itself will not expire pending loan holds, issue periodic overdue notices,
+or escalate ticket SLAs.
 
-## Contributing
+Example commands (adapt PHP binary and project path to your server):
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+php artisan queue:work --sleep=3 --tries=3 --timeout=90
+php artisan schedule:run
+```
 
-## Code of Conduct
+Run the worker under Supervisor (or systemd), and invoke scheduler *once per
+minute* through system cron. The cron expression belongs in the scheduler
+UI, not in the shell command field:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```cron
+* * * * * cd /path/to/invman && /usr/bin/php artisan schedule:run >> /dev/null 2>&1
+```
 
-## Security Vulnerabilities
+The `routes/console.php` scheduler manages hold expiry every minute and
+overdue-loan notifications and ticket escalations hourly. Restart workers after
+a release (`php artisan queue:restart`); ensure the worker user can write
+`storage/` and `bootstrap/cache/`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Recommended zero-data-loss release sequence:
 
-## License
+1. Backup the database and verify restore viability.
+2. Deploy exactly one tested `main` commit and build frontend assets.
+3. Run `php artisan migrate --force` (never `migrate:fresh` on live data).
+4. Run `php artisan optimize:clear` and `php artisan invman:security-audit`.
+5. Restart queue workers; verify cron, notification delivery and roles.
+6. Smoke-test a loan and return, ticket report + repair, and protected PDF endpoints.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+**Ticket SLA calendar:** configure `TICKET_SLA_TIMEZONE`,
+`TICKET_SLA_WORKDAY_START`, `TICKET_SLA_WORKDAY_END`,
+`TICKET_SLA_WORKING_WEEKDAYS`, and `TICKET_SLA_HOLIDAYS` in `.env`
+to match approved office days/holidays; update yearly.
+SLA deadlines are saved when tickets are created; changing the calendar
+does not retroactively rewrite open ticket deadlines.
+
+## Quality gates
+
+```bash
+php artisan test
+composer audit --locked --no-dev --abandoned=ignore
+npm audit --omit=dev --audit-level=high
+npm run build
+```
+
+GitHub Actions also lint-checks PHP, exercises SQLite feature tests,
+and validates schema plus historical foreign-key guards on MySQL 8.
+
+## Further documentation
+
+- [P1 audit/security rollout](docs/P1-AUDIT-HARDENING.md)
+- [Two-party outbound handover](docs/OUTBOUND-HANDOVER-V2.md)
+- [GitHub Actions CI](.github/workflows/ci.yml)
+- [Ticket SLA and maintenance configuration](config/ticket_sla.php)
+
+## Upgrade safety
+
+New code must preserve audit history, reservation state transitions, item-instance
+allocation and return verification. Avoid destructive seeds or migrations,
+bypassing both signatures, and global data access outside unit/manager scopes.
