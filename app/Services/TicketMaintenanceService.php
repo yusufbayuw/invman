@@ -247,7 +247,7 @@ class TicketMaintenanceService
                 'item_instance' => G002M015ItemInstance::class,
                 default => null,
             };
-            $asset = $model?::query()->lockForUpdate()->find($link->asset_id);
+            $asset = $model ? $model::query()->lockForUpdate()->find($link->asset_id) : null;
             if ($asset?->status !== 'perlu_perbaikan') {
                 continue;
             }

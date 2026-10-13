@@ -37,10 +37,15 @@ class LoanAvailabilityService
             ->orderBy('name')
             ->get()
             ->mapWithKeys(function (G002M007Item $item) use ($reserved) {
+                $safety = app(TicketAssetSafetyService::class);
+                if ($safety->isBlocked('item', (int) $item->id)) {
+                    return [];
+                }
                 $stock = $item->item_instance_count > 0
                     ? (int) $item->borrowable_instance_count
                     : (int) ($item->quantity ?? 0);
-                $available = max(0, $stock - (int) ($reserved[$item->id] ?? 0));
+                $available = max(0, $stock - $safety->blockedItemQuantity((int) $item->id)
+                    - (int) ($reserved[$item->id] ?? 0));
 
                 if ($available < 1) {
                     return [];
@@ -68,6 +73,9 @@ class LoanAvailabilityService
             ->orderBy('name')
             ->get()
             ->mapWithKeys(function (G003M006Room $room) {
+                if (app(TicketAssetSafetyService::class)->isBlocked('room', (int) $room->id)) {
+                    return [];
+                }
                 $location = collect([
                     $room->floor?->building?->name,
                     $room->floor?->name,
@@ -93,6 +101,9 @@ class LoanAvailabilityService
             ->orderBy('name')
             ->get()
             ->mapWithKeys(function (G008M017Vehicle $vehicle) {
+                if (app(TicketAssetSafetyService::class)->isBlocked('vehicle', (int) $vehicle->id)) {
+                    return [];
+                }
                 $plate = $vehicle->license_plate ? " · {$vehicle->license_plate}" : '';
 
                 return [$vehicle->id => "{$vehicle->name}{$plate}"];
@@ -131,16 +142,24 @@ class LoanAvailabilityService
             return 0;
         }
 
+        $safety = app(TicketAssetSafetyService::class);
+        if ($safety->isBlocked('item', (int) $item->id)) {
+            return 0;
+        }
         [$start, $end] = $period;
         $stock = $item->item_instance_count > 0
             ? (int) $item->borrowable_instance_count
             : (int) ($item->quantity ?? 0);
 
-        return max(0, $stock - $this->reservedItemQuantity((int) $item->id, $start, $end, $locking));
+        return max(0, $stock - $safety->blockedItemQuantity((int) $item->id)
+            - $this->reservedItemQuantity((int) $item->id, $start, $end, $locking));
     }
 
     public function roomIsAvailable(int $roomId, Carbon $start, Carbon $end, bool $locking = false): bool
     {
+        if (app(TicketAssetSafetyService::class)->isBlocked('room', $roomId)) {
+            return false;
+        }
         $query = G005M010RoomReservation::query()
             ->where('g003_m006_room_id', $roomId)
             ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
@@ -150,6 +169,9 @@ class LoanAvailabilityService
 
     public function vehicleIsAvailable(int $vehicleId, Carbon $start, Carbon $end, bool $locking = false): bool
     {
+        if (app(TicketAssetSafetyService::class)->isBlocked('vehicle', $vehicleId)) {
+            return false;
+        }
         $query = G005M019VehicleReservation::query()
             ->where('g008_m017_vehicle_id', $vehicleId)
             ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
