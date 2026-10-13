@@ -28,6 +28,12 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      *
      * @var list<string>
      */
+    // Eloquent does not hydrate DB defaults on newly created model instances.
+    // Match the safe database default so newly provisioned users stay enabled.
+    protected $attributes = [
+        'is_enabled' => true,
+    ];
+
     protected $fillable = [
         'name',
         'g001_m001_unit_id',
