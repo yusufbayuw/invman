@@ -32,7 +32,7 @@ jobs:
       - name: Audit production PHP dependencies (existing advisory baseline)
         id: composer_audit
         continue-on-error: true
-        run: composer audit --locked --no-dev --abandoned=ignore --format=summary
+        run: composer audit --locked --no-dev --abandoned=ignore --format=table
       - name: Flag outstanding PHP vulnerability findings
         if: ${{ steps.composer_audit.outcome == 'failure' }}
         run: |
@@ -66,6 +66,18 @@ jobs:
         run: npm ci
       - name: Audit production Node dependencies
         run: npm audit --omit=dev --audit-level=high
+      # Development build tooling still has upstream advisories. Preserve a
+      # visible audit without breaking deploy tests while Tailwind v3 is used.
+      - name: Audit build-time npm dependencies
+        id: npm_build_audit
+        continue-on-error: true
+        run: npm audit --audit-level=high
+      - name: Highlight vulnerable build tooling
+        if: ${{ steps.npm_build_audit.outcome == 'failure' }}
+        run: |
+          echo "::warning::Build-time npm dependencies have unresolved advisories (tracked in issue #21)."
+          echo "### ⚠️ npm build dependency audit" >> "$GITHUB_STEP_SUMMARY"
+          echo "Build dependencies contain published advisories. Functional CI success does not imply a clean supply-chain audit." >> "$GITHUB_STEP_SUMMARY"
       - name: Build Vite assets
         run: npm run build
       - name: Run Laravel tests
@@ -92,7 +104,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.2'
           extensions: mbstring, pdo_mysql, mysqli, sodium, gd, zip, intl, fileinfo, bcmath
           coverage: none
           tools: composer:v2
