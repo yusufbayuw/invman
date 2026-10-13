@@ -1,5 +1,8 @@
 # Dependency security remediation — 13 October 2026
 
+> **Historical baseline (PR #22):** the later [Laravel 12 upgrade](LARAVEL-12-UPGRADE-2026-10.md) has resolved the four remaining Laravel 11 Composer advisories at the time of audit. The tables below describe the prior Laravel 11 intermediate state, not the newest main branch.
+
+
 ## Scope
 
 This change refreshes `composer.lock` and `package-lock.json` using Composer/npm dependency resolvers, **not manual lockfile editing**, while retaining Laravel 11, Filament 3 and PHP 8.2 compatibility.

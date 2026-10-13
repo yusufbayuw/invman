@@ -110,6 +110,7 @@ and validates schema plus historical foreign-key guards on MySQL 8.
 
 - [P1 audit/security rollout](docs/P1-AUDIT-HARDENING.md)
 - [October 2026 dependency security updates and residual advisories](docs/DEPENDENCY-REMEDIATION-2026-10.md)
+- [Laravel 12 framework security upgrade, staging checks and rollback](docs/LARAVEL-12-UPGRADE-2026-10.md)
 - [Two-party outbound handover](docs/OUTBOUND-HANDOVER-V2.md)
 - [GitHub Actions CI](.github/workflows/ci.yml)
 - [Ticket SLA and maintenance configuration](config/ticket_sla.php)
