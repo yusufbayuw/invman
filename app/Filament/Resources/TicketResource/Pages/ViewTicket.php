@@ -35,7 +35,8 @@ class ViewTicket extends ViewRecord
                         ->acceptedFileTypes(['image/jpeg','image/png','application/pdf'])
                         ->disk('local')->directory('tickets/attachments')->visibility('private'),
                     Forms\Components\Toggle::make('internal')->label('Catatan khusus pengelola')
-                        ->visible(fn (): bool => app(TicketVisibility::class)->canManage(auth()->user(), $this->getRecord())),
+                        ->visible(fn (): bool => $this->getRecord()->maintenance === null
+                    && app(TicketVisibility::class)->canManage(auth()->user(), $this->getRecord())),
                 ])
                 ->action(function (array $data): void {
                     $comment = app(TicketService::class)->comment(
@@ -58,6 +59,122 @@ class ViewTicket extends ViewRecord
                     );
                     Notification::make()->title('Inventaris berhasil dihubungkan')->success()->send();
                 }),
+            Actions\Action::make('approveMaintenance')
+                ->label('Setujui & Tugaskan')->icon('heroicon-o-check-badge')->color('success')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && $this->getRecord()->status === 'open'
+                    && (auth()->user()?->isFacility() ?? false))
+                ->form([
+                    Forms\Components\Select::make('technician')->label('Teknisi / petugas')
+                        ->options(fn (): array => $this->maintenanceTechnicians())->searchable()->required(),
+                    Forms\Components\Select::make('priority')->label('Prioritas SLA')->required()
+                        ->options(['low'=>'Rendah','normal'=>'Normal','high'=>'Tinggi','critical'=>'Kritis'])
+                        ->default(fn (): string => $this->getRecord()->priority),
+                    Forms\Components\Textarea::make('notes')->label('Catatan persetujuan')->maxLength(2000),
+                ])
+                ->action(function (array $data): void {
+                    app(\App\Services\TicketMaintenanceService::class)->approve(
+                        $this->getRecord(), auth()->user(), (int) $data['technician'],
+                        $data['priority'], $data['notes'] ?? null,
+                    );
+                    Notification::make()->title('Pekerjaan disetujui dan ditugaskan')->success()->send();
+                }),
+            Actions\Action::make('acceptMaintenance')
+                ->label('Terima & Mulai Kerja')->icon('heroicon-o-play')->color('primary')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && $this->getRecord()->status === 'triaged'
+                    && $this->getRecord()->assigned_to === auth()->id())
+                ->requiresConfirmation()
+                ->action(fn () => app(\App\Services\TicketMaintenanceService::class)
+                    ->accept($this->getRecord(), auth()->user())),
+            Actions\Action::make('waitParts')
+                ->label('Menunggu Material')->icon('heroicon-o-clock')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && $this->getRecord()->status === 'in_progress'
+                    && $this->getRecord()->assigned_to === auth()->id())
+                ->form([Forms\Components\Textarea::make('reason')->label('Alasan')->required()->minLength(3)])
+                ->action(fn (array $data) => app(\App\Services\TicketMaintenanceService::class)
+                    ->waiting($this->getRecord(), auth()->user(), true, $data['reason'])),
+            Actions\Action::make('resumeWork')
+                ->label('Lanjutkan Pekerjaan')->icon('heroicon-o-arrow-path')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && $this->getRecord()->status === 'waiting_parts'
+                    && $this->getRecord()->assigned_to === auth()->id())
+                ->form([Forms\Components\Textarea::make('reason')->label('Keterangan')->required()->minLength(3)])
+                ->action(fn (array $data) => app(\App\Services\TicketMaintenanceService::class)
+                    ->waiting($this->getRecord(), auth()->user(), false, $data['reason'])),
+            Actions\Action::make('finishMaintenance')
+                ->label('Catat Hasil Perbaikan')->icon('heroicon-o-wrench-screwdriver')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && $this->getRecord()->status === 'in_progress'
+                    && $this->getRecord()->assigned_to === auth()->id())
+                ->form([
+                    Forms\Components\Textarea::make('diagnosis')->label('Analisis masalah')
+                        ->required()->minLength(5),
+                    Forms\Components\Textarea::make('actions')->label('Tindakan perbaikan')
+                        ->required()->minLength(5),
+                    Forms\Components\Repeater::make('materials')->label('Material / Sparepart (opsional)')
+                        ->schema([
+                            Forms\Components\TextInput::make('name')->label('Nama material')->required()->maxLength(200),
+                            Forms\Components\TextInput::make('quantity')->label('Jumlah')->numeric()->gt(0)->required(),
+                            Forms\Components\TextInput::make('unit')->label('Satuan')->default('pcs')->required()->maxLength(25),
+                        ])->columns(3)->maxItems(30)->default([])->addActionLabel('Tambah Material'),
+                    Forms\Components\Select::make('outcome')->label('Hasil pekerjaan')->required()
+                        ->options([
+                            'complete' => 'Selesai Sempurna',
+                            'temporary' => 'Selesai Sementara',
+                            'unrepairable' => 'Tidak Dapat Diperbaiki',
+                        ]),
+                ])
+                ->action(function (array $data): void {
+                    app(\App\Services\TicketMaintenanceService::class)->finish(
+                        $this->getRecord(), auth()->user(), $data['diagnosis'],
+                        $data['actions'], $data['materials'] ?? [], $data['outcome'],
+                    );
+                    Notification::make()->title('Hasil pekerjaan menunggu verifikasi pelapor')->success()->send();
+                }),
+            Actions\Action::make('verifyMaintenance')
+                ->label('Verifikasi Hasil')->icon('heroicon-o-clipboard-document-check')->color('success')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && $this->getRecord()->status === 'resolved'
+                    && ! $this->getRecord()->maintenance->verified_at
+                    && $this->getRecord()->reporter_id === auth()->id())
+                ->form([
+                    Forms\Components\Select::make('accepted')->label('Hasil pemeriksaan')->required()
+                        ->options(['yes'=>'Sudah Baik', 'no'=>'Masih Bermasalah']),
+                    Forms\Components\Textarea::make('notes')->label('Catatan / alasan jika menolak'),
+                ])
+                ->action(fn (array $data) => app(\App\Services\TicketMaintenanceService::class)
+                    ->verify($this->getRecord(), auth()->user(),
+                        $data['accepted'] === 'yes', $data['notes'] ?? null)),
+            Actions\Action::make('closeMaintenance')
+                ->label('Sahkan Penyelesaian')->icon('heroicon-o-check-circle')->color('success')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && $this->getRecord()->status === 'resolved'
+                    && $this->getRecord()->maintenance->verified_at !== null
+                    && (auth()->user()?->isFacility() ?? false))
+                ->form([
+                    Forms\Components\Toggle::make('safe')
+                        ->label('Sudah dinyatakan layak pakai setelah pemeriksaan fisik')
+                        ->helperText('Hanya untuk hasil perbaikan sempurna. Jika tidak dipilih, aset tetap ditahan.')
+                        ->default(false),
+                    Forms\Components\Textarea::make('notes')->label('Catatan pengesahan'),
+                ])
+                ->action(fn (array $data) => app(\App\Services\TicketMaintenanceService::class)
+                    ->close($this->getRecord(), auth()->user(), (bool) $data['safe'], $data['notes'] ?? null)),
+            Actions\Action::make('cancelMaintenance')
+                ->label('Batalkan Pengajuan')->icon('heroicon-o-x-circle')->color('danger')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && in_array($this->getRecord()->status, ['open','triaged'], true)
+                    && (auth()->user()?->isFacility() ?? false))
+                ->form([Forms\Components\Textarea::make('notes')->label('Alasan pembatalan')->required()->minLength(5)])
+                ->action(fn (array $data) => app(\App\Services\TicketMaintenanceService::class)
+                    ->cancel($this->getRecord(), auth()->user(), $data['notes'])),
+            Actions\Action::make('maintenancePdf')
+                ->label('Form Perawatan PDF')->icon('heroicon-o-document-arrow-down')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null)
+                ->url(fn (): string => route('tickets.maintenance.pdf', ['ticket' => $this->getRecord()->id]))
+                ->openUrlInNewTab(),
             Actions\Action::make('assign')
                 ->label('Tugaskan')->icon('heroicon-o-user-plus')
                 ->visible(fn (): bool => app(TicketVisibility::class)->canManage(auth()->user(), $this->getRecord()))
@@ -76,6 +193,7 @@ class ViewTicket extends ViewRecord
                 }),
             Actions\Action::make('status')
                 ->label('Proses Status')->icon('heroicon-o-arrow-path')
+                ->visible(fn (): bool => $this->getRecord()->maintenance === null)
                 ->form([
                     Forms\Components\Select::make('to')->label('Status baru')->required()
                         ->options(fn (): array => $this->availableTransitions()),
@@ -86,6 +204,16 @@ class ViewTicket extends ViewRecord
                     Notification::make()->title('Status diperbarui')->success()->send();
                 }),
         ];
+    }
+
+    private function maintenanceTechnicians(): array
+    {
+        $ticket = $this->getRecord();
+        $management = $ticket->management?->users()->pluck('users.id') ?? collect();
+        $facilities = \App\Models\User::role(config('role.fasilitas'))->pluck('id')
+            ->merge(\App\Models\User::role(config('role.admin'))->pluck('id'));
+        $ids = $management->merge($facilities)->unique()->reject(fn ($id) => $id === $ticket->reporter_id);
+        return \App\Models\User::query()->whereKey($ids)->orderBy('name')->pluck('name', 'id')->all();
     }
 
     private function assigneeOptions(): array

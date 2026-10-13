@@ -151,6 +151,10 @@ class TicketResource extends Resource
             Tables\Columns\TextColumn::make('reporter.name')->label('Pelapor')->toggleable(),
             Tables\Columns\TextColumn::make('management.name')->label('Pengelola')->placeholder('-')->toggleable(),
             Tables\Columns\TextColumn::make('assignee.name')->label('Petugas')->placeholder('-'),
+            Tables\Columns\TextColumn::make('maintenance.response_due_at')->label('Respons SLA')
+                ->dateTime('d M Y H:i')->toggleable(isToggledHiddenByDefault: true),
+            Tables\Columns\TextColumn::make('maintenance.resolution_due_at')->label('Selesai SLA')
+                ->dateTime('d M Y H:i')->toggleable(isToggledHiddenByDefault: true),
             Tables\Columns\TextColumn::make('created_at')->label('Dilaporkan')->dateTime('d M Y H:i')->sortable(),
         ])
         ->filters([
@@ -186,6 +190,30 @@ class TicketResource extends Resource
                 Infolists\Components\TextEntry::make('activity.name')->label('Pengajuan terkait')->placeholder('-'),
                 Infolists\Components\TextEntry::make('created_at')->dateTime('d M Y H:i')->label('Dibuat'),
             ])->columns(2),
+            Infolists\Components\Section::make('Perawatan / Perbaikan V3')
+                ->visible(fn ($record): bool => $record->maintenance !== null)
+                ->schema([
+                    Infolists\Components\TextEntry::make('maintenance.approver.name')->label('Disetujui oleh')->placeholder('Belum'),
+                    Infolists\Components\TextEntry::make('maintenance.approved_at')->label('Waktu persetujuan')->dateTime()->placeholder('-'),
+                    Infolists\Components\TextEntry::make('maintenance.technician.name')->label('Diterima teknisi')->placeholder('Belum'),
+                    Infolists\Components\TextEntry::make('maintenance.accepted_at')->label('Diterima pada')->dateTime()->placeholder('-'),
+                    Infolists\Components\TextEntry::make('maintenance.response_due_at')->label('Deadline respons')->dateTime(),
+                    Infolists\Components\TextEntry::make('maintenance.resolution_due_at')->label('Deadline perbaikan')->dateTime(),
+                    Infolists\Components\TextEntry::make('maintenance.diagnosis')->label('Analisis masalah')->placeholder('-')->columnSpanFull(),
+                    Infolists\Components\TextEntry::make('maintenance.repair_actions')->label('Tindakan perbaikan')->placeholder('-')->columnSpanFull(),
+                    Infolists\Components\TextEntry::make('maintenance.outcome')->label('Hasil pekerjaan')->badge()->placeholder('Belum'),
+                    Infolists\Components\TextEntry::make('maintenance.work_finished_at')->label('Pekerjaan selesai pada')->dateTime()->placeholder('-'),
+                    Infolists\Components\RepeatableEntry::make('maintenance.materials')->label('Material / Sparepart')->schema([
+                        Infolists\Components\TextEntry::make('name')->label('Material'),
+                        Infolists\Components\TextEntry::make('quantity')->label('Jumlah'),
+                        Infolists\Components\TextEntry::make('unit')->label('Satuan'),
+                    ])->columns(3)->columnSpanFull(),
+                    Infolists\Components\TextEntry::make('maintenance.verifier.name')->label('Diverifikasi oleh')->placeholder('-'),
+                    Infolists\Components\TextEntry::make('maintenance.verified_at')->label('Verifikasi pada')->dateTime()->placeholder('-'),
+                    Infolists\Components\TextEntry::make('maintenance.finalApprover.name')->label('Disahkan oleh')->placeholder('-'),
+                    Infolists\Components\TextEntry::make('maintenance.final_approved_at')->label('Pengesahan akhir')->dateTime()->placeholder('-'),
+                    Infolists\Components\TextEntry::make('maintenance.asset_released_at')->label('Dinyatakan layak pakai')->dateTime()->placeholder('Belum'),
+                ])->columns(2)->collapsible(),
             Infolists\Components\Section::make('Aset terkait')->schema([
                 Infolists\Components\RepeatableEntry::make('assets')->hiddenLabel()->schema([
                     Infolists\Components\TextEntry::make('asset_type')->label('Jenis'),
