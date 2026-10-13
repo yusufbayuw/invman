@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
+use App\Support\AccountPasswordPolicy;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 
@@ -16,7 +16,7 @@ final class AdminProvisioner
         Validator::make(compact('username', 'email', 'password'), [
             'username' => ['required', 'string', 'min:3', 'max:100', 'regex:/^[A-Za-z0-9._-]+$/', 'unique:users,username'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', Password::min(16)->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'string', AccountPasswordPolicy::rule()],
         ])->validate();
 
         $role = Role::query()->where('name', config('role.admin'))->where('guard_name', 'web')->first();

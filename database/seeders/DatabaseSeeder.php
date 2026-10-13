@@ -11,7 +11,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Production seeding is opt-in by individual class. The default seeder
+        // must never reset live vehicle/room availability or reference data.
+        if (app()->environment('production') || config('app.env') === 'production') {
+            $this->command?->warn('Production: DatabaseSeeder dilewati. Jalankan seeder referensi yang diperlukan secara eksplisit.');
+
+            return;
+        }
 
         $this->call([
             RoleSeeder::class,

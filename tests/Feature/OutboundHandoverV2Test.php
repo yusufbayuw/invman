@@ -240,6 +240,28 @@ class OutboundHandoverV2Test extends TestCase
         $this->assertSame(ReservationStatus::CheckedOut->value, $reservation->fresh()->status);
     }
 
+    public function test_production_style_guard_blocks_direct_checkout_but_allows_audited_fallback(): void
+    {
+        config()->set('loans.allow_legacy_direct_checkout', false);
+        [$manager, , , $reservation] = $this->room();
+        $this->actingAs($manager);
+
+        try {
+            app(LoanRequestService::class)->processReservation('room', $reservation->id, ReservationStatus::CheckedOut);
+            $this->fail('Direct checkout must be blocked when compatibility is disabled.');
+        } catch (ValidationException) {
+            $this->assertSame(ReservationStatus::Approved->value, $reservation->fresh()->status);
+            $this->assertNull($reservation->fresh()->outboundReceipt);
+        }
+
+        app(LoanCheckoutService::class)->fallback('room', $reservation->id, [
+            'reason' => 'Peminjam tidak dapat memindai QR; berita acara fisik disimpan.',
+        ]);
+        $this->assertSame(ReservationStatus::CheckedOut->value, $reservation->fresh()->status);
+        $this->assertNull($reservation->fresh()->outboundReceipt->borrower_confirmed_by);
+        $this->assertNotNull($reservation->fresh()->outboundReceipt->fallback_reason);
+    }
+
     public function test_qr_screen_shows_initial_condition_form_and_borrower_acceptance(): void
     {
         [$manager, $borrower, , $reservation] = $this->room();

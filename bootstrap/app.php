@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureApplicationIsLicensed;
+use App\Http\Middleware\EnsureAccountEnabled;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Read security.trusted_proxies at request-time, not in this callback.
         $middleware->replace(TrustProxies::class, ConfigureTrustedProxies::class);
         $middleware->prepend(EnsureApplicationIsLicensed::class);
+        // Runs after web session middleware and signs out revoked accounts on the next request.
+        $middleware->web(append: [EnsureAccountEnabled::class]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

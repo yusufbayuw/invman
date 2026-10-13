@@ -70,7 +70,7 @@ class TicketingCoreTest extends TestCase
     {
         [$reporter, $manager, $outsider, $facility, $room, $management] = $this->context();
         $service = app(TicketService::class);
-        $ticket = $service->open($reporter, $this->data($room));
+        $ticket = $service->openLegacy($reporter, $this->data($room));
 
         $this->assertStringStartsWith('TKT-', $ticket->number);
         $this->assertSame('open', $ticket->status);
@@ -97,7 +97,7 @@ class TicketingCoreTest extends TestCase
         [$reporter, , $outsider, , $room] = $this->context();
         $service = app(TicketService::class);
         try {
-            $service->open($outsider, $this->data($room));
+            $service->openLegacy($outsider, $this->data($room));
             $this->fail('Foreign user accepted asset from unrelated unit.');
         } catch (ValidationException) {
             $this->assertDatabaseCount('tickets', 0);
@@ -106,14 +106,14 @@ class TicketingCoreTest extends TestCase
         $inactive = TicketCategory::query()->where('slug', 'damage_room')->firstOrFail();
         $inactive->update(['is_active' => false]);
         $this->expectException(ValidationException::class);
-        $service->open($reporter, $this->data($room));
+        $service->openLegacy($reporter, $this->data($room));
     }
 
     public function test_ticket_workflow_assignment_and_internal_notes_are_guarded(): void
     {
         [$reporter, $manager, $outsider, $facility, $room] = $this->context();
         $service = app(TicketService::class);
-        $ticket = $service->open($reporter, $this->data($room));
+        $ticket = $service->openLegacy($reporter, $this->data($room));
         $this->assertSame([], $service->availableTransitions($ticket, $outsider));
 
         try {
@@ -170,7 +170,7 @@ class TicketingCoreTest extends TestCase
         [$reporter, $manager, $outsider, , $room] = $this->context();
         Storage::fake('local');
         $service = app(TicketService::class);
-        $ticket = $service->open($reporter, $this->data($room));
+        $ticket = $service->openLegacy($reporter, $this->data($room));
         $path = 'tickets/attachments/test.pdf';
         Storage::disk('local')->put($path, '%PDF-1.4 test');
         $this->actingAs($manager);
@@ -223,7 +223,7 @@ class TicketingCoreTest extends TestCase
     public function test_filament_ticket_resource_is_visible_to_authorized_user_and_scopes_tickets(): void
     {
         [$reporter, , $outsider, , $room] = $this->context();
-        $ticket = app(TicketService::class)->open($reporter, $this->data($room));
+        $ticket = app(TicketService::class)->openLegacy($reporter, $this->data($room));
 
         Livewire::actingAs($reporter)->test(ListTickets::class)
             ->assertSee($ticket->number)

@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Illuminate\Support\Facades\Hash;
+use App\Support\AccountPasswordPolicy;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\UserResource\Pages;
@@ -95,10 +96,17 @@ class UserResource extends Resource
                     ->required(),
                 Forms\Components\TextInput::make('password')
                     ->password()
-                    ->unique(ignoreRecord:true)
+                    ->required(fn (string $operation): bool => $operation === 'create')
+                    ->rules([AccountPasswordPolicy::rule()])
                     ->dehydrateStateUsing(static fn (null|string $state): null|string => filled($state) ? Hash::make($state) : null,)
                     ->dehydrated(static fn (null|string $state): bool => filled($state)),
                 Forms\Components\TextInput::make('username'),
+                // Do not reuse Chatify active_status: it represents presence, not permission.
+                Forms\Components\Toggle::make('is_enabled')
+                    ->label('Akun dapat login')
+                    ->default(true)
+                    ->disabled(fn (?User $record): bool => $record?->id === auth()->id())
+                    ->helperText('Nonaktifkan untuk mencabut akses pada permintaan berikutnya.'),
                 Forms\Components\Select::make('g001_m001_unit_id')
                     ->label('Unit')
                     ->relationship('unit', 'name')
@@ -152,6 +160,9 @@ class UserResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('username')
                     ->searchable(),
+                Tables\Columns\IconColumn::make('is_enabled')
+                    ->label('Akun aktif')
+                    ->boolean(),
                 Tables\Columns\TextColumn::make('unit.name')
                     ->label('Unit')
                     ->placeholder('Akses global')

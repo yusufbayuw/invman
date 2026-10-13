@@ -35,6 +35,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         'email_verified_at',
         'username',
         'password',
+        'is_enabled',
         'avatar',
     ];
 
@@ -58,6 +59,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_enabled' => 'boolean',
         ];
     }
 
@@ -85,6 +87,10 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
 
     public function canAccessPanel(Panel $panel): bool
     {
+        if (! $this->is_enabled) {
+            return false;
+        }
+
         if ($panel->getId() === 'admin') {
             return $this->isFacility() || $this->isSarpras() || $this->isAssetManager();
         }
