@@ -5,9 +5,25 @@ use App\Http\Controllers\PublicRoomScheduleController;
 use App\Http\Controllers\RoomQrCodePdfController;
 use App\Http\Controllers\LoanHandoverPdfController;
 use App\Http\Controllers\TicketAttachmentController;
+use App\Models\G003M006Room;
+use App\Filament\Resources\TicketResource;
+use App\Services\TicketService;
 use App\Services\LoanHandoverQrService;
 use App\Filament\Pages\PeminjamanSerahTerima;
 use Illuminate\Support\Facades\Route;
+
+// Existing room QR opens the public room page, with a safe logged-in report shortcut.
+Route::get('/tiket/lapor/ruangan/{room:qr_uuid}', function (G003M006Room $room) {
+    $service = app(TicketService::class);
+    abort_unless($service->canCreate(auth()->user()), 403);
+    $allowed = $service->assetOptionLabel('room', $room->id, auth()->user()) !== null;
+    return redirect(TicketResource::getUrl('create', array_filter([
+        'location' => $room->name,
+        'asset_type' => $allowed ? 'room' : null,
+        'asset_id' => $allowed ? $room->id : null,
+    ], fn ($value) => $value !== null)));
+})->middleware(['auth', 'throttle:30,1'])
+    ->whereUuid('room')->name('tickets.report.room');
 
 Route::get('/tiket/lampiran/{attachment}', TicketAttachmentController::class)
     ->middleware(['auth', 'throttle:30,1'])
