@@ -74,7 +74,7 @@ class TicketSlaService
                 ->whereHas('ticket', fn ($q) => $q->whereNotIn('status', ['closed', 'cancelled']))
                 ->when($kind === 'response', fn ($q) => $q->whereNull('responded_at'))
                 ->when($kind === 'resolution', fn ($q) => $q->whereNull('work_finished_at'))
-                ->orderBy($due)->chunkById(50, function ($cases) use (&$count, $kind, $flag, $due): void {
+                ->orderBy('ticket_id')->chunkById(50, function ($cases) use (&$count, $kind, $flag, $due): void {
                     foreach ($cases as $case) {
                         DB::transaction(function () use ($case, $kind, $flag, $due, &$count): void {
                             $record = TicketMaintenanceCase::query()->lockForUpdate()->find($case->ticket_id);

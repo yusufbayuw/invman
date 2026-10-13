@@ -5,6 +5,7 @@ use App\Http\Controllers\PublicRoomScheduleController;
 use App\Http\Controllers\RoomQrCodePdfController;
 use App\Http\Controllers\LoanHandoverPdfController;
 use App\Http\Controllers\TicketAttachmentController;
+use App\Http\Controllers\TicketMaintenancePdfController;
 use App\Models\G003M006Room;
 use App\Models\G002M015ItemInstance;
 use App\Filament\Resources\TicketResource;
@@ -57,6 +58,10 @@ Route::get('/tiket/lapor/ruangan/{room:qr_uuid}', function (G003M006Room $room) 
     ], fn ($value) => $value !== null)));
 })->middleware(['auth', 'throttle:30,1'])
     ->whereUuid('room')->name('tickets.report.room');
+
+Route::get('/tiket/{ticket}/perawatan/pdf', TicketMaintenancePdfController::class)
+    ->middleware(['auth', 'throttle:20,1'])->whereUuid('ticket')
+    ->name('tickets.maintenance.pdf');
 
 Route::get('/tiket/lampiran/{attachment}', TicketAttachmentController::class)
     ->middleware(['auth', 'throttle:30,1'])

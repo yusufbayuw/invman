@@ -12,7 +12,7 @@ class TicketMaintenanceCase extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['ticket_id'];
+    protected $fillable = ['ticket_id', 'response_due_at', 'resolution_due_at', 'asset_hold_at'];
     protected $casts = [
         'materials' => 'array',
         'approved_at' => 'datetime',

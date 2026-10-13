@@ -60,6 +60,16 @@ Artisan::command('license:status', function (LicenseManager $licenses) {
     return $applicationUrl->valid ? Command::SUCCESS : Command::FAILURE;
 })->purpose('Check the offline license and APP_URL host without printing the token');
 
+Artisan::command('tickets:escalate-sla', function (\App\Services\TicketSlaService $sla) {
+    $this->info($sla->escalateOverdue().' tenggat SLA tiket dieskalasikan.');
+    return Command::SUCCESS;
+})->purpose('Idempotently escalate overdue ticket response and repair deadlines');
+
+Schedule::command('tickets:escalate-sla')
+    ->hourly()
+    ->when(fn (LicenseManager $licenses): bool => $licenses->validateAppUrl()->valid)
+    ->withoutOverlapping();
+
 Artisan::command('loans:expire-holds', function (LoanRequestService $service, LicenseManager $licenses) {
     $status = $licenses->validateAppUrl();
 
