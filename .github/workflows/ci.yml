@@ -26,6 +26,19 @@ jobs:
         run: composer validate --no-check-publish
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+      # Existing composer.lock has published advisories. Surface them on every
+      # run without disabling functional regression tests; track remediation
+      # separately and promote updated locks only after compatibility testing.
+      - name: Audit production PHP dependencies (existing advisory baseline)
+        id: composer_audit
+        continue-on-error: true
+        run: composer audit --locked --no-dev --abandoned=ignore --format=summary
+      - name: Flag outstanding PHP vulnerability findings
+        if: ${{ steps.composer_audit.outcome == 'failure' }}
+        run: |
+          echo "::warning::Existing composer.lock contains vulnerable packages. Review the audit report and security remediation issue."
+          echo "### ⚠️ Dependency security debt" >> "$GITHUB_STEP_SUMMARY"
+          echo "Composer audit found published advisories in the current lockfile. This check is advisory while dependency upgrades and compatibility testing are pending. **Do not interpret green tests as a clean dependency audit.**" >> "$GITHUB_STEP_SUMMARY"
       - name: Generate CI-only encryption key
         run: |
           cp .env.example .env
@@ -51,6 +64,8 @@ jobs:
           cache: npm
       - name: Install frontend dependencies
         run: npm ci
+      - name: Audit production Node dependencies
+        run: npm audit --omit=dev --audit-level=high
       - name: Build Vite assets
         run: npm run build
       - name: Run Laravel tests

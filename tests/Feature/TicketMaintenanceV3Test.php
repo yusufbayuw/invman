@@ -214,6 +214,98 @@ class TicketMaintenanceV3Test extends TestCase
         $this->assertTrue((bool) DB::table('g002_m015_item_instances')->where('id', $firstId)->value('is_borrowable'));
     }
 
+    public function test_batched_picker_limits_safety_queries_and_preserves_option_order(): void
+    {
+        $d = $this->context();
+        $now = now();
+        $rows = [];
+        for ($i = 0; $i < 240; $i++) {
+            $rows[] = [
+                'name' => sprintf('Aset Demo %03d', $i),
+                'code' => sprintf('DEMO-%03d', $i),
+                'g001_m001_unit_id' => $d['unit']->id,
+                'g002_m003_item_management_id' => $d['managerTeam']->id,
+                'quantity' => 2,
+                'is_borrowable' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+        DB::table('g002_m007_items')->insert($rows);
+
+        $from = now()->addDays(2);
+        $to = $from->copy()->addHours(2);
+        DB::connection()->enableQueryLog();
+        DB::connection()->flushQueryLog();
+        try {
+            $options = app(LoanAvailabilityService::class)->itemOptions($from, $to);
+            $sql = DB::connection()->getQueryLog();
+        } finally {
+            DB::connection()->disableQueryLog();
+        }
+        $holdQueries = collect($sql)->filter(fn (array $row): bool =>
+            str_contains($row['query'], 'ticket_maintenance_cases'))->count();
+
+        $this->assertCount(240, $options);
+        $this->assertLessThanOrEqual(4, $holdQueries, 'Safety hold queries should scale with pages, not item count.');
+        $names = array_values($options);
+        $this->assertStringContainsString('Aset Demo 000', $names[0]);
+        $this->assertStringContainsString('Aset Demo 239', end($names));
+        $this->assertStringContainsString('2 tersedia', $names[0]);
+    }
+
+    public function test_safety_batch_preserves_room_and_instance_blocking(): void
+    {
+        $d = $this->context();
+        $now = now();
+        $from = now()->addDays(2);
+        $to = $from->copy()->addHour();
+
+        // The ticket from context() holds this room from loan selection.
+        $roomOptions = app(LoanAvailabilityService::class)->roomOptions($from, $to);
+        $this->assertArrayNotHasKey($d['room']->id, $roomOptions);
+        $this->assertSame([$d['room']->id], app(TicketAssetSafetyService::class)
+            ->blockedAssetIds('room', [$d['room']->id]));
+        $this->assertSame([], app(TicketAssetSafetyService::class)
+            ->blockedBorrowableItemQuantities([]));
+
+        $itemId = DB::table('g002_m007_items')->insertGetId([
+            'name' => 'Multistok', 'code' => 'STOCK-002',
+            'g001_m001_unit_id' => $d['unit']->id,
+            'g002_m003_item_management_id' => $d['managerTeam']->id,
+            'quantity' => 2, 'is_borrowable' => true,
+            'created_at' => $now, 'updated_at' => $now,
+        ]);
+        $instanceId = DB::table('g002_m015_item_instances')->insertGetId([
+            'g002_m007_item_id' => $itemId, 'g001_m001_unit_id' => $d['unit']->id,
+            'name' => 'Baterai 001', 'code' => 'STOCK-002-1',
+            'is_borrowable' => true, 'is_available' => true,
+            'created_at' => $now, 'updated_at' => $now,
+        ]);
+        DB::table('g002_m015_item_instances')->insert([
+            'g002_m007_item_id' => $itemId, 'g001_m001_unit_id' => $d['unit']->id,
+            'name' => 'Baterai 002', 'code' => 'STOCK-002-2',
+            'is_borrowable' => true, 'is_available' => true,
+            'created_at' => $now, 'updated_at' => $now,
+        ]);
+        $category = TicketCategory::query()->where('slug', 'maintenance_equipment')->firstOrFail();
+        $payload = [
+            'ticket_category_id' => $category->id,
+            'location' => 'Gudang',
+            'description' => 'Baterai tidak aman digunakan, perlu diperiksa.',
+            'asset_type' => 'item_instance',
+            'asset_id' => $instanceId,
+        ];
+        // Two active tickets concerning one instance must subtract only 1.
+        app(TicketService::class)->open($d['reporter'], $payload);
+        app(TicketService::class)->open($d['reporter'], $payload);
+        $this->assertSame(1, app(TicketAssetSafetyService::class)
+            ->blockedBorrowableItemQuantities([$itemId])[$itemId]);
+        $this->assertSame(1, app(LoanAvailabilityService::class)->availableItemQuantity($itemId, $from, $to));
+        $this->assertStringContainsString('1 tersedia',
+            app(LoanAvailabilityService::class)->itemOptions($from, $to)[$itemId]);
+    }
+
     public function test_legacy_ticket_can_continue_v1_flow_without_v3_signoffs(): void
     {
         $d = $this->context();
