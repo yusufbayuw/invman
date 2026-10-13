@@ -153,4 +153,26 @@ class TicketReportingUxTest extends TestCase
             TicketResource::getUrl('create', ['location' => $f['room']->name])
         );
     }
+    public function test_item_qr_scans_open_prefilled_report_only_for_authorized_users(): void
+    {
+        $f = $this->fixture();
+        $id = DB::table('g002_m015_item_instances')->insertGetId([
+            'name' => 'Proyektor Unit A', 'code' => 'PJ-001',
+            'g001_m001_unit_id' => $f['unit']->id,
+            'g003_m006_room_id' => $f['room']->id,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $this->get(route('tickets.report.item.qr', ['item' => $id]))->assertRedirect();
+        $this->actingAs($f['reporter'])->get(route('tickets.report.item.qr', ['item' => $id]))
+            ->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->actingAs($f['reporter'])->get(route('tickets.report.item', ['item' => $id]))
+            ->assertRedirect(TicketResource::getUrl('create', [
+                'location' => 'Ruang Guru', 'asset_type' => 'item_instance', 'asset_id' => $id,
+            ]));
+        $this->actingAs($f['other'])->get(route('tickets.report.item', ['item' => $id]))
+            ->assertForbidden();
+        $this->actingAs($f['other'])->get(route('tickets.report.item.qr', ['item' => $id]))
+            ->assertForbidden();
+    }
+
 }

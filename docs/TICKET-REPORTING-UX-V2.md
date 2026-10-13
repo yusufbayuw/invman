@@ -10,7 +10,9 @@ QR jadwal ruangan yang sudah ada tetap membuka halaman jadwal publik. Tombol Lap
 
 Kategori tiket sebelumnya tetap disimpan untuk tiket/otomatisasi lama. Kolom tickets.location dan tickets.reported_urgency nullable. Urgensi pelapor tidak mengubah prioritas internal sampai triase dilakukan.
 
-Belum termasuk perbaikan terstruktur teknisi, persetujuan manajer, daftar material, PDF kerja, atau QR stiker barang baru. Role yang diizinkan membuat tiket tetap mengikuti otorisasi sebelumnya.
+Untuk **Barang Satuan**, gunakan aksi **QR Laporan** untuk membuka kode QR PNG sesuai barang tersebut; ketika dipindai oleh akun berwenang, form tiket terbuka dengan inventaris dan lokasi terisi. File QR dibuat saat diminta dan tidak disimpan ribuan salinan. Aksi **Laporkan Kerusakan** tersedia langsung di baris barang.
+
+Belum termasuk perbaikan terstruktur teknisi, persetujuan manajer, daftar material, PDF kerja, atau PDF label cetak massal. Role yang diizinkan membuat tiket tetap mengikuti otorisasi sebelumnya.
 
 ## Deployment dan pengujian
 

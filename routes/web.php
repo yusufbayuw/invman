@@ -6,11 +6,44 @@ use App\Http\Controllers\RoomQrCodePdfController;
 use App\Http\Controllers\LoanHandoverPdfController;
 use App\Http\Controllers\TicketAttachmentController;
 use App\Models\G003M006Room;
+use App\Models\G002M015ItemInstance;
 use App\Filament\Resources\TicketResource;
 use App\Services\TicketService;
 use App\Services\LoanHandoverQrService;
 use App\Filament\Pages\PeminjamanSerahTerima;
 use Illuminate\Support\Facades\Route;
+
+// Per-item QR is generated on demand, without generating thousands of permanent files.
+Route::get('/tiket/lapor/barang/{item}', function (G002M015ItemInstance $item) {
+    $service = app(TicketService::class);
+    abort_unless($service->canCreate(auth()->user())
+        && $service->assetOptionLabel('item_instance', $item->id, auth()->user()) !== null, 403);
+    return redirect(TicketResource::getUrl('create', [
+        'location' => $item->room?->name ?: $item->name,
+        'asset_type' => 'item_instance',
+        'asset_id' => $item->id,
+    ]));
+})->middleware(['auth', 'throttle:30,1'])->whereNumber('item')->name('tickets.report.item');
+
+Route::get('/tiket/qr/barang/{item}', function (G002M015ItemInstance $item) {
+    $service = app(TicketService::class);
+    abort_unless($service->canCreate(auth()->user())
+        && $service->assetOptionLabel('item_instance', $item->id, auth()->user()) !== null, 403);
+
+    $result = (new \Endroid\QrCode\Builder\Builder(
+        writer: new \Endroid\QrCode\Writer\PngWriter,
+        writerOptions: [],
+        validateResult: false,
+        data: route('tickets.report.item', ['item' => $item->id]),
+        encoding: new \Endroid\QrCode\Encoding\Encoding('UTF-8'),
+        errorCorrectionLevel: \Endroid\QrCode\ErrorCorrectionLevel::High,
+        size: 420,
+        margin: 15,
+        roundBlockSizeMode: \Endroid\QrCode\RoundBlockSizeMode::Margin,
+    ))->build();
+    return response($result->getString())->header('Content-Type', 'image/png')
+        ->header('Cache-Control', 'private, no-store');
+})->middleware(['auth', 'throttle:30,1'])->whereNumber('item')->name('tickets.report.item.qr');
 
 // Existing room QR opens the public room page, with a safe logged-in report shortcut.
 Route::get('/tiket/lapor/ruangan/{room:qr_uuid}', function (G003M006Room $room) {
