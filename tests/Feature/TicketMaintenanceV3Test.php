@@ -143,7 +143,7 @@ class TicketMaintenanceV3Test extends TestCase
         $this->actingAs($d['outsider'])->get($url)->assertNotFound();
         $response = $this->actingAs($d['reporter'])->get($url);
         $response->assertOk()->assertHeader('Content-Type', 'application/pdf');
-        $this->assertStringStartsWith('%PDF', $response->streamedContent());
+        $this->assertStringStartsWith('%PDF', $response->baseResponse->getContent());
         $response->assertHeader('Cache-Control', 'private, no-store, max-age=0');
     }
 
