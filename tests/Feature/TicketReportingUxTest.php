@@ -118,6 +118,55 @@ class TicketReportingUxTest extends TestCase
         $this->assertArrayHasKey($lastId, $service->searchAssets('item', 'ZB-987', $f['room']->id, $f['reporter']));
     }
 
+    public function test_room_lookup_searches_only_existing_name_column_and_preserves_unit_scoping(): void
+    {
+        $f = $this->fixture();
+        $roomId = DB::table('g003_m006_rooms')->insertGetId([
+            'name' => 'Ruang AC Utama',
+            'g001_m001_unit_id' => $f['unit']->id,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $foreignId = DB::table('g003_m006_rooms')->insertGetId([
+            'name' => 'Ruang AC Rahasia',
+            'g001_m001_unit_id' => $f['otherUnit']->id,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $service = app(TicketService::class);
+
+        // Regression: rooms have no "code" column; both search and
+        // empty-query option rendering must not try to read it.
+        $found = $service->searchAssets('room', 'ac', null, $f['reporter']);
+        $this->assertSame('Ruang AC Utama', $found[$roomId]);
+        $this->assertArrayNotHasKey($foreignId, $found);
+        $this->assertArrayHasKey($f['room']->id, $service->assetOptions('room', $f['reporter']));
+        $this->assertSame([], $service->searchAssets('room', 'missing-term', null, $f['reporter']));
+        $this->assertArrayHasKey($foreignId, $service->searchAssets('room', 'AC Rahasia', null, $f['facility']));
+    }
+
+    public function test_code_and_license_plate_search_still_work_for_supported_asset_types(): void
+    {
+        $f = $this->fixture();
+        $instanceId = DB::table('g002_m015_item_instances')->insertGetId([
+            'name' => 'Unit UPS',
+            'code' => 'UPS-SN-990',
+            'g001_m001_unit_id' => $f['unit']->id,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $vehicleId = DB::table('g008_m017_vehicles')->insertGetId([
+            'name' => 'Minibus Sarpras',
+            'license_plate' => 'D 1234 ZZ',
+            'g001_m001_unit_id' => $f['unit']->id,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $service = app(TicketService::class);
+        $this->assertSame('Unit UPS · UPS-SN-990',
+            $service->searchAssets('item_instance', 'UPS-SN-990', null, $f['reporter'])[$instanceId]);
+        $this->assertSame('Minibus Sarpras · D 1234 ZZ',
+            $service->searchAssets('vehicle', 'D 1234 ZZ', null, $f['facility'])[$vehicleId]);
+    }
+
     public function test_manager_can_link_unidentified_asset_with_audit_and_access_guards(): void
     {
         $f = $this->fixture();
