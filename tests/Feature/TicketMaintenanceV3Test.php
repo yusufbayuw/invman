@@ -166,6 +166,53 @@ class TicketMaintenanceV3Test extends TestCase
         ]);
     }
 
+    public function test_single_item_safety_hold_reduces_available_stock_without_disabling_other_instances(): void
+    {
+        $d = $this->context();
+        $now = now();
+        $itemId = DB::table('g002_m007_items')->insertGetId([
+            'g001_m001_unit_id' => $d['unit']->id,
+            'g002_m003_item_management_id' => $d['managerTeam']->id,
+            'name' => 'Proyektor LCD', 'code' => 'PJ',
+            'quantity' => '2', 'is_borrowable' => true,
+            'created_at' => $now, 'updated_at' => $now,
+        ]);
+        $firstId = DB::table('g002_m015_item_instances')->insertGetId([
+            'g002_m007_item_id' => $itemId,
+            'g001_m001_unit_id' => $d['unit']->id,
+            'name' => 'Proyektor 1', 'code' => 'PJ-001',
+            'is_borrowable' => true, 'is_available' => true,
+            'created_at' => $now, 'updated_at' => $now,
+        ]);
+        DB::table('g002_m015_item_instances')->insert([
+            'g002_m007_item_id' => $itemId,
+            'g001_m001_unit_id' => $d['unit']->id,
+            'name' => 'Proyektor 2', 'code' => 'PJ-002',
+            'is_borrowable' => true, 'is_available' => true,
+            'created_at' => $now, 'updated_at' => $now,
+        ]);
+        $availability = app(LoanAvailabilityService::class);
+        $from = now()->addDays(4); $to = $from->copy()->addHour();
+        $this->assertSame(2, $availability->availableItemQuantity($itemId, $from, $to));
+        $category = TicketCategory::query()->where('slug', 'maintenance_equipment')->firstOrFail();
+        $ticket = app(TicketService::class)->open($d['reporter'], [
+            'ticket_category_id' => $category->id,
+            'location' => 'Ruang Kelas',
+            'description' => 'Kabel proyektor yang pertama terkelupas.',
+            'asset_type' => 'item_instance', 'asset_id' => $firstId,
+        ]);
+        $this->assertSame(1, $availability->availableItemQuantity($itemId, $from, $to));
+        $this->assertArrayHasKey($itemId, $availability->itemOptions($from, $to));
+        $maintenance = app(TicketMaintenanceService::class);
+        $maintenance->approve($ticket, $d['facility'], $d['technician']->id);
+        $maintenance->accept($ticket, $d['technician']);
+        $maintenance->finish($ticket, $d['technician'], 'Isolasi kabel robek.', 'Ganti kabel dan uji arus.', [], 'complete');
+        $maintenance->verify($ticket, $d['reporter'], true);
+        $maintenance->close($ticket, $d['facility'], true);
+        $this->assertSame(2, $availability->availableItemQuantity($itemId, $from, $to));
+        $this->assertTrue((bool) DB::table('g002_m015_item_instances')->where('id', $firstId)->value('is_borrowable'));
+    }
+
     public function test_legacy_ticket_can_continue_v1_flow_without_v3_signoffs(): void
     {
         $d = $this->context();
