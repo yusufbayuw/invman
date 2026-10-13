@@ -3,11 +3,14 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "alperenersoy/filament-export": "*",
+        "alperenersoy/filament-export": "^3.0",
         "bezhansalleh/filament-shield": "^3.3",
         "coderflex/filament-turnstile": "^2.2",
         "coolsam/flatpickr": "^4.1",
@@ -87,6 +90,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+            "php": "8.2.0"
         }
     },
     "minimum-stability": "stable",
