@@ -24,6 +24,10 @@ jobs:
           coverage: none
           extensions: mbstring, pdo_sqlite, sqlite3, sodium, gd, zip, intl, fileinfo, bcmath, xml, dom, simplexml
       - name: Resolve latest compatible Composer packages
+        # Temporary resolver-only exemption: Laravel 11 releases permitted
+        # by this application have published advisories. Do not suppress audits.
+        env:
+          COMPOSER_POLICY_ADVISORIES_BLOCK: '0'
         run: |
           composer update --with-all-dependencies --no-interaction --prefer-dist --no-progress
           composer validate --no-check-publish
