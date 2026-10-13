@@ -238,7 +238,12 @@ class TicketingCoreTest extends TestCase
         $this->actingAs($outsider)->get(TicketResource::getUrl('view', ['record' => $ticket]))->assertNotFound();
 
         Livewire::actingAs($reporter)->test(CreateTicket::class)
-            ->fillForm($this->data($room))
+            ->fillForm(array_merge($this->data($room), [
+                'ticket_category_id' => TicketCategory::query()->where('slug', 'maintenance_hvac')->value('id'),
+                'location' => 'Ruang Seminar',
+                'reported_urgency' => 'normal',
+                'link_asset' => true,
+            ]))
             ->call('create')
             ->assertHasNoFormErrors();
         $this->assertDatabaseCount('tickets', 2);
