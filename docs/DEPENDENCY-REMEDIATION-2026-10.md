@@ -20,6 +20,8 @@ Other transitive versions also change. Refer to the actual lockfile diff and `co
 ## Advisory baseline (as reported by GitHub Actions)
 
 - Production Composer dependencies: **71 advisories / 21 packages → 4 advisories / 1 package** after compatible updates. **Not fully remediated**; see [issue #20](https://github.com/yusufbayuw/invman/issues/20).
+- Remaining Composer package: **`laravel/framework` 11.57.0**, with one *high* CRLF injection finding in the default email validation rule (also represented by a second overlapping advisory), one *medium* temporary-signed-URL path confusion advisory, and one *low* debug-page XSS advisory. Laravel 11 does not have a compatible patched 11.x release reported by Composer's current advisory source. Upgrading Laravel major versions must be separately validated against the importer package's `^10|^11` framework constraint.
+- Existing mitigations such as `APP_DEBUG=false`, login/authorization checks, HTTPS and signed-QR scoping remain necessary but **do not eliminate all Laravel 11 vulnerability classes**. See [issue #20](https://github.com/yusufbayuw/invman/issues/20) for next work.
 - npm build/development dependency tree: **26 vulnerabilities → 8** (3 moderate, 5 high). Remaining advisories are related to Tailwind CSS v3's older transitive build dependencies and would require careful major-version migration; see [issue #21](https://github.com/yusufbayuw/invman/issues/21).
 - `npm audit --omit=dev` previously reported 0 production Node vulnerabilities; the updated CI independently rechecks it.
 
