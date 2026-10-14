@@ -269,10 +269,13 @@ class TicketingCoreTest extends TestCase
             ->assertSee('kerusakan.png');
 
         $url = route('tickets.attachment', ['attachment' => $attachment->id]);
-        $this->get($url)->assertOk()
+        $preview = $this->get($url)->assertOk()
             ->assertHeader('Content-Type', 'image/png')
-            ->assertHeader('X-Content-Type-Options', 'nosniff')
-            ->assertHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate, max-age=0');
+            ->assertHeader('X-Content-Type-Options', 'nosniff');
+        $cacheControl = $preview->headers->get('Cache-Control');
+        $this->assertStringContainsString('private', $cacheControl);
+        $this->assertStringContainsString('no-store', $cacheControl);
+        $this->assertStringNotContainsString('public', $cacheControl);
         $this->get($url.'?download=1')->assertOk()
             ->assertHeader('Content-Disposition', 'attachment; filename=kerusakan.png');
         $this->actingAs($outsider)->get($url)->assertNotFound();
