@@ -36,6 +36,29 @@ class TicketTeamMember extends Model
             if (! $user || ! $user->is_enabled) {
                 throw ValidationException::withMessages(['user_id' => 'Pilih akun petugas yang aktif.']);
             }
+            // Prevent editing/deactivating a supervisor in a way that would
+            // orphan active descendants. Reassign them first.
+            if ($member->exists) {
+                $children = self::query()->where('supervisor_user_id', $member->user_id)
+                    ->where('is_active', true)->get();
+                if ($children->isNotEmpty()) {
+                    if (! $member->is_active || $member->position !== 'lead') {
+                        throw ValidationException::withMessages([
+                            'is_active' => 'Pindahkan bawahan aktif sebelum menonaktifkan atau mengubah jabatan atasan.',
+                        ]);
+                    }
+                    foreach ($children as $child) {
+                        if ($child->team_name !== $member->team_name
+                            || $child->team_type !== $member->team_type
+                            || (int) $child->g002_m003_item_management_id !== (int) $member->g002_m003_item_management_id) {
+                            throw ValidationException::withMessages([
+                                'team_name' => 'Tim/pengelola atasan tidak boleh berubah selama masih memiliki bawahan aktif.',
+                            ]);
+                        }
+                    }
+                }
+            }
+
             if ($member->supervisor_user_id === null) {
                 // Only leads are roots of a ticket dispatch tree.
                 if ($member->position !== 'lead') {
@@ -129,8 +152,15 @@ class TicketTeamMember extends Model
         if (! $member) {
             return false;
         }
-        // A specific asset management can only dispatch to that manager's team.
-        return ! $ticket->g002_m003_item_management_id
-            || (int) $member->g002_m003_item_management_id === (int) $ticket->g002_m003_item_management_id;
+        // Asset-less reports still belong to a reporting unit. Without this
+        // check, a general field team could be dispatched across unrelated
+        // units merely because both records had no management identifier.
+        if (! $ticket->g002_m003_item_management_id) {
+            return ! $ticket->g001_m001_unit_id
+                || (int) $technician->g001_m001_unit_id === (int) $ticket->g001_m001_unit_id;
+        }
+
+        return (int) $member->g002_m003_item_management_id
+            === (int) $ticket->g002_m003_item_management_id;
     }
 }
