@@ -20,9 +20,11 @@ class Login extends BaseAuth
         $this->getPasswordFormComponent(),
         config('base_urls.login_turnstile') ? 
         Turnstile::make('captcha')
-            ->label('Captcha')
+            ->label('Kode Keamanan')
             ->theme('auto')
         : Captcha::make('captcha')
+            ->label('Kode Keamanan')
+            ->helperText('Masukkan 5 karakter pada gambar. Huruf besar/kecil tidak dibedakan.')
             ->rules(['captcha'])
             ->required()
             ->validationMessages([
@@ -56,6 +58,8 @@ class Login extends BaseAuth
 
     protected function throwFailureValidationException(): never
     {
+        // Clear the rejected challenge so the next attempt uses a fresh code.
+        $this->data['captcha'] = null;
         $this->dispatch('reset-captcha');
  
         parent::throwFailureValidationException();
