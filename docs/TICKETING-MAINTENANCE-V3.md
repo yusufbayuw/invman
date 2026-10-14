@@ -32,3 +32,17 @@ php artisan schedule:list
 Uji semua role, uji fisik penyerahan/perbaikan/penutupan, PDF A4, serta pengembalian aset rusak. Tidak memerlukan paket Composer baru. PDF bukan tanda tangan digital tersertifikasi.
 
 **Belum masuk tahap ini:** preventive maintenance terjadwal, dashboard kinerja teknisi, AI; kebijakan penggantian aset yang tidak dapat diperbaiki perlu otorisasi tersendiri.
+
+
+## Hierarki tim teknis lapangan — fase penugasan
+
+Menu **Layanan & Ticketing → Tim & Hierarki Petugas** memakai satu tabel/model `ticket_team_members` dan satu Resource Filament. Tidak ada role superuser baru, migrasi user, atau perubahan transaksi peminjaman. Satu pengguna hanya memiliki satu keanggotaan aktif/nonaktif: `team_name`, `team_type` (Lapangan/Pendukung), `position` (Koordinator/Teknisi), `supervisor_user_id` dan pengelola aset opsional.
+
+1. Fasilitas/admin mengisi **koordinator** tim terlebih dahulu. Koordinator utama boleh tanpa atasan, teknisi wajib memiliki atasan aktif di tim yang sama. Koordinator bisa melapor kepada koordinator lain; siklus dan lintas tim ditolak.
+2. Fasilitas/admin membuka tiket V3, memilih **Setujui & Tetapkan PIC** (koordinator atau teknisi), dan memberi prioritas SLA. Atasan **tidak** otomatis memperoleh hak approval atau final sign-off.
+3. Jika PIC adalah koordinator, tombol **Delegasikan ke Tim** menampilkan hanya anggota aktif di bawah hierarki koordinator tersebut. Tindakan mewajibkan instruksi/alasan, terekam pada `ticket_events` dan membuat notifikasi database.
+4. Delegasi hanya berlaku untuk pekerjaan **sudah disetujui** dengan status `triaged` dan **belum diterima**. Setelah petugas menekan **Terima & Mulai Kerja**, perpindahan PIC ditolak; tidak ada perubahan tersembunyi pada SLA, checklist, hasil kerja, verifikasi pelapor, maupun pengesahan fasilitas.
+5. Teknisi tanpa role fasilitas/pengelola aset dapat membuka panel dan **hanya** melihat tiket yang ditugaskan kepadanya. Koordinator dapat melihat antrean bawahan lewat tab **Tugas Tim Saya**, tidak memperoleh akses atas seluruh unit. Nonaktifkan anggota tanpa menghapus histori lama.
+6. Tiket V1 tetap berjalan; penugasan lama ke pengelola/fasilitas masih didukung dan opsi tim baru dibatasi sesuai cakupan pengelola. Data existing tidak perlu diubah.
+
+Uji `php artisan test --filter=TicketTeamHierarchyTest`, lalu `php artisan test` dan pengujian manual di staging sebagai fasilitas, koordinator, petugas lapangan, pelapor, serta akun tim lain. Migrasi `php artisan migrate --force` bersifat create-only untuk tabel hierarki; tetap lakukan backup sebelum migrasi produksi.
