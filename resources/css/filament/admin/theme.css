@@ -1,0 +1,9 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@config './tailwind.config.js';
+
+/*
+ * Filament's shipped CSS does not contain arbitrary utility classes used by
+ * project-specific Blade widgets. Compile a dedicated panel theme so spacing,
+ * responsive grids, and buttons render consistently on all breakpoints.
+ */
