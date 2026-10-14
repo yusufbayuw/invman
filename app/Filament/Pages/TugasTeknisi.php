@@ -217,7 +217,9 @@ class TugasTeknisi extends Page implements HasTable
 
     public static function mayAccept(Ticket $record): bool
     {
-        return (int) $record->assigned_to === (int) auth()->id()
+        return auth()->user()?->is_enabled === true
+            && TicketTeamMember::qualifiesFor($record, auth()->user())
+            && (int) $record->assigned_to === (int) auth()->id()
             && $record->status === 'triaged'
             && $record->maintenance?->approved_at !== null
             && $record->maintenance?->accepted_at === null;
@@ -225,7 +227,9 @@ class TugasTeknisi extends Page implements HasTable
 
     public static function mayWork(Ticket $record): bool
     {
-        return (int) $record->assigned_to === (int) auth()->id()
+        return auth()->user()?->is_enabled === true
+            && TicketTeamMember::qualifiesFor($record, auth()->user())
+            && (int) $record->assigned_to === (int) auth()->id()
             && in_array($record->status, ['in_progress', 'waiting_parts'], true)
             && $record->maintenance?->approved_at !== null
             && $record->maintenance?->accepted_at !== null;
