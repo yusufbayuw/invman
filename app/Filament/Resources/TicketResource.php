@@ -227,17 +227,42 @@ class TicketResource extends Resource
                         Infolists\Components\TextEntry::make('created_at')->dateTime('d M Y H:i')->label('Waktu'),
                         Infolists\Components\TextEntry::make('body')->label('Isi')->columnSpanFull(),
                         Infolists\Components\IconEntry::make('is_internal')->label('Internal')->boolean(),
+                        // Native Filament entries render each upload beside the comment
+                        // to which it belongs. No public storage URL or custom JS.
+                        Infolists\Components\RepeatableEntry::make('attachments')
+                            ->label('Foto / dokumen komentar')
+                            ->schema([
+                                Infolists\Components\ImageEntry::make('image_url')
+                                    ->label('Foto')->height(120)->square()
+                                    ->url(fn (\App\Models\TicketAttachment $record): string => $record->preview_url)
+                                    ->openUrlInNewTab()
+                                    ->visible(fn (Infolists\Components\ImageEntry $component): bool => filled($component->getState())),
+                                Infolists\Components\TextEntry::make('original_name')
+                                    ->label('Buka lampiran')
+                                    ->url(fn (\App\Models\TicketAttachment $record): string => $record->preview_url)
+                                    ->openUrlInNewTab(),
+                                Infolists\Components\TextEntry::make('download_url')
+                                    ->label('Unduh')
+                                    ->formatStateUsing(fn (): string => 'Unduh file')
+                                    ->url(fn (\App\Models\TicketAttachment $record): string => $record->download_url)
+                                    ->openUrlInNewTab(),
+                            ])->columns(3)->columnSpanFull(),
                     ])->columns(2),
             ])->collapsible(),
-            Infolists\Components\Section::make('Lampiran')->schema([
-                Infolists\Components\RepeatableEntry::make('visibleAttachments')->hiddenLabel()->schema([
-                    Infolists\Components\TextEntry::make('original_name')->label('Dokumen')
-                        ->url(fn (\App\Models\TicketAttachment $record): string => route('tickets.attachment', ['attachment' => $record->id]))
-                        ->openUrlInNewTab(),
-                    Infolists\Components\TextEntry::make('mime_type')->label('Format'),
-                    Infolists\Components\TextEntry::make('created_at')->dateTime('d M Y H:i')->label('Diunggah'),
-                ])->columns(3),
-            ])->collapsed(),
+            Infolists\Components\Section::make('Semua Lampiran')
+                ->description('Lampiran awal dan lampiran komentar. Foto/PDF dibuka privat; gunakan tautan unduh bila ingin menyimpan file.')
+                ->schema([
+                    Infolists\Components\RepeatableEntry::make('visibleAttachments')->hiddenLabel()->schema([
+                        Infolists\Components\TextEntry::make('original_name')->label('Buka file')
+                            ->url(fn (\App\Models\TicketAttachment $record): string => $record->preview_url)
+                            ->openUrlInNewTab(),
+                        Infolists\Components\TextEntry::make('download_url')->label('Unduh')
+                            ->formatStateUsing(fn (): string => 'Unduh file')
+                            ->url(fn (\App\Models\TicketAttachment $record): string => $record->download_url)
+                            ->openUrlInNewTab(),
+                        Infolists\Components\TextEntry::make('created_at')->dateTime('d M Y H:i')->label('Diunggah'),
+                    ])->columns(3),
+                ])->collapsed(),
             Infolists\Components\Section::make('Audit perubahan')->schema([
                 Infolists\Components\RepeatableEntry::make('events')->hiddenLabel()->schema([
                     Infolists\Components\TextEntry::make('action')->label('Aksi'),
