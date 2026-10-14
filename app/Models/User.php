@@ -98,7 +98,8 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         }
 
         if ($panel->getId() === 'admin') {
-            return $this->isFacility() || $this->isSarpras() || $this->isAssetManager();
+            return $this->isFacility() || $this->isSarpras() || $this->isAssetManager()
+                || $this->ticketTeamMember()->where('is_active', true)->exists();
         }
 
         return true;
@@ -124,6 +125,11 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         return $this->isSarpras()
             && $this->g001_m001_unit_id !== null
             && $this->g001_m001_unit_id === $unitId;
+    }
+
+    public function ticketTeamMember(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(TicketTeamMember::class, 'user_id');
     }
 
     public function itemManagements(): BelongsToMany
