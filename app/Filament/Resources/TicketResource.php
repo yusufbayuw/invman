@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TicketResource\Pages;
 use App\Models\Ticket;
+use App\Models\TicketTeamMember;
 use App\Models\TicketCategory;
 use App\Models\User;
 use App\Services\TicketService;
@@ -31,10 +32,11 @@ class TicketResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return app(TicketService::class)->canCreate(auth()->user());
+        return app(TicketService::class)->canCreate(auth()->user())
+            || (auth()->user()?->ticketTeamMember()->where('is_active', true)->exists() ?? false);
     }
 
-    public static function canCreate(): bool { return static::canViewAny(); }
+    public static function canCreate(): bool { return app(TicketService::class)->canCreate(auth()->user()); }
     public static function canView(Model $record): bool
     {
         return $record instanceof Ticket && app(TicketVisibility::class)->canView(auth()->user(), $record);
@@ -190,6 +192,14 @@ class TicketResource extends Resource
                 Infolists\Components\TextEntry::make('activity.name')->label('Pengajuan terkait')->placeholder('-'),
                 Infolists\Components\TextEntry::make('created_at')->dateTime('d M Y H:i')->label('Dibuat'),
             ])->columns(2),
+            Infolists\Components\Section::make('Penanganan tiket')
+                ->description('Lihat petugas penanggung jawab dan tahap pekerjaan saat ini. Hanya penugasan yang disetujui yang dapat dilanjutkan.')
+                ->schema([
+                    Infolists\Components\TextEntry::make('assignee.name')->label('Ditugaskan kepada')->placeholder('Belum ada petugas'),
+                    Infolists\Components\TextEntry::make('status')->label('Tahap saat ini')->badge(),
+                    Infolists\Components\TextEntry::make('maintenance.approver.name')->label('Disetujui oleh')->placeholder('Menunggu persetujuan'),
+                    Infolists\Components\TextEntry::make('maintenance.accepted_at')->label('Diterima petugas')->dateTime('d M Y H:i')->placeholder('Belum diterima'),
+                ])->columns(2),
             Infolists\Components\Section::make('Perawatan / Perbaikan V3')
                 ->visible(fn ($record): bool => $record->maintenance !== null)
                 ->schema([

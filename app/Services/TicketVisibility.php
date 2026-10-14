@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Ticket;
+use App\Models\TicketTeamMember;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -20,10 +21,15 @@ class TicketVisibility
         }
 
         $managementIds = $user->itemManagements()->pluck('g002_m003_item_management.id');
+        $descendantIds = TicketTeamMember::descendantsOf($user);
 
-        return $query->where(function (Builder $visible) use ($user, $managementIds): void {
+        return $query->where(function (Builder $visible) use ($user, $managementIds, $descendantIds): void {
             $visible->where('reporter_id', $user->id)
                 ->orWhere('assigned_to', $user->id);
+
+            if ($descendantIds !== []) {
+                $visible->orWhereIn('assigned_to', $descendantIds);
+            }
 
             if ($managementIds->isNotEmpty()) {
                 $visible->orWhereIn('g002_m003_item_management_id', $managementIds);

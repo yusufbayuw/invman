@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TicketResource\Pages;
 
 use App\Filament\Resources\TicketResource;
+use App\Models\TicketTeamMember;
 use App\Services\TicketService;
 use App\Services\TicketVisibility;
 use Filament\Actions;
@@ -60,12 +61,13 @@ class ViewTicket extends ViewRecord
                     Notification::make()->title('Inventaris berhasil dihubungkan')->success()->send();
                 }),
             Actions\Action::make('approveMaintenance')
-                ->label('Setujui & Tugaskan')->icon('heroicon-o-check-badge')->color('success')
+                ->label('Setujui & Tetapkan PIC')->icon('heroicon-o-check-badge')->color('success')
                 ->visible(fn (): bool => $this->getRecord()->maintenance !== null
                     && $this->getRecord()->status === 'open'
                     && (auth()->user()?->isFacility() ?? false))
                 ->form([
-                    Forms\Components\Select::make('technician')->label('Teknisi / petugas')
+                    Forms\Components\Select::make('technician')->label('Koordinator / teknisi penanggung jawab')
+                        ->helperText('Bisa pilih koordinator terlebih dahulu. Setelah disetujui, koordinator dapat mendelegasikan kepada petugas lapangan.')
                         ->options(fn (): array => $this->maintenanceTechnicians())->searchable()->required(),
                     Forms\Components\Select::make('priority')->label('Prioritas SLA')->required()
                         ->options(['low'=>'Rendah','normal'=>'Normal','high'=>'Tinggi','critical'=>'Kritis'])
@@ -78,6 +80,27 @@ class ViewTicket extends ViewRecord
                         $data['priority'], $data['notes'] ?? null,
                     );
                     Notification::make()->title('Pekerjaan disetujui dan ditugaskan')->success()->send();
+                }),
+            Actions\Action::make('delegateMaintenance')
+                ->label('Delegasikan ke Tim')->icon('heroicon-o-user-group')->color('info')
+                ->visible(fn (): bool => app(\App\Services\TicketMaintenanceService::class)
+                    ->canDelegate($this->getRecord(), auth()->user()))
+                ->modalHeading('Tugaskan petugas dalam hierarki')
+                ->modalDescription('Tiket sudah disetujui. Koordinator hanya dapat memilih anggota aktif di bawahnya; tugas yang sudah diterima tidak boleh dipindahkan tanpa proses koreksi.')
+                ->form([
+                    Forms\Components\Select::make('technician')->label('Anggota tim')
+                        ->options(fn (): array => app(\App\Services\TicketMaintenanceService::class)
+                            ->delegationOptions($this->getRecord(), auth()->user()))
+                        ->searchable()->required(),
+                    Forms\Components\Textarea::make('reason')->label('Instruksi / alasan delegasi')
+                        ->required()->minLength(5)->maxLength(2000)
+                        ->placeholder('Contoh: Periksa instalasi listrik di lokasi dan dokumentasikan hasil.'),
+                ])
+                ->action(function (array $data): void {
+                    app(\App\Services\TicketMaintenanceService::class)->delegate(
+                        $this->getRecord(), auth()->user(), (int) $data['technician'], (string) $data['reason'],
+                    );
+                    Notification::make()->title('Tugas berhasil didelegasikan')->success()->send();
                 }),
             Actions\Action::make('acceptMaintenance')
                 ->label('Terima & Mulai Kerja')->icon('heroicon-o-play')->color('primary')
@@ -177,7 +200,8 @@ class ViewTicket extends ViewRecord
                 ->openUrlInNewTab(),
             Actions\Action::make('assign')
                 ->label('Tugaskan')->icon('heroicon-o-user-plus')
-                ->visible(fn (): bool => app(TicketVisibility::class)->canManage(auth()->user(), $this->getRecord()))
+                ->visible(fn (): bool => $this->getRecord()->maintenance === null
+                    && app(TicketVisibility::class)->canManage(auth()->user(), $this->getRecord()))
                 ->form([
                     Forms\Components\Select::make('user_id')->label('Petugas')
                         ->options(fn (): array => $this->assigneeOptions())->searchable()->nullable(),
@@ -211,16 +235,39 @@ class ViewTicket extends ViewRecord
         $ticket = $this->getRecord();
         $management = $ticket->management?->users()->pluck('users.id') ?? collect();
         $facilities = \App\Models\User::role(config('role.fasilitas'))->pluck('id')
-            ->merge(\App\Models\User::role(config('role.admin'))->pluck('id'));
-        $ids = $management->merge($facilities)->unique()->reject(fn ($id) => $id === $ticket->reporter_id);
-        return \App\Models\User::query()->whereKey($ids)->orderBy('name')->pluck('name', 'id')->all();
+            ->merge(\App\Models\User::role(config('role.admin'))->pluck('id'))
+            ->merge(\App\Models\User::role('super_admin')->pluck('id'));
+        $members = TicketTeamMember::query()->where('is_active', true)->pluck('user_id');
+        $ids = $management->merge($facilities)->merge($members)->unique()
+            ->reject(fn ($id) => (int) $id === (int) $ticket->reporter_id);
+        return \App\Models\User::query()->whereKey($ids)->where('is_enabled', true)->orderBy('name')
+            ->get()->filter(fn ($user): bool => TicketTeamMember::qualifiesFor($ticket, $user))
+            ->mapWithKeys(function ($user): array {
+                $member = $user->ticketTeamMember;
+                $suffix = $member
+                    ? ' · '.($member->position === 'lead' ? 'Koordinator' : 'Teknisi')
+                        .' / '.($member->team_type === 'field' ? 'Lapangan' : 'Pendukung')
+                    : ' · Pengelola';
+                return [$user->id => $user->name.$suffix];
+            })->all();
     }
 
     private function assigneeOptions(): array
     {
-        $record = $this->getRecord();
-        $ids = $record->management?->users()->pluck('users.id') ?? collect();
-        return \App\Models\User::query()->whereKey($ids)->orderBy('name')->pluck('name','id')->all();
+        $ticket = $this->getRecord();
+        $actor = auth()->user();
+        if (! $actor) {
+            return [];
+        }
+        $ids = $actor->isFacility()
+            ? TicketTeamMember::query()->where('is_active', true)->pluck('user_id')
+            : collect(TicketTeamMember::descendantsOf($actor));
+        if ($actor->isFacility() || $actor->isAssetManager()) {
+            $ids = $ids->merge($ticket->management?->users()->pluck('users.id') ?? collect());
+        }
+        return \App\Models\User::query()->whereKey($ids->unique()->all())->where('is_enabled', true)
+            ->orderBy('name')->get()->filter(fn ($user): bool => TicketTeamMember::qualifiesFor($ticket, $user))
+            ->pluck('name', 'id')->all();
     }
 
     private function availableTransitions(): array
