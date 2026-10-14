@@ -12,6 +12,7 @@ use App\Models\G005M010RoomReservation;
 use App\Models\G005M019VehicleReservation;
 use App\Models\Ticket;
 use App\Models\TicketComment;
+use App\Models\TicketTeamMember;
 use App\Models\TicketCategory;
 use App\Models\User;
 use Filament\Notifications\Notification;
@@ -398,10 +399,14 @@ class TicketService
             }
             if ($userId) {
                 $assignee = User::query()->find($userId);
-                if (! $assignee || (! $assignee->isFacility()
-                    && (! $record->g002_m003_item_management_id
-                        || ! $assignee->itemManagements()->whereKey($record->g002_m003_item_management_id)->exists()))) {
-                    throw ValidationException::withMessages(['assigned_to' => 'Petugas harus berada dalam pengelola aset terkait.']);
+                if (! $assignee || ! TicketTeamMember::qualifiesFor($record, $assignee)) {
+                    throw ValidationException::withMessages(['assigned_to' => 'Petugas harus aktif dan berada dalam tim atau pengelola terkait.']);
+                }
+                // Delegation is limited to one's own descendants unless the
+                // actor already manages the asset or belongs to facility.
+                if (! $actor->isFacility() && ! $actor->isAssetManager()
+                    && ! in_array((int) $userId, TicketTeamMember::descendantsOf($actor), true)) {
+                    throw ValidationException::withMessages(['assigned_to' => 'Atasan hanya dapat menugaskan bawahan dalam hierarkinya.']);
                 }
             }
             $old = $record->assigned_to;
@@ -411,6 +416,12 @@ class TicketService
             }
             $record->save();
             $this->event($record, $actor->id, 'assigned', (string) $old, (string) $userId, $priority);
+            if ($userId && (int) $old !== (int) $userId) {
+                DB::afterCommit(function () use ($record, $assignee): void {
+                    Notification::make()->title('Tiket ditugaskan: '.$record->number)
+                        ->body('Buka tiket untuk meninjau tugas Anda.')->info()->sendToDatabase($assignee);
+                });
+            }
             return $record;
         }, 3);
     }
