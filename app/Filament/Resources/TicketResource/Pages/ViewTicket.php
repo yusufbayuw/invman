@@ -254,9 +254,20 @@ class ViewTicket extends ViewRecord
 
     private function assigneeOptions(): array
     {
-        $record = $this->getRecord();
-        $ids = $record->management?->users()->pluck('users.id') ?? collect();
-        return \App\Models\User::query()->whereKey($ids)->orderBy('name')->pluck('name','id')->all();
+        $ticket = $this->getRecord();
+        $actor = auth()->user();
+        if (! $actor) {
+            return [];
+        }
+        $ids = $actor->isFacility()
+            ? TicketTeamMember::query()->where('is_active', true)->pluck('user_id')
+            : collect(TicketTeamMember::descendantsOf($actor));
+        if ($actor->isFacility() || $actor->isAssetManager()) {
+            $ids = $ids->merge($ticket->management?->users()->pluck('users.id') ?? collect());
+        }
+        return \App\Models\User::query()->whereKey($ids->unique()->all())->where('is_enabled', true)
+            ->orderBy('name')->get()->filter(fn ($user): bool => TicketTeamMember::qualifiesFor($ticket, $user))
+            ->pluck('name', 'id')->all();
     }
 
     private function availableTransitions(): array
