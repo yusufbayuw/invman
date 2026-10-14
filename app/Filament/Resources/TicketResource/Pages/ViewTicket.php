@@ -131,24 +131,7 @@ class ViewTicket extends ViewRecord
                 ->visible(fn (): bool => $this->getRecord()->maintenance !== null
                     && $this->getRecord()->status === 'in_progress'
                     && $this->getRecord()->assigned_to === auth()->id())
-                ->form([
-                    Forms\Components\Textarea::make('diagnosis')->label('Analisis masalah')
-                        ->required()->minLength(5),
-                    Forms\Components\Textarea::make('actions')->label('Tindakan perbaikan')
-                        ->required()->minLength(5),
-                    Forms\Components\Repeater::make('materials')->label('Material / Sparepart (opsional)')
-                        ->schema([
-                            Forms\Components\TextInput::make('name')->label('Nama material')->required()->maxLength(200),
-                            Forms\Components\TextInput::make('quantity')->label('Jumlah')->numeric()->gt(0)->required(),
-                            Forms\Components\TextInput::make('unit')->label('Satuan')->default('pcs')->required()->maxLength(25),
-                        ])->columns(3)->maxItems(30)->default([])->addActionLabel('Tambah Material'),
-                    Forms\Components\Select::make('outcome')->label('Hasil pekerjaan')->required()
-                        ->options([
-                            'complete' => 'Selesai Sempurna',
-                            'temporary' => 'Selesai Sementara',
-                            'unrepairable' => 'Tidak Dapat Diperbaiki',
-                        ]),
-                ])
+                ->form(\App\Filament\Support\TicketWorkForms::finish())
                 ->action(function (array $data): void {
                     app(\App\Services\TicketMaintenanceService::class)->finish(
                         $this->getRecord(), auth()->user(), $data['diagnosis'],
