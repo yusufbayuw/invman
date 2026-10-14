@@ -7,6 +7,7 @@ use App\Models\G003M006Room;
 use App\Models\G008M017Vehicle;
 use App\Models\Ticket;
 use App\Models\TicketMaintenanceCase;
+use App\Models\TicketTeamMember;
 use App\Models\User;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
@@ -68,11 +69,8 @@ class TicketMaintenanceService
                 $this->reject('Tiket bukan pengajuan baru.');
             }
             $technician = User::query()->find($technicianId);
-            if (! $technician || ($technician->id === $locked->reporter_id)
-                || (! $technician->isFacility() && (! $locked->g002_m003_item_management_id
-                    || ! $technician->itemManagements()
-                        ->whereKey($locked->g002_m003_item_management_id)->exists()))) {
-                $this->reject('Teknisi harus pengelola yang berwenang dan berbeda dari pelapor.');
+            if (! $technician || ! TicketTeamMember::qualifiesFor($locked, $technician)) {
+                $this->reject('Petugas tidak aktif atau berada di luar tim/pengelola tiket.');
             }
             $old = $locked->priority;
             $locked->forceFill([
@@ -87,6 +85,73 @@ class TicketMaintenanceService
             DB::afterCommit(function () use ($technician, $locked): void {
                 Notification::make()->title('Tugas perbaikan: '.$locked->number)
                     ->body('Silakan terima dan kerjakan tiket.')->info()->sendToDatabase($technician);
+            });
+        }, 3);
+    }
+
+    /** A lead may delegate only an approved, unaccepted task within their own hierarchy. */
+    public function canDelegate(Ticket $ticket, ?User $actor): bool
+    {
+        if (! $actor || ! $actor->is_enabled || ! $ticket->maintenance) {
+            return false;
+        }
+        $case = $ticket->maintenance;
+        if ($ticket->status !== 'triaged' || ! $case->approved_at || $case->accepted_at) {
+            return false;
+        }
+        if ($actor->isFacility()) {
+            return true;
+        }
+        $descendants = TicketTeamMember::descendantsOf($actor);
+        return $descendants !== [] && (
+            (int) $ticket->assigned_to === (int) $actor->id
+            || in_array((int) $ticket->assigned_to, $descendants, true)
+        );
+    }
+
+    /** @return array<int, string> */
+    public function delegationOptions(Ticket $ticket, ?User $actor): array
+    {
+        if (! $this->canDelegate($ticket, $actor)) {
+            return [];
+        }
+        $ids = $actor->isFacility()
+            ? TicketTeamMember::query()->where('is_active', true)->pluck('user_id')->all()
+            : TicketTeamMember::descendantsOf($actor);
+        $ids = array_values(array_diff(array_map('intval', $ids), [(int) $ticket->reporter_id]));
+        return User::query()->whereKey($ids)->where('is_enabled', true)->orderBy('name')
+            ->get()->filter(fn (User $user): bool => TicketTeamMember::qualifiesFor($ticket, $user))
+            ->mapWithKeys(function (User $user): array {
+                $member = $user->ticketTeamMember;
+                return [$user->id => $user->name.' · '.($member?->team_type === 'field' ? 'Lapangan' : 'Pendukung')
+                    .' / '.($member?->position === 'lead' ? 'Koordinator' : 'Teknisi')];
+            })->all();
+    }
+
+    public function delegate(Ticket $ticket, User $actor, int $technicianId, string $reason): void
+    {
+        if (mb_strlen(trim($reason)) < 5 || mb_strlen($reason) > 2000) {
+            $this->reject('Alasan penugasan minimal lima karakter.');
+        }
+        DB::transaction(function () use ($ticket, $actor, $technicianId, $reason): void {
+            $locked = $this->locked($ticket);
+            $this->case($locked);
+            if (! $this->canDelegate($locked, $actor)) {
+                $this->reject('Hanya atasan yang berwenang dapat meneruskan tugas sebelum diterima petugas.');
+            }
+            $target = User::query()->find($technicianId);
+            if (! $target || ! TicketTeamMember::qualifiesFor($locked, $target)
+                || $technicianId === (int) $locked->assigned_to
+                || (! $actor->isFacility() && ! in_array($technicianId, TicketTeamMember::descendantsOf($actor), true))) {
+                $this->reject('Pilih anggota aktif di bawah hierarki Anda dan sesuai pengelola tiket.');
+            }
+            $from = (string) $locked->assigned_to;
+            $locked->forceFill(['assigned_to' => $technicianId])->save();
+            $this->record($locked, $actor, 'maintenance_delegated', $from, (string) $technicianId, trim($reason));
+            DB::afterCommit(function () use ($locked, $target): void {
+                Notification::make()->title('Penugasan lapangan: '.$locked->number)
+                    ->body('Tugas telah didelegasikan kepada Anda. Buka tiket untuk mulai bekerja.')
+                    ->info()->sendToDatabase($target);
             });
         }, 3);
     }
