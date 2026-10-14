@@ -60,18 +60,24 @@ class TicketAttachmentController extends Controller
         ]);
 
         if ($isDownload) {
-            return response()->download($disk->path($attachment->path), $safeName, $headers);
+            $response = response()->download($disk->path($attachment->path), $safeName, $headers);
+        } else {
+            $response = response()->file($disk->path($attachment->path), $headers);
+            $response->headers->set(
+                'Content-Disposition',
+                $response->headers->makeDisposition(
+                    ResponseHeaderBag::DISPOSITION_INLINE,
+                    $safeName,
+                    'file',
+                ),
+            );
         }
 
-        $response = response()->file($disk->path($attachment->path), $headers);
-        $response->headers->set(
-            'Content-Disposition',
-            $response->headers->makeDisposition(
-                ResponseHeaderBag::DISPOSITION_INLINE,
-                $safeName,
-                'file',
-            ),
-        );
+        // Symfony BinaryFileResponse can replace explicitly supplied caching
+        // headers with "public"; set them after response construction.
+        $response->headers->set('Cache-Control', 'private, no-store, no-cache, must-revalidate, max-age=0');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
 
         return $response;
     }
