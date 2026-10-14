@@ -449,13 +449,12 @@ class TicketService
                 || ! $disk->exists($path)) {
                 throw ValidationException::withMessages(['files' => 'Lampiran tidak valid.']);
             }
-            $mime = $disk->mimeType($path);
-            $size = $disk->size($path);
-            if (! in_array($mime, ['application/pdf','image/png','image/jpeg'], true)
-                || $size > 5242880) {
-                throw ValidationException::withMessages(['files' => 'Hanya PDF/JPG/PNG maksimal 5 MB.']);
-            }
-            $validated[] = compact('path','mime','size');
+            $inspection = app(TicketAttachmentSecurity::class)->inspect($path);
+            $validated[] = [
+                'path' => $path,
+                'mime' => $inspection['mime'],
+                'size' => $inspection['size'],
+            ];
         }
 
         DB::transaction(function () use ($ticket, $actor, $validated, $comment): void {

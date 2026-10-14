@@ -248,4 +248,90 @@ class TicketingCoreTest extends TestCase
             ->assertHasNoFormErrors();
         $this->assertDatabaseCount('tickets', 2);
     }
+    public function test_comment_images_render_through_authorized_native_filament_entries(): void
+    {
+        [$reporter, $manager, $outsider, , $room] = $this->context();
+        Storage::fake('local');
+        $ticket = app(TicketService::class)->openLegacy($reporter, $this->data($room));
+        $comment = app(TicketService::class)->comment($ticket, $reporter, 'Foto unit AC yang rusak');
+        $path = 'tickets/attachments/kerusakan.png';
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jW7sAAAAASUVORK5CYII=', true);
+        Storage::disk('local')->put($path, $png);
+        app(TicketService::class)->attach($ticket, $reporter, [$path], $comment);
+
+        $attachment = $ticket->attachments()->firstOrFail();
+        $this->actingAs($reporter);
+        $this->assertSame($attachment->id, $ticket->visibleComments()->firstOrFail()->attachments->firstOrFail()->id);
+
+        Livewire::actingAs($reporter)->test(ViewTicket::class, ['record' => $ticket->id])
+            ->assertSee('Foto unit AC yang rusak')
+            ->assertSee('Foto / dokumen komentar')
+            ->assertSee('kerusakan.png');
+
+        $url = route('tickets.attachment', ['attachment' => $attachment->id]);
+        $preview = $this->get($url)->assertOk()
+            ->assertHeader('Content-Type', 'image/png')
+            ->assertHeader('X-Content-Type-Options', 'nosniff');
+        $cacheControl = $preview->headers->get('Cache-Control');
+        $this->assertStringContainsString('private', $cacheControl);
+        $this->assertStringContainsString('no-store', $cacheControl);
+        $this->assertStringNotContainsString('public', $cacheControl);
+        $this->get($url.'?download=1')->assertOk()
+            ->assertHeader('Content-Disposition', 'attachment; filename=kerusakan.png');
+        $this->actingAs($outsider)->get($url)->assertNotFound();
+        $this->assertDatabaseHas('ticket_events', [
+            'ticket_id' => $ticket->id, 'action' => 'attachment_viewed', 'actor_id' => $reporter->id,
+        ]);
+        $this->assertDatabaseHas('ticket_events', [
+            'ticket_id' => $ticket->id, 'action' => 'attachment_downloaded', 'actor_id' => $reporter->id,
+        ]);
+    }
+
+    public function test_attachment_validation_rejects_spoofed_content_and_unsafe_file_paths(): void
+    {
+        [$reporter, , , , $room] = $this->context();
+        Storage::fake('local');
+        $ticket = app(TicketService::class)->openLegacy($reporter, $this->data($room));
+        $comment = app(TicketService::class)->comment($ticket, $reporter, 'Contoh lampiran');
+        Storage::disk('local')->put('tickets/attachments/forged.png', '%PDF-1.4 not an image');
+
+        try {
+            app(TicketService::class)->attach($ticket, $reporter, ['tickets/attachments/forged.png'], $comment);
+            $this->fail('Spoofed content must be rejected.');
+        } catch (ValidationException) {
+            $this->assertDatabaseCount('ticket_attachments', 0);
+        }
+
+        try {
+            app(TicketService::class)->attach($ticket, $reporter, ['tickets/attachments/../.env'], $comment);
+            $this->fail('Unsafe attachment path must be rejected.');
+        } catch (ValidationException) {
+            $this->assertDatabaseCount('ticket_attachments', 0);
+        }
+    }
+
+    public function test_private_pdf_can_preview_inline_but_internal_comments_remain_hidden(): void
+    {
+        [$reporter, $manager, $outsider, , $room] = $this->context();
+        Storage::fake('local');
+        $ticket = app(TicketService::class)->openLegacy($reporter, $this->data($room));
+        $comment = app(TicketService::class)->comment($ticket, $manager, 'Hanya untuk tim', true);
+        $path = 'tickets/attachments/diagnosis.pdf';
+        Storage::disk('local')->put($path, '%PDF-1.4 test');
+        app(TicketService::class)->attach($ticket, $manager, [$path], $comment);
+        $attachment = $ticket->attachments()->firstOrFail();
+
+        $url = route('tickets.attachment', ['attachment' => $attachment->id]);
+        $this->actingAs($manager)->get($url)->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf');
+        Livewire::actingAs($manager)->test(ViewTicket::class, ['record' => $ticket->id])
+            ->assertSee('diagnosis.pdf')
+            ->assertSee('Hanya untuk tim');
+        $this->actingAs($reporter)->get($url)->assertNotFound();
+        Livewire::actingAs($reporter)->test(ViewTicket::class, ['record' => $ticket->id])
+            ->assertDontSee('diagnosis.pdf')
+            ->assertDontSee('Hanya untuk tim');
+        $this->actingAs($outsider)->get($url)->assertNotFound();
+    }
+
 }

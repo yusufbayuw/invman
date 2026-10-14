@@ -32,3 +32,15 @@ php artisan test --filter=TicketingCoreTest
 php artisan test
 ```
 Uji role sarpras, fasilitas, pengelola aset, dan unit asing. Konfirmasi file dalam `storage/app/private/tickets/attachments` tidak bisa diambil dari symlink `public/storage`. Konfigurasi queue dan scheduler lama tidak diubah dalam fase pertama ini.
+
+
+## Lampiran komentar dan pratinjau privat (Filament)
+
+- Di **Percakapan**, foto JPG/PNG pada komentar ditampilkan menggunakan `ImageEntry` bawaan Filament; nama file dan unduhan menggunakan `TextEntry`. Berkas PDF terbuka melalui preview inline browser, tanpa modal JavaScript, CDN viewer, atau layanan eksternal.
+- Semua file tetap di disk `local` privat. Endpoint `/tiket/lampiran/{attachment}` tetap memerlukan login dan otorisasi tiket; lampiran pada komentar internal hanya dapat diakses petugas berwenang. `?download=1` memaksa unduh, sedangkan tautan biasa memberikan preview inline untuk JPG/PNG/PDF.
+- File diverifikasi ulang sebelum di-stream, respons memakai `Cache-Control: private, no-store`, `nosniff`, dan audit akses `attachment_viewed` / `attachment_downloaded`. Akses lampiran untuk akun tidak berwenang menghasilkan HTTP 404.
+- Upload baru diperiksa berdasarkan ekstensi **dan** MIME byte aktual, signature PDF atau struktur gambar, ukuran maksimal 5 MB, dan larangan path traversal. Berkas lama yang tidak valid tidak akan disajikan sebagai preview.
+- Pemindaian malware pada saat upload bersifat opsional dan membutuhkan `clamscan` yang sudah dipasang di server. Aktifkan `TICKET_UPLOAD_REQUIRE_MALWARE_SCAN=true` agar upload **ditolak** apabila scanner tidak tersedia atau gagal; `TICKET_UPLOAD_CLAMAV_BINARY` dan `TICKET_UPLOAD_CLAMAV_TIMEOUT` dapat disesuaikan. Default tidak mewajibkan antivirus.
+- CAPTCHA login lokal yang sudah ada memakai 5 karakter dan tidak membedakan kapitalisasi, sedangkan Turnstile tetap menjadi opsi konfigurasi lama. Tidak ada perubahan dependensi Composer ataupun migrasi database.
+
+Sesudah deployment, jalankan `php artisan optimize:clear` dan uji dengan akun pelapor, pengelola, serta akun unit lain. Foto pada komentar internal tidak boleh muncul untuk pelapor yang tidak memiliki izin pengelolaan.
