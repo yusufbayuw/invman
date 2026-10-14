@@ -50,6 +50,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(fn () => view('filament.components.logo'))
             ->brandLogoHeight('4rem')
             ->path('admin')
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->favicon(asset(config('app.logo')))
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('pwa.meta'))
             ->renderHook(PanelsRenderHook::BODY_END, fn () => view('pwa.client', [
