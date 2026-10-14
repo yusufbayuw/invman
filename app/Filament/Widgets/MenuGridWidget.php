@@ -93,7 +93,7 @@ class MenuGridWidget extends Widget
     public function getTotalPages(): int
     {
         $items = $this->getFilteredMenuItems();
-        return ceil(count($items) / $this->getItemsPerPage());
+        return max(1, (int) ceil(count($items) / $this->getItemsPerPage()));
     }
 
     public function goToPage($page)
