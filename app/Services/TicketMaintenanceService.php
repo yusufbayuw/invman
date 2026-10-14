@@ -162,6 +162,7 @@ class TicketMaintenanceService
             $locked = $this->locked($ticket);
             $case = $this->case($locked);
             if ($locked->assigned_to !== $technician->id
+                || ! TicketTeamMember::qualifiesFor($locked, $technician)
                 || $locked->status !== 'triaged' || ! $case->approved_at) {
                 $this->reject('Hanya teknisi yang ditugaskan dapat menerima pekerjaan yang disetujui.');
             }
@@ -182,6 +183,7 @@ class TicketMaintenanceService
             $this->case($locked);
             $from = $locked->status;
             if ($locked->assigned_to !== $technician->id
+                || ! TicketTeamMember::qualifiesFor($locked, $technician)
                 || ! ($waiting ? $from === 'in_progress' : $from === 'waiting_parts')) {
                 $this->reject('Status pekerjaan atau petugas tidak sesuai.');
             }
@@ -215,7 +217,9 @@ class TicketMaintenanceService
         DB::transaction(function () use ($ticket, $technician, $diagnosis, $actions, $clean, $outcome): void {
             $locked = $this->locked($ticket);
             $case = $this->case($locked);
-            if ($locked->assigned_to !== $technician->id || $locked->status !== 'in_progress'
+            if ($locked->assigned_to !== $technician->id
+                || ! TicketTeamMember::qualifiesFor($locked, $technician)
+                || $locked->status !== 'in_progress'
                 || ! $case->accepted_at) {
                 $this->reject('Hanya teknisi yang menerima tugas dapat mengirim hasil pekerjaan.');
             }
