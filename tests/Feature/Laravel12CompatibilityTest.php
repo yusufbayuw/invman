@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use DominionSolutions\FilamentCaptcha\Forms\Components\Captcha;
+use App\Filament\Forms\Components\ShieldCaptcha;
 use Filament\Forms\Components\Component as FormComponent;
 use Filament\Contracts\Plugin as FilamentPlugin;
 use SolutionForest\FilamentSimpleLightBox\SimpleLightBoxPlugin;
@@ -16,7 +16,7 @@ class Laravel12CompatibilityTest extends TestCase
 
         // These classes are part of the existing login CAPTCHA and asset
         // preview screens. Catch accidental package removals on upgrade.
-        $this->assertInstanceOf(FormComponent::class, Captcha::make('captcha'));
+        $this->assertInstanceOf(FormComponent::class, ShieldCaptcha::make('captcha'));
         $this->assertInstanceOf(FilamentPlugin::class, SimpleLightBoxPlugin::make());
     }
 }
