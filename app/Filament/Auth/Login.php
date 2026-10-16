@@ -2,15 +2,18 @@
 
 namespace App\Filament\Auth;
 
+use App\Filament\Support\Concerns\ResetsCaptchaOnValidationError;
+use App\Filament\Support\InvmanCaptcha;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
 use Filament\Pages\Auth\Login as BaseAuth;
 use Coderflex\FilamentTurnstile\Forms\Components\Turnstile;
-use DominionSolutions\FilamentCaptcha\Forms\Components\Captcha;
 
-class Login extends BaseAuth 
+class Login extends BaseAuth
 {
+    use ResetsCaptchaOnValidationError;
+
     public function form(Form $form): Form
     {
         return $form
@@ -22,14 +25,7 @@ class Login extends BaseAuth
         Turnstile::make('captcha')
             ->label('Kode Keamanan')
             ->theme('auto')
-        : Captcha::make('captcha')
-            ->label('Kode Keamanan')
-            ->helperText('Masukkan 5 karakter pada gambar. Huruf besar/kecil tidak dibedakan.')
-            ->rules(['captcha'])
-            ->required()
-            ->validationMessages([
-                'captcha' => __('Captcha tidak sesuai'),
-            ]),
+        : InvmanCaptcha::make(),
         $this->getRememberFormComponent(),
         ])
         ->statePath('data');
@@ -60,7 +56,9 @@ class Login extends BaseAuth
     {
         // Clear the rejected challenge so the next attempt uses a fresh code.
         $this->data['captcha'] = null;
-        $this->dispatch('reset-captcha');
+        if (config('base_urls.login_turnstile')) {
+            $this->dispatch('reset-captcha');
+        }
  
         parent::throwFailureValidationException();
     }
