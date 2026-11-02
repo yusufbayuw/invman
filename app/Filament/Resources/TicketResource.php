@@ -34,7 +34,8 @@ class TicketResource extends Resource
     {
         return app(TicketService::class)->canCreate(auth()->user())
             || (auth()->user()?->ticketTeamMember()->where('is_active', true)->exists() ?? false)
-            || (auth()->user()?->workOrderAssignments()->where('is_active', true)->exists() ?? false);
+            || (auth()->user()?->workOrderAssignments()->where('is_active', true)->exists() ?? false)
+            || (auth()->check() && \App\Models\WorkOrderApproval::query()->where('status', 'pending')->whereJsonContains('candidate_user_ids', auth()->id())->exists());
     }
 
     public static function canCreate(): bool { return app(TicketService::class)->canCreate(auth()->user()); }

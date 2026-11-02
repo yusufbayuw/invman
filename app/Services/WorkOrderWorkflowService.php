@@ -138,6 +138,13 @@ final class WorkOrderWorkflowService
         if (! $user->is_enabled || $approval->status !== 'pending') {
             return false;
         }
+        if ($approval->checkpoint === 'start' && $approval->ticket->status !== 'open') {
+            return false;
+        }
+        if ($approval->checkpoint === 'final' && ($approval->ticket->status !== 'resolved'
+            || ! $approval->ticket->maintenance?->verified_at)) {
+            return false;
+        }
         if ($approval->ticket->workOrderApprovals()->where('checkpoint', $approval->checkpoint)->where('status', 'rejected')->exists()) {
             return false;
         }
