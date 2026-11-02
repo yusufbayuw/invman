@@ -18,7 +18,7 @@ class G002M003ItemManagementResource extends Resource
 {
     protected static ?string $model = G002M003ItemManagement::class;
 
-    protected static ?string $navigationGroup = 'Barang';
+    protected static ?string $navigationGroup = 'Data Aset';
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-vertical';
     protected static ?string $slug = 'item-management';
     protected static ?string $modelLabel = 'Pengelola Barang';

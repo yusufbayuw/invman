@@ -17,7 +17,7 @@ class G008M018DriverResource extends Resource
 {
     protected static ?string $model = G008M018Driver::class;
 
-    protected static ?string $navigationGroup = 'Kendaraan';
+    protected static ?string $navigationGroup = 'Data Aset';
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
     protected static ?string $slug = 'driver';
     protected static ?string $modelLabel = 'Pengemudi';

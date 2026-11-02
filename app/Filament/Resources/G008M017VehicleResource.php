@@ -14,7 +14,7 @@ class G008M017VehicleResource extends Resource
 {
     protected static ?string $model = G008M017Vehicle::class;
 
-    protected static ?string $navigationGroup = 'Kendaraan';
+    protected static ?string $navigationGroup = 'Data Aset';
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 

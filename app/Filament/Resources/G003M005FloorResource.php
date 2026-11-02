@@ -18,7 +18,7 @@ class G003M005FloorResource extends Resource
 {
     protected static ?string $model = G003M005Floor::class;
 
-    protected static ?string $navigationGroup = 'Ruangan';
+    protected static ?string $navigationGroup = 'Data Aset';
     protected static ?string $navigationIcon = 'heroicon-o-map';
     protected static ?string $slug = 'floor';
     protected static ?string $modelLabel = 'Lantai';

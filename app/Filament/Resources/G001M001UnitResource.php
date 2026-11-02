@@ -21,7 +21,7 @@ class G001M001UnitResource extends Resource
 {
     protected static ?string $model = G001M001Unit::class;
 
-    protected static ?string $navigationGroup = 'Manajemen';
+    protected static ?string $navigationGroup = 'Pengaturan';
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
     protected static ?string $slug = 'unit';
     protected static ?string $modelLabel = 'Unit';

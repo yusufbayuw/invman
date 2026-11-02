@@ -16,7 +16,7 @@ class G007M013ItemHistoryResource extends Resource
 {
     protected static ?string $model = G007M013ItemHistory::class;
 
-    protected static ?string $navigationGroup = 'Riwayat';
+    protected static ?string $navigationGroup = 'Pemeriksaan & Riwayat';
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
 

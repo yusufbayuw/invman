@@ -18,7 +18,7 @@ class G002M007ItemResource extends Resource
 {
     protected static ?string $model = G002M007Item::class;
 
-    protected static ?string $navigationGroup = 'Barang';
+    protected static ?string $navigationGroup = 'Data Aset';
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
 

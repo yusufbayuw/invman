@@ -22,8 +22,8 @@ use Illuminate\Database\Eloquent\Model;
 class TicketResource extends Resource
 {
     protected static ?string $model = Ticket::class;
-    protected static ?string $navigationGroup = 'Layanan & Ticketing';
-    protected static ?string $navigationLabel = 'Tiket Layanan';
+    protected static ?string $navigationGroup = 'Laporan & Perbaikan';
+    protected static ?string $navigationLabel = 'Laporan Kerusakan';
     protected static ?string $modelLabel = 'Tiket';
     protected static ?string $navigationIcon = 'heroicon-o-ticket';
     protected static ?string $slug = 'tiket';

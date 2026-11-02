@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 class TicketTeamMemberResource extends Resource
 {
     protected static ?string $model = TicketTeamMember::class;
-    protected static ?string $navigationGroup = 'Layanan & Ticketing';
+    protected static ?string $navigationGroup = 'Pengaturan';
     protected static ?string $navigationLabel = 'Tim & Hierarki Petugas';
     protected static ?string $modelLabel = 'Anggota Tim';
     protected static ?string $navigationIcon = 'heroicon-o-user-group';

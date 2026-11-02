@@ -25,8 +25,8 @@ class TugasTeknisi extends Page implements HasTable
     use InteractsWithTable;
 
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
-    protected static ?string $navigationGroup = 'Layanan & Ticketing';
-    protected static ?string $navigationLabel = 'Tugas Lapangan';
+    protected static ?string $navigationGroup = 'Laporan & Perbaikan';
+    protected static ?string $navigationLabel = 'Tugas Saya';
     protected static ?string $title = 'Tugas Teknisi Lapangan';
     protected static ?int $navigationSort = 0;
     protected static string $view = 'filament.pages.tugas-teknisi';
