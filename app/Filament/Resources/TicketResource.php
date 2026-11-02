@@ -33,7 +33,8 @@ class TicketResource extends Resource
     public static function canViewAny(): bool
     {
         return app(TicketService::class)->canCreate(auth()->user())
-            || (auth()->user()?->ticketTeamMember()->where('is_active', true)->exists() ?? false);
+            || (auth()->user()?->ticketTeamMember()->where('is_active', true)->exists() ?? false)
+            || (auth()->user()?->workOrderAssignments()->where('is_active', true)->exists() ?? false);
     }
 
     public static function canCreate(): bool { return app(TicketService::class)->canCreate(auth()->user()); }

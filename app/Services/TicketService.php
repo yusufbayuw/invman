@@ -292,6 +292,7 @@ class TicketService
             $this->event($ticket, $actor->id, 'created', null, 'open');
             if ($category->reporting_enabled) {
                 app(TicketMaintenanceService::class)->initialize($ticket);
+                app(WorkOrderWorkflowService::class)->snapshot($ticket);
             }
             return $ticket;
         }, 3);

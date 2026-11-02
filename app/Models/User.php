@@ -99,7 +99,8 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
 
         if ($panel->getId() === 'admin') {
             return $this->isFacility() || $this->isSarpras() || $this->isAssetManager()
-                || $this->ticketTeamMember()->where('is_active', true)->exists();
+                || $this->ticketTeamMember()->where('is_active', true)->exists()
+                || $this->workOrderAssignments()->where('is_active', true)->exists();
         }
 
         return true;
@@ -136,6 +137,11 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     {
         return $this->belongsToMany(G002M003ItemManagement::class, 'g002_m003_item_management_user')
             ->withTimestamps();
+    }
+
+    public function workOrderAssignments(): HasMany
+    {
+        return $this->hasMany(WorkOrderAssignment::class);
     }
 
     public function isAssetManager(): bool
