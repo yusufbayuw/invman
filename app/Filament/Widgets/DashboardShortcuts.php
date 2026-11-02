@@ -30,7 +30,7 @@ class DashboardShortcuts extends Widget
         if (PeminjamanSaya::canAccess()) {
             $links[] = $this->link(PeminjamanSaya::getNavigationLabel(), 'Lihat status dan tindak lanjut pinjaman.', 'heroicon-o-clipboard-document-list', PeminjamanSaya::getUrl());
         }
-        if (TugasTeknisi::canAccess() && (! $user?->isFacility() || $user?->ticketTeamMember()->where('is_active', true)->exists())) {
+        if (TugasTeknisi::hasActiveTasks()) {
             $links[] = $this->link('Tugas Saya', 'Dokumentasikan pekerjaan dan kirim hasil.', 'heroicon-o-wrench-screwdriver', TugasTeknisi::getUrl());
         }
         if (RingkasanPeminjaman::canAccess()) {

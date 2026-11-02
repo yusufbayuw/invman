@@ -5,20 +5,48 @@
         </x-slot>
 
         <x-slot name="description">
-            Reservasi yang saat ini memerlukan tindakan Anda sesuai peran dan jenis pengelolaan.
+            Peminjaman yang perlu Anda tindak lanjuti.
         </x-slot>
 
         <div wire:poll.30s wire:loading.class.delay="opacity-70" class="space-y-4 transition-opacity">
-            @if ($queue->isEmpty())
+            <div class="flex flex-wrap items-center gap-2">
+                @if ($overdueCount > 0)
+                    <x-filament::badge color="danger" icon="heroicon-m-exclamation-triangle">{{ $overdueCount }} reservasi terlambat</x-filament::badge>
+                @endif
+                @if ($acceptanceCount > 0)
+                    <x-filament::badge color="warning">{{ $acceptanceCount }} reservasi menunggu penerimaan</x-filament::badge>
+                @endif
+                <x-filament::link :href="\App\Filament\Pages\RingkasanPeminjaman::getUrl()" icon="heroicon-m-arrow-top-right-on-square">
+                    Lihat pemantauan aset
+                </x-filament::link>
+            </div>
+
+            @foreach ($acceptances as $receipt)
+                <article wire:key="acceptance-{{ $receipt['key'] }}" class="flex flex-col gap-3 rounded-xl bg-warning-50 p-3 ring-1 ring-warning-600/20 sm:flex-row sm:items-center sm:justify-between dark:bg-warning-400/10">
+                    <div class="min-w-0 break-words text-sm">
+                        <p class="font-semibold text-gray-950 dark:text-white">{{ $receipt['asset'] }}</p>
+                        <p class="text-gray-600 dark:text-gray-400">{{ $receipt['activity'] }} · {{ $receipt['type_label'] }}</p>
+                    </div>
+                    <x-filament::button tag="a" :href="$receipt['url']" color="warning" size="sm" class="invman-quick-action min-h-11 max-w-full sm:shrink-0">
+                        Konfirmasi penerimaan
+                    </x-filament::button>
+                </article>
+            @endforeach
+
+            @if ($acceptances->count() >= 12)
+                <p class="text-sm text-gray-500 dark:text-gray-400">Menampilkan hingga 12 penerimaan. Buka pemantauan aset untuk memeriksa seluruh status.</p>
+            @endif
+
+            @if ($queue->isEmpty() && $acceptances->isEmpty())
                 <div class="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
                     <x-filament::icon icon="heroicon-o-check-circle" class="h-10 w-10 text-success-500" />
                     <p class="text-sm font-medium text-gray-950 dark:text-white">Tidak ada tindakan yang menunggu</p>
                     <p class="max-w-lg text-sm text-gray-500 dark:text-gray-400">
-                        Semua reservasi dalam kewenangan Anda sudah diproses.
+                        Status dan jadwal peminjaman tetap tersedia pada pemantauan aset.
                     </p>
                 </div>
-            @else
-                <div class="hidden overflow-x-auto rounded-xl border border-gray-200 md:block dark:border-white/10">
+            @elseif ($queue->isNotEmpty())
+                <div class="hidden overflow-x-auto rounded-xl border border-gray-200 xl:block dark:border-white/10">
                     <table class="w-full table-fixed divide-y divide-gray-200 text-start dark:divide-white/5">
                         <thead>
                             <tr class="bg-gray-50 dark:bg-white/5">
@@ -34,8 +62,8 @@
                                 <tr wire:key="quick-action-desktop-{{ $row['key'] }}" class="hover:bg-gray-50 dark:hover:bg-white/5">
                                     <td class="px-4 py-3">
                                         <div class="flex items-start gap-3">
-                                            <x-filament::icon :icon="$row['type_icon']" class="mt-0.5 h-5 w-5 text-primary-500" />
-                                            <div>
+                                            <x-filament::icon :icon="$row['type_icon']" class="mt-0.5 h-5 w-5 shrink-0 text-primary-500" />
+                                            <div class="min-w-0 break-words">
                                                 <p class="text-sm font-medium text-gray-950 dark:text-white">{{ $row['asset_name'] }}</p>
                                                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ $row['type_label'] }}</p>
                                             </div>
@@ -47,7 +75,7 @@
                                     </td>
                                     <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $row['schedule'] }}</td>
                                     <td class="px-4 py-3">
-                                        <x-filament::badge :color="$row['status_color']" class="[&_.truncate]:whitespace-normal">{{ $row['status_label'] }}</x-filament::badge>
+                                        <x-filament::badge :color="$row['status_color']" class="invman-action-status max-w-full">{{ $row['status_label'] }}</x-filament::badge>
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="flex flex-wrap justify-end gap-2">
@@ -64,7 +92,7 @@
                                                         .')';
                                                 @endphp
                                                 <x-filament::button
-                                                    class="max-w-full [&_.truncate]:whitespace-normal"
+                                                    class="invman-quick-action min-h-11 max-w-full"
                                                     size="sm"
                                                     :color="$presentation['color']"
                                                     :icon="$presentation['icon']"
@@ -82,20 +110,20 @@
                     </table>
                 </div>
 
-                <div class="grid gap-3 md:hidden">
+                <div class="grid gap-3 md:grid-cols-2 xl:hidden">
                     @foreach ($queue as $row)
                         <article wire:key="quick-action-mobile-{{ $row['key'] }}" class="space-y-3 rounded-xl border border-gray-200 p-4 dark:border-white/10">
-                            <div class="flex items-start justify-between gap-3">
+                            <div class="flex flex-wrap items-start justify-between gap-2">
                                 <div class="flex min-w-0 items-start gap-3">
-                                    <x-filament::icon :icon="$row['type_icon']" class="mt-0.5 h-5 w-5 text-primary-500" />
-                                    <div>
+                                    <x-filament::icon :icon="$row['type_icon']" class="mt-0.5 h-5 w-5 shrink-0 text-primary-500" />
+                                    <div class="min-w-0 break-words">
                                         <p class="text-sm font-semibold text-gray-950 dark:text-white">{{ $row['asset_name'] }}</p>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">{{ $row['type_label'] }} · {{ $row['unit_name'] }}</p>
                                     </div>
                                 </div>
-                                <x-filament::badge :color="$row['status_color']" class="[&_.truncate]:whitespace-normal">{{ $row['status_label'] }}</x-filament::badge>
+                                <x-filament::badge :color="$row['status_color']" class="invman-action-status max-w-full">{{ $row['status_label'] }}</x-filament::badge>
                             </div>
-                            <div class="space-y-1 text-sm">
+                            <div class="space-y-1 break-words text-sm">
                                 <p class="font-medium text-gray-900 dark:text-gray-100">{{ $row['activity_name'] }}</p>
                                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ $row['schedule'] }}</p>
                             </div>
@@ -113,6 +141,7 @@
                                             .')';
                                     @endphp
                                     <x-filament::button
+                                        class="invman-quick-action min-h-11 max-w-full"
                                         size="sm"
                                         :color="$presentation['color']"
                                         :icon="$presentation['icon']"

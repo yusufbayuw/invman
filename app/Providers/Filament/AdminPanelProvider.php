@@ -70,6 +70,8 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()->label('Laporan & Perbaikan'),
                 NavigationGroup::make()->label('Koordinasi'),
                 NavigationGroup::make()->label('Laporan'),
+                NavigationGroup::make()->label('Kelola Peminjaman')->collapsed(),
+                NavigationGroup::make()->label('Opsi Peminjaman')->collapsed(),
                 NavigationGroup::make()->label('Data Aset')->collapsed(),
                 NavigationGroup::make()->label('Pemeriksaan & Riwayat')->collapsed(),
                 NavigationGroup::make()->label('Pengaturan')->collapsed(),

@@ -8,6 +8,7 @@ use App\Models\G005M009ItemReservation;
 use App\Models\G005M010RoomReservation;
 use App\Models\G005M019VehicleReservation;
 use App\Models\User;
+use App\Services\LoanOperationalPulseService;
 use App\Services\LoanQuickActionService;
 use App\Services\LoanRequestService;
 use Filament\Actions\Action;
@@ -170,8 +171,14 @@ class QuickActionsWidget extends Widget implements HasActions, HasForms
         $queue = app(LoanQuickActionService::class)->forUser($user);
         $pageCount = max(1, (int) ceil($queue->count() / $this->perPage));
         $page = min($this->currentPage, $pageCount);
+        // Keep overdue alerts and two-party receipt acceptance visible without
+        // repeating the full monitoring list from Ringkasan Peminjaman.
+        $attention = app(LoanOperationalPulseService::class)->snapshot($user, 'acceptance');
 
         return [
+            'overdueCount' => $attention['counts']['overdue'],
+            'acceptanceCount' => $attention['counts']['acceptance'],
+            'acceptances' => collect($attention['rows'])->where('action', 'Konfirmasi penerimaan'),
             'queue' => $queue->slice(($page - 1) * $this->perPage, $this->perPage)->values(),
             'queueCount' => $queue->count(),
             'currentQueuePage' => $page,

@@ -5,8 +5,9 @@ namespace Tests\Feature;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\RingkasanPeminjaman;
 use App\Filament\Pages\SemuaMenu;
+use App\Filament\Pages\TugasTeknisi;
+use App\Filament\Resources\TicketResource;
 use App\Filament\Widgets\DashboardShortcuts;
-use App\Filament\Widgets\OperationalPriorityWidget;
 use App\Filament\Widgets\QuickActionsWidget;
 use App\Filament\Widgets\TechnicianTaskStats;
 use App\Filament\Widgets\TicketAttentionWidget;
@@ -62,11 +63,11 @@ class RoleDashboardTest extends TestCase
         $this->actingAs($this->user(config('role.sarpras')))->get('/admin')->assertOk()
             ->assertSee('Ajukan Peminjaman')->assertSee('Peminjaman Saya')
             ->assertSee('Lihat Jadwal')->assertSee('Lapor Kerusakan')
-            ->assertSee('Perlu Tindakan Anda')->assertSee('Prioritas Reservasi Aset')
+            ->assertSee('Perlu Tindakan Anda')->assertSee('Lihat pemantauan aset')->assertDontSee('Prioritas Reservasi Aset')
             ->assertDontSee('Filter Dasbor')->assertDontSee('Ringkasan Pengajuan')
             ->assertDontSee('Komposisi Status')->assertDontSee('Cari menu');
-        $this->assertSame([DashboardShortcuts::class, QuickActionsWidget::class, OperationalPriorityWidget::class, TicketAttentionWidget::class], app(Dashboard::class)->getWidgets());
-        $this->get('/admin/ringkasan-peminjaman')->assertOk()->assertSee('Ringkasan Pengajuan')->assertSee('Pengajuan Terbaru');
+        $this->assertSame([DashboardShortcuts::class, QuickActionsWidget::class, TicketAttentionWidget::class], app(Dashboard::class)->getWidgets());
+        $this->get('/admin/ringkasan-peminjaman')->assertOk()->assertSee('Ringkasan Pengajuan')->assertSee('Pengajuan Terbaru')->assertSee('Prioritas Reservasi Aset');
         $this->get(SemuaMenu::getUrl())->assertForbidden();
     }
 
@@ -83,11 +84,13 @@ class RoleDashboardTest extends TestCase
 
     public function test_technician_dashboard_contains_only_own_work_and_cannot_open_loan_tools(): void
     {
-        $this->actingAs($this->technician())->get('/admin')->assertOk()
+        $technician = $this->technician();
+        $this->workTicket($technician);
+        $this->actingAs($technician)->get('/admin')->assertOk()
             ->assertSee('Tugas Saya')->assertSee('Pekerjaan Saya')->assertSee('Perlu Diterima')
             ->assertDontSee('Prioritas Reservasi Aset')->assertDontSee('Perlu Tindakan Anda')
             ->assertDontSee('Ajukan Peminjaman')->assertDontSee('Komposisi Status');
-        $this->assertSame([DashboardShortcuts::class, TechnicianTaskStats::class, TicketAttentionWidget::class], app(Dashboard::class)->getWidgets());
+        $this->assertSame([DashboardShortcuts::class, TicketAttentionWidget::class, TechnicianTaskStats::class], app(Dashboard::class)->getWidgets());
         $this->get('/admin/ringkasan-peminjaman')->assertForbidden();
         $this->get('/admin/peminjaman-cepat')->assertForbidden();
         $this->get('/admin/ajukan-peminjaman')->assertForbidden();
@@ -108,6 +111,7 @@ class RoleDashboardTest extends TestCase
     {
         $user = $this->technician();
         $user->assignRole(config('role.sarpras'));
+        $this->workTicket($user);
         $this->actingAs($user);
         $this->assertContains(QuickActionsWidget::class, app(Dashboard::class)->getWidgets());
         $this->assertContains(TechnicianTaskStats::class, app(Dashboard::class)->getWidgets());
@@ -144,13 +148,109 @@ class RoleDashboardTest extends TestCase
     {
         $this->actingAs($this->user(config('role.admin')));
         $groups = collect(Filament::getPanel('admin')->getNavigationGroups())->keyBy(fn ($group) => $group->getLabel());
-        foreach (['Data Aset', 'Pemeriksaan & Riwayat', 'Pengaturan'] as $name) {
+        foreach (['Kelola Peminjaman', 'Opsi Peminjaman', 'Data Aset', 'Pemeriksaan & Riwayat', 'Pengaturan'] as $name) {
             $this->assertTrue($groups[$name]->isCollapsed());
         }
         $paths = collect(Route::getRoutes())->map->uri();
         foreach (['admin', 'admin/peminjaman-cepat', 'admin/ajukan-peminjaman', 'admin/peminjaman-saya', 'admin/peminjaman-serah-terima', 'admin/tiket', 'admin/activity'] as $path) {
             $this->assertContains($path, $paths);
         }
+    }
+
+    public function test_technician_links_open_the_exact_ticket_and_preserve_existing_work_guards(): void
+    {
+        $technician = $this->technician();
+        $triaged = $this->workTicket($technician);
+        $working = $this->workTicket($technician, 'in_progress');
+        $waiting = $this->workTicket($technician, 'waiting_parts');
+        $unapproved = $this->workTicket($technician);
+        $unapproved->maintenance->forceFill(['approved_at' => null])->save();
+        $unaccepted = $this->workTicket($technician, 'in_progress');
+        $unaccepted->maintenance->forceFill(['accepted_at' => null])->save();
+        $resolved = $this->workTicket($technician, 'resolved');
+        $other = $this->workTicket($this->technician());
+        $widget = Livewire::actingAs($technician)->test(TicketAttentionWidget::class)
+            ->set('tableRecordsPerPage', 10)
+            ->assertCanNotSeeTableRecords([$other]);
+        foreach ([$triaged, $working, $waiting] as $ticket) {
+            $url = TicketResource::getUrl('view', ['record' => $ticket]);
+            $widget->assertTableActionVisible('work', $ticket)
+                ->assertTableActionHasUrl('work', $url, $ticket);
+            $this->get($url)->assertOk()->assertSee($ticket->number);
+        }
+        foreach ([$unapproved, $unaccepted, $resolved] as $ticket) {
+            $widget->assertTableActionHidden('work', $ticket);
+        }
+        $this->assertNotSame(TicketResource::getUrl('view', ['record' => $triaged]), TicketResource::getUrl('view', ['record' => $working]));
+        $this->get(TicketResource::getUrl('view', ['record' => $other]))->assertNotFound();
+    }
+
+    public function test_administrative_access_alone_does_not_offer_technician_work(): void
+    {
+        $manager = $this->user();
+        $management = G002M003ItemManagement::query()->create(['name' => 'Pengelola Tanpa Tugas']);
+        $management->users()->attach($manager);
+        foreach ([$this->user(config('role.admin')), $this->user(config('role.fasilitas')), $manager, $this->technician()] as $user) {
+            $this->actingAs($user);
+            $this->assertTrue(TugasTeknisi::canAccess());
+            $this->assertNotContains(TechnicianTaskStats::class, app(Dashboard::class)->getWidgets());
+            $this->assertNotContains('Tugas Saya', array_column(app(DashboardShortcuts::class)->shortcuts(), 'label'));
+            // Direct access remains available for history and bookmarks.
+            $this->get(TugasTeknisi::getUrl())->assertOk();
+        }
+    }
+
+    public function test_completed_or_foreign_work_does_not_make_technician_shortcut_relevant(): void
+    {
+        $administrator = $this->user(config('role.admin'));
+        $this->workTicket($administrator, 'closed');
+        $this->workTicket($this->technician());
+        $this->actingAs($administrator);
+        $this->assertFalse(TugasTeknisi::hasActiveTasks());
+        $this->assertFalse(TugasTeknisi::shouldRegisterNavigation());
+        $own = $this->workTicket($administrator);
+        $this->assertTrue(TugasTeknisi::hasActiveTasks());
+        $this->assertTrue(TugasTeknisi::shouldRegisterNavigation());
+        Livewire::test(TicketAttentionWidget::class)->assertTableActionVisible('work', $own);
+    }
+
+    public function test_ticket_unit_filter_is_local_and_cannot_expand_nonfacility_scope(): void
+    {
+        $reporter = $this->user(config('role.sarpras'));
+        $otherUnit = G001M001Unit::query()->create(['name' => 'Unit Asing']);
+        $otherReporter = $this->user(config('role.sarpras'));
+        $otherReporter->update(['g001_m001_unit_id' => $otherUnit->id]);
+        $own = $this->ticket($reporter, 'TIKET UNIT SENDIRI');
+        $foreign = $this->ticket($otherReporter, 'TIKET UNIT ASING');
+        Livewire::actingAs($this->user(config('role.fasilitas')))->test(TicketAttentionWidget::class)
+            ->assertCanSeeTableRecords([$own, $foreign])
+            ->filterTable('unit', $otherUnit->id)
+            ->assertCanSeeTableRecords([$foreign])->assertCanNotSeeTableRecords([$own]);
+        Livewire::actingAs($reporter)->test(TicketAttentionWidget::class)
+            ->set('tableFilters', ['unit' => ['value' => $otherUnit->id]])
+            ->assertCanSeeTableRecords([$own])->assertCanNotSeeTableRecords([$foreign]);
+    }
+
+    public function test_work_action_is_hidden_after_assignment_or_qualification_changes(): void
+    {
+        $technician = $this->technician();
+        $own = $this->workTicket($technician);
+        $this->actingAs($this->user(config('role.fasilitas')));
+        Livewire::test(TicketAttentionWidget::class)->assertTableActionHidden('work', $own);
+        $technician->ticketTeamMember->update(['is_active' => false]);
+        Livewire::actingAs($technician)->test(TicketAttentionWidget::class)->assertTableActionHidden('work', $own);
+    }
+
+    private function workTicket(User $technician, string $status = 'triaged'): Ticket
+    {
+        $ticket = $this->ticket($this->user(config('role.sarpras')), 'TUGAS '.Str::uuid(), $status);
+        $ticket->update(['assigned_to' => $technician->id]);
+        $ticket->maintenance()->create([])->forceFill([
+            'approved_at' => now(),
+            'accepted_at' => in_array($status, ['in_progress', 'waiting_parts', 'resolved', 'closed']) ? now() : null,
+        ])->save();
+
+        return $ticket->fresh();
     }
 
     private function ticket(User $reporter, string $title, string $status = 'open'): Ticket

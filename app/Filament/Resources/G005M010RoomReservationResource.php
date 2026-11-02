@@ -20,11 +20,11 @@ class G005M010RoomReservationResource extends Resource
 {
     protected static ?string $model = G005M010RoomReservation::class;
 
-    protected static ?string $navigationGroup = 'Peminjaman';
+    protected static ?string $navigationGroup = 'Kelola Peminjaman';
     protected static ?string $navigationIcon = 'heroicon-o-bookmark';
     protected static ?string $slug = 'd345aa3b-0dc3-43ee-8ae4-b8916fb2a48f';//'room-reservation';
     protected static ?string $modelLabel = 'Reservasi Ruangan';
-    protected static ?string $navigationLabel = 'Reservasi Ruangan';
+    protected static ?string $navigationLabel = 'Peminjaman Ruangan';
 
     public static function shouldRegisterNavigation(): bool
     {

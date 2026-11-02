@@ -119,6 +119,8 @@ class OperationalPriorityDashboardTest extends TestCase
         $this->assertCount(5, $pulse['rows']); // one overdue active and one overdue return are de-duplicated
         $this->assertSame('overdue', $pulse['rows'][0]['category']);
         $this->assertStringNotContainsString('RAHASIA', json_encode($pulse, JSON_THROW_ON_ERROR));
+        Livewire::actingAs($borrower)->test(\App\Filament\Widgets\QuickActionsWidget::class)
+            ->assertSee('2 reservasi terlambat')->assertDontSee('ASET RAHASIA ANTAR UNIT');
 
         $acceptance = $service->snapshot($borrower, 'acceptance');
         $this->assertSame('Konfirmasi penerimaan', $acceptance['rows'][0]['action']);
@@ -180,17 +182,25 @@ class OperationalPriorityDashboardTest extends TestCase
         $this->assertSame('Lihat transaksi', $managerPulse['rows'][0]['action']);
         $this->assertSame('Konfirmasi penerimaan', $borrowerPulse['rows'][0]['action']);
         $this->assertSame(0, $service->snapshot($manager)['counts']['handover']);
+
+        Livewire::actingAs($borrower)->test(\App\Filament\Widgets\QuickActionsWidget::class)
+            ->assertSee('Konfirmasi penerimaan')->assertSee('Butuh Konfirmasi Penerima')
+            ->assertSeeHtml(e($borrowerPulse['rows'][0]['url']));
+        Livewire::actingAs($manager)->test(\App\Filament\Widgets\QuickActionsWidget::class)
+            ->assertDontSee('Konfirmasi penerimaan')->assertSee('1 reservasi menunggu penerimaan');
     }
 
-    public function test_dashboard_registers_new_priority_widget_without_removing_existing_actions(): void
+    public function test_dashboard_keeps_actions_and_moves_complete_monitoring_to_summary(): void
     {
         [, , $borrower] = $this->context();
 
         $this->actingAs($borrower)->get('/admin')
             ->assertOk()
-            ->assertSee('Prioritas Reservasi Aset')
+            ->assertDontSee('Prioritas Reservasi Aset')
+            ->assertSee('Lihat pemantauan aset')
             ->assertSee('Perlu Tindakan Anda')
             ->assertDontSee('Ringkasan Pengajuan');
+        $this->get('/admin/ringkasan-peminjaman')->assertOk()->assertSee('Prioritas Reservasi Aset')->assertSee('Ringkasan Pengajuan');
     }
     public function test_one_submission_with_two_assets_is_counted_once_in_summary_and_twice_in_reservations(): void
     {

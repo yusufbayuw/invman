@@ -29,9 +29,9 @@ class FilamentExperienceTest extends TestCase
             ->get('/admin')
             ->assertOk()
             ->assertSee('Dasbor Operasional')
-            ->assertSee('Cakupan pekerjaan')
+            ->assertDontSee('Cakupan pekerjaan')
             ->assertSee('Perlu Tindakan Anda')
-            ->assertSee('Prioritas Reservasi Aset')
+            ->assertSee('Lihat pemantauan aset')
             ->assertDontSee('Pengajuan Terbaru');
     }
 

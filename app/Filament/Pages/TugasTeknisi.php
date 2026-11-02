@@ -40,6 +40,24 @@ class TugasTeknisi extends Page implements HasTable
                 || $user->ticketTeamMember()->where('is_active', true)->exists()));
     }
 
+    /** Navigation relevance only; access and transaction eligibility stay unchanged. */
+    public static function hasActiveTasks(): bool
+    {
+        return static::canAccess() && TicketResource::getEloquentQuery()
+            ->where('assigned_to', auth()->id())
+            ->whereHas('maintenance')
+            ->whereIn('status', ['triaged', 'in_progress', 'waiting_parts', 'waiting_requester', 'reopened'])
+            ->exists();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = auth()->user();
+
+        return static::canAccess() && ((! $user->isFacility() && ! $user->isAssetManager())
+            || static::hasActiveTasks());
+    }
+
     public function getSubheading(): ?string
     {
         return 'Pekerjaan yang ditugaskan kepada Anda. Gunakan tindakan pada tiap baris untuk menerima, mencatat foto, menunggu material, atau mengirim hasil.';

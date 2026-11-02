@@ -7,6 +7,7 @@ use App\Filament\Widgets\CalendarWidget;
 use App\Filament\Widgets\LoanOperationsStats;
 use App\Filament\Widgets\LoanStatusChart;
 use App\Filament\Widgets\LoanUsageTrendChart;
+use App\Filament\Widgets\OperationalPriorityWidget;
 use App\Filament\Widgets\RecentLoanRequests;
 use App\Models\G001M001Unit;
 use Filament\Forms\Components\DatePicker;
@@ -42,7 +43,7 @@ class RingkasanPeminjaman extends BaseDashboard
     {
         return $form->schema([
             Section::make('Filter Ringkasan')
-                ->description('Filter berlaku untuk angka pengajuan, grafik, dan daftar terbaru. Kalender mengikuti rentang yang dipilih pada kalender.')
+                ->description('Tanggal dan status memfilter angka pengajuan, grafik, dan daftar terbaru. Unit juga memfilter Prioritas Reservasi Aset; tanggal dan status tidak menyembunyikan pekerjaan aktif atau terlambat. Kalender memiliki rentang sendiri.')
                 ->icon('heroicon-o-funnel')
                 ->schema([
                     DatePicker::make('start_date')
@@ -89,6 +90,7 @@ class RingkasanPeminjaman extends BaseDashboard
     public function getWidgets(): array
     {
         return [
+            OperationalPriorityWidget::class,
             LoanOperationsStats::class,
             LoanStatusChart::class,
             LoanUsageTrendChart::class,

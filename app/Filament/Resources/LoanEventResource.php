@@ -17,8 +17,8 @@ use Illuminate\Database\Eloquent\Model;
 class LoanEventResource extends Resource
 {
     protected static ?string $model = LoanEvent::class;
-    protected static ?string $navigationGroup = 'Peminjaman';
-    protected static ?string $navigationLabel = 'Kegiatan Master';
+    protected static ?string $navigationGroup = 'Opsi Peminjaman';
+    protected static ?string $navigationLabel = 'Agenda Kegiatan';
     protected static ?string $modelLabel = 'Kegiatan Master';
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
     protected static ?int $navigationSort = -5;
