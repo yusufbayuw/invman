@@ -138,6 +138,9 @@ final class WorkOrderWorkflowService
         if (! $user->is_enabled || $approval->status !== 'pending') {
             return false;
         }
+        if ($approval->ticket->workOrderApprovals()->where('checkpoint', $approval->checkpoint)->where('status', 'rejected')->exists()) {
+            return false;
+        }
         $first = $this->next($approval->ticket, $approval->checkpoint);
         if (! $first || $first->id !== $approval->id) {
             return false;
