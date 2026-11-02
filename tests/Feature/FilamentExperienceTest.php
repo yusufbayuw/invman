@@ -29,9 +29,10 @@ class FilamentExperienceTest extends TestCase
             ->get('/admin')
             ->assertOk()
             ->assertSee('Dasbor Operasional')
-            ->assertSee('Filter Dasbor')
-            ->assertSee('Ringkasan Operasional')
-            ->assertSee('Pengajuan Terbaru');
+            ->assertSee('Cakupan pekerjaan')
+            ->assertSee('Perlu Tindakan Anda')
+            ->assertSee('Prioritas Reservasi Aset')
+            ->assertDontSee('Pengajuan Terbaru');
     }
 
     public function test_recent_requests_widget_respects_sarpras_unit_scope(): void

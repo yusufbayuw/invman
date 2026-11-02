@@ -127,7 +127,7 @@ class OperationalPriorityDashboardTest extends TestCase
         $this->assertSame('Tinjau persetujuan', $approval['rows'][0]['action']);
 
         Livewire::actingAs($borrower)->test(OperationalPriorityWidget::class)
-            ->assertSee('Prioritas Operasional V2')
+            ->assertSee('Prioritas Reservasi Aset')
             ->assertSee('Pinjaman Terlambat Dari Bulan Lalu')
             ->assertDontSee('ASET RAHASIA ANTAR UNIT')
             ->call('selectCategory', 'acceptance')
@@ -188,8 +188,28 @@ class OperationalPriorityDashboardTest extends TestCase
 
         $this->actingAs($borrower)->get('/admin')
             ->assertOk()
-            ->assertSee('Prioritas Operasional V2')
-            ->assertSee('Tindakan Cepat')
-            ->assertSee('Ringkasan Operasional');
+            ->assertSee('Prioritas Reservasi Aset')
+            ->assertSee('Perlu Tindakan Anda')
+            ->assertDontSee('Ringkasan Pengajuan');
     }
+    public function test_one_submission_with_two_assets_is_counted_once_in_summary_and_twice_in_reservations(): void
+    {
+        [$unit, , $borrower, , , , $management] = $this->context();
+        $first = $this->reservation($unit, $management, 'Pengajuan dua ruangan', ReservationStatus::Submitted, borrower: $borrower);
+        $room = G003M006Room::query()->create([
+            'name' => 'Ruang Kedua', 'g001_m001_unit_id' => $unit->id,
+            'g002_m003_item_management_id' => $management->id, 'is_borrowable' => true,
+        ]);
+        G005M010RoomReservation::query()->create([
+            'g004_m008_activity_id' => $first->g004_m008_activity_id,
+            'g003_m006_room_id' => $room->id, 'status' => ReservationStatus::Submitted->value,
+            'start_time' => $first->start_time, 'end_time' => $first->end_time,
+        ]);
+        $widget = Livewire::actingAs($borrower)->test(\App\Filament\Widgets\LoanOperationsStats::class)
+            ->assertSee('Ringkasan Pengajuan')->assertSee('bukan reservasi aset')->instance();
+        $stats = (new \ReflectionMethod($widget, 'getStats'))->invoke($widget);
+        $this->assertSame('1', $stats[0]->getValue());
+        $this->assertSame(2, app(LoanOperationalPulseService::class)->snapshot($borrower)['counts']['approval']);
+    }
+
 }
