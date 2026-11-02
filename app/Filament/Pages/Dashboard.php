@@ -2,10 +2,15 @@
 
 namespace App\Filament\Pages;
 
-use App\Enums\ReservationStatus;
+use App\Filament\Resources\UserResource;
+use App\Filament\Widgets\DashboardShortcuts;
+use App\Filament\Widgets\OperationalPriorityWidget;
+use App\Filament\Widgets\QuickActionsWidget;
+use App\Filament\Widgets\TechnicianTaskStats;
+use App\Filament\Widgets\TicketAttentionWidget;
 use App\Models\G001M001Unit;
 use Filament\Actions\Action;
-use Filament\Forms\Components\DatePicker;
+use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
@@ -20,94 +25,84 @@ class Dashboard extends BaseDashboard
 
     protected static ?string $title = 'Dasbor Operasional';
 
+    public function getSubheading(): ?string
+    {
+        $user = auth()->user();
+
+        return match (true) {
+            $user?->isAdmin() => 'Pantau pekerjaan operasional dan kelola sistem dari satu tempat.',
+            $user?->isFacility() => 'Tinjau persetujuan, penyerahan, pengembalian, dan laporan yang perlu ditangani.',
+            $user?->isSarpras() => 'Ajukan kebutuhan unit dan tindak lanjuti peminjaman serta laporan Anda.',
+            $user?->isAssetManager() => 'Tindak lanjuti peminjaman dan kerusakan aset yang Anda kelola.',
+            default => 'Lihat tugas Anda, dokumentasikan pekerjaan, dan kirim hasil perbaikan.',
+        };
+    }
+
     public function getColumns(): int|array
     {
-        return [
-            'md' => 2,
-            'xl' => 4,
-        ];
+        return ['md' => 2, 'xl' => 4];
+    }
+
+    public function getWidgets(): array
+    {
+        $widgets = [DashboardShortcuts::class];
+
+        if (QuickActionsWidget::canView()) {
+            $widgets[] = QuickActionsWidget::class;
+            $widgets[] = OperationalPriorityWidget::class;
+        }
+
+        if (TugasTeknisi::canAccess() && (auth()->user()?->ticketTeamMember()->where('is_active', true)->exists()
+            || TugasTeknisi::taskQuery()->exists())) {
+            $widgets[] = TechnicianTaskStats::class;
+        }
+
+        if (TicketAttentionWidget::canView()) {
+            $widgets[] = TicketAttentionWidget::class;
+        }
+
+        return $widgets;
     }
 
     public function filtersForm(Form $form): Form
     {
         return $form->schema([
-            Section::make('Filter Dasbor')
-                ->description('Seluruh kartu, grafik, dan daftar terbaru mengikuti filter ini.')
-                ->icon('heroicon-o-funnel')
+            Section::make('Cakupan pekerjaan')
+                ->description('Filter unit berlaku untuk prioritas reservasi dan daftar tiket. Perlu Tindakan Anda selalu menampilkan seluruh pekerjaan Anda.')
                 ->schema([
-                    DatePicker::make('start_date')
-                        ->label('Dari tanggal')
-                        ->default(now()->startOfMonth())
-                        ->native(false),
-                    DatePicker::make('end_date')
-                        ->label('Sampai tanggal')
-                        ->default(now()->endOfMonth())
-                        ->native(false)
-                        ->afterOrEqual('start_date'),
-                    Select::make('unit_id')
-                        ->label('Unit')
-                        ->options(fn(): array => G001M001Unit::query()->orderBy('name')->pluck('name', 'id')->all())
-                        ->searchable()
-                        ->preload()
-                        ->visible(fn(): bool => auth()->user()?->isFacility() ?? false),
-                    Select::make('status')
-                        ->label('Status')
-                        ->options(ReservationStatus::options())
-                        ->native(false),
+                    Select::make('unit_id')->label('Unit')
+                        ->placeholder('Semua unit')
+                        ->options(fn (): array => G001M001Unit::query()->orderBy('name')->pluck('name', 'id')->all())
+                        ->searchable()->preload(),
                 ])
-                ->columns([
-                    'default' => 1,
-                    'md' => 2,
-                    'xl' => 4,
-                ])
-                ->collapsible(),
+                ->visible(fn (): bool => auth()->user()?->isFacility() ?? false)
+                ->collapsible()->collapsed(),
         ]);
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('pinjamBarang')
-                ->label('Pinjam Barang')
-                ->icon('heroicon-o-cube')
-                ->color('primary')
-                ->visible(fn (): bool => PeminjamanCepat::canAccess())
-                ->url(PeminjamanCepat::getUrl(['type' => 'item'])),
-
-            Action::make('pinjamKendaraan')
-                ->label('Pinjam Kendaraan')
-                ->icon('heroicon-o-truck')
-                ->color('primary')
-                ->visible(fn (): bool => PeminjamanCepat::canAccess())
-                ->url(PeminjamanCepat::getUrl(['type' => 'vehicle'])),
-
-            Action::make('pinjamRuangan')
-                ->label('Pinjam Ruangan')
-                ->icon('heroicon-o-building-office')
-                ->color('gray')
-                ->visible(fn (): bool => PeminjamanCepat::canAccess())
-                ->url(PeminjamanCepat::getUrl(['type' => 'room'])),
-
-            Action::make('ajukanPeminjamanLengkap')
-                ->label('Pengajuan Lengkap')
-                ->icon('heroicon-o-rectangle-stack')
-                ->color('gray')
-                ->visible(fn (): bool => AjukanPeminjaman::canAccess())
-                ->url(AjukanPeminjaman::getUrl()),
-
-            Action::make('peminjamanSaya')
-                ->label('Peminjaman Saya')
-                ->icon('heroicon-o-clipboard-document-list')
-                ->color('gray')
-                ->visible(fn (): bool => auth()->user()?->isSarpras() ?? false)
-                ->url(PeminjamanSaya::getUrl()),
-
-            Action::make('rekapan')
-                ->label('Lihat Rekapan')
-                ->icon('heroicon-o-chart-bar-square')
-                ->color('gray')
-                ->visible(fn (): bool => RekapanPenggunaan::canAccess())
-                ->url(RekapanPenggunaan::getUrl()),
+            ActionGroup::make([
+                Action::make('ajukanLainnya')->label('Ajukan Peminjaman')
+                    ->icon('heroicon-o-plus-circle')
+                    ->visible(fn (): bool => PeminjamanCepat::canAccess() && (auth()->user()?->isFacility() ?? false))
+                    ->url(PeminjamanCepat::getUrl()),
+                Action::make('tugasSaya')->label('Tugas Saya')
+                    ->icon('heroicon-o-wrench-screwdriver')
+                    ->visible(fn (): bool => TugasTeknisi::canAccess() && (auth()->user()?->isFacility() ?? false))
+                    ->url(TugasTeknisi::getUrl()),
+                Action::make('pengguna')->label('Kelola Pengguna')
+                    ->icon('heroicon-o-user-group')
+                    ->visible(fn (): bool => (auth()->user()?->isAdmin() ?? false) && UserResource::canViewAny())
+                    ->url(UserResource::getUrl()),
+                Action::make('ringkasan')->label('Ringkasan Peminjaman')
+                    ->icon('heroicon-o-chart-bar')->visible(fn (): bool => RingkasanPeminjaman::canAccess())
+                    ->url(RingkasanPeminjaman::getUrl()),
+                Action::make('semuaMenu')->label('Semua Menu & Favorit')
+                    ->icon('heroicon-o-squares-2x2')->visible(fn (): bool => SemuaMenu::canAccess())
+                    ->url(SemuaMenu::getUrl()),
+            ])->label('Akses Lainnya')->icon('heroicon-o-ellipsis-horizontal')->button()->color('gray'),
         ];
     }
 }

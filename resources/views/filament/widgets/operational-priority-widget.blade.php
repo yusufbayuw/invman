@@ -1,16 +1,16 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <x-slot name="heading">
-            Prioritas Operasional V2
+            Prioritas Reservasi Aset
         </x-slot>
 
         <x-slot name="description">
-            Status reservasi saat ini sesuai kewenangan Anda. Filter unit berlaku untuk pengelola fasilitas; filter periode dan status historis tidak menyembunyikan pinjaman terlambat.
+            Satu pengajuan dapat berisi beberapa reservasi aset. Angka berikut menghitung reservasi, bukan jumlah pengajuan atau jumlah barang fisik.
         </x-slot>
 
         <div wire:poll.30s wire:loading.class.delay="opacity-60" class="space-y-6 transition-opacity">
             {{-- The category cards are filters, not independent navigation links. --}}
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
                 @foreach ($categories as $key => $meta)
                     <button
                         type="button"

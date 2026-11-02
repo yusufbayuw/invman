@@ -1,7 +1,7 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <x-slot name="heading">
-            Tindakan Cepat
+            Perlu Tindakan Anda
         </x-slot>
 
         <x-slot name="description">
@@ -19,17 +19,17 @@
                 </div>
             @else
                 <div class="hidden overflow-x-auto rounded-xl border border-gray-200 md:block dark:border-white/10">
-                    <table class="w-full min-w-[900px] divide-y divide-gray-200 text-start dark:divide-white/5">
+                    <table class="w-full table-fixed divide-y divide-gray-200 text-start dark:divide-white/5">
                         <thead>
                             <tr class="bg-gray-50 dark:bg-white/5">
                                 <th class="px-4 py-3 text-start text-xs font-semibold text-gray-700 dark:text-gray-200">Aset</th>
                                 <th class="px-4 py-3 text-start text-xs font-semibold text-gray-700 dark:text-gray-200">Kegiatan</th>
                                 <th class="px-4 py-3 text-start text-xs font-semibold text-gray-700 dark:text-gray-200">Jadwal</th>
                                 <th class="px-4 py-3 text-start text-xs font-semibold text-gray-700 dark:text-gray-200">Status</th>
-                                <th class="px-4 py-3 text-end text-xs font-semibold text-gray-700 dark:text-gray-200">Tindakan</th>
+                                <th class="w-1/4 px-4 py-3 text-end text-xs font-semibold text-gray-700 dark:text-gray-200">Tindakan</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200 whitespace-nowrap dark:divide-white/5">
+                        <tbody class="divide-y divide-gray-200 dark:divide-white/5">
                             @foreach ($queue as $row)
                                 <tr wire:key="quick-action-desktop-{{ $row['key'] }}" class="hover:bg-gray-50 dark:hover:bg-white/5">
                                     <td class="px-4 py-3">
@@ -42,15 +42,15 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <p class="max-w-xs truncate text-sm text-gray-950 dark:text-white">{{ $row['activity_name'] }}</p>
+                                        <p class="break-words text-sm text-gray-950 dark:text-white">{{ $row['activity_name'] }}</p>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">{{ $row['unit_name'] }} · {{ $row['requester_name'] }}</p>
                                     </td>
                                     <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ $row['schedule'] }}</td>
                                     <td class="px-4 py-3">
-                                        <x-filament::badge :color="$row['status_color']">{{ $row['status_label'] }}</x-filament::badge>
+                                        <x-filament::badge :color="$row['status_color']" class="[&_.truncate]:whitespace-normal">{{ $row['status_label'] }}</x-filament::badge>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <div class="flex justify-end gap-2">
+                                        <div class="flex flex-wrap justify-end gap-2">
                                             @foreach ($row['actions'] as $action)
                                                 @php
                                                     $presentation = $this->actionPresentation($action);
@@ -64,6 +64,7 @@
                                                         .')';
                                                 @endphp
                                                 <x-filament::button
+                                                    class="max-w-full [&_.truncate]:whitespace-normal"
                                                     size="sm"
                                                     :color="$presentation['color']"
                                                     :icon="$presentation['icon']"
@@ -92,7 +93,7 @@
                                         <p class="text-xs text-gray-500 dark:text-gray-400">{{ $row['type_label'] }} · {{ $row['unit_name'] }}</p>
                                     </div>
                                 </div>
-                                <x-filament::badge :color="$row['status_color']">{{ $row['status_label'] }}</x-filament::badge>
+                                <x-filament::badge :color="$row['status_color']" class="[&_.truncate]:whitespace-normal">{{ $row['status_label'] }}</x-filament::badge>
                             </div>
                             <div class="space-y-1 text-sm">
                                 <p class="font-medium text-gray-900 dark:text-gray-100">{{ $row['activity_name'] }}</p>

@@ -10,6 +10,8 @@ class TechnicianTaskStats extends StatsOverviewWidget
 {
     protected int|string|array $columnSpan = 'full';
 
+    protected static bool $isLazy = false;
+
     protected static ?string $pollingInterval = '30s';
 
     public static function canView(): bool
@@ -31,13 +33,16 @@ class TechnicianTaskStats extends StatsOverviewWidget
         return [
             Stat::make('Perlu Diterima', number_format((int) $counts->get('triaged', 0)))
                 ->description('Tugas baru menunggu konfirmasi')->color('warning')
-                ->icon('heroicon-o-inbox-arrow-down'),
+                ->icon('heroicon-o-inbox-arrow-down')
+                ->url(TugasTeknisi::getUrl(['tableFilters' => ['status' => ['value' => 'triaged']]])),
             Stat::make('Sedang Dikerjakan', number_format((int) $counts->get('in_progress', 0)))
                 ->description('Pekerjaan aktif')->color('info')
-                ->icon('heroicon-o-wrench-screwdriver'),
+                ->icon('heroicon-o-wrench-screwdriver')
+                ->url(TugasTeknisi::getUrl(['tableFilters' => ['status' => ['value' => 'in_progress']]])),
             Stat::make('Menunggu Material', number_format((int) $counts->get('waiting_parts', 0)))
                 ->description('SLA tetap berjalan')->color('warning')
-                ->icon('heroicon-o-clock'),
+                ->icon('heroicon-o-clock')
+                ->url(TugasTeknisi::getUrl(['tableFilters' => ['status' => ['value' => 'waiting_parts']]])),
             Stat::make('Terlambat', number_format($overdue))
                 ->description('Batas penyelesaian terlewati')->color($overdue > 0 ? 'danger' : 'success')
                 ->icon('heroicon-o-exclamation-triangle'),
