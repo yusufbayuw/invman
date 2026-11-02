@@ -1,5 +1,7 @@
 # Redesign UI/UX InvMan — tahap 1
 
+> Catatan ini merekam implementasi tahap pertama. Lihat [penyempurnaan PR #31](PR-31-UX-REVIEW.md) untuk perilaku akhir, validasi terbaru, dan screenshot review.
+
 Dasbor sekarang mendahulukan pekerjaan pengguna: pintasan harian, antrean tindakan, prioritas reservasi, dan laporan aktif. Fondasi tetap Laravel 12 / Filament 3. Tahap ini tidak mengubah migrasi, model, service transaksi, policy, role, permission, ataupun URL lama. Ada satu pembaruan patch dependensi yang diperlukan oleh hasil CI; rincian di bawah.
 
 ## Audit dan validasi rancangan
