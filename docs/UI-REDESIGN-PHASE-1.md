@@ -1,10 +1,10 @@
 # Redesign UI/UX InvMan — tahap 1
 
-Dasbor sekarang mendahulukan pekerjaan pengguna: pintasan harian, antrean tindakan, prioritas reservasi, dan laporan aktif. Fondasi tetap Laravel 12 / Filament 3. Tahap ini tidak mengubah migrasi, model, service transaksi, policy, role, permission, ataupun URL lama.
+Dasbor sekarang mendahulukan pekerjaan pengguna: pintasan harian, antrean tindakan, prioritas reservasi, dan laporan aktif. Fondasi tetap Laravel 12 / Filament 3. Tahap ini tidak mengubah migrasi, model, service transaksi, policy, role, permission, ataupun URL lama. Ada satu pembaruan patch dependensi yang diperlukan oleh hasil CI; rincian di bawah.
 
 ## Audit dan validasi rancangan
 
-Baseline: `main` pada commit `153fef1`. Bukti browser menggunakan aplikasi Laravel yang dirender dari source baseline dan source redesign, dependensi lockfile yang sama, dan data sintetis yang sama. Tidak menggunakan data produksi.
+Baseline: `main` pada commit `153fef1`. Bukti browser menggunakan aplikasi Laravel yang dirender dari source baseline dan source redesign, dependensi lockfile yang sama pada saat pengambilan screenshot, dan data sintetis yang sama. Screenshot diambil sebelum patch keamanan MIME di bawah. Tidak menggunakan data produksi.
 
 | Langkah | Temuan baseline | Hasil tahap 1 | Kesehatan / batas pemeriksaan |
 | --- | --- | --- | --- |
@@ -36,7 +36,7 @@ Filter unit pada dasbor berlaku pada prioritas reservasi dan tiket. Antrean **Pe
 
 ## Validasi
 
-- PHP 8.3, dependensi dipasang dari `composer.lock`; tidak ada pembaruan dependensi.
+- PHP 8.3, dependensi dipasang dari `composer.lock`; hanya `symfony/mime` diperbarui dari 7.4.19 ke 7.4.22 setelah audit CI menemukan CVE-2026-45070. Tidak ada pembaruan paket lain.
 - `php artisan test --no-ansi`: **220 lulus**, **1 dilewati**, 1666 assertions. Tes dilewati khusus pembatasan foreign key MySQL; lokal menggunakan SQLite.
 - Cakupan mencakup peminjaman barang/ruangan/kendaraan, master kegiatan, persetujuan, QR, serah-terima dua pihak, pengembalian, bukti, tiket/maintenance, visibilitas unit/pengelola, dan batas peran.
 - `npm ci` dan `npm run build`: lulus.
@@ -77,6 +77,12 @@ Filter unit pada dasbor berlaku pada prioritas reservasi dan tiket. Antrean **Pe
 | Sebelum | Sesudah |
 | --- | --- |
 | ![Administrator sebelum](ui-redesign/invman-before-admin-desktop.jpg) | ![Administrator sesudah](ui-redesign/invman-after-admin-desktop.jpg) |
+
+## Temuan CI dan patch keamanan terpisah
+
+Run CI pertama [41403629809](https://github.com/yusufbayuw/invman/actions/runs/41403629809) meluluskan migrasi dan pembatasan akses MySQL. Job PHP berhenti pada audit Composer sebelum build/tes karena `symfony/mime` 7.4.19 dalam lockfile existing terkena `PKSA-wtxr-p26d-nn42` / CVE-2026-45070 (medium).
+
+[Advisory resmi Symfony](https://symfony.com/cve-2026-45070) menetapkan 7.4.22 sebagai versi perbaikan pada cabang 7.4. Pembaruan terarah `composer update symfony/mime:7.4.22 --minimal-changes --no-scripts` mengubah satu paket saja; metadata versi plugin API lockfile juga diperbarui Composer. Workflow/audit keamanan tidak dilemahkan. Seluruh 220 tes dijalankan ulang sesudah patch dan audit produksi harus bersih sebelum merge.
 
 ## Risiko dan tindak lanjut
 
