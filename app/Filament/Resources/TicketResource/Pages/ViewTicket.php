@@ -118,13 +118,20 @@ class ViewTicket extends ViewRecord
                     ])->required(),
                     Forms\Components\Textarea::make('notes')->label('Catatan / alasan penolakan')->maxLength(2000),
                 ])
-                ->action(function (array $data): void {
-                    $step = $this->getRecord()->workOrderApprovals()->find($data['approval_id']);
+                ->action(function (array $data, Actions\Action $action): void {
+                    $ticket = $this->getRecord();
+                    $step = $ticket->workOrderApprovals()->find($data['approval_id']);
                     abort_unless($step, 404);
                     app(WorkOrderWorkflowService::class)
                         ->decide($step, auth()->user(), $data['decision'] === 'approve', $data['notes'] ?? null,
                             filled($data['estimate_id'] ?? null) ? (int) $data['estimate_id'] : null);
                     Notification::make()->title('Keputusan Work Order dicatat')->success()->send();
+                    // An approver-only user's pending scope ends with this decision.
+                    // Redirect before Livewire renders the now-inaccessible record.
+                    if (! app(TicketVisibility::class)->canView(auth()->user(), $ticket)) {
+                        $this->redirect(TicketResource::getUrl('index'));
+                        $action->halt();
+                    }
                 }),
             Actions\Action::make('reviseWorkOrder')
                 ->label('Revisi & Kirim Ulang')->icon('heroicon-o-arrow-path')->color('warning')
@@ -361,9 +368,9 @@ class ViewTicket extends ViewRecord
     {
         $ticket = $this->getRecord();
         $management = $ticket->management?->users()->pluck('users.id') ?? collect();
-        $facilities = User::role(config('role.fasilitas'))->pluck('id')
-            ->merge(User::role(config('role.admin'))->pluck('id'))
-            ->merge(User::role('super_admin')->pluck('id'));
+        $facilities = User::query()->whereHas('roles', fn ($roles) => $roles
+            ->where('guard_name', 'web')
+            ->whereIn('name', [config('role.fasilitas'), config('role.admin'), 'super_admin']))->pluck('id');
         $members = TicketTeamMember::query()->where('is_active', true)->pluck('user_id');
         $ids = $management->merge($facilities)->merge($members)->unique()
             ->reject(fn ($id) => (int) $id === (int) $ticket->reporter_id);

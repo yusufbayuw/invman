@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\TicketResource;
+use App\Filament\Resources\TicketResource\Pages\ViewTicket;
 use App\Models\G001M001Unit;
 use App\Models\TicketCategory;
 use App\Models\User;
@@ -10,10 +12,14 @@ use App\Models\WorkOrderJobTitle;
 use App\Models\WorkOrderWorkflow;
 use App\Services\TicketMaintenanceService;
 use App\Services\TicketService;
+use App\Services\TicketVisibility;
 use App\Services\WorkOrderWorkflowService;
 use Database\Seeders\RoleSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class DynamicWorkOrderApprovalFlowTest extends TestCase
@@ -33,8 +39,8 @@ class DynamicWorkOrderApprovalFlowTest extends TestCase
         $technician->assignRole(config('role.fasilitas'));
         $other = User::factory()->create();
 
-        $headTitle = WorkOrderJobTitle::query()->create(['name' => 'Kepala Sarpras']);
-        $managerTitle = WorkOrderJobTitle::query()->create(['name' => 'Manager Fasilitas']);
+        $headTitle = WorkOrderJobTitle::query()->firstOrCreate(['name' => 'Kepala Sarpras']);
+        $managerTitle = WorkOrderJobTitle::query()->firstOrCreate(['name' => 'Manager Fasilitas']);
         WorkOrderAssignment::query()->create([
             'user_id' => $reporter->id, 'work_order_job_title_id' => $headTitle->id,
             'g001_m001_unit_id' => $unit->id, 'supervisor_user_id' => $supervisor->id,
@@ -64,6 +70,44 @@ class DynamicWorkOrderApprovalFlowTest extends TestCase
 
         return compact('unit', 'reporter', 'supervisor', 'manager', 'technician', 'other',
             'assignment', 'ticket', 'workflow');
+    }
+
+    public function test_approver_only_decision_redirects_when_the_pending_scope_ends(): void
+    {
+        foreach ([true, false] as $approve) {
+            $d = $this->setupFlow();
+            Filament::setCurrentPanel(Filament::getPanel('admin'));
+            $this->flushSession();
+            $this->actingAs($d['supervisor']);
+            $step = $d['ticket']->workOrderApprovals()->where('checkpoint', 'start')->firstOrFail();
+            Livewire::test(ViewTicket::class, ['record' => $d['ticket']->id])
+                ->call('mountAction', 'workOrderApproval')
+                ->set('mountedActionsData.0.decision', $approve ? 'approve' : 'reject')
+                ->set('mountedActionsData.0.notes', 'Browser regression: scope ends after the decision.')
+                ->call('callMountedAction')
+                ->assertStatus(200)
+                ->assertHasNoActionErrors()
+                ->assertRedirect(TicketResource::getUrl('index'));
+            $this->assertSame($approve ? 'approved' : 'rejected', $step->fresh()->status);
+            $this->assertFalse(app(TicketVisibility::class)->canView($d['supervisor'], $d['ticket']));
+            $this->assertContains($this->get(TicketResource::getUrl('view', ['record' => $d['ticket']]))->status(), [403, 404]);
+            $this->assertSame(1, $d['ticket']->events()->where('action', $approve ? 'work_order_approval_granted' : 'work_order_approval_rejected')->count());
+        }
+    }
+
+    public function test_native_assignment_modal_does_not_require_an_optional_super_admin_role(): void
+    {
+        $d = $this->setupFlow();
+        $this->assertFalse(Role::where('name', 'super_admin')->exists());
+        $step = $d['ticket']->workOrderApprovals()->where('checkpoint', 'start')->firstOrFail();
+        app(WorkOrderWorkflowService::class)->decide($step, $d['supervisor'], true, 'Required checkpoint approved.');
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        $this->actingAs($d['manager']);
+        Livewire::test(ViewTicket::class, ['record' => $d['ticket']->id])
+            ->callAction('approveMaintenance', ['technician' => $d['technician']->id, 'priority' => 'high', 'notes' => 'Native browser assignment regression.'])
+            ->assertHasNoActionErrors();
+        $this->assertSame('triaged', $d['ticket']->fresh()->status);
+        $this->assertSame($d['technician']->id, $d['ticket']->fresh()->assigned_to);
     }
 
     public function test_dynamic_work_order_runs_full_approval_and_maintenance_sequence(): void

@@ -205,6 +205,9 @@ function pair(array $first, array $second): array
 
     return ['first' => finishWorker($a), 'second' => finishWorker($b), 'contender_state' => $state];
 }
+if (defined('INVMAN_AUTHORITY_FIXTURES_ONLY')) {
+    return;
+}
 $cases = [];
 $onlyBefore = in_array('--record-before', $argv, true);
 foreach (['title_revoke', 'assignment_move', 'supervisor_change', 'disable', 'assignment_revoke'] as $action) {
