@@ -1,0 +1,33 @@
+
+  ⨯⨯
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ProductionReadinessSecurityTest > reporter with fac…   
+  Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ProductionReadinessSecurityTest > approval only use…   
+  Expected: <div wire:snapshot="{&quot;data&quot;:{&quot;mountedActions&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;mountedActionsArguments&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;mountedActionsData&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;defaultAction&quot;:null,&quot;defaultActionArguments&quot;:null,&quot;componentFileAttachments&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;areFormStateUpdateHooksDisabledForTesting&quot;:false,&quot;mountedFormComponentActions&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;mountedFormComponentActionsArguments&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;mountedFormComponentActionsData&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;mountedFormComponentActionsComponents&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;mountedInfolistActions&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;mountedInfolistActionsData&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;mountedInfolistActionsComponent&quot;:null,&quot;mountedInfolistActionsInfolist&quot;:null,&quot;isTableLoaded&quot;:false,&quot;tableGrouping&quot;:null,&quot;tableGroupingDirection&quot;:null,&quot;tableRecordsPerPage&quot;:5,&quot;isTableReordering&quot;:false,&quot;tableColumnSearches&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;tableSearch&quot;:&quot;&quot;,&quot;tableSortColumn&quot;:null,&quot;tableSortDirection&quot;:null,&quot;toggledTableColumns&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;mountedTableActions&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;mountedTableActionsData&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;mountedTableActionsArguments&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;mountedTableActionRecord&quot;:null,&quot;defaultTableAction&quot;:null,&quot;defaultTableActionArguments&quot;:null,&quot;defaultTableActionRecord&quot;:null,&quot;selectedTableRecords&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;mountedTableBulkAction&quot;:null,&quot;mountedTableBulkActionData&quot;:[[],{&quot;s&quot;:&quot;arr&quot;}],&quot;tableFilters&quot;:null,&quot;tableDeferredFilters&quot;:null,&quot;paginators&quot;:[{&quot;page&quot;:1},{&quot;s&quot;:&quot;arr&quot;}]},&quot;memo&quot;:{&quot;id&quot;:&quot;SK8MIOZ6twUNHlW2cyk3&quot;,&quot;name&quot;:3270909384,&quot;path&quot;:&quot;livewire-unit-test-endpoint\/hohIp5qAimRSfgFXlQte&quot;,&quot;method&quot;:&quot;GET&quot;,&quot;release&quot;:&quot;a-a-a&quot;,&quot;children&quot;:[],&quot;scripts&quot;:[],&quot;assets&quot;:[],&quot;errors&quot;:[],&quot;locale&quot;:&quot;id&quot;},&quot;checksum&quot;:&quot;cd709226d8e28b30fd96ca59278375bf30f7f84d2c101efcdeffa9bf4c6e7dd2&quot;}" wire:effects="{&quot;url&quot;:{&quot;defaultAction&quot;:{&quot;as&quot;:&quot;action&quot;,&quot;use&quot;:&quot;replace&quot;,&quot;alwaysShow&quot;:false,&quot;except&quot;:null},&quot;defaultActionArguments&quot;:{&quot;as&quot;:&quot;actionArguments&quot;,&quot;use&quot;:&quot;replace&quot;,&quot;alwaysShow&quot;:false,&quot;except&quot;:null},&quot;defaultTableAction&quot;:{&quot;as&quot;:&quot;tableAction&quot;,&quot;use&quot;:&quot;replace&quot;,&quot;alwaysShow&quot;:false,&quot;except&quot;:null},&quot;defaultTableActionArguments&quot;:{&quot;as&quot;:&quot;tableActionArguments&quot;,&quot;use&quot;:&quot;replace&quot;,&quot;alwaysShow&quot;:false,&quot;except&quot;:null},&quot;defaultTableActionRecord&quot;:{&quot;as&quot;:&quot;tableActionRecord&quot;,&quot;use&quot;:&quot;replace&quot;,&quot;alwaysShow&quot;:false,&quot;except&quot;:null},&quot;paginators.page&quot;:{&quot;as&quot;:&quot;page&quot;,&quot;use&quot;:&quot;push&quot;,&quot;alwaysShow&quot;:false,&quot;except&quot;:null}}}" wire:id="SK8MIOZ6twUNHlW2cyk3"\n
+      style="--col-span-default: 1 / -1;" class="col-[--col-span-default] fi-wi-widget fi-wi-table"\n
+  >\n
+  ... (808 more lines)
+
+  To contain: SK8MIOZ6twUNHlW2cyk3.table.records.01a19f2d-65fd-7240-b537-0ac272de6fc6
+
+  at vendor/livewire/livewire/src/Features/SupportTesting/MakesAssertions.php:38
+     34▕ 
+     35▕     function assertSeeHtml($values)
+     36▕     {
+     37▕         foreach (Arr::wrap($values) as $value) {
+  ➜  38▕             PHPUnit::assertStringContainsString(
+     39▕                 $value,
+     40▕                 $this->html()
+     41▕             );
+     42▕         }
+
+      [2m+4 vendor frames [22m
+  5   tests/Feature/ProductionReadinessSecurityTest.php:132
+
+
+  Tests:    2 failed (2 assertions)
+  Duration: 0.61s
+

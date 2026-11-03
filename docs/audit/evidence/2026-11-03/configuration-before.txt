@@ -1,0 +1,14 @@
+
+  ⨯⨯
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ProductionReadinessSecurityTest > multi position hi…   
+  Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ProductionReadinessSecurityTest > default active as…   
+  Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+
+  Tests:    2 failed (2 assertions)
+  Duration: 0.63s
+

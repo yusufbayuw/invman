@@ -1,0 +1,15 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> build
+> vite build
+
+vite v6.4.5 building for production...
+transforming...
+✓ 65 modules transformed.
+rendering chunks...
+computing gzip size...
+public/build/manifest.json                0.44 kB │ gzip:  0.19 kB
+public/build/assets/theme-CeWK_5hg.css  115.90 kB │ gzip: 16.29 kB
+public/build/assets/app-CLUfdeIU.css    137.43 kB │ gzip: 19.53 kB
+public/build/assets/app-DzN3xbeP.js     145.49 kB │ gzip: 45.79 kB
+✓ built in 3.11s

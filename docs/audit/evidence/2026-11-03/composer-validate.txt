@@ -1,0 +1,7 @@
+Composer plugins have been disabled for safety in this non-interactive session.
+Set COMPOSER_ALLOW_SUPERUSER=1 if you want to allow plugins to run as root/super user.
+Do not run Composer as root/super user! See https://getcomposer.org/root for details
+./composer.json is valid, but with a few warnings
+See https://getcomposer.org/doc/04-schema.md for details on the schema
+# General warnings
+- require.endroid/qr-code : exact version constraints (6.0) should be avoided if the package follows semantic versioning

@@ -1,0 +1,16 @@
+{
+    "mysql": "8.0.46-0ubuntu0.24.04.3",
+    "legacy_migrations": 64,
+    "upgrade": "PASS",
+    "existing_rows_password_roles_history": "unchanged",
+    "legacy_approval_rows": 0,
+    "seed_twice": {
+        "users": 23,
+        "work_order_job_titles": 11,
+        "work_order_assignments": 21,
+        "work_order_workflows": 1,
+        "ticket_team_members": 2
+    },
+    "automatic_publish": false,
+    "production_demo_guard": "PASS"
+}
