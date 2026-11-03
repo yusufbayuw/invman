@@ -4,9 +4,9 @@ Tanggal: **3 November 2026 (WIB)**. Pemilik sistem meminta audit mandiri; tidak 
 
 ## Pembaruan lanjutan — 3 November 2026
 
-**Keputusan tetap NO-GO.** Perbaikan dan bukti lanjutan tersedia lokal; PR #33 masih pada baseline `182c12e` sampai penyimpanan remote diizinkan. Tidak ada merge/deploy. CI baseline tidak dianggap sebagai CI untuk perubahan lanjutan.
+**Keputusan tetap NO-GO.** Perbaikan dan bukti lanjutan tersimpan pada commit `c3dcc0916cdbbb963a7cbff5825061bd3c1506af` di branch PR #33; hash seluruh 39 file di GitHub cocok dengan hasil lokal. Tidak ada merge/deploy. **[Quality Guard #141](https://github.com/yusufbayuw/invman/actions/runs/41601559937) SUCCESS** pada commit baru: 269 MySQL (2.124 assertions), 268 SQLite + 1 skipped (2.116 assertions), concurrency dan upgrade SUCCESS. [Bukti CI](CI-RESULTS-2026-11-03.md). CI baseline tidak dianggap sebagai CI untuk perubahan lanjutan.
 
-Tiga FAIL bisnis ditangani: revisi/resubmit dengan riwayat immutable pada tiket sama, estimasi vendor/nominal berversi yang disetujui pihak berbeda, dan dispatch assetless melalui jabatan/cakupan eksplisit. Satu dari delapan BLOCKED (DEP-07) berhasil diuji melalui login HTTP normal dengan server-side provider CAPTCHA asli dan kunci uji resmi. **Matriks lokal: 52 PASS / 0 FAIL / 7 BLOCKED**, dengan batas lapisan pengujian tetap berlaku.
+Tiga FAIL bisnis ditangani: revisi/resubmit dengan riwayat immutable pada tiket sama, estimasi vendor/nominal berversi yang disetujui pihak berbeda, dan dispatch assetless melalui jabatan/cakupan eksplisit. Satu dari delapan BLOCKED (DEP-07) berhasil diuji melalui login HTTP normal dengan server-side provider CAPTCHA asli dan kunci uji resmi. **Matriks lanjutan: 52 PASS / 0 FAIL / 7 BLOCKED**, dengan batas lapisan pengujian tetap berlaku.
 
 [Laporan lanjutan dan seluruh gap tersisa](FOLLOWUP-READINESS-2026-11-03.md) · [Matriks diperbarui](TEST-MATRIX-2026-11-03.md) · [Bukti lanjutan](evidence/2026-11-03-followup/).
 

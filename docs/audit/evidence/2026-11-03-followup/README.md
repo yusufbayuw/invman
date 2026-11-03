@@ -1,6 +1,6 @@
 # Evidence lanjutan — 3 November 2026
 
-Baseline PR #33: `182c12e`. Source/tes lanjutan masih lokal, belum ada commit remote atau CI baru.
+Baseline PR #33: `182c12e`. Seluruh source/tes/evidence lanjutan tersimpan pada commit `c3dcc0916cdbbb963a7cbff5825061bd3c1506af` di branch PR #33. Hash 39 file terverifikasi cocok. Status CI tercatat di laporan lanjutan, bukan diambil dari baseline.
 
 Lihat [laporan lanjutan](../../FOLLOWUP-READINESS-2026-11-03.md) untuk batas tiap bukti. Suite DB memakai database disposable, tidak diarahkan ke produksi.
 

@@ -2,7 +2,7 @@
 
 **Keputusan diperbarui: NO-GO untuk production.** Tiga FAIL bisnis awal telah diperbaiki dan lulus pada lapisan backend/Livewire. DEP-07 berhasil diuji melalui HTTP normal dengan provider CAPTCHA asli. Tujuh BLOCKED masih terbuka. Tidak ada merge atau deployment.
 
-Pembaruan ini memakai baseline PR #33 `182c12e5b8e9f5ede7bc239a409a9e745187d516`. Audit A–G awal tidak diulang. Pengujian regresi diulang karena ada perubahan pada approval, schema, otorisasi teknisi dan histori. **Kode, dokumen dan evidence lanjutan masih lokal; head PR #33 belum berubah dan belum ada CI GitHub untuk perubahan ini.** CI baseline tidak boleh dipakai untuk menyatakan perubahan baru lulus CI.
+Pembaruan ini memakai baseline PR #33 `182c12e5b8e9f5ede7bc239a409a9e745187d516`. Audit A–G awal tidak diulang. Pengujian regresi diulang karena ada perubahan pada approval, schema, otorisasi teknisi dan histori. **Seluruh 39 file source, migration, tes, dokumentasi dan evidence awal lanjutan telah tersimpan pada commit `c3dcc0916cdbbb963a7cbff5825061bd3c1506af` di branch PR #33.** Hash Git blob seluruh 39 file di GitHub cocok dengan salinan lokal; source checksum hasil 269 tes MySQL juga cocok. [Bukti verifikasi](evidence/2026-11-03-followup/github-source-verification.json). **[Quality Guard #141](https://github.com/yusufbayuw/invman/actions/runs/41601559937) completed / SUCCESS** pada commit tersebut; `php-tests` dan `mysql-regression` keduanya SUCCESS. [Bukti CI terstruktur](evidence/2026-11-03-followup/ci-141-results.json). CI baseline tidak dipakai sebagai pengganti hasil baru.
 
 ## Hasil untuk tiga FAIL
 
@@ -25,7 +25,7 @@ Pembaruan ini memakai baseline PR #33 `182c12e5b8e9f5ede7bc239a409a9e745187d516`
 | DEP-06 | BLOCKED | Race approval/draft/resubmit terarah lulus. Tidak ada hasil stress/load, disk full, failover atau SLA kapasitas produksi; tidak ada angka kapasitas yang dikarang. |
 | DEP-07 | PASS — HTTP QA | GET login 200 → normal Livewire authenticate 200 → dashboard authenticated 200, session cookies berubah. Validasi server-side benar-benar menghubungi Cloudflare siteverify dengan kunci uji resmi, tanpa Http fake atau bypass auth/CSRF. Token dummy resmi disuplai ke komponen login; tidak mengklaim widget browser telah diuji. Kunci/provider produksi belum divalidasi. |
 
-**Matriks 59 skenario lokal: 52 PASS / 0 FAIL / 7 BLOCKED.** PASS tetap dibatasi lapisan yang disebutkan; bukan keputusan GO. Matriks remote pada baseline tetap 48/3/8 hingga perubahan disimpan.
+**Matriks 59 skenario lanjutan: 52 PASS / 0 FAIL / 7 BLOCKED.** PASS tetap dibatasi lapisan yang disebutkan; bukan keputusan GO. Baseline historis adalah 48 PASS / 3 FAIL / 8 BLOCKED.
 
 ## Bukti pengujian akhir
 
@@ -39,7 +39,7 @@ Pembaruan ini memakai baseline PR #33 `182c12e5b8e9f5ede7bc239a409a9e745187d516`
 | HTTP provider/session/CSRF | Authenticated true, dashboard 200, refresh [200,200,200], negative checks 419 — [JSON](evidence/2026-11-03-followup/provider-login.json) |
 | PHP syntax / whitespace | Seluruh file PHP yang berubah lulus lint; git diff --check bersih — [lint](evidence/2026-11-03-followup/php-lint.txt) |
 | Browser | BLOCKED, bukan hasil UAT — [alasan](evidence/2026-11-03-followup/browser-blocker.txt) |
-| CI/build/advisory terbaru | CI GitHub baru belum dijalankan karena penyimpanan remote ditolak peninjau otomatis. Baseline punya CI/build/advisory evidence sebelumnya; itu bukan bukti CI untuk patch baru. Dependency lock/frontend source tidak berubah. |
+| CI/build/advisory terbaru | **Quality Guard #141 SUCCESS** pada `c3dcc09`, kedua job SUCCESS. Log: SQLite 268+1 skipped / 2.116 assertions; MySQL 269 / 2.124 assertions. Composer audit produksi tanpa advisory; npm audit produksi dan build-time 0 vulnerabilities; Vite build, lint, validasi/config audit, tiga race dan upgrade lulus. [Rincian CI](CI-RESULTS-2026-11-03.md). Warning deprecation Node/actions pada runner tidak menggagalkan job; bukan failure aplikasi. |
 
 Tes baru: `WorkOrderRevisionTest` dan `WorkOrderEstimateTest`; perluasan `WorkOrderReadinessTest`, probe concurrency dan probe upgrade. Suite existing juga menegakkan mass assignment allowlist, batas unit/role, private attachment/PDF, self-approval, akun nonaktif, gate final dan safety hold.
 
@@ -66,6 +66,8 @@ Sebelum deploy tetap wajib backup DB+storage, write freeze terencana saat peruba
 
 ## Status penyimpanan dan pekerjaan berikutnya
 
-Peninjau persetujuan otomatis menolak pembuatan GitHub tree karena menilai belum ada izin eksplisit mengunggah perubahan ke remote. Tujuan sudah diperiksa: repository publik `yusufbayuw/invman` (ID 1008496621), akun terhubung pemilik `yusufbayuw` dengan izin admin, head PR #33 cocok baseline. Payload hanya source/tes proyek, tanpa .env/kredensial/data produksi. Penolakan tetap berlaku; tidak dicoba jalur alternatif untuk melewatinya.
+Pemilik memberikan izin eksplisit untuk push source, migrations, tests, dokumentasi dan evidence ke branch `audit/production-readiness-pr31-pr32`. Penolakan persetujuan otomatis pada tahap sebelumnya terselesaikan setelah izin tersebut; tidak digunakan jalur untuk melewati pembatasan.
 
-Hasil konkret siap ditinjau lokal. Langkah remote yang memerlukan persetujuan: simpan kode, tes dan laporan ke **branch PR #33 yang sama**, jalankan CI dan periksa hasilnya; **tanpa merge/deploy**. Setelah itu lanjutkan tujuh gate yang masih BLOCKED. Keputusan rilis harus diperbarui lagi dengan evidence gate yang tersisa; CI hijau sendiri tidak cukup.
+Commit kode/tes/evidence lanjutan: [`c3dcc09`](https://github.com/yusufbayuw/invman/commit/c3dcc0916cdbbb963a7cbff5825061bd3c1506af). Seluruh 39 file diperiksa kembali dari GitHub dan cocok dengan hash lokal. PR tetap [#33](https://github.com/yusufbayuw/invman/pull/33), draft. Tidak ada PR baru, merge ke main, atau deploy. Patch `FOLLOWUP-CHANGES-2026-11-03.patch` dipertahankan sebagai snapshot yang disiapkan sebelum izin push; source-nya sama, tetapi keterangan status penyimpanan di dalam snapshot patch adalah historis.
+
+CI #141 menguji kode final `c3dcc09`. Commit setelahnya hanya memperbarui laporan/evidence CI, tanpa mengubah source/migration/tes yang telah lulus. Status check head dokumentasi akhir dapat dilihat pada PR #33; hasil runner head akhir dikonfirmasi sebelum penyerahan. CI baru dan pembaruan dokumentasi tidak menutup tujuh gate BLOCKED. Keputusan rilis harus diperbarui lagi dengan evidence gate yang tersisa; CI hijau sendiri tidak cukup.

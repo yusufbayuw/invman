@@ -1,6 +1,6 @@
 # Matriks pengujian InvMan — 3 November 2026
 
-Cakupan: input SHA dan lingkungan pada [laporan A–G](PRODUCTION-READINESS-2026-11-03.md). **PASS hanya untuk lapisan yang disebutkan; BLOCKED bukan PASS.** FAIL kebutuhan bisnis tidak disembunyikan oleh tes fail-closed yang berhasil. Keputusan produksi tetap NO-GO. Pembaruan lokal lanjutan belum tersimpan ke PR #33; CI GitHub baru belum dijalankan. Lihat [laporan lanjutan](FOLLOWUP-READINESS-2026-11-03.md). Baseline remote: `182c12e`.
+Cakupan: input SHA dan lingkungan pada [laporan A–G](PRODUCTION-READINESS-2026-11-03.md). **PASS hanya untuk lapisan yang disebutkan; BLOCKED bukan PASS.** FAIL kebutuhan bisnis tidak disembunyikan oleh tes fail-closed yang berhasil. Keputusan produksi tetap NO-GO. Pembaruan lanjutan tersimpan pada commit `c3dcc09` di branch PR #33; hash 39 file terverifikasi cocok. [CI #141](https://github.com/yusufbayuw/invman/actions/runs/41601559937) SUCCESS pada commit baru; kedua job lulus dengan jumlah tes sama seperti lokal. Lihat [laporan lanjutan](FOLLOWUP-READINESS-2026-11-03.md). Baseline remote: `182c12e`.
 
 | ID | Pengujian | Expected result | Actual result | Status | Bukti |
 | --- | --- | --- | --- | --- | --- |
