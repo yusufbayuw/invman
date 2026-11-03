@@ -28,8 +28,8 @@ class WorkOrderAssignmentResource extends Resource
         return $form->schema([
             Forms\Components\Select::make('user_id')->label('Pegawai')->relationship('user', 'name')->searchable()->preload()->required(),
             Forms\Components\Select::make('work_order_job_title_id')->label('Jabatan')->relationship('jobTitle', 'name', fn ($query) => $query->where('is_active', true))->searchable()->preload()->required(),
-            Forms\Components\Select::make('g001_m001_unit_id')->label('Unit (kosong = pusat)')->relationship('unit', 'name')->searchable()->preload(),
-            Forms\Components\Select::make('g002_m003_item_management_id')->label('Pengelola aset (opsional)')->relationship('management', 'name')->searchable()->preload(),
+            Forms\Components\Select::make('g001_m001_unit_id')->label('Cakupan unit')->placeholder('Semua unit')->helperText('Kosong berarti berlaku untuk semua unit, bukan hanya kantor pusat.')->relationship('unit', 'name')->searchable()->preload(),
+            Forms\Components\Select::make('g002_m003_item_management_id')->label('Cakupan pengelola aset')->placeholder('Semua pengelola')->relationship('management', 'name')->searchable()->preload(),
             Forms\Components\Select::make('supervisor_user_id')->label('Atasan langsung (opsional)')
                 ->options(fn (): array => User::query()->where('is_enabled', true)->orderBy('name')->pluck('name', 'id')->all())->searchable(),
             Forms\Components\Toggle::make('is_active')->label('Penugasan aktif')->default(true),
@@ -41,8 +41,8 @@ class WorkOrderAssignmentResource extends Resource
         return $table->columns([
             Tables\Columns\TextColumn::make('user.name')->label('Pegawai')->searchable(),
             Tables\Columns\TextColumn::make('jobTitle.name')->label('Jabatan'),
-            Tables\Columns\TextColumn::make('unit.name')->label('Unit')->placeholder('Pusat'),
-            Tables\Columns\TextColumn::make('management.name')->label('Pengelola')->placeholder('Umum'),
+            Tables\Columns\TextColumn::make('unit.name')->label('Unit')->placeholder('Semua unit'),
+            Tables\Columns\TextColumn::make('management.name')->label('Pengelola')->placeholder('Semua pengelola'),
             Tables\Columns\TextColumn::make('supervisor.name')->label('Atasan')->placeholder('—'),
             Tables\Columns\IconColumn::make('is_active')->label('Aktif')->boolean(),
         ])->actions([Tables\Actions\EditAction::make()]);

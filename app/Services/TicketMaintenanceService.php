@@ -56,15 +56,15 @@ class TicketMaintenanceService
     /** Manager approves and assigns. No technician may self-approve. */
     public function approve(Ticket $ticket, User $manager, int $technicianId, string $priority = 'normal', ?string $notes = null): void
     {
-        if (! app(WorkOrderWorkflowService::class)->canPerform($ticket, $manager, 'assign')) {
-            $this->reject('Tidak berwenang menyetujui atau menugaskan perbaikan ini.');
-        }
-        app(WorkOrderWorkflowService::class)->assertReady($ticket, 'start');
         if (! in_array($priority, ['low', 'normal', 'high', 'critical'], true)) {
             $this->reject('Prioritas tidak valid.');
         }
         DB::transaction(function () use ($ticket, $manager, $technicianId, $priority, $notes): void {
             $locked = $this->locked($ticket);
+            if (! app(WorkOrderWorkflowService::class)->canPerform($locked, $manager, 'assign')) {
+                $this->reject('Tidak berwenang menyetujui atau menugaskan perbaikan ini.');
+            }
+            app(WorkOrderWorkflowService::class)->assertReady($locked, 'start');
             $case = $this->case($locked);
             if ($locked->status !== 'open' || $case->approved_at) {
                 $this->reject('Tiket bukan pengajuan baru.');
@@ -248,7 +248,7 @@ class TicketMaintenanceService
         DB::transaction(function () use ($ticket, $reporter, $accepted, $notes): void {
             $locked = $this->locked($ticket);
             $case = $this->case($locked);
-            if ($locked->status !== 'resolved' || ! $case->work_finished_at
+            if (! $reporter->is_enabled || $locked->status !== 'resolved' || ! $case->work_finished_at
                 || $case->verified_at || $locked->reporter_id !== $reporter->id
                 || $locked->assigned_to === $reporter->id) {
                 $this->reject('Hanya pelapor asli dapat memverifikasi pekerjaan yang telah diselesaikan.');
@@ -270,12 +270,12 @@ class TicketMaintenanceService
     /** Final administrative sign-off is distinct from a physical readiness declaration. */
     public function close(Ticket $ticket, User $manager, bool $safe, ?string $notes = null): void
     {
-        if (! app(WorkOrderWorkflowService::class)->canPerform($ticket, $manager, 'close')) {
-            $this->reject('Tidak berwenang mengesahkan perbaikan ini.');
-        }
-        app(WorkOrderWorkflowService::class)->assertReady($ticket, 'final');
         DB::transaction(function () use ($ticket, $manager, $safe, $notes): void {
             $locked = $this->locked($ticket);
+            if (! app(WorkOrderWorkflowService::class)->canPerform($locked, $manager, 'close')) {
+                $this->reject('Tidak berwenang mengesahkan perbaikan ini.');
+            }
+            app(WorkOrderWorkflowService::class)->assertReady($locked, 'final');
             $case = $this->case($locked);
             if ($locked->status !== 'resolved' || ! $case->verified_at
                 || ! $case->approved_at || ! $case->work_finished_at
@@ -335,7 +335,7 @@ class TicketMaintenanceService
 
     public function cancel(Ticket $ticket, User $manager, string $notes): void
     {
-        if (! $manager->isFacility() || mb_strlen(trim($notes)) < 5) {
+        if (! $manager->is_enabled || ! $manager->isFacility() || mb_strlen(trim($notes)) < 5) {
             $this->reject('Pembatalan memerlukan fasilitas/admin dan alasan.');
         }
         DB::transaction(function () use ($ticket, $manager, $notes): void {

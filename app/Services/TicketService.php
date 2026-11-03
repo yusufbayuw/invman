@@ -47,7 +47,7 @@ class TicketService
 
     public function canCreate(?User $user): bool
     {
-        return (bool) ($user && ($user->isSarpras() || $user->isFacility() || $user->isAssetManager()));
+        return (bool) ($user && $user->is_enabled && ($user->isSarpras() || $user->isFacility() || $user->isAssetManager()));
     }
 
     /**

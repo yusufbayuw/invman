@@ -17,11 +17,7 @@ class CreateWorkflow extends CreateRecord
     {
         return DB::transaction(function () use ($data): WorkOrderWorkflow {
             $unit = $data['g001_m001_unit_id'] ?? null;
-            if ($unit) {
-                \App\Models\G001M001Unit::query()->lockForUpdate()->findOrFail($unit);
-            } else {
-                DB::table('users')->where('id', auth()->id())->lockForUpdate()->first();
-            }
+            app(WorkOrderWorkflowService::class)->lockScope($unit);
             $hasDraft = WorkOrderWorkflow::query()
                 ->where('g001_m001_unit_id', $unit)->where('status', 'draft')->exists();
             if ($hasDraft) {
@@ -34,6 +30,6 @@ class CreateWorkflow extends CreateRecord
             $data['status'] = 'draft';
             $data['created_by'] = auth()->id();
             return WorkOrderWorkflow::query()->create($data);
-        });
+        }, 3);
     }
 }

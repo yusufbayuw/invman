@@ -26,6 +26,7 @@ class Dashboard extends BaseDashboard
             $user?->isFacility() => 'Tinjau persetujuan, penyerahan, pengembalian, dan laporan yang perlu ditangani.',
             $user?->isSarpras() => 'Ajukan dan tindak lanjuti kebutuhan unit Anda.',
             $user?->isAssetManager() => 'Tindak lanjuti peminjaman dan kerusakan aset yang Anda kelola.',
+            ! TugasTeknisi::canAccess() => 'Tinjau laporan dan persetujuan dalam kewenangan Anda.',
             default => 'Lihat tugas Anda, dokumentasikan pekerjaan, dan kirim hasil perbaikan.',
         };
     }

@@ -8,6 +8,7 @@ use App\Models\WorkOrderApproval;
 use App\Models\WorkOrderAssignment;
 use App\Models\WorkOrderWorkflow;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
 
 final class WorkOrderWorkflowService
@@ -45,23 +46,45 @@ final class WorkOrderWorkflowService
             $seen[$key] = true;
             $normalized[] = compact('key', 'label', 'checkpoint', 'resolver') + ['job_title_id' => $resolver === 'job_title' ? $titleId : null];
         }
-        if (collect($normalized)->pluck('checkpoint')->contains('start')
-            && collect($normalized)->pluck('checkpoint')->contains('final')
-            && array_search('final', array_column($normalized, 'checkpoint'), true) < array_search('start', array_column($normalized, 'checkpoint'), true)) {
-            throw ValidationException::withMessages(['steps' => 'Persetujuan sebelum pekerjaan harus mendahului pengesahan akhir.']);
+        $finalSeen = false;
+        foreach ($normalized as $step) {
+            if ($step['checkpoint'] === 'final') {
+                $finalSeen = true;
+            } elseif ($finalSeen) {
+                throw ValidationException::withMessages(['steps' => 'Persetujuan sebelum pekerjaan harus mendahului pengesahan akhir.']);
+            }
         }
         return $normalized;
     }
 
+    /** Both creation and publication serialize on the same stable scope row. */
+    public function lockScope(?int $unitId): void
+    {
+        if ($unitId) {
+            \App\Models\G001M001Unit::query()->lockForUpdate()->findOrFail($unitId);
+        } else {
+            // A global scope has no unit row. Lock one shared principal, not
+            // the current administrator (different admins must serialize).
+            User::query()->orderBy('id')->lockForUpdate()->firstOrFail();
+        }
+    }
+
     public function publish(WorkOrderWorkflow $workflow, User $actor): void
     {
-        if (! $actor->isAdmin()) {
+        if (! $actor->is_enabled || ! $actor->isAdmin()) {
             abort(403);
         }
         DB::transaction(function () use ($workflow): void {
+            $scope = WorkOrderWorkflow::query()->findOrFail($workflow->id)->g001_m001_unit_id;
+            $this->lockScope($scope);
             $locked = WorkOrderWorkflow::query()->lockForUpdate()->findOrFail($workflow->id);
             if ($locked->status !== 'draft') {
                 throw ValidationException::withMessages(['workflow' => 'Hanya draft yang dapat dipublikasikan.']);
+            }
+            if ($locked->g001_m001_unit_id !== $scope
+                || WorkOrderWorkflow::query()->where('g001_m001_unit_id', $scope)
+                    ->where('status', 'published')->where('version', '>=', $locked->version)->exists()) {
+                throw ValidationException::withMessages(['workflow' => 'Draft sudah usang atau versi cakupan ini telah dipublikasikan.']);
             }
             $steps = $this->validateSteps($locked->steps ?? []);
             // Do not activate a role-based workflow with no active person to approve.
@@ -88,7 +111,7 @@ final class WorkOrderWorkflowService
                 }
             }
             $locked->forceFill(['steps' => $steps, 'status' => 'published', 'published_at' => now()])->save();
-        });
+        }, 3);
     }
 
     public function snapshot(Ticket $ticket): void
@@ -118,9 +141,8 @@ final class WorkOrderWorkflowService
     private function resolveCandidates(Ticket $ticket, array $step): array
     {
         if ($step['resolver'] === 'reporter_supervisor') {
-            $candidate = WorkOrderAssignment::query()->where('user_id', $ticket->reporter_id)
-                ->where('is_active', true)->whereNotNull('supervisor_user_id')
-                ->when($ticket->g001_m001_unit_id, fn ($query) => $query->where('g001_m001_unit_id', $ticket->g001_m001_unit_id))
+            $candidate = $this->reporterAssignments($ticket)->whereNotNull('supervisor_user_id')
+                ->whereHas('supervisor', fn (Builder $query) => $query->where('is_enabled', true))
                 ->orderBy('id')->value('supervisor_user_id');
             return $candidate ? [(int) $candidate] : [];
         }
@@ -212,19 +234,63 @@ final class WorkOrderWorkflowService
     }
 
 
+    /** Apply the same current authority boundary to list/detail/files as decisions. */
+    public function scopeEligibleCandidates(Builder $query, User $user): Builder
+    {
+        if (! $user->is_enabled) {
+            return $query->whereRaw('1=0');
+        }
+        return $query->where('status', 'pending')
+            ->whereJsonContains('candidate_user_ids', (int) $user->id)
+            ->whereHas('ticket', fn (Builder $tickets) => $tickets->where(fn (Builder $reporter) =>
+                $reporter->whereNull('reporter_id')->orWhere('reporter_id', '!=', $user->id)))
+            ->where(function (Builder $candidates) use ($user): void {
+                $candidates->where(function (Builder $byTitle) use ($user): void {
+                    $byTitle->where('resolver', 'job_title')->whereHas('ticket', function (Builder $tickets) use ($user): void {
+                        $tickets->whereExists(function ($assignments) use ($user): void {
+                            $assignments->selectRaw('1')->from('work_order_assignments as wo_candidate')
+                                ->join('work_order_job_titles as wo_title', 'wo_title.id', '=', 'wo_candidate.work_order_job_title_id')
+                                ->where('wo_candidate.user_id', $user->id)->where('wo_candidate.is_active', true)
+                                ->where('wo_title.is_active', true)
+                                ->whereColumn('wo_candidate.work_order_job_title_id', 'work_order_approvals.job_title_id')
+                                ->where(fn ($scope) => $scope->whereNull('wo_candidate.g001_m001_unit_id')
+                                    ->orWhereColumn('wo_candidate.g001_m001_unit_id', 'tickets.g001_m001_unit_id'))
+                                ->where(fn ($scope) => $scope->whereNull('wo_candidate.g002_m003_item_management_id')
+                                    ->orWhereColumn('wo_candidate.g002_m003_item_management_id', 'tickets.g002_m003_item_management_id'));
+                        });
+                    });
+                })->orWhere(function (Builder $bySupervisor) use ($user): void {
+                    $bySupervisor->where('resolver', 'reporter_supervisor')->whereHas('ticket', function (Builder $tickets) use ($user): void {
+                        $tickets->whereExists(function ($assignments) use ($user): void {
+                            $assignments->selectRaw('1')->from('work_order_assignments as wo_reporter')
+                                ->join('work_order_job_titles as wo_reporter_title', 'wo_reporter_title.id', '=', 'wo_reporter.work_order_job_title_id')
+                                ->whereColumn('wo_reporter.user_id', 'tickets.reporter_id')
+                                ->where('wo_reporter.supervisor_user_id', $user->id)
+                                ->where('wo_reporter.is_active', true)->where('wo_reporter_title.is_active', true)
+                                ->where(fn ($scope) => $scope->whereNull('wo_reporter.g001_m001_unit_id')
+                                    ->orWhereColumn('wo_reporter.g001_m001_unit_id', 'tickets.g001_m001_unit_id'))
+                                ->where(fn ($scope) => $scope->whereNull('wo_reporter.g002_m003_item_management_id')
+                                    ->orWhereColumn('wo_reporter.g002_m003_item_management_id', 'tickets.g002_m003_item_management_id'));
+                        });
+                    });
+                });
+            });
+    }
+
+    private function reporterAssignments(Ticket $ticket): Builder
+    {
+        return WorkOrderAssignment::query()->where('user_id', $ticket->reporter_id)
+            ->where('is_active', true)->whereHas('jobTitle', fn (Builder $query) => $query->where('is_active', true))
+            ->where(fn (Builder $query) => $query->whereNull('g001_m001_unit_id')
+                ->when($ticket->g001_m001_unit_id, fn (Builder $scope) => $scope->orWhere('g001_m001_unit_id', $ticket->g001_m001_unit_id)))
+            ->where(fn (Builder $query) => $query->whereNull('g002_m003_item_management_id')
+                ->when($ticket->g002_m003_item_management_id, fn (Builder $scope) => $scope->orWhere('g002_m003_item_management_id', $ticket->g002_m003_item_management_id)));
+    }
+
     private function currentlyEligible(WorkOrderApproval $approval, User $user): bool
     {
         if ($approval->resolver === 'reporter_supervisor') {
-            return WorkOrderAssignment::query()
-                ->where('user_id', $approval->ticket->reporter_id)
-                ->where('supervisor_user_id', $user->id)
-                ->where('is_active', true)
-                ->where(function ($query) use ($approval): void {
-                    $query->whereNull('g001_m001_unit_id');
-                    if ($approval->ticket->g001_m001_unit_id) {
-                        $query->orWhere('g001_m001_unit_id', $approval->ticket->g001_m001_unit_id);
-                    }
-                })->exists();
+            return $this->reporterAssignments($approval->ticket)->where('supervisor_user_id', $user->id)->exists();
         }
         return $approval->resolver === 'job_title' && $approval->job_title_id
             && $this->hasActiveTitle($approval->ticket, $user, (int) $approval->job_title_id);
@@ -291,6 +357,9 @@ final class WorkOrderWorkflowService
 
     public function canPerform(Ticket $ticket, User $user, string $action): bool
     {
+        if (! $user->is_enabled || (int) $user->id === (int) $ticket->reporter_id) {
+            return false;
+        }
         $record = $ticket->workOrderApprovals()->with('workflow')->orderBy('sequence')->first();
         if (! $record) {
             return $user->isFacility();

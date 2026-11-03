@@ -13,6 +13,8 @@ class WorkOrderAssignment extends Model
         'g002_m003_item_management_id', 'supervisor_user_id', 'is_active',
     ];
 
+    protected $attributes = ['is_active' => true];
+
     protected $casts = ['is_active' => 'boolean'];
 
     public function user(): BelongsTo { return $this->belongsTo(User::class); }
@@ -33,21 +35,21 @@ class WorkOrderAssignment extends Model
             if ($assignment->supervisor_user_id && ! User::query()->whereKey($assignment->supervisor_user_id)->where('is_enabled', true)->exists()) {
                 throw ValidationException::withMessages(['supervisor_user_id' => 'Atasan harus merupakan pegawai aktif.']);
             }
-            if ($assignment->supervisor_user_id) {
-                $seen = [(int) $assignment->user_id => true];
-                $cursor = (int) $assignment->supervisor_user_id;
+            if ($assignment->is_active && $assignment->supervisor_user_id) {
+                $seen = [];
+                $frontier = [(int) $assignment->supervisor_user_id];
                 for ($depth = 0; $depth < 100; $depth++) {
-                    if (isset($seen[$cursor])) {
+                    if (in_array((int) $assignment->user_id, $frontier, true)) {
                         throw ValidationException::withMessages(['supervisor_user_id' => 'Hierarki jabatan tidak boleh membentuk siklus.']);
                     }
-                    $seen[$cursor] = true;
-                    $next = self::query()->where('user_id', $cursor)->where('is_active', true)
-                        ->where('id', '!=', $assignment->id ?: 0)->orderBy('id')
-                        ->value('supervisor_user_id');
-                    if (! $next) {
+                    $frontier = array_values(array_diff(array_unique($frontier), $seen));
+                    if ($frontier === []) {
                         break;
                     }
-                    $cursor = (int) $next;
+                    $seen = array_merge($seen, $frontier);
+                    $frontier = self::query()->whereIn('user_id', $frontier)->where('is_active', true)
+                        ->where('id', '!=', $assignment->id ?: 0)->whereNotNull('supervisor_user_id')
+                        ->pluck('supervisor_user_id')->map(fn ($id): int => (int) $id)->all();
                 }
                 if ($depth === 100) {
                     throw ValidationException::withMessages(['supervisor_user_id' => 'Hierarki terlalu dalam.']);

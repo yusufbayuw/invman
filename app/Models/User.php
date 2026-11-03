@@ -100,8 +100,8 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         if ($panel->getId() === 'admin') {
             return $this->isFacility() || $this->isSarpras() || $this->isAssetManager()
                 || $this->ticketTeamMember()->where('is_active', true)->exists()
-                || $this->workOrderAssignments()->where('is_active', true)->exists()
-                || WorkOrderApproval::query()->where('status', 'pending')->whereJsonContains('candidate_user_ids', $this->id)->exists();
+                || $this->workOrderAssignments()->where('is_active', true)->whereHas('jobTitle', fn ($query) => $query->where('is_active', true))->exists()
+                || app(\App\Services\WorkOrderWorkflowService::class)->scopeEligibleCandidates(WorkOrderApproval::query(), $this)->exists();
         }
 
         return true;

@@ -5,6 +5,8 @@ namespace App\Filament\Widgets;
 use App\Filament\Pages\TugasTeknisi;
 use App\Filament\Resources\TicketResource;
 use App\Models\G001M001Unit;
+use App\Models\WorkOrderApproval;
+use App\Services\WorkOrderWorkflowService;
 use App\Models\Ticket;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -25,15 +27,21 @@ class TicketAttentionWidget extends TableWidget
     public function table(Table $table): Table
     {
         $user = auth()->user();
-        $technicianOnly = $user && ! $user->isFacility() && ! $user->isSarpras() && ! $user->isAssetManager();
+        $technicianOnly = $user && ! $user->isFacility() && ! $user->isSarpras() && ! $user->isAssetManager()
+            && $user->ticketTeamMember()->where('is_active', true)->exists();
+        $hasApprovals = $user && app(WorkOrderWorkflowService::class)
+            ->scopeEligibleCandidates(WorkOrderApproval::query(), $user)->exists();
         // Reuse the resource's visibility boundary; never expand scope for a dashboard.
         $query = TicketResource::getEloquentQuery()
             ->whereNotIn('status', ['closed', 'cancelled'])
-            ->when($technicianOnly, fn ($query) => $query->where('assigned_to', $user->id))
+            ->when($technicianOnly, fn (Builder $query) => $query->where(fn (Builder $work) => $work
+                ->where('assigned_to', $user->id)
+                ->orWhereHas('workOrderApprovals', fn (Builder $approvals) => app(WorkOrderWorkflowService::class)
+                    ->scopeEligibleCandidates($approvals, $user))))
             ->with(['maintenance', 'assignee']);
 
         return $table
-            ->heading($technicianOnly ? 'Pekerjaan Saya' : 'Tiket yang Perlu Perhatian')
+            ->heading($technicianOnly && ! $hasApprovals ? 'Pekerjaan Saya' : 'Tiket yang Perlu Perhatian')
             ->description($technicianOnly
                 ? 'Buka tugas untuk menerima pekerjaan, menambahkan dokumentasi, atau mengirim hasil.'
                 : 'Laporan aktif dalam kewenangan Anda.'.($user?->isFacility() ? ' Filter unit hanya berlaku pada daftar tiket ini.' : ' Buka tiket untuk melihat tindak lanjut yang tersedia.'))

@@ -65,6 +65,21 @@ th { background: #eef2f8; }
 <p><b>Deadline respons:</b> {{ $ticket->maintenance->response_due_at?->format('d/m/Y H:i') ?? '-' }} &nbsp;
 <b>Deadline penyelesaian:</b> {{ $ticket->maintenance->resolution_due_at?->format('d/m/Y H:i') ?? '-' }}</p>
 
+@if($ticket->workOrderApprovals->isNotEmpty())
+<p><b>Jejak persetujuan Work Order</b> · Konfigurasi versi {{ $ticket->workOrderApprovals->first()->workflow?->version ?? '-' }}</p>
+<table class="bordered">
+<tr><th>Tahap</th><th>Status</th><th>Keputusan oleh / waktu</th><th>Catatan</th></tr>
+@foreach($ticket->workOrderApprovals->sortBy('sequence') as $approval)
+<tr>
+<td>{{ $approval->label }}<br><small>{{ $approval->checkpoint === 'final' ? 'Pengesahan akhir' : 'Sebelum penugasan' }}</small></td>
+<td>{{ ['approved' => 'Disetujui', 'rejected' => 'Ditolak', 'pending' => 'Menunggu', 'blocked' => 'Belum ada pejabat'] [$approval->status] ?? $approval->status }}</td>
+<td>{{ $approval->decisionMaker?->name ?? 'Belum diputuskan' }}<br><small>{{ $approval->decided_at?->format('d/m/Y H:i') ?? '-' }}</small></td>
+<td class="long">{{ $approval->notes ?? '-' }}</td>
+</tr>
+@endforeach
+</table>
+@endif
+
 <h2>IV. TINDAKAN PERBAIKAN (DIISI OLEH TEKNISI / MAINTENANCE)</h2>
 <table>
 <tr><td class="key">Nama teknisi</td><td>{{ $ticket->maintenance->technician?->name ?? '-' }}</td></tr>

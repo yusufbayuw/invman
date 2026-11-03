@@ -256,7 +256,7 @@ class RoleDashboardTest extends TestCase
     private function ticket(User $reporter, string $title, string $status = 'open'): Ticket
     {
         return Ticket::query()->create([
-            'number' => 'UI-'.Str::uuid(),
+            'number' => 'UI-'.Str::ulid(),
             'ticket_category_id' => TicketCategory::query()->firstOrFail()->id,
             'reporter_id' => $reporter->id, 'g001_m001_unit_id' => $reporter->g001_m001_unit_id,
             'title' => $title, 'description' => 'Fixture pengujian antarmuka',
