@@ -57,4 +57,5 @@ class Ticket extends Model
         return $query;
     }
     public function events(): HasMany { return $this->hasMany(TicketEvent::class); }
+    public function workOrderApprovals(): HasMany { return $this->hasMany(WorkOrderApproval::class, 'ticket_id'); }
 }

@@ -56,9 +56,10 @@ class TicketMaintenanceService
     /** Manager approves and assigns. No technician may self-approve. */
     public function approve(Ticket $ticket, User $manager, int $technicianId, string $priority = 'normal', ?string $notes = null): void
     {
-        if (! $manager->isFacility()) {
-            $this->reject('Hanya fasilitas/admin dapat menyetujui perbaikan.');
+        if (! app(WorkOrderWorkflowService::class)->canPerform($ticket, $manager, 'assign')) {
+            $this->reject('Tidak berwenang menyetujui atau menugaskan perbaikan ini.');
         }
+        app(WorkOrderWorkflowService::class)->assertReady($ticket, 'start');
         if (! in_array($priority, ['low', 'normal', 'high', 'critical'], true)) {
             $this->reject('Prioritas tidak valid.');
         }
@@ -269,9 +270,10 @@ class TicketMaintenanceService
     /** Final administrative sign-off is distinct from a physical readiness declaration. */
     public function close(Ticket $ticket, User $manager, bool $safe, ?string $notes = null): void
     {
-        if (! $manager->isFacility()) {
-            $this->reject('Pengesahan akhir hanya untuk manajer fasilitas/admin.');
+        if (! app(WorkOrderWorkflowService::class)->canPerform($ticket, $manager, 'close')) {
+            $this->reject('Tidak berwenang mengesahkan perbaikan ini.');
         }
+        app(WorkOrderWorkflowService::class)->assertReady($ticket, 'final');
         DB::transaction(function () use ($ticket, $manager, $safe, $notes): void {
             $locked = $this->locked($ticket);
             $case = $this->case($locked);

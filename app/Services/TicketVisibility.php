@@ -31,6 +31,9 @@ class TicketVisibility
                 $visible->orWhereIn('assigned_to', $descendantIds);
             }
 
+            $visible->orWhereHas('workOrderApprovals', fn (Builder $approvals) => $approvals
+                ->where('status', 'pending')->whereJsonContains('candidate_user_ids', (int) $user->id));
+
             if ($managementIds->isNotEmpty()) {
                 $visible->orWhereIn('g002_m003_item_management_id', $managementIds);
             }

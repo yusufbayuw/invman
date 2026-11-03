@@ -60,11 +60,50 @@ class ViewTicket extends ViewRecord
                     );
                     Notification::make()->title('Inventaris berhasil dihubungkan')->success()->send();
                 }),
+            Actions\Action::make('workOrderApproval')
+                ->label('Persetujuan Work Order')->icon('heroicon-o-document-check')->color('warning')
+                ->visible(fn (): bool => ($step = $this->nextWorkOrderApproval()) !== null
+                    && app(\App\Services\WorkOrderWorkflowService::class)->canDecide($step, auth()->user()))
+                ->modalHeading(fn (): string => $this->nextWorkOrderApproval()?->label ?? 'Persetujuan Work Order')
+                ->form([
+                    Forms\Components\Select::make('decision')->label('Keputusan')->options([
+                        'approve' => 'Setujui', 'reject' => 'Tolak',
+                    ])->required(),
+                    Forms\Components\Textarea::make('notes')->label('Catatan / alasan penolakan')->maxLength(2000),
+                ])
+                ->action(function (array $data): void {
+                    $step = $this->nextWorkOrderApproval();
+                    abort_unless($step, 404);
+                    app(\App\Services\WorkOrderWorkflowService::class)
+                        ->decide($step, auth()->user(), $data['decision'] === 'approve', $data['notes'] ?? null);
+                    Notification::make()->title('Keputusan Work Order dicatat')->success()->send();
+                }),
+            Actions\Action::make('reassignWorkOrderApproval')
+                ->label('Alihkan Persetujuan')->icon('heroicon-o-arrow-path')->color('gray')
+                ->visible(fn (): bool => (auth()->user()?->isAdmin() ?? false)
+                    && $this->nextWorkOrderApproval() !== null)
+                ->form([
+                    Forms\Components\Select::make('replacement_id')->label('Pengganti')
+                        ->options(fn (): array => \App\Models\User::query()->where('is_enabled', true)
+                            ->where('id', '!=', $this->getRecord()->reporter_id)
+                            ->orderBy('name')->pluck('name', 'id')->all())->searchable()->required(),
+                    Forms\Components\Textarea::make('reason')->label('Alasan pengalihan')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])->action(function (array $data): void {
+                    $step = $this->nextWorkOrderApproval();
+                    abort_unless($step, 404);
+                    app(\App\Services\WorkOrderWorkflowService::class)->reassign(
+                        $step, auth()->user(), \App\Models\User::query()->findOrFail($data['replacement_id']),
+                        $data['reason'],
+                    );
+                    Notification::make()->title('Pengalihan persetujuan tercatat')->success()->send();
+                }),
             Actions\Action::make('approveMaintenance')
                 ->label('Setujui & Tetapkan PIC')->icon('heroicon-o-check-badge')->color('success')
                 ->visible(fn (): bool => $this->getRecord()->maintenance !== null
                     && $this->getRecord()->status === 'open'
-                    && (auth()->user()?->isFacility() ?? false))
+                    && app(\App\Services\WorkOrderWorkflowService::class)->canPerform($this->getRecord(), auth()->user(), 'assign')
+                    && ! $this->getRecord()->workOrderApprovals()->where('checkpoint', 'start')->whereIn('status', ['pending', 'rejected'])->exists())
                 ->form([
                     Forms\Components\Select::make('technician')->label('Koordinator / teknisi penanggung jawab')
                         ->helperText('Bisa pilih koordinator terlebih dahulu. Setelah disetujui, koordinator dapat mendelegasikan kepada petugas lapangan.')
@@ -158,7 +197,8 @@ class ViewTicket extends ViewRecord
                 ->visible(fn (): bool => $this->getRecord()->maintenance !== null
                     && $this->getRecord()->status === 'resolved'
                     && $this->getRecord()->maintenance->verified_at !== null
-                    && (auth()->user()?->isFacility() ?? false))
+                    && app(\App\Services\WorkOrderWorkflowService::class)->canPerform($this->getRecord(), auth()->user(), 'close')
+                    && ! $this->getRecord()->workOrderApprovals()->where('checkpoint', 'final')->whereIn('status', ['pending', 'rejected'])->exists())
                 ->form([
                     Forms\Components\Toggle::make('safe')
                         ->label('Sudah dinyatakan layak pakai setelah pemeriksaan fisik')
@@ -211,6 +251,12 @@ class ViewTicket extends ViewRecord
                     Notification::make()->title('Status diperbarui')->success()->send();
                 }),
         ];
+    }
+
+    private function nextWorkOrderApproval(): ?\App\Models\WorkOrderApproval
+    {
+        return $this->getRecord()->workOrderApprovals()->where('status', 'pending')
+            ->orderBy('sequence')->first();
     }
 
     private function maintenanceTechnicians(): array
