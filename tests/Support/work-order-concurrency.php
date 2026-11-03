@@ -6,7 +6,7 @@ $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 use App\Models\{G001M001Unit, TicketCategory, User, WorkOrderApproval, WorkOrderAssignment, WorkOrderJobTitle, WorkOrderWorkflow};
-use App\Services\{TicketService, WorkOrderWorkflowService};
+use App\Services\{TicketService, WorkOrderWorkflowService, WorkOrderRevisionService};
 use Illuminate\Support\Facades\{DB, Notification};
 use Illuminate\Validation\ValidationException;
 
@@ -16,6 +16,17 @@ if (! app()->environment('testing') || getenv('INVMAN_CONCURRENCY_TEST') !== '1'
 }
 Notification::fake();
 $mode = $argv[1] ?? 'parent';
+if ($mode === 'revision') {
+    try {
+        $ticket = \App\Models\Ticket::findOrFail($argv[2]);
+        app(WorkOrderRevisionService::class)->resubmit($ticket, User::findOrFail($argv[3]), (int) $argv[4],
+            'Laporan diperbaiki sesuai penolakan.', array_merge($ticket->only(['title', 'location', 'reported_urgency']), [
+                'description' => 'Lokasi kerusakan dan kondisi diperjelas untuk persetujuan ulang.',
+            ]));
+        echo 'committed';
+    } catch (ValidationException $exception) { echo 'rejected'; }
+    exit;
+}
 if ($mode === 'approval') {
     try {
         app(WorkOrderWorkflowService::class)->decide(WorkOrderApproval::findOrFail($argv[2]), User::findOrFail($argv[3]), true, 'Concurrent synthetic decision');
@@ -72,6 +83,16 @@ $a = worker(['approval', $approval->id, $actors[0]->id]);
 $b = worker(['approval', $approval->id, $actors[1]->id]);
 $outcomes = [finish($a), finish($b)]; sort($outcomes);
 $approvalResult = $outcomes === ['committed', 'rejected'] && $ticket->events()->where('action', 'work_order_approval_granted')->count() === 1;
+$revisionTicket = app(TicketService::class)->open($reporter, ['ticket_category_id' => TicketCategory::where('slug', 'maintenance_hvac')->firstOrFail()->id,
+    'title' => 'Concurrent QA revision', 'description' => 'Disposable resubmission race test', 'location' => 'QA']);
+$rejected = $revisionTicket->workOrderApprovals()->firstOrFail();
+app(WorkOrderWorkflowService::class)->decide($rejected, $actors[0], false, 'Perbaiki keterangan laporan.');
+$a = worker(['revision', $revisionTicket->id, $reporter->id, $rejected->id]);
+$b = worker(['revision', $revisionTicket->id, $reporter->id, $rejected->id]);
+$revisionOutcomes = [finish($a), finish($b)]; sort($revisionOutcomes);
+$revisionResult = $revisionOutcomes === ['committed', 'rejected'] && $revisionTicket->workOrderRevisions()->count() === 1
+    && $revisionTicket->workOrderApprovals()->count() === 1 && $rejected->fresh()->status === 'rejected'
+    && $revisionTicket->events()->where('action', 'work_order_revision_submitted')->count() === 1;
 $marker = tempnam(sys_get_temp_dir(), 'invman-race-'); unlink($marker);
 if (WorkOrderWorkflow::whereNull('g001_m001_unit_id')->exists()) { throw new RuntimeException('Global scope must be unused in this disposable probe database.'); }
 $a = worker(['draft', $actors[0]->id, $title->id, $marker]);
@@ -84,5 +105,6 @@ $draftCount = WorkOrderWorkflow::whereNull('g001_m001_unit_id')->count();
 $draftResult = $draftOutcomes === ['committed', 'rejected'] && $draftCount === 1;
 echo json_encode(['mysql' => DB::selectOne('select version() as version')->version,
     'approval_race' => ['pass' => $approvalResult, 'outcomes' => $outcomes, 'committed_events' => $ticket->events()->where('action', 'work_order_approval_granted')->count()],
+    'revision_race' => ['pass' => $revisionResult, 'outcomes' => $revisionOutcomes, 'revisions' => $revisionTicket->workOrderRevisions()->count()],
     'global_draft_race' => ['pass' => $draftResult, 'outcomes' => $draftOutcomes, 'drafts' => $draftCount]], JSON_PRETTY_PRINT).PHP_EOL;
-exit($approvalResult && $draftResult ? 0 : 1);
+exit($approvalResult && $draftResult && $revisionResult ? 0 : 1);

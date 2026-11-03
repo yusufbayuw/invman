@@ -30,6 +30,7 @@ class WorkOrderDemoSeeder extends Seeder
         ])->validate();
 
         $this->call(WorkOrderJobTitleSeeder::class);
+        WorkOrderJobTitle::query()->firstOrCreate(['name' => 'Teknisi Laporan Umum'], ['is_active' => true]);
         $titles = WorkOrderJobTitle::query()->pluck('id', 'name');
         $groups = G002M003ItemManagement::query()->pluck('id', 'name');
 
@@ -52,6 +53,9 @@ class WorkOrderDemoSeeder extends Seeder
         $this->position($librarySpv, $titles['Supervisor Perpustakaan'], null, $groups['Perpustakaan'] ?? null);
         $this->position($lead, $titles['Koordinator Teknisi'], null, $groups['Fasilitas'] ?? null);
         $this->position($technician, $titles['Teknisi'], null, $groups['Fasilitas'] ?? null, $lead?->id);
+        // Explicit example for assetless reports; does not grant inventory membership.
+        $this->position($lead, $titles['Teknisi Laporan Umum']);
+        $this->position($technician, $titles['Teknisi Laporan Umum']);
 
         // Grant asset membership only to *newly provisioned* demo identities,
         // never to a real account that happens to share a username.
@@ -107,6 +111,7 @@ class WorkOrderDemoSeeder extends Seeder
                 'created_by' => $manager->id,
                 'assign_job_title_id' => $titles['Supervisor Fasilitas'],
                 'close_job_title_id' => $titles['Manager Fasilitas'],
+                'dispatch_job_title_id' => $titles['Teknisi Laporan Umum'],
                 'steps' => [
                     ['key' => 'diketahui_atasan', 'label' => 'Diketahui Atasan Pelapor',
                         'checkpoint' => 'start', 'resolver' => 'reporter_supervisor'],

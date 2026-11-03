@@ -40,10 +40,15 @@ class WorkOrderWorkflowResource extends Resource
             Forms\Components\Select::make('close_job_title_id')->label('Jabatan pengesahan akhir')
                 ->relationship('closeTitle', 'name', fn ($query) => $query->where('is_active', true))->searchable()->preload()
                 ->helperText('Isi jabatan Manager Fasilitas untuk membatasi pengesahan akhir. Kosong = perilaku Fasilitas existing.'),
+            Forms\Components\Select::make('dispatch_job_title_id')->label('Jabatan teknisi lintas unit untuk laporan tanpa aset')
+                ->relationship('dispatchTitle', 'name', fn ($query) => $query->where('is_active', true))->searchable()->preload()
+                ->helperText('Opsional. Teknisi tetap harus anggota tim aktif dan memegang jabatan ini sesuai cakupan unit. Kosong mempertahankan batas unit existing.'),
             Forms\Components\Repeater::make('steps')->label('Tahapan persetujuan')
                 ->schema([
                     Forms\Components\TextInput::make('key')->label('Kode unik (huruf kecil)')->required()->regex('/^[a-z][a-z0-9_]{0,59}$/'),
                     Forms\Components\TextInput::make('label')->label('Nama tahap')->required()->maxLength(150),
+                    Forms\Components\Toggle::make('requires_estimate')->label('Menyetujui vendor & nominal estimasi')
+                        ->helperText('Khusus tahap sebelum penugasan. Pencatat estimasi tidak boleh menyetujui nominalnya sendiri.'),
                     Forms\Components\Select::make('checkpoint')->label('Waktu persetujuan')->options([
                         'start' => 'Sebelum teknisi ditugaskan', 'final' => 'Sebelum pengesahan akhir',
                     ])->required(),

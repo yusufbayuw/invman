@@ -10,7 +10,7 @@ class WorkOrderWorkflow extends Model
 {
     protected $fillable = [
         'g001_m001_unit_id', 'version', 'status', 'steps', 'assign_job_title_id',
-        'close_job_title_id', 'created_by', 'published_at',
+        'close_job_title_id', 'dispatch_job_title_id', 'created_by', 'published_at',
     ];
 
     protected $casts = [
@@ -22,6 +22,7 @@ class WorkOrderWorkflow extends Model
     public function unit(): BelongsTo { return $this->belongsTo(G001M001Unit::class, 'g001_m001_unit_id'); }
     public function assignTitle(): BelongsTo { return $this->belongsTo(WorkOrderJobTitle::class, 'assign_job_title_id'); }
     public function closeTitle(): BelongsTo { return $this->belongsTo(WorkOrderJobTitle::class, 'close_job_title_id'); }
+    public function dispatchTitle(): BelongsTo { return $this->belongsTo(WorkOrderJobTitle::class, 'dispatch_job_title_id'); }
 
     protected static function booted(): void
     {

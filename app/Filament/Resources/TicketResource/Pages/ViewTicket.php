@@ -60,23 +60,105 @@ class ViewTicket extends ViewRecord
                     );
                     Notification::make()->title('Inventaris berhasil dihubungkan')->success()->send();
                 }),
+            Actions\Action::make('recordWorkOrderEstimate')
+                ->label('Catat Tinjauan & Estimasi')->icon('heroicon-o-calculator')
+                ->visible(fn (): bool => app(\App\Services\WorkOrderEstimateService::class)->canRecord($this->getRecord(), auth()->user()))
+                ->fillForm(fn (): array => [
+                    'expected_version' => (int) $this->getRecord()->workOrderEstimates()->max('version'),
+                    'materials' => [], 'execution_mode' => 'internal',
+                ])
+                ->form([
+                    Forms\Components\Hidden::make('expected_version')->required(),
+                    Forms\Components\Select::make('execution_mode')->label('Pelaksana')->required()->live()
+                        ->options(['internal' => 'Tim internal', 'external' => 'Vendor eksternal']),
+                    Forms\Components\TextInput::make('vendor_name')->label('Nama vendor')->maxLength(200)
+                        ->required(fn (Forms\Get $get): bool => $get('execution_mode') === 'external')
+                        ->visible(fn (Forms\Get $get): bool => $get('execution_mode') === 'external'),
+                    Forms\Components\Textarea::make('diagnosis')->label('Diagnosis / tinjauan awal')->required()->minLength(5)->maxLength(10000),
+                    Forms\Components\Repeater::make('materials')->label('Rencana material')->schema([
+                        Forms\Components\TextInput::make('name')->label('Material')->required()->maxLength(200),
+                        Forms\Components\TextInput::make('quantity')->label('Jumlah')->numeric()->gt(0)->maxValue(100000)->required(),
+                        Forms\Components\TextInput::make('unit')->label('Satuan')->required()->maxLength(25)->default('pcs'),
+                    ])->columns(3)->default([])->maxItems(30),
+                    Forms\Components\TextInput::make('amount')->label('Total estimasi (Rp)')->required()
+                        ->regex('/^(0|[1-9][0-9]{0,11})$/D')->helperText('Rupiah bulat, tanpa titik atau koma.'),
+                ])
+                ->action(function (array $data): void {
+                    $version = (int) $data['expected_version']; unset($data['expected_version']);
+                    app(\App\Services\WorkOrderEstimateService::class)->record($this->getRecord(), auth()->user(), $data, $version);
+                    $this->getRecord()->refresh();
+                    Notification::make()->title('Tinjauan dan estimasi tercatat')->success()->send();
+                }),
             Actions\Action::make('workOrderApproval')
                 ->label('Persetujuan Work Order')->icon('heroicon-o-document-check')->color('warning')
                 ->visible(fn (): bool => ($step = $this->nextWorkOrderApproval()) !== null
                     && app(\App\Services\WorkOrderWorkflowService::class)->canDecide($step, auth()->user()))
                 ->modalHeading(fn (): string => $this->nextWorkOrderApproval()?->label ?? 'Persetujuan Work Order')
+                ->fillForm(function (): array {
+                    $estimate = app(\App\Services\WorkOrderEstimateService::class)->current($this->getRecord());
+                    return ['approval_id' => $this->nextWorkOrderApproval()?->id, 'estimate_id' => $estimate?->id,
+                        'estimate_summary' => $estimate ? 'Estimasi #'.$estimate->id.' · '.($estimate->vendor_name ?? 'Tim internal').' · Rp '.$estimate->amount : 'Belum ada estimasi'];
+                })
                 ->form([
+                    Forms\Components\Hidden::make('approval_id')->required(),
+                    Forms\Components\Hidden::make('estimate_id'),
+                    Forms\Components\Textarea::make('estimate_summary')->label('Estimasi yang diperiksa')->disabled()->dehydrated(false),
                     Forms\Components\Select::make('decision')->label('Keputusan')->options([
                         'approve' => 'Setujui', 'reject' => 'Tolak',
                     ])->required(),
                     Forms\Components\Textarea::make('notes')->label('Catatan / alasan penolakan')->maxLength(2000),
                 ])
                 ->action(function (array $data): void {
-                    $step = $this->nextWorkOrderApproval();
+                    $step = $this->getRecord()->workOrderApprovals()->find($data['approval_id']);
                     abort_unless($step, 404);
                     app(\App\Services\WorkOrderWorkflowService::class)
-                        ->decide($step, auth()->user(), $data['decision'] === 'approve', $data['notes'] ?? null);
+                        ->decide($step, auth()->user(), $data['decision'] === 'approve', $data['notes'] ?? null,
+                            filled($data['estimate_id'] ?? null) ? (int) $data['estimate_id'] : null);
                     Notification::make()->title('Keputusan Work Order dicatat')->success()->send();
+                }),
+            Actions\Action::make('reviseWorkOrder')
+                ->label('Revisi & Kirim Ulang')->icon('heroicon-o-arrow-path')->color('warning')
+                ->visible(fn (): bool => app(\App\Services\WorkOrderRevisionService::class)
+                    ->canRevise($this->getRecord(), auth()->user(), 'start'))
+                ->fillForm(fn (): array => $this->getRecord()->only(['title', 'description', 'location', 'reported_urgency']) + [
+                    'rejection_id' => $this->getRecord()->workOrderApprovals()->where('checkpoint', 'start')->where('status', 'rejected')->value('id'),
+                ])
+                ->form([
+                    Forms\Components\Hidden::make('rejection_id')->required(),
+                    Forms\Components\TextInput::make('title')->label('Judul')->required()->minLength(5)->maxLength(255),
+                    Forms\Components\Textarea::make('description')->label('Laporan yang diperbaiki')->required()->minLength(10)->maxLength(10000),
+                    Forms\Components\TextInput::make('location')->label('Lokasi')->required()->maxLength(255),
+                    Forms\Components\Select::make('reported_urgency')->label('Urgensi')->required()
+                        ->options(['normal' => 'Normal', 'urgent' => 'Mendesak', 'emergency' => 'Darurat']),
+                    Forms\Components\Textarea::make('reason')->label('Penjelasan perbaikan')->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(function (array $data): void {
+                    app(\App\Services\WorkOrderRevisionService::class)->resubmit(
+                        $this->getRecord(), auth()->user(), (int) $data['rejection_id'], $data['reason'],
+                        array_intersect_key($data, array_flip(['title', 'description', 'location', 'reported_urgency'])),
+                    );
+                    $this->refreshFormData(['title', 'description', 'location', 'reported_urgency']);
+                    $this->getRecord()->refresh();
+                    Notification::make()->title('Revisi dikirim untuk persetujuan ulang')->success()->send();
+                }),
+            Actions\Action::make('reworkRejectedWorkOrder')
+                ->label('Perbaiki Hasil yang Ditolak')->icon('heroicon-o-wrench-screwdriver')->color('warning')
+                ->visible(fn (): bool => app(\App\Services\WorkOrderRevisionService::class)
+                    ->canRevise($this->getRecord(), auth()->user(), 'final'))
+                ->fillForm(fn (): array => [
+                    'rejection_id' => $this->getRecord()->workOrderApprovals()->where('checkpoint', 'final')->where('status', 'rejected')->value('id'),
+                ])
+                ->modalDescription('Pekerjaan dikembalikan untuk diperbaiki. Hasil baru harus diverifikasi kembali oleh pelapor sebelum pengesahan ulang.')
+                ->form([
+                    Forms\Components\Hidden::make('rejection_id')->required(),
+                    Forms\Components\Textarea::make('reason')->label('Rencana perbaikan')->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(function (array $data): void {
+                    app(\App\Services\WorkOrderRevisionService::class)->resubmit(
+                        $this->getRecord(), auth()->user(), (int) $data['rejection_id'], $data['reason'],
+                    );
+                    $this->getRecord()->refresh();
+                    Notification::make()->title('Pekerjaan dikembalikan untuk perbaikan')->success()->send();
                 }),
             Actions\Action::make('reassignWorkOrderApproval')
                 ->label('Alihkan Persetujuan')->icon('heroicon-o-arrow-path')->color('gray')

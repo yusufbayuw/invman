@@ -29,8 +29,8 @@ class DatabaseSeederTest extends TestCase
 
         $this->assertSame(7, G001M001Unit::query()->count());
         $this->assertSame(23, User::query()->count());
-        $this->assertSame(11, WorkOrderJobTitle::query()->count());
-        $this->assertSame(21, WorkOrderAssignment::query()->count());
+        $this->assertSame(12, WorkOrderJobTitle::query()->count());
+        $this->assertSame(23, WorkOrderAssignment::query()->count());
         $this->assertDatabaseHas('work_order_workflows', ['version' => 1, 'status' => 'draft', 'g001_m001_unit_id' => null]);
         $this->assertSame(0, WorkOrderWorkflow::query()->where('status', 'published')->count());
         $this->assertDatabaseHas('ticket_team_members', ['team_name' => 'Tim Fasilitas Demo', 'position' => 'lead']);

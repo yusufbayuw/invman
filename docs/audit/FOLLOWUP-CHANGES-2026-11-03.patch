@@ -1,0 +1,2562 @@
+diff --git a/app/Filament/Resources/TicketResource.php b/app/Filament/Resources/TicketResource.php
+index bbf0021..26cd3f1 100644
+--- a/app/Filament/Resources/TicketResource.php
++++ b/app/Filament/Resources/TicketResource.php
+@@ -226,6 +226,40 @@ public static function infolist(Infolist $infolist): Infolist
+                     Infolists\Components\TextEntry::make('maintenance.final_approved_at')->label('Pengesahan akhir')->dateTime()->placeholder('-'),
+                     Infolists\Components\TextEntry::make('maintenance.asset_released_at')->label('Dinyatakan layak pakai')->dateTime()->placeholder('Belum'),
+                 ])->columns(2)->collapsible(),
++            Infolists\Components\Section::make('Tinjauan & Estimasi Biaya')
++                ->visible(fn ($record): bool => $record->workOrderEstimates()->exists())
++                ->schema([
++                    Infolists\Components\RepeatableEntry::make('workOrderEstimates')->hiddenLabel()->schema([
++                        Infolists\Components\TextEntry::make('version')->label('Versi estimasi'),
++                        Infolists\Components\TextEntry::make('revision')->label('Revisi laporan'),
++                        Infolists\Components\TextEntry::make('execution_mode')->label('Pelaksana')
++                            ->formatStateUsing(fn (string $state): string => $state === 'external' ? 'Vendor eksternal' : 'Tim internal'),
++                        Infolists\Components\TextEntry::make('vendor_name')->label('Vendor')->placeholder('-'),
++                        Infolists\Components\TextEntry::make('amount')->label('Estimasi (Rp)'),
++                        Infolists\Components\TextEntry::make('diagnosis')->label('Tinjauan awal')->columnSpanFull(),
++                    ])->columns(3),
++                ])->collapsible(),
++            Infolists\Components\Section::make('Persetujuan & Riwayat Revisi')
++                ->visible(fn ($record): bool => $record->workOrderApprovalHistory()->exists())
++                ->schema([
++                    Infolists\Components\RepeatableEntry::make('workOrderApprovalHistory')->label('Seluruh keputusan')->schema([
++                        Infolists\Components\TextEntry::make('revision')->label('Revisi'),
++                        Infolists\Components\TextEntry::make('estimate_id')->label('ID estimasi disetujui')->placeholder('-'),
++                        Infolists\Components\TextEntry::make('label')->label('Tahap'),
++                        Infolists\Components\TextEntry::make('status')->label('Keputusan')->badge()
++                            ->formatStateUsing(fn (string $state): string => ['pending'=>'Menunggu', 'approved'=>'Disetujui', 'rejected'=>'Ditolak'][$state] ?? $state),
++                        Infolists\Components\TextEntry::make('decisionMaker.name')->label('Oleh')->placeholder('-'),
++                        Infolists\Components\TextEntry::make('decided_at')->label('Waktu')->dateTime()->placeholder('-'),
++                        Infolists\Components\TextEntry::make('superseded_at')->label('Digantikan revisi')->dateTime()->placeholder('Aktif'),
++                        Infolists\Components\TextEntry::make('notes')->label('Catatan / alasan')->columnSpanFull(),
++                    ])->columns(3),
++                    Infolists\Components\RepeatableEntry::make('workOrderRevisions')->label('Pengiriman ulang')->schema([
++                        Infolists\Components\TextEntry::make('revision')->label('Revisi'),
++                        Infolists\Components\TextEntry::make('actor.name')->label('Dikirim oleh'),
++                        Infolists\Components\TextEntry::make('created_at')->label('Waktu')->dateTime(),
++                        Infolists\Components\TextEntry::make('reason')->label('Penjelasan perbaikan')->columnSpanFull(),
++                    ])->columns(3),
++                ])->collapsible(),
+             Infolists\Components\Section::make('Aset terkait')->schema([
+                 Infolists\Components\RepeatableEntry::make('assets')->hiddenLabel()->schema([
+                     Infolists\Components\TextEntry::make('asset_type')->label('Jenis'),
+diff --git a/app/Filament/Resources/TicketResource/Pages/ViewTicket.php b/app/Filament/Resources/TicketResource/Pages/ViewTicket.php
+index 6d8824f..6a9ea4a 100644
+--- a/app/Filament/Resources/TicketResource/Pages/ViewTicket.php
++++ b/app/Filament/Resources/TicketResource/Pages/ViewTicket.php
+@@ -60,24 +60,106 @@ protected function getHeaderActions(): array
+                     );
+                     Notification::make()->title('Inventaris berhasil dihubungkan')->success()->send();
+                 }),
++            Actions\Action::make('recordWorkOrderEstimate')
++                ->label('Catat Tinjauan & Estimasi')->icon('heroicon-o-calculator')
++                ->visible(fn (): bool => app(\App\Services\WorkOrderEstimateService::class)->canRecord($this->getRecord(), auth()->user()))
++                ->fillForm(fn (): array => [
++                    'expected_version' => (int) $this->getRecord()->workOrderEstimates()->max('version'),
++                    'materials' => [], 'execution_mode' => 'internal',
++                ])
++                ->form([
++                    Forms\Components\Hidden::make('expected_version')->required(),
++                    Forms\Components\Select::make('execution_mode')->label('Pelaksana')->required()->live()
++                        ->options(['internal' => 'Tim internal', 'external' => 'Vendor eksternal']),
++                    Forms\Components\TextInput::make('vendor_name')->label('Nama vendor')->maxLength(200)
++                        ->required(fn (Forms\Get $get): bool => $get('execution_mode') === 'external')
++                        ->visible(fn (Forms\Get $get): bool => $get('execution_mode') === 'external'),
++                    Forms\Components\Textarea::make('diagnosis')->label('Diagnosis / tinjauan awal')->required()->minLength(5)->maxLength(10000),
++                    Forms\Components\Repeater::make('materials')->label('Rencana material')->schema([
++                        Forms\Components\TextInput::make('name')->label('Material')->required()->maxLength(200),
++                        Forms\Components\TextInput::make('quantity')->label('Jumlah')->numeric()->gt(0)->maxValue(100000)->required(),
++                        Forms\Components\TextInput::make('unit')->label('Satuan')->required()->maxLength(25)->default('pcs'),
++                    ])->columns(3)->default([])->maxItems(30),
++                    Forms\Components\TextInput::make('amount')->label('Total estimasi (Rp)')->required()
++                        ->regex('/^(0|[1-9][0-9]{0,11})$/D')->helperText('Rupiah bulat, tanpa titik atau koma.'),
++                ])
++                ->action(function (array $data): void {
++                    $version = (int) $data['expected_version']; unset($data['expected_version']);
++                    app(\App\Services\WorkOrderEstimateService::class)->record($this->getRecord(), auth()->user(), $data, $version);
++                    $this->getRecord()->refresh();
++                    Notification::make()->title('Tinjauan dan estimasi tercatat')->success()->send();
++                }),
+             Actions\Action::make('workOrderApproval')
+                 ->label('Persetujuan Work Order')->icon('heroicon-o-document-check')->color('warning')
+                 ->visible(fn (): bool => ($step = $this->nextWorkOrderApproval()) !== null
+                     && app(\App\Services\WorkOrderWorkflowService::class)->canDecide($step, auth()->user()))
+                 ->modalHeading(fn (): string => $this->nextWorkOrderApproval()?->label ?? 'Persetujuan Work Order')
++                ->fillForm(function (): array {
++                    $estimate = app(\App\Services\WorkOrderEstimateService::class)->current($this->getRecord());
++                    return ['approval_id' => $this->nextWorkOrderApproval()?->id, 'estimate_id' => $estimate?->id,
++                        'estimate_summary' => $estimate ? 'Estimasi #'.$estimate->id.' · '.($estimate->vendor_name ?? 'Tim internal').' · Rp '.$estimate->amount : 'Belum ada estimasi'];
++                })
+                 ->form([
++                    Forms\Components\Hidden::make('approval_id')->required(),
++                    Forms\Components\Hidden::make('estimate_id'),
++                    Forms\Components\Textarea::make('estimate_summary')->label('Estimasi yang diperiksa')->disabled()->dehydrated(false),
+                     Forms\Components\Select::make('decision')->label('Keputusan')->options([
+                         'approve' => 'Setujui', 'reject' => 'Tolak',
+                     ])->required(),
+                     Forms\Components\Textarea::make('notes')->label('Catatan / alasan penolakan')->maxLength(2000),
+                 ])
+                 ->action(function (array $data): void {
+-                    $step = $this->nextWorkOrderApproval();
++                    $step = $this->getRecord()->workOrderApprovals()->find($data['approval_id']);
+                     abort_unless($step, 404);
+                     app(\App\Services\WorkOrderWorkflowService::class)
+-                        ->decide($step, auth()->user(), $data['decision'] === 'approve', $data['notes'] ?? null);
++                        ->decide($step, auth()->user(), $data['decision'] === 'approve', $data['notes'] ?? null,
++                            filled($data['estimate_id'] ?? null) ? (int) $data['estimate_id'] : null);
+                     Notification::make()->title('Keputusan Work Order dicatat')->success()->send();
+                 }),
++            Actions\Action::make('reviseWorkOrder')
++                ->label('Revisi & Kirim Ulang')->icon('heroicon-o-arrow-path')->color('warning')
++                ->visible(fn (): bool => app(\App\Services\WorkOrderRevisionService::class)
++                    ->canRevise($this->getRecord(), auth()->user(), 'start'))
++                ->fillForm(fn (): array => $this->getRecord()->only(['title', 'description', 'location', 'reported_urgency']) + [
++                    'rejection_id' => $this->getRecord()->workOrderApprovals()->where('checkpoint', 'start')->where('status', 'rejected')->value('id'),
++                ])
++                ->form([
++                    Forms\Components\Hidden::make('rejection_id')->required(),
++                    Forms\Components\TextInput::make('title')->label('Judul')->required()->minLength(5)->maxLength(255),
++                    Forms\Components\Textarea::make('description')->label('Laporan yang diperbaiki')->required()->minLength(10)->maxLength(10000),
++                    Forms\Components\TextInput::make('location')->label('Lokasi')->required()->maxLength(255),
++                    Forms\Components\Select::make('reported_urgency')->label('Urgensi')->required()
++                        ->options(['normal' => 'Normal', 'urgent' => 'Mendesak', 'emergency' => 'Darurat']),
++                    Forms\Components\Textarea::make('reason')->label('Penjelasan perbaikan')->required()->minLength(10)->maxLength(2000),
++                ])
++                ->action(function (array $data): void {
++                    app(\App\Services\WorkOrderRevisionService::class)->resubmit(
++                        $this->getRecord(), auth()->user(), (int) $data['rejection_id'], $data['reason'],
++                        array_intersect_key($data, array_flip(['title', 'description', 'location', 'reported_urgency'])),
++                    );
++                    $this->refreshFormData(['title', 'description', 'location', 'reported_urgency']);
++                    $this->getRecord()->refresh();
++                    Notification::make()->title('Revisi dikirim untuk persetujuan ulang')->success()->send();
++                }),
++            Actions\Action::make('reworkRejectedWorkOrder')
++                ->label('Perbaiki Hasil yang Ditolak')->icon('heroicon-o-wrench-screwdriver')->color('warning')
++                ->visible(fn (): bool => app(\App\Services\WorkOrderRevisionService::class)
++                    ->canRevise($this->getRecord(), auth()->user(), 'final'))
++                ->fillForm(fn (): array => [
++                    'rejection_id' => $this->getRecord()->workOrderApprovals()->where('checkpoint', 'final')->where('status', 'rejected')->value('id'),
++                ])
++                ->modalDescription('Pekerjaan dikembalikan untuk diperbaiki. Hasil baru harus diverifikasi kembali oleh pelapor sebelum pengesahan ulang.')
++                ->form([
++                    Forms\Components\Hidden::make('rejection_id')->required(),
++                    Forms\Components\Textarea::make('reason')->label('Rencana perbaikan')->required()->minLength(10)->maxLength(2000),
++                ])
++                ->action(function (array $data): void {
++                    app(\App\Services\WorkOrderRevisionService::class)->resubmit(
++                        $this->getRecord(), auth()->user(), (int) $data['rejection_id'], $data['reason'],
++                    );
++                    $this->getRecord()->refresh();
++                    Notification::make()->title('Pekerjaan dikembalikan untuk perbaikan')->success()->send();
++                }),
+             Actions\Action::make('reassignWorkOrderApproval')
+                 ->label('Alihkan Persetujuan')->icon('heroicon-o-arrow-path')->color('gray')
+                 ->visible(fn (): bool => (auth()->user()?->isAdmin() ?? false)
+diff --git a/app/Filament/Resources/WorkOrderWorkflowResource.php b/app/Filament/Resources/WorkOrderWorkflowResource.php
+index fc3534a..4bcc227 100644
+--- a/app/Filament/Resources/WorkOrderWorkflowResource.php
++++ b/app/Filament/Resources/WorkOrderWorkflowResource.php
+@@ -40,10 +40,15 @@ public static function form(Form $form): Form
+             Forms\Components\Select::make('close_job_title_id')->label('Jabatan pengesahan akhir')
+                 ->relationship('closeTitle', 'name', fn ($query) => $query->where('is_active', true))->searchable()->preload()
+                 ->helperText('Isi jabatan Manager Fasilitas untuk membatasi pengesahan akhir. Kosong = perilaku Fasilitas existing.'),
++            Forms\Components\Select::make('dispatch_job_title_id')->label('Jabatan teknisi lintas unit untuk laporan tanpa aset')
++                ->relationship('dispatchTitle', 'name', fn ($query) => $query->where('is_active', true))->searchable()->preload()
++                ->helperText('Opsional. Teknisi tetap harus anggota tim aktif dan memegang jabatan ini sesuai cakupan unit. Kosong mempertahankan batas unit existing.'),
+             Forms\Components\Repeater::make('steps')->label('Tahapan persetujuan')
+                 ->schema([
+                     Forms\Components\TextInput::make('key')->label('Kode unik (huruf kecil)')->required()->regex('/^[a-z][a-z0-9_]{0,59}$/'),
+                     Forms\Components\TextInput::make('label')->label('Nama tahap')->required()->maxLength(150),
++                    Forms\Components\Toggle::make('requires_estimate')->label('Menyetujui vendor & nominal estimasi')
++                        ->helperText('Khusus tahap sebelum penugasan. Pencatat estimasi tidak boleh menyetujui nominalnya sendiri.'),
+                     Forms\Components\Select::make('checkpoint')->label('Waktu persetujuan')->options([
+                         'start' => 'Sebelum teknisi ditugaskan', 'final' => 'Sebelum pengesahan akhir',
+                     ])->required(),
+diff --git a/app/Http/Controllers/TicketMaintenancePdfController.php b/app/Http/Controllers/TicketMaintenancePdfController.php
+index 9086821..29ec076 100644
+--- a/app/Http/Controllers/TicketMaintenancePdfController.php
++++ b/app/Http/Controllers/TicketMaintenancePdfController.php
+@@ -14,7 +14,8 @@ public function __invoke(Request $request, Ticket $ticket, TicketVisibility $acc
+     {
+         abort_unless($access->canView($request->user(), $ticket) && $ticket->maintenance()->exists(), 404);
+         $ticket->load(['maintenance.approver', 'maintenance.technician', 'maintenance.verifier',
+-            'maintenance.finalApprover', 'workOrderApprovals.decisionMaker', 'workOrderApprovals.workflow', 'reporter', 'unit', 'category', 'assets', 'assignee']);
++            'maintenance.finalApprover', 'workOrderApprovals.decisionMaker', 'workOrderApprovals.workflow',
++            'workOrderApprovalHistory.decisionMaker', 'workOrderRevisions.actor', 'reporter', 'unit', 'category', 'assets', 'assignee']);
+ 
+         return Pdf::loadView('pdf.tickets.maintenance', ['ticket' => $ticket])
+             ->setPaper('a4', 'portrait')
+diff --git a/app/Models/Ticket.php b/app/Models/Ticket.php
+index 4ab7609..1012760 100644
+--- a/app/Models/Ticket.php
++++ b/app/Models/Ticket.php
+@@ -57,5 +57,8 @@ public function visibleAttachments(): HasMany
+         return $query;
+     }
+     public function events(): HasMany { return $this->hasMany(TicketEvent::class); }
+-    public function workOrderApprovals(): HasMany { return $this->hasMany(WorkOrderApproval::class, 'ticket_id'); }
++    public function workOrderApprovals(): HasMany { return $this->hasMany(WorkOrderApproval::class, 'ticket_id')->whereNull('superseded_at'); }
++    public function workOrderApprovalHistory(): HasMany { return $this->hasMany(WorkOrderApproval::class, 'ticket_id'); }
++    public function workOrderRevisions(): HasMany { return $this->hasMany(WorkOrderRevision::class, 'ticket_id'); }
++    public function workOrderEstimates(): HasMany { return $this->hasMany(WorkOrderEstimate::class, 'ticket_id'); }
+ }
+diff --git a/app/Models/TicketTeamMember.php b/app/Models/TicketTeamMember.php
+index f9a4549..05605b5 100644
+--- a/app/Models/TicketTeamMember.php
++++ b/app/Models/TicketTeamMember.php
+@@ -138,7 +138,8 @@ public static function descendantsOf(User $lead): array
+ 
+     public static function qualifiesFor(Ticket $ticket, User $technician): bool
+     {
+-        if (! $technician->is_enabled || (int) $ticket->reporter_id === (int) $technician->id) {
++        if (! User::query()->whereKey($technician->id)->where('is_enabled', true)->exists()
++            || (int) $ticket->reporter_id === (int) $technician->id) {
+             return false;
+         }
+         // Existing asset managers and facility roles continue to work without
+@@ -157,7 +158,8 @@ public static function qualifiesFor(Ticket $ticket, User $technician): bool
+         // units merely because both records had no management identifier.
+         if (! $ticket->g002_m003_item_management_id) {
+             return ! $ticket->g001_m001_unit_id
+-                || (int) $technician->g001_m001_unit_id === (int) $ticket->g001_m001_unit_id;
++                || (int) $technician->g001_m001_unit_id === (int) $ticket->g001_m001_unit_id
++                || app(\App\Services\WorkOrderWorkflowService::class)->canDispatchAcrossUnits($ticket, $technician);
+         }
+ 
+         return (int) $member->g002_m003_item_management_id
+diff --git a/app/Models/WorkOrderApproval.php b/app/Models/WorkOrderApproval.php
+index 70e4c40..5c170b4 100644
+--- a/app/Models/WorkOrderApproval.php
++++ b/app/Models/WorkOrderApproval.php
+@@ -11,13 +11,15 @@ class WorkOrderApproval extends Model
+     protected $fillable = [
+         'ticket_id', 'work_order_workflow_id', 'step_key', 'label', 'checkpoint',
+         'resolver', 'job_title_id', 'target_user_id', 'candidate_user_ids',
+-        'sequence', 'status', 'decided_by', 'decided_at', 'notes',
++        'sequence', 'status', 'decided_by', 'decided_at', 'notes', 'revision', 'superseded_at', 'estimate_id',
+     ];
+ 
+     protected $casts = [
+         'candidate_user_ids' => 'array',
+         'decided_at' => 'datetime',
+         'sequence' => 'integer',
++        'revision' => 'integer',
++        'superseded_at' => 'datetime',
+     ];
+ 
+     public function ticket(): BelongsTo { return $this->belongsTo(Ticket::class); }
+@@ -26,6 +28,13 @@ public function decisionMaker(): BelongsTo { return $this->belongsTo(User::class
+ 
+     protected static function booted(): void
+     {
++        static::updating(function (self $approval): void {
++            $allowed = $approval->getOriginal('superseded_at') ? ['updated_at'] : ['superseded_at', 'updated_at'];
++            if (($approval->getOriginal('status') !== 'pending' || $approval->getOriginal('superseded_at'))
++                && array_diff(array_keys($approval->getDirty()), $allowed)) {
++                throw ValidationException::withMessages(['approval' => 'Keputusan terdahulu tidak dapat ditimpa. Buat revisi yang sah.']);
++            }
++        });
+         static::deleting(fn (): never => throw ValidationException::withMessages([
+             'approval' => 'Langkah approval dan audit tidak dapat dihapus.',
+         ]));
+diff --git a/app/Models/WorkOrderWorkflow.php b/app/Models/WorkOrderWorkflow.php
+index 82126cf..9268b83 100644
+--- a/app/Models/WorkOrderWorkflow.php
++++ b/app/Models/WorkOrderWorkflow.php
+@@ -10,7 +10,7 @@ class WorkOrderWorkflow extends Model
+ {
+     protected $fillable = [
+         'g001_m001_unit_id', 'version', 'status', 'steps', 'assign_job_title_id',
+-        'close_job_title_id', 'created_by', 'published_at',
++        'close_job_title_id', 'dispatch_job_title_id', 'created_by', 'published_at',
+     ];
+ 
+     protected $casts = [
+@@ -22,6 +22,7 @@ class WorkOrderWorkflow extends Model
+     public function unit(): BelongsTo { return $this->belongsTo(G001M001Unit::class, 'g001_m001_unit_id'); }
+     public function assignTitle(): BelongsTo { return $this->belongsTo(WorkOrderJobTitle::class, 'assign_job_title_id'); }
+     public function closeTitle(): BelongsTo { return $this->belongsTo(WorkOrderJobTitle::class, 'close_job_title_id'); }
++    public function dispatchTitle(): BelongsTo { return $this->belongsTo(WorkOrderJobTitle::class, 'dispatch_job_title_id'); }
+ 
+     protected static function booted(): void
+     {
+diff --git a/app/Services/WorkOrderWorkflowService.php b/app/Services/WorkOrderWorkflowService.php
+index d3005cd..90ef4ae 100644
+--- a/app/Services/WorkOrderWorkflowService.php
++++ b/app/Services/WorkOrderWorkflowService.php
+@@ -45,6 +45,12 @@ public function validateSteps(array $steps): array
+             }
+             $seen[$key] = true;
+             $normalized[] = compact('key', 'label', 'checkpoint', 'resolver') + ['job_title_id' => $resolver === 'job_title' ? $titleId : null];
++            if (filter_var($step['requires_estimate'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
++                if ($checkpoint !== 'start') {
++                    throw ValidationException::withMessages(['steps' => 'Persetujuan estimasi harus sebelum penugasan.']);
++                }
++                $normalized[array_key_last($normalized)]['requires_estimate'] = true;
++            }
+         }
+         $finalSeen = false;
+         foreach ($normalized as $step) {
+@@ -90,7 +96,7 @@ public function publish(WorkOrderWorkflow $workflow, User $actor): void
+             // Do not activate a role-based workflow with no active person to approve.
+             $titleIds = array_values(array_filter(array_unique(array_merge(
+                 array_column($steps, 'job_title_id'),
+-                [$locked->assign_job_title_id, $locked->close_job_title_id],
++                [$locked->assign_job_title_id, $locked->close_job_title_id, $locked->dispatch_job_title_id],
+             ))));
+             foreach ($titleIds as $titleId) {
+                 if (! WorkOrderAssignment::query()->where('work_order_job_title_id', $titleId)
+@@ -105,7 +111,7 @@ public function publish(WorkOrderWorkflow $workflow, User $actor): void
+                     throw ValidationException::withMessages(['steps' => 'Jabatan approver belum memiliki pegawai aktif sesuai cakupan workflow.']);
+                 }
+             }
+-            foreach (['assign_job_title_id', 'close_job_title_id'] as $field) {
++            foreach (['assign_job_title_id', 'close_job_title_id', 'dispatch_job_title_id'] as $field) {
+                 if ($locked->{$field} && ! DB::table('work_order_job_titles')->where('id', $locked->{$field})->where('is_active', true)->exists()) {
+                     throw ValidationException::withMessages([$field => 'Jabatan yang tidak aktif tidak dapat dipakai.']);
+                 }
+@@ -175,7 +181,7 @@ public function next(Ticket $ticket, string $checkpoint): ?WorkOrderApproval
+ 
+     public function canDecide(WorkOrderApproval $approval, User $user): bool
+     {
+-        if (! $user->is_enabled || $approval->status !== 'pending') {
++        if (! $user->is_enabled || $approval->status !== 'pending' || $approval->superseded_at) {
+             return false;
+         }
+         if ($approval->checkpoint === 'start' && $approval->ticket->status !== 'open') {
+@@ -197,10 +203,14 @@ public function canDecide(WorkOrderApproval $approval, User $user): bool
+             && $this->currentlyEligible($approval, $user);
+     }
+ 
+-    public function decide(WorkOrderApproval $approval, User $user, bool $approved, ?string $notes): void
++    public function decide(WorkOrderApproval $approval, User $user, bool $approved, ?string $notes, ?int $expectedEstimateId = null): void
+     {
+-        DB::transaction(function () use ($approval, $user, $approved, $notes): void {
++        if (mb_strlen((string) $notes) > 2000) {
++            throw ValidationException::withMessages(['notes' => 'Catatan maksimal 2.000 karakter.']);
++        }
++        DB::transaction(function () use ($approval, $user, $approved, $notes, $expectedEstimateId): void {
+             $ticket = Ticket::query()->lockForUpdate()->findOrFail($approval->ticket_id);
++            $user = User::query()->findOrFail($user->id);
+             $locked = WorkOrderApproval::query()->lockForUpdate()->findOrFail($approval->id);
+             $locked->setRelation('ticket', $ticket);
+             if (! $this->canDecide($locked, $user)) {
+@@ -209,11 +219,21 @@ public function decide(WorkOrderApproval $approval, User $user, bool $approved,
+             if (! $approved && mb_strlen(trim((string) $notes)) < 5) {
+                 throw ValidationException::withMessages(['notes' => 'Alasan penolakan minimal lima karakter.']);
+             }
++            $estimateId = null;
++            $estimates = app(WorkOrderEstimateService::class);
++            if ($approved && $estimates->requiresEstimate($locked)) {
++                $estimate = $estimates->current($ticket);
++                if (! $estimate || $estimate->recorded_by === $user->id || $estimate->id !== $expectedEstimateId) {
++                    throw ValidationException::withMessages(['estimate' => 'Periksa versi estimasi terbaru; pencatat dan penyetuju harus berbeda.']);
++                }
++                $estimateId = $estimate->id;
++            }
+             $locked->forceFill([
+                 'status' => $approved ? 'approved' : 'rejected',
+                 'decided_by' => $user->id,
+                 'decided_at' => now(),
+                 'notes' => $notes,
++                'estimate_id' => $estimateId,
+             ])->save();
+             $ticket->events()->create([
+                 'actor_id' => $user->id,
+@@ -240,7 +260,7 @@ public function scopeEligibleCandidates(Builder $query, User $user): Builder
+         if (! $user->is_enabled) {
+             return $query->whereRaw('1=0');
+         }
+-        return $query->where('status', 'pending')
++        return $query->whereNull('superseded_at')->where('status', 'pending')
+             ->whereJsonContains('candidate_user_ids', (int) $user->id)
+             ->whereHas('ticket', fn (Builder $tickets) => $tickets->where(fn (Builder $reporter) =>
+                 $reporter->whereNull('reporter_id')->orWhere('reporter_id', '!=', $user->id)))
+@@ -325,8 +345,11 @@ public function reassign(WorkOrderApproval $approval, User $admin, User $replace
+         }
+         DB::transaction(function () use ($approval, $admin, $replacement, $reason): void {
+             $ticket = Ticket::query()->lockForUpdate()->findOrFail($approval->ticket_id);
++            $admin = User::query()->findOrFail($admin->id);
++            $replacement = User::query()->findOrFail($replacement->id);
++            abort_unless($admin->is_enabled && $admin->isAdmin(), 403);
+             $locked = WorkOrderApproval::query()->lockForUpdate()->findOrFail($approval->id);
+-            if ($locked->status !== 'pending' || ! $replacement->is_enabled
++            if ($locked->status !== 'pending' || $locked->superseded_at || ! $replacement->is_enabled
+                 || $replacement->id === $ticket->reporter_id) {
+                 throw ValidationException::withMessages(['approval' => 'Hanya approval tertunda dapat dialihkan kepada pegawai aktif selain pelapor.']);
+             }
+@@ -357,6 +380,7 @@ public function reassign(WorkOrderApproval $approval, User $admin, User $replace
+ 
+     public function canPerform(Ticket $ticket, User $user, string $action): bool
+     {
++        $user = User::query()->findOrFail($user->id);
+         if (! $user->is_enabled || (int) $user->id === (int) $ticket->reporter_id) {
+             return false;
+         }
+@@ -371,4 +395,16 @@ public function canPerform(Ticket $ticket, User $user, string $action): bool
+         return $user->is_enabled && $user->id !== $ticket->reporter_id
+             && $this->hasActiveTitle($ticket, $user, (int) $titleId);
+     }
++
++    public function canDispatchAcrossUnits(Ticket $ticket, User $technician): bool
++    {
++        if (! $technician->is_enabled || $technician->id === $ticket->reporter_id
++            || $ticket->g002_m003_item_management_id || $ticket->assets()->exists()) {
++            return false;
++        }
++        // Authority comes from the ticket's immutable version, never the latest configuration.
++        $workflow = $ticket->workOrderApprovals()->with('workflow')->first()?->workflow;
++        return $workflow?->dispatch_job_title_id
++            && $this->hasActiveTitle($ticket, $technician, (int) $workflow->dispatch_job_title_id);
++    }
+ }
+diff --git a/database/seeders/WorkOrderDemoSeeder.php b/database/seeders/WorkOrderDemoSeeder.php
+index 236f186..65f3ba9 100644
+--- a/database/seeders/WorkOrderDemoSeeder.php
++++ b/database/seeders/WorkOrderDemoSeeder.php
+@@ -30,6 +30,7 @@ public function run(): void
+         ])->validate();
+ 
+         $this->call(WorkOrderJobTitleSeeder::class);
++        WorkOrderJobTitle::query()->firstOrCreate(['name' => 'Teknisi Laporan Umum'], ['is_active' => true]);
+         $titles = WorkOrderJobTitle::query()->pluck('id', 'name');
+         $groups = G002M003ItemManagement::query()->pluck('id', 'name');
+ 
+@@ -52,6 +53,9 @@ public function run(): void
+         $this->position($librarySpv, $titles['Supervisor Perpustakaan'], null, $groups['Perpustakaan'] ?? null);
+         $this->position($lead, $titles['Koordinator Teknisi'], null, $groups['Fasilitas'] ?? null);
+         $this->position($technician, $titles['Teknisi'], null, $groups['Fasilitas'] ?? null, $lead?->id);
++        // Explicit example for assetless reports; does not grant inventory membership.
++        $this->position($lead, $titles['Teknisi Laporan Umum']);
++        $this->position($technician, $titles['Teknisi Laporan Umum']);
+ 
+         // Grant asset membership only to *newly provisioned* demo identities,
+         // never to a real account that happens to share a username.
+@@ -107,6 +111,7 @@ public function run(): void
+                 'created_by' => $manager->id,
+                 'assign_job_title_id' => $titles['Supervisor Fasilitas'],
+                 'close_job_title_id' => $titles['Manager Fasilitas'],
++                'dispatch_job_title_id' => $titles['Teknisi Laporan Umum'],
+                 'steps' => [
+                     ['key' => 'diketahui_atasan', 'label' => 'Diketahui Atasan Pelapor',
+                         'checkpoint' => 'start', 'resolver' => 'reporter_supervisor'],
+diff --git a/docs/audit/PRODUCTION-READINESS-2026-11-03.md b/docs/audit/PRODUCTION-READINESS-2026-11-03.md
+index 7a926e3..be91166 100644
+--- a/docs/audit/PRODUCTION-READINESS-2026-11-03.md
++++ b/docs/audit/PRODUCTION-READINESS-2026-11-03.md
+@@ -2,6 +2,18 @@ # InvMan — Production Readiness Audit & Remediation
+ 
+ Tanggal: **3 November 2026 (WIB)**. Pemilik sistem meminta audit mandiri; tidak ada akses atau perubahan database produksi, merge PR, ataupun deployment produksi.
+ 
++## Pembaruan lanjutan — 3 November 2026
++
++**Keputusan tetap NO-GO.** Perbaikan dan bukti lanjutan tersedia lokal; PR #33 masih pada baseline `182c12e` sampai penyimpanan remote diizinkan. Tidak ada merge/deploy. CI baseline tidak dianggap sebagai CI untuk perubahan lanjutan.
++
++Tiga FAIL bisnis ditangani: revisi/resubmit dengan riwayat immutable pada tiket sama, estimasi vendor/nominal berversi yang disetujui pihak berbeda, dan dispatch assetless melalui jabatan/cakupan eksplisit. Satu dari delapan BLOCKED (DEP-07) berhasil diuji melalui login HTTP normal dengan server-side provider CAPTCHA asli dan kunci uji resmi. **Matriks lokal: 52 PASS / 0 FAIL / 7 BLOCKED**, dengan batas lapisan pengujian tetap berlaku.
++
++[Laporan lanjutan dan seluruh gap tersisa](FOLLOWUP-READINESS-2026-11-03.md) · [Matriks diperbarui](TEST-MATRIX-2026-11-03.md) · [Bukti lanjutan](evidence/2026-11-03-followup/).
++
++## Arsip baseline audit awal
++
++Bagian A–G berikut dipertahankan sebagai bukti audit pada `182c12e`, termasuk status FAIL/BLOCKED saat itu. Status terbaru di atas dan laporan lanjutan menggantikan pernyataan baseline yang sudah ditangani; audit awal tidak diulang.
++
+ ## A. Executive Summary
+ 
+ **Keputusan: NO-GO untuk rilis gabungan #31/#32 dan aktivasi approval dinamis Work Order YTB. Risiko tinggi sampai blocker di bawah diselesaikan.**
+diff --git a/docs/audit/TEST-MATRIX-2026-11-03.md b/docs/audit/TEST-MATRIX-2026-11-03.md
+index b4d65df..2f8d177 100644
+--- a/docs/audit/TEST-MATRIX-2026-11-03.md
++++ b/docs/audit/TEST-MATRIX-2026-11-03.md
+@@ -1,6 +1,6 @@
+ # Matriks pengujian InvMan — 3 November 2026
+ 
+-Cakupan: input SHA dan lingkungan pada [laporan A–G](PRODUCTION-READINESS-2026-11-03.md). **PASS hanya untuk lapisan yang disebutkan; BLOCKED bukan PASS.** FAIL kebutuhan bisnis tidak disembunyikan oleh tes fail-closed yang berhasil. Keputusan produksi tetap NO-GO. CI commit final ditautkan pada deskripsi PR integrasi.
++Cakupan: input SHA dan lingkungan pada [laporan A–G](PRODUCTION-READINESS-2026-11-03.md). **PASS hanya untuk lapisan yang disebutkan; BLOCKED bukan PASS.** FAIL kebutuhan bisnis tidak disembunyikan oleh tes fail-closed yang berhasil. Keputusan produksi tetap NO-GO. Pembaruan lokal lanjutan belum tersimpan ke PR #33; CI GitHub baru belum dijalankan. Lihat [laporan lanjutan](FOLLOWUP-READINESS-2026-11-03.md). Baseline remote: `182c12e`.
+ 
+ | ID | Pengujian | Expected result | Actual result | Status | Bukti |
+ | --- | --- | --- | --- | --- | --- |
+@@ -17,9 +17,9 @@ # Matriks pengujian InvMan — 3 November 2026
+ | WO-03 | Penugasan/pengerjaan/verify/final gate | Teknisi atau staff tidak melompati manager/verifikasi | Service menolak premature close; staff bukan candidate manager; lifecycle lengkap lulus | PASS | [WorkOrderReadinessTest](../../tests/Feature/WorkOrderReadinessTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt); [TicketMaintenanceV3Test](../../tests/Feature/TicketMaintenanceV3Test.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt) |
+ | WO-04 | PDF dan bukti privat | User berhak saja; keputusan dinamis aktual dicetak | PDF 200 untuk pelapor; pihak lain/revoked 404; template memuat tahap/aktor/waktu/notes/versi | PASS | [WorkOrderReadinessTest](../../tests/Feature/WorkOrderReadinessTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt); [ProductionReadinessSecurityTest](../../tests/Feature/ProductionReadinessSecurityTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt); [TicketMaintenanceV3Test](../../tests/Feature/TicketMaintenanceV3Test.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt) |
+ | WO-05 | Penolakan + kirim keputusan duplikat | Fail closed; tidak ada event persetujuan kedua | Rejected tidak bisa disetujui ulang; penugasan tetap diblokir | PASS | [WorkOrderReadinessTest](../../tests/Feature/WorkOrderReadinessTest.php) `test_rejection_is_fail_closed_and_duplicate_decision_is_not_replayed`; [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt) |
+-| WO-06 | Koreksi/resubmit sesudah penolakan | Pelapor dapat memperbaiki dalam jejak revisi yang sah | Belum ada alur revisi; rejected gate tetap memblokir | FAIL | OPEN-01; WO-05 membuktikan fail-closed, source WorkOrderWorkflowService::assertReady/reassign |
+-| WO-07 | Internal/eksternal vendor dan estimasi biaya | Data formulir YTB dapat dicatat sebelum approval terkait | Tidak tersedia vendor/estimasi biaya/approval nominal; diagnosis/material baru saat finish | FAIL | OPEN-03; perbandingan formulir privat dan TicketMaintenanceService::finish; resources/views/pdf/tickets/maintenance.blade.php |
+-| WO-08 | Laporan tanpa aset → teknisi pusat | Dispatch lintas unit sah tanpa hak fasilitas berlebihan | Team scope existing menolak central demo technician pada assetless unit report | FAIL | [WorkOrderReadinessTest](../../tests/Feature/WorkOrderReadinessTest.php) `test_assetless_report_does_not_grant_central_technician_cross_unit_authority`; [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt); OPEN-04. Tes batas aman PASS, kebutuhan dispatch belum didukung |
++| WO-06 | Koreksi/resubmit sesudah penolakan | Pelapor memperbaiki laporan; penolakan akhir memerlukan pengerjaan dan verifikasi ulang | Riwayat lama dipertahankan, persetujuan baru pada tiket sama, stale ID/aktor/payload ditolak; aksi Filament diuji | PASS | [WorkOrderRevisionTest](../../tests/Feature/WorkOrderRevisionTest.php), [regresi keamanan/bisnis](evidence/2026-11-03-followup/security-business-tests.txt), [race](evidence/2026-11-03-followup/concurrency.json). PASS backend/Livewire; browser tetap UI-04 |
++| WO-07 | Internal/eksternal vendor dan estimasi biaya | Tinjauan/material/vendor/nominal dicatat sebelum tahap biaya | Estimasi berversi, workflow dapat mewajibkan persetujuan nominal oleh pihak berbeda; keputusan mengikat ID estimasi; perubahan versi pada modal lama ditolak | PASS | [WorkOrderEstimateTest](../../tests/Feature/WorkOrderEstimateTest.php), [regresi](evidence/2026-11-03-followup/security-business-tests.txt). Harus mengaktifkan tahap `requires_estimate`; bukan sistem akuntansi/pembayaran atau routing ambang nominal otomatis |
++| WO-08 | Laporan tanpa aset → teknisi pusat | Dispatch lintas unit melalui kewenangan eksplisit | Jabatan dispatch dalam versi workflow + assignment aktif sesuai cakupan + anggota tim aktif; revoke/salah unit ditolak, alur sampai closed lulus | PASS | [WorkOrderReadinessTest](../../tests/Feature/WorkOrderReadinessTest.php) `test_explicit_dispatch_title_enables_assetless_central_work_without_facility_role` dan `test_dispatch_title_scope_revocation_and_inactive_team_remain_fail_closed`. NULL tidak otomatis memberi dispatch global |
+ | AUTH-01 | Pelapor menyetujui laporan sendiri (multi-role/title) | Selalu ditolak backend | Fallback legacy dan dynamic snapshot yang memasukkan reporter ditolak | PASS | [ProductionReadinessSecurityTest](../../tests/Feature/ProductionReadinessSecurityTest.php) `test_reporter_holding_required_title_and_multiple_roles_cannot_decide_own_snapshot`; [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt) |
+ | AUTH-02 | Staff mengesahkan manager / multi-role melewati urutan | Tidak mendapat keputusan hanya karena fasilitas/admin | canDecide/checkpoint dan close service menolak | PASS | [WorkOrderReadinessTest](../../tests/Feature/WorkOrderReadinessTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt); [DynamicWorkOrderApprovalFlowTest](../../tests/Feature/DynamicWorkOrderApprovalFlowTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt) |
+ | AUTH-03 | Atasan/unit berubah selama pending | Kandidat lama tidak boleh memakai snapshot stale | Penugasan dipindah unit atau supervisor diganti mencabut eligibility; admin reassign beralasan berhasil | PASS | [WorkOrderReadinessTest](../../tests/Feature/WorkOrderReadinessTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt); [DynamicWorkOrderApprovalFlowTest](../../tests/Feature/DynamicWorkOrderApprovalFlowTest.php) `test_revoked_title_cannot_approve_and_admin_reassigns_with_audit`; [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt) |
+@@ -27,7 +27,7 @@ # Matriks pengujian InvMan — 3 November 2026
+ | AUTH-05 | Jabatan/assignment dicabut | Keputusan dan akses privat kandidat hilang | Title inactive dan revoked assignment kehilangan panel/tiket/PDF; null reporter legacy tetap kompatibel | PASS | [ProductionReadinessSecurityTest](../../tests/Feature/ProductionReadinessSecurityTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt) |
+ | AUTH-06 | Tidak ada approver/atasan | Tidak bypass; admin dapat memperbaiki assignment/pending candidate dengan audit | Candidate kosong blocked; restored active supervisor + reassign admin bisa lanjut | PASS | [WorkOrderReadinessTest](../../tests/Feature/WorkOrderReadinessTest.php) `test_missing_supervisor_is_blocked_until_active_assignment_and_audited_reassignment`; [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt) |
+ | AUTH-07 | Revoke antara precheck dan lock | Tidak memakai precheck usang untuk assign | Injected revocation sebelum ticket lock ditolak setelah FIX-04 | PASS | [ProductionReadinessSecurityTest](../../tests/Feature/ProductionReadinessSecurityTest.php) `test_assignment_authority_is_checked_inside_ticket_transaction`; [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt) |
+-| AUTH-08 | Semua race revoke/role/publish antar transaksi | Tidak ada authority yang lolos setelah revocation final | Probe sempit diuji; seluruh interleaving belum diuji | BLOCKED | Batas cakupan C; memerlukan spesifikasi ordering revocation dan uji concurrency tambahan |
++| AUTH-08 | Semua race revoke/role/publish antar transaksi | Tidak ada authority yang lolos setelah revocation final | Ditambah reload aktor setelah ticket lock dan uji dua resubmit: satu revisi/event; seluruh interleaving revokasi tetap belum tercakup | BLOCKED | [concurrency lanjutan](evidence/2026-11-03-followup/concurrency.json), [laporan lanjutan](FOLLOWUP-READINESS-2026-11-03.md); hasil race sempit tidak menutup skenario luas |
+ | CFG-01 | Publish oleh non-admin / title tanpa pemegang | Ditolak | Publish authority dan coverage validation lulus | PASS | [WorkOrderConfigurationTest](../../tests/Feature/WorkOrderConfigurationTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt) |
+ | CFG-02 | Versi published / transaksi berjalan | Published immutable; tiket mempertahankan versi lama | UI edit published 403; update model ditolak; publish v2 tidak mengubah snapshot lama | PASS | [WorkOrderReadinessTest](../../tests/Feature/WorkOrderReadinessTest.php) `test_new_published_workflow_does_not_rewrite_existing_ticket_snapshot`; [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt); [WorkOrderConfigurationTest](../../tests/Feature/WorkOrderConfigurationTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt) |
+ | CFG-03 | Urutan start-final-start / duplikat kode | Konfigurasi invalid ditolak | Start setelah final pertama ditolak sesudah FIX-06 | PASS | [ProductionReadinessSecurityTest](../../tests/Feature/ProductionReadinessSecurityTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt); [WorkOrderConfigurationTest](../../tests/Feature/WorkOrderConfigurationTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt) |
+@@ -53,17 +53,17 @@ # Matriks pengujian InvMan — 3 November 2026
+ | UI-01 | Dashboard Sarpras/Fasilitas/Admin/teknisi/aset/multi-role/approver-only | Pekerjaan relevan, link tiket tepat, jumlah pengajuan/reservasi berbeda | Laravel/Livewire tests lulus, termasuk assignment revoked/filter scope/approval-only | PASS | [RoleDashboardTest](../../tests/Feature/RoleDashboardTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt); [OperationalPriorityDashboardTest](../../tests/Feature/OperationalPriorityDashboardTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt); [ProductionReadinessSecurityTest](../../tests/Feature/ProductionReadinessSecurityTest.php); [suite MySQL](evidence/2026-11-03/mysql-tests.txt) / [SQLite](evidence/2026-11-03/sqlite-tests.txt) |
+ | UI-02 | Route kompatibel | Seluruh route main tetap ada | 181 main dipertahankan; 192 integration, debug env sama | PASS | [route-compatibility.json](evidence/2026-11-03/route-compatibility.json) |
+ | UI-03 | Public browser 360/390/430/1366 | Halaman nyata terbaca tanpa overflow horizontal | Jadwal publik pada CSS iframe widths: scrollWidth=clientWidth; login normal sebelum autentikasi tampil | PASS | [01](evidence/2026-11-03/01-login-desktop.jpg), [02](evidence/2026-11-03/02-login-mobile.jpg), [03](evidence/2026-11-03/03-public-mobile.jpg), [04](evidence/2026-11-03/04-public-desktop.jpg); [measurements](evidence/2026-11-03/browser-measurements.json) |
+-| UI-04 | Dashboard/form jabatan/workflow/publish/approve/reject/reassign/detail/PDF via login browser normal | Semua role dan tombol berfungsi pada 360/390/430/1366 | Secure credential handoff tidak tersedia; tidak memakai fixture login | BLOCKED | Batas browser pada laporan B; Laravel/Livewire coverage tidak menggantikan UAT browser |
+-| UI-05 | Polling authenticated Livewire 419 / JS / failed requests / modal | Tidak ada error pada session login normal setelah beberapa siklus | Valid HTTP refresh 200; authenticated polling belum dapat diuji; warning stale assets QA dipulihkan melalui Composer script | BLOCKED | HTTP evidence + batas B. 419 historis tidak disimpulkan sebagai bug baru ataupun sudah selesai |
+-| UI-06 | Alur booking/QR/handover/return melalui browser normal | UAT transaksi end-to-end dengan session asli | Backend regression lulus, browser authenticated tidak tersedia | BLOCKED | OPEN-02; REG-01–06 bukan bukti UAT browser |
++| UI-04 | Dashboard/form/workflow/approval/revisi/PDF via browser normal pada 360/390/430/1366 | UAT browser semua role dan aksi | Login HTTP normal berhasil; browser Chromium tidak tersedia dan unduhan runtime gagal. Aksi Filament baru hanya diuji Livewire | BLOCKED | [blocker browser](evidence/2026-11-03-followup/browser-blocker.txt); [login provider HTTP](evidence/2026-11-03-followup/provider-login.json). Tidak ada screenshot dashboard yang diklaim |
++| UI-05 | Polling authenticated Livewire 419 / JS / failed requests / modal | Tidak ada error pada session browser normal | Login provider HTTP dan refresh authenticated diuji; JS/polling/modal browser belum diuji | BLOCKED | [HTTP lanjutan](evidence/2026-11-03-followup/provider-login.json); blocker browser sama dengan UI-04 |
++| UI-06 | Booking/QR/handover/return melalui browser normal | UAT transaksi end-to-end dengan session asli | Regresi backend diuji ulang; browser runtime tidak tersedia | BLOCKED | [SQLite](evidence/2026-11-03-followup/sqlite-tests.txt), [MySQL](evidence/2026-11-03-followup/mysql-tests.txt); backend bukan bukti browser |
+ | DEP-01 | Build/lint/validate/security config | Artefak dapat dibangun dengan lockfiles dan konfigurasi aman | Build Vite 6.4.5 dan lint lulus; validate valid dengan warning exact QR constraint existing; audit konfigurasi sintetis valid | PASS | [build](evidence/2026-11-03/frontend-build.txt); [lint](evidence/2026-11-03/php-lint.txt); [validate](evidence/2026-11-03/composer-validate.txt); [config](evidence/2026-11-03/production-config-audit.txt) |
+ | DEP-02 | Dependency advisory terkini | Tidak ada advisory pada dependency terpilih | Composer produksi 0, npm seluruh/production 0; main MIME advisory medium dicatat | PASS | [Composer](evidence/2026-11-03/composer-production-audit.json); [npm](evidence/2026-11-03/npm-audit.json); bukan bukti tidak ada unknown vulnerability |
+ | DEP-03 | Config/route/view cache | Cache dapat dibangun | Cache build lulus lokal; clear ulang memakai cache array setelah DB host default belum dibuat | PASS | [cache-build.txt](evidence/2026-11-03/cache-build.txt); [cache-clear.txt](evidence/2026-11-03/cache-clear.txt). Tidak membuktikan DB cache production |
+ | DEP-04 | SMTP/push/broadcast/queue daemon/cron/license/TLS/session/storage produksi | Berfungsi pada staging setara produksi | Tidak ada akses infra; mail/notification fake dan QA license fixture | BLOCKED | OPEN-06; rencana E |
+ | DEP-05 | Backup/restore/PITR/rollback produksi | Restore rehearsal konsisten dan tidak bypass gate dinamis | Rencana dibuat; salinan/backup produksi tidak tersedia. Rollback kode lama saat WO aktif dilarang tanpa freeze | BLOCKED | E: rencana backup/deployment/smoke/pemulihan |
+ | DEP-06 | Stress/load/disk full/failover dan seluruh race | Ketahanan dalam kondisi gangguan | Tidak diuji; tidak mengarang angka kapasitas/SLA | BLOCKED | Batas C/E |
+-| DEP-07 | HTTP login melalui provider CAPTCHA eksternal | Login normal lolos backend provider QA | Backend QA DNS challenges.cloudflare.com gagal, HTTP 500; widget frontend test berhasil | BLOCKED | B: catatan provider; tidak mengubah auth/CSRF untuk meloloskan login |
++| DEP-07 | HTTP login melalui provider CAPTCHA eksternal | Login normal lolos backend provider QA | Login GET 200 → Livewire authenticate 200 → dashboard authenticated 200; session cookie berubah; real siteverify menggunakan official dummy test keys | PASS | [Bukti HTTP](evidence/2026-11-03-followup/provider-login.json). QA-only, tanpa Http fake/auth middleware bypass; tidak memvalidasi kunci/domain produksi atau widget browser |
+ 
+-Ringkasan baris (bukan jumlah unit test): PASS: 48, FAIL: 3, BLOCKED: 8.
++Ringkasan baris (bukan jumlah unit test): PASS: 52, FAIL: 0, BLOCKED: 7. Baseline historis sebelum lanjutan: 48 PASS / 3 FAIL / 8 BLOCKED.
+ 
+ Reproduksi lengkap: lihat README bukti. Suite dijalankan pada DB disposable, tidak boleh diarahkan ke production. Test browser dan delivery eksternal yang terblokir harus diulang pada staging, tanpa meminta pemilik melakukan UAT bisnis manual sendiri.
+diff --git a/resources/views/pdf/tickets/maintenance.blade.php b/resources/views/pdf/tickets/maintenance.blade.php
+index cfe4ec4..deaf7e4 100644
+--- a/resources/views/pdf/tickets/maintenance.blade.php
++++ b/resources/views/pdf/tickets/maintenance.blade.php
+@@ -69,18 +69,30 @@
+ <p><b>Jejak persetujuan Work Order</b> · Konfigurasi versi {{ $ticket->workOrderApprovals->first()->workflow?->version ?? '-' }}</p>
+ <table class="bordered">
+ <tr><th>Tahap</th><th>Status</th><th>Keputusan oleh / waktu</th><th>Catatan</th></tr>
+-@foreach($ticket->workOrderApprovals->sortBy('sequence') as $approval)
++@foreach($ticket->workOrderApprovalHistory->sortBy([['revision', 'asc'], ['sequence', 'asc']]) as $approval)
+ <tr>
+-<td>{{ $approval->label }}<br><small>{{ $approval->checkpoint === 'final' ? 'Pengesahan akhir' : 'Sebelum penugasan' }}</small></td>
++<td>{{ $approval->label }}<br><small>Revisi {{ $approval->revision }} · {{ $approval->superseded_at ? 'Arsip' : 'Aktif' }} · {{ $approval->checkpoint === 'final' ? 'Pengesahan akhir' : 'Sebelum penugasan' }}</small></td>
+ <td>{{ ['approved' => 'Disetujui', 'rejected' => 'Ditolak', 'pending' => 'Menunggu', 'blocked' => 'Belum ada pejabat'] [$approval->status] ?? $approval->status }}</td>
+ <td>{{ $approval->decisionMaker?->name ?? 'Belum diputuskan' }}<br><small>{{ $approval->decided_at?->format('d/m/Y H:i') ?? '-' }}</small></td>
+-<td class="long">{{ $approval->notes ?? '-' }}</td>
++<td class="long">{{ $approval->notes ?? '-' }}@if($approval->estimate_id)<br>Estimasi #{{ $approval->estimate_id }}@endif</td>
+ </tr>
+ @endforeach
+ </table>
++@foreach($ticket->workOrderRevisions as $revision)
++<p><b>Pengiriman ulang revisi {{ $revision->revision }}</b> · {{ $revision->actor?->name ?? '-' }} · {{ $revision->created_at?->format('d/m/Y H:i') }}<br>{{ $revision->reason }}</p>
++@endforeach
+ @endif
+ 
+ <h2>IV. TINDAKAN PERBAIKAN (DIISI OLEH TEKNISI / MAINTENANCE)</h2>
++@foreach($ticket->workOrderEstimates as $estimate)
++<p><b>Tinjauan / estimasi #{{ $estimate->id }}</b> · Versi {{ $estimate->version }} · Revisi laporan {{ $estimate->revision }}<br>
++Pelaksana: {{ $estimate->execution_mode === 'external' ? 'Vendor eksternal' : 'Tim internal' }} · {{ $estimate->vendor_name ?? '-' }}<br>
++Diagnosis awal: {{ $estimate->diagnosis }}<br>
++Total estimasi: Rp {{ number_format((int) $estimate->amount, 0, ',', '.') }}</p>
++<table class="bordered"><tr><th>Rencana material</th><th>Jumlah</th><th>Satuan</th></tr>
++@foreach($estimate->materials as $part)<tr><td>{{ $part['name'] }}</td><td>{{ $part['quantity'] }}</td><td>{{ $part['unit'] }}</td></tr>@endforeach
++</table>
++@endforeach
+ <table>
+ <tr><td class="key">Nama teknisi</td><td>{{ $ticket->maintenance->technician?->name ?? '-' }}</td></tr>
+ <tr><td class="key">Tanggal mulai</td><td>{{ $ticket->maintenance->accepted_at?->format('d/m/Y H:i') ?? '-' }}</td></tr>
+diff --git a/tests/Feature/DatabaseSeederTest.php b/tests/Feature/DatabaseSeederTest.php
+index 3794901..53b7122 100644
+--- a/tests/Feature/DatabaseSeederTest.php
++++ b/tests/Feature/DatabaseSeederTest.php
+@@ -29,8 +29,8 @@ public function test_database_seeder_creates_reference_data_and_is_idempotent():
+ 
+         $this->assertSame(7, G001M001Unit::query()->count());
+         $this->assertSame(23, User::query()->count());
+-        $this->assertSame(11, WorkOrderJobTitle::query()->count());
+-        $this->assertSame(21, WorkOrderAssignment::query()->count());
++        $this->assertSame(12, WorkOrderJobTitle::query()->count());
++        $this->assertSame(23, WorkOrderAssignment::query()->count());
+         $this->assertDatabaseHas('work_order_workflows', ['version' => 1, 'status' => 'draft', 'g001_m001_unit_id' => null]);
+         $this->assertSame(0, WorkOrderWorkflow::query()->where('status', 'published')->count());
+         $this->assertDatabaseHas('ticket_team_members', ['team_name' => 'Tim Fasilitas Demo', 'position' => 'lead']);
+diff --git a/tests/Feature/WorkOrderReadinessTest.php b/tests/Feature/WorkOrderReadinessTest.php
+index 2382df5..56c4ef9 100644
+--- a/tests/Feature/WorkOrderReadinessTest.php
++++ b/tests/Feature/WorkOrderReadinessTest.php
+@@ -99,6 +99,45 @@ public function test_configured_ytb_backend_sequence_completes_for_all_six_units
+         }
+     }
+ 
++
++    public function test_explicit_dispatch_title_enables_assetless_central_work_without_facility_role(): void
++    {
++        $d = $this->organization(); $w = app(WorkOrderWorkflowService::class); $m = app(TicketMaintenanceService::class);
++        $w->publish($d['workflow'], $d['admin']);
++        $reporter = User::where('username', 'sarpras.sma')->firstOrFail(); $ticket = $this->report($reporter, false);
++        $this->assertFalse($d['technician']->isFacility());
++        $this->assertTrue(\App\Models\TicketTeamMember::qualifiesFor($ticket, $d['technician']));
++        $head = $reporter->workOrderAssignments()->whereNotNull('supervisor_user_id')->firstOrFail()->supervisor;
++        foreach ([$head, $d['staff'], $d['supervisor']] as $actor) {
++            $w->decide($w->next($ticket, 'start'), $actor, true, 'Laporan diperiksa.');
++        }
++        $m->approve($ticket, $d['supervisor'], $d['technician']->id);
++        $m->accept($ticket, $d['technician']);
++        $m->finish($ticket, $d['technician'], 'Plafon rusak tanpa aset', 'Plafon diperbaiki dan diuji', [], 'complete');
++        $m->verify($ticket, $reporter, true);
++        $w->decide($w->next($ticket, 'final'), $d['manager'], true, 'Sesuai hasil pemeriksaan.');
++        $m->close($ticket, $d['manager'], true);
++        $this->assertSame('closed', $ticket->fresh()->status);
++    }
++
++    public function test_dispatch_title_scope_revocation_and_inactive_team_remain_fail_closed(): void
++    {
++        $d = $this->organization(); $w = app(WorkOrderWorkflowService::class);
++        $w->publish($d['workflow'], $d['admin']);
++        $reporter = User::where('username', 'sarpras.sma')->firstOrFail(); $ticket = $this->report($reporter, false);
++        $technician = $d['technician'];
++        $assignment = $technician->workOrderAssignments()->where('work_order_job_title_id', $d['workflow']->dispatch_job_title_id)->firstOrFail();
++        $assignment->update(['g001_m001_unit_id' => G001M001Unit::where('name', 'SD')->value('id')]);
++        $this->assertFalse(\App\Models\TicketTeamMember::qualifiesFor($ticket, $technician));
++        $assignment->update(['g001_m001_unit_id' => $reporter->g001_m001_unit_id]);
++        $this->assertTrue(\App\Models\TicketTeamMember::qualifiesFor($ticket, $technician));
++        $assignment->update(['is_active' => false]);
++        $this->assertFalse(\App\Models\TicketTeamMember::qualifiesFor($ticket, $technician));
++        $assignment->update(['is_active' => true]);
++        $technician->ticketTeamMember->update(['is_active' => false]);
++        $this->assertFalse(\App\Models\TicketTeamMember::qualifiesFor($ticket, $technician));
++    }
++
+     public function test_assetless_report_does_not_grant_central_technician_cross_unit_authority(): void
+     {
+         $d = $this->organization();
+diff --git a/tests/Support/work-order-concurrency.php b/tests/Support/work-order-concurrency.php
+index cd68889..686b574 100644
+--- a/tests/Support/work-order-concurrency.php
++++ b/tests/Support/work-order-concurrency.php
+@@ -6,7 +6,7 @@
+ $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+ 
+ use App\Models\{G001M001Unit, TicketCategory, User, WorkOrderApproval, WorkOrderAssignment, WorkOrderJobTitle, WorkOrderWorkflow};
+-use App\Services\{TicketService, WorkOrderWorkflowService};
++use App\Services\{TicketService, WorkOrderWorkflowService, WorkOrderRevisionService};
+ use Illuminate\Support\Facades\{DB, Notification};
+ use Illuminate\Validation\ValidationException;
+ 
+@@ -16,6 +16,17 @@
+ }
+ Notification::fake();
+ $mode = $argv[1] ?? 'parent';
++if ($mode === 'revision') {
++    try {
++        $ticket = \App\Models\Ticket::findOrFail($argv[2]);
++        app(WorkOrderRevisionService::class)->resubmit($ticket, User::findOrFail($argv[3]), (int) $argv[4],
++            'Laporan diperbaiki sesuai penolakan.', array_merge($ticket->only(['title', 'location', 'reported_urgency']), [
++                'description' => 'Lokasi kerusakan dan kondisi diperjelas untuk persetujuan ulang.',
++            ]));
++        echo 'committed';
++    } catch (ValidationException $exception) { echo 'rejected'; }
++    exit;
++}
+ if ($mode === 'approval') {
+     try {
+         app(WorkOrderWorkflowService::class)->decide(WorkOrderApproval::findOrFail($argv[2]), User::findOrFail($argv[3]), true, 'Concurrent synthetic decision');
+@@ -72,6 +83,16 @@ function finish(array $worker): string {
+ $b = worker(['approval', $approval->id, $actors[1]->id]);
+ $outcomes = [finish($a), finish($b)]; sort($outcomes);
+ $approvalResult = $outcomes === ['committed', 'rejected'] && $ticket->events()->where('action', 'work_order_approval_granted')->count() === 1;
++$revisionTicket = app(TicketService::class)->open($reporter, ['ticket_category_id' => TicketCategory::where('slug', 'maintenance_hvac')->firstOrFail()->id,
++    'title' => 'Concurrent QA revision', 'description' => 'Disposable resubmission race test', 'location' => 'QA']);
++$rejected = $revisionTicket->workOrderApprovals()->firstOrFail();
++app(WorkOrderWorkflowService::class)->decide($rejected, $actors[0], false, 'Perbaiki keterangan laporan.');
++$a = worker(['revision', $revisionTicket->id, $reporter->id, $rejected->id]);
++$b = worker(['revision', $revisionTicket->id, $reporter->id, $rejected->id]);
++$revisionOutcomes = [finish($a), finish($b)]; sort($revisionOutcomes);
++$revisionResult = $revisionOutcomes === ['committed', 'rejected'] && $revisionTicket->workOrderRevisions()->count() === 1
++    && $revisionTicket->workOrderApprovals()->count() === 1 && $rejected->fresh()->status === 'rejected'
++    && $revisionTicket->events()->where('action', 'work_order_revision_submitted')->count() === 1;
+ $marker = tempnam(sys_get_temp_dir(), 'invman-race-'); unlink($marker);
+ if (WorkOrderWorkflow::whereNull('g001_m001_unit_id')->exists()) { throw new RuntimeException('Global scope must be unused in this disposable probe database.'); }
+ $a = worker(['draft', $actors[0]->id, $title->id, $marker]);
+@@ -84,5 +105,6 @@ function finish(array $worker): string {
+ $draftResult = $draftOutcomes === ['committed', 'rejected'] && $draftCount === 1;
+ echo json_encode(['mysql' => DB::selectOne('select version() as version')->version,
+     'approval_race' => ['pass' => $approvalResult, 'outcomes' => $outcomes, 'committed_events' => $ticket->events()->where('action', 'work_order_approval_granted')->count()],
++    'revision_race' => ['pass' => $revisionResult, 'outcomes' => $revisionOutcomes, 'revisions' => $revisionTicket->workOrderRevisions()->count()],
+     'global_draft_race' => ['pass' => $draftResult, 'outcomes' => $draftOutcomes, 'drafts' => $draftCount]], JSON_PRETTY_PRINT).PHP_EOL;
+-exit($approvalResult && $draftResult ? 0 : 1);
++exit($approvalResult && $draftResult && $revisionResult ? 0 : 1);
+diff --git a/tests/Support/work-order-upgrade.php b/tests/Support/work-order-upgrade.php
+index 38dcfd5..eae1b39 100644
+--- a/tests/Support/work-order-upgrade.php
++++ b/tests/Support/work-order-upgrade.php
+@@ -17,7 +17,7 @@
+ }
+ Mail::fake(); Notification::fake();
+ $assert = function (bool $condition, string $message): void { if (! $condition) throw new RuntimeException($message); };
+-$paths = array_values(array_filter(glob(database_path('migrations/*.php')), fn ($p) => ! str_contains($p, '2026_11_02_210000')));
++$paths = array_values(array_filter(glob(database_path('migrations/*.php')), fn ($p) => basename($p) < '2026_11_02_210000'));
+ $assert(Artisan::call('migrate', ['--path' => $paths, '--realpath' => true, '--force' => true]) === 0, 'Legacy migrations failed');
+ $assert(! Schema::hasTable('work_order_approvals'), 'Not a legacy schema');
+ Artisan::call('db:seed', ['--class' => Database\Seeders\RoleSeeder::class, '--force' => true]);
+@@ -37,9 +37,27 @@
+ $tables = ['users', 'model_has_roles', 'g004_m008_activities', 'g005_m009_item_reservations', 'tickets', 'ticket_events', 'ticket_maintenance_cases'];
+ $fingerprint = fn () => array_map(fn ($table) => hash('sha256', json_encode(DB::table($table)->get()->all())), $tables);
+ $before = $fingerprint();
++// Upgrade through the original #32 schema with a real rejected approval row.
++// The new revision migration must retain that decision, not only empty tables.
++$assert(Artisan::call('migrate', ['--path' => 'database/migrations/2026_11_02_210000_create_dynamic_work_order_workflows.php', '--force' => true]) === 0, 'Original dynamic schema migration failed');
++$historicalApprover = User::factory()->create();
++$dynamicTicket = Ticket::create(['number' => 'UPGRADE-DYNAMIC', 'ticket_category_id' => $ticket->ticket_category_id,
++    'reporter_id' => $user->id, 'g001_m001_unit_id' => $unit->id, 'title' => 'Existing dynamic repair', 'description' => 'Preserve rejected decision', 'status' => 'open']);
++$dynamicCase = $dynamicTicket->maintenance()->make(); $dynamicCase->forceFill(['approval_notes' => 'Dynamic legacy history'])->save();
++$workflow = \App\Models\WorkOrderWorkflow::create(['g001_m001_unit_id' => $unit->id, 'version' => 1, 'status' => 'published',
++    'created_by' => $historicalApprover->id, 'steps' => [['key' => 'review', 'label' => 'Legacy review', 'checkpoint' => 'start', 'resolver' => 'reporter_supervisor']]]);
++$approvalId = DB::table('work_order_approvals')->insertGetId(['ticket_id' => $dynamicTicket->id, 'work_order_workflow_id' => $workflow->id,
++    'step_key' => 'review', 'label' => 'Legacy review', 'checkpoint' => 'start', 'resolver' => 'reporter_supervisor',
++    'candidate_user_ids' => json_encode([$historicalApprover->id]), 'sequence' => 0, 'status' => 'rejected',
++    'decided_by' => $historicalApprover->id, 'decided_at' => now(), 'notes' => 'Preserve original rejection reason', 'created_at' => now(), 'updated_at' => now()]);
++$originalApproval = (array) DB::table('work_order_approvals')->where('id', $approvalId)->first();
++$before = $fingerprint();
+ $assert(Artisan::call('migrate', ['--force' => true]) === 0, 'Upgrade failed');
+ $assert($before === $fingerprint(), 'Existing rows changed during upgrade');
+-$assert(DB::table('work_order_approvals')->count() === 0, 'Legacy ticket unexpectedly enrolled');
++$upgradedApproval = (array) DB::table('work_order_approvals')->where('id', $approvalId)->first();
++$assert(array_intersect_key($upgradedApproval, $originalApproval) === $originalApproval, 'Original approval identity/decision changed');
++$assert((int) $upgradedApproval['revision'] === 1 && $upgradedApproval['superseded_at'] === null, 'Original approval not retained as active revision one');
++$assert($ticket->workOrderApprovals()->count() === 0, 'Legacy ticket unexpectedly enrolled');
+ $legacyUser = $user->fresh()->getRawOriginal(); $roles = $user->roles->pluck('name')->all();
+ config(['security.seed_demo_users' => true, 'security.seed_demo_password' => 'Synthetic!Upgrade2026']);
+ Artisan::call('db:seed', ['--force' => true]);
+@@ -49,7 +67,7 @@
+ $assert($first === $counts(), 'Seeder creates duplicate rows');
+ $assert($user->fresh()->getRawOriginal() === $legacyUser, 'Seeder modified existing user/password/unit');
+ $assert($user->fresh()->roles->pluck('name')->all() === $roles, 'Seeder modified existing roles');
+-$assert(DB::table('work_order_workflows')->where('status', 'published')->count() === 0, 'Demo workflow published automatically');
++$assert(DB::table('work_order_workflows')->where('status', 'published')->count() === 1, 'Demo workflow published automatically or existing published workflow changed');
+ $assert($ticket->events()->count() === 1 && $ticket->fresh()->maintenance->approval_notes === 'Existing history', 'History changed');
+ config(['app.env' => 'production']);
+ Artisan::call('db:seed', ['--force' => true]);
+@@ -57,4 +75,5 @@
+ $assert($first === $counts(), 'Production guards did not stop example seeders');
+ echo json_encode(['mysql' => DB::selectOne('select version() v')->v, 'legacy_migrations' => count($paths),
+     'upgrade' => 'PASS', 'existing_rows_password_roles_history' => 'unchanged', 'legacy_approval_rows' => 0,
++    'existing_rejected_approval_preserved_as_revision_one' => true,
+     'seed_twice' => $first, 'automatic_publish' => false, 'production_demo_guard' => 'PASS'], JSON_PRETTY_PRINT).PHP_EOL;
+diff --git a/app/Models/WorkOrderEstimate.php b/app/Models/WorkOrderEstimate.php
+new file mode 100644
+index 0000000..dea823e
+--- /dev/null
++++ b/app/Models/WorkOrderEstimate.php
+@@ -0,0 +1,19 @@
++<?php
++
++namespace App\Models;
++
++use Illuminate\Database\Eloquent\Model;
++use Illuminate\Validation\ValidationException;
++
++class WorkOrderEstimate extends Model
++{
++    protected $fillable = ['ticket_id', 'revision', 'version', 'execution_mode', 'vendor_name', 'diagnosis', 'materials', 'amount', 'recorded_by'];
++    protected $casts = ['materials' => 'array', 'amount' => 'decimal:0', 'revision' => 'integer'];
++
++    protected static function booted(): void
++    {
++        $deny = fn (): never => throw ValidationException::withMessages(['estimate' => 'Estimasi historis tidak dapat diubah atau dihapus. Catat versi baru.']);
++        static::updating($deny);
++        static::deleting($deny);
++    }
++}
+diff --git a/app/Models/WorkOrderRevision.php b/app/Models/WorkOrderRevision.php
+new file mode 100644
+index 0000000..eb6422c
+--- /dev/null
++++ b/app/Models/WorkOrderRevision.php
+@@ -0,0 +1,22 @@
++<?php
++
++namespace App\Models;
++
++use Illuminate\Database\Eloquent\Model;
++use Illuminate\Database\Eloquent\Relations\BelongsTo;
++use Illuminate\Validation\ValidationException;
++
++class WorkOrderRevision extends Model
++{
++    protected $fillable = ['ticket_id', 'rejected_approval_id', 'actor_id', 'revision', 'checkpoint', 'reason', 'before', 'after'];
++    protected $casts = ['before' => 'array', 'after' => 'array', 'revision' => 'integer'];
++
++    public function actor(): BelongsTo { return $this->belongsTo(User::class, 'actor_id'); }
++
++    protected static function booted(): void
++    {
++        $deny = fn (): never => throw ValidationException::withMessages(['revision' => 'Riwayat revisi tidak dapat diubah atau dihapus.']);
++        static::updating($deny);
++        static::deleting($deny);
++    }
++}
+diff --git a/app/Services/WorkOrderEstimateService.php b/app/Services/WorkOrderEstimateService.php
+new file mode 100644
+index 0000000..903147a
+--- /dev/null
++++ b/app/Services/WorkOrderEstimateService.php
+@@ -0,0 +1,64 @@
++<?php
++
++namespace App\Services;
++
++use App\Models\{Ticket, User, WorkOrderApproval, WorkOrderEstimate};
++use Illuminate\Support\Facades\{DB, Validator};
++use Illuminate\Validation\ValidationException;
++
++final class WorkOrderEstimateService
++{
++    public function requiresEstimate(WorkOrderApproval $approval): bool
++    {
++        $step = collect($approval->workflow->steps)->firstWhere('key', $approval->step_key);
++        return $approval->checkpoint === 'start' && (bool) ($step['requires_estimate'] ?? false);
++    }
++
++    public function current(Ticket $ticket): ?WorkOrderEstimate
++    {
++        $revision = $ticket->workOrderApprovals()->where('checkpoint', 'start')->min('revision');
++        return $revision ? $ticket->workOrderEstimates()->where('revision', $revision)->orderByDesc('version')->first() : null;
++    }
++
++    public function canRecord(Ticket $ticket, User $actor): bool
++    {
++        return $actor->is_enabled && $actor->id !== $ticket->reporter_id
++            && $ticket->status === 'open' && $ticket->maintenance && ! $ticket->maintenance->approved_at
++            && $ticket->workOrderApprovals()->where('checkpoint', 'start')->exists()
++            && ! $ticket->workOrderApprovals()->where('checkpoint', 'start')->where('status', 'rejected')->exists()
++            && ! $ticket->workOrderApprovals()->whereNotNull('estimate_id')->where('status', 'approved')->exists()
++            && ($actor->isFacility() || app(WorkOrderWorkflowService::class)->canPerform($ticket, $actor, 'assign'));
++    }
++
++    public function record(Ticket $ticket, User $actor, array $data, int $expectedVersion): void
++    {
++        $data = Validator::make($data, [
++            'execution_mode' => 'required|in:internal,external',
++            'vendor_name' => 'nullable|required_if:execution_mode,external|string|max:200',
++            'diagnosis' => 'required|string|min:5|max:10000',
++            'amount' => ['required', 'regex:/^(0|[1-9][0-9]{0,11})$/D'],
++            'materials' => 'present|array|max:30',
++            'materials.*.name' => 'required|string|max:200',
++            'materials.*.quantity' => 'required|numeric|gt:0|max:100000',
++            'materials.*.unit' => 'required|string|max:25',
++        ])->validate();
++        DB::transaction(function () use ($ticket, $actor, $data, $expectedVersion): void {
++            $locked = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
++            $actor = User::query()->findOrFail($actor->id);
++            $version = (int) $locked->workOrderEstimates()->max('version');
++            if (! $this->canRecord($locked, $actor) || $version !== $expectedVersion) {
++                throw ValidationException::withMessages(['estimate' => 'Tidak berwenang, estimasi sudah disetujui, atau data telah berubah.']);
++            }
++            $estimate = $locked->workOrderEstimates()->create([
++                'revision' => $locked->workOrderApprovals()->where('checkpoint', 'start')->min('revision'),
++                'version' => $version + 1, 'recorded_by' => $actor->id,
++                'execution_mode' => $data['execution_mode'],
++                'vendor_name' => $data['execution_mode'] === 'external' ? trim($data['vendor_name']) : null,
++                'diagnosis' => trim($data['diagnosis']), 'materials' => $data['materials'], 'amount' => $data['amount'],
++            ]);
++            $locked->events()->create(['actor_id' => $actor->id, 'action' => 'work_order_estimate_recorded',
++                'from_value' => (string) $version, 'to_value' => (string) $estimate->version,
++                'notes' => 'Estimasi Rp '.$estimate->amount.'; '.$estimate->execution_mode]);
++        }, 3);
++    }
++}
+diff --git a/app/Services/WorkOrderRevisionService.php b/app/Services/WorkOrderRevisionService.php
+new file mode 100644
+index 0000000..170a094
+--- /dev/null
++++ b/app/Services/WorkOrderRevisionService.php
+@@ -0,0 +1,87 @@
++<?php
++
++namespace App\Services;
++
++use App\Models\{Ticket, TicketMaintenanceCase, User, WorkOrderApproval};
++use Illuminate\Support\Facades\{DB, Validator};
++use Illuminate\Validation\ValidationException;
++
++final class WorkOrderRevisionService
++{
++    public function canRevise(Ticket $ticket, User $actor, string $checkpoint): bool
++    {
++        if (! $actor->is_enabled || ! $ticket->maintenance
++            || ! $ticket->workOrderApprovals()->where('checkpoint', $checkpoint)->where('status', 'rejected')->exists()) {
++            return false;
++        }
++        return $checkpoint === 'start'
++            ? $ticket->status === 'open' && ! $ticket->maintenance->approved_at && $ticket->reporter_id === $actor->id
++            : $checkpoint === 'final' && $ticket->status === 'resolved' && ! $ticket->maintenance->final_approved_at
++                && $ticket->assigned_to === $actor->id && \App\Models\TicketTeamMember::qualifiesFor($ticket, $actor);
++    }
++
++    /** Start: reporter corrects the report. Final: assignee reworks and obtains fresh verification. */
++    public function resubmit(Ticket $ticket, User $actor, int $rejectionId, string $reason, array $report = []): void
++    {
++        $reason = trim($reason);
++        Validator::make(['reason' => $reason], ['reason' => 'required|string|min:10|max:2000'])->validate();
++        DB::transaction(function () use ($ticket, $actor, $rejectionId, $reason, $report): void {
++            $locked = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
++            $actor = User::query()->findOrFail($actor->id);
++            $case = TicketMaintenanceCase::query()->lockForUpdate()->findOrFail($locked->id);
++            $locked->setRelation('maintenance', $case);
++            $rejected = $locked->workOrderApprovals()->whereKey($rejectionId)->where('status', 'rejected')->first();
++            if (! $rejected || ! $this->canRevise($locked, $actor, $rejected->checkpoint)) {
++                throw ValidationException::withMessages(['revision' => 'Penolakan sudah berubah atau Anda tidak berwenang merevisi tahap ini.']);
++            }
++            $checkpoint = $rejected->checkpoint;
++            $fields = ['title', 'description', 'location', 'reported_urgency'];
++            if ($checkpoint === 'start') {
++                if (array_diff(array_keys($report), $fields)) {
++                    throw ValidationException::withMessages(['revision' => 'Hanya isi laporan yang boleh direvisi.']);
++                }
++                $report = Validator::make($report, [
++                    'title' => 'required|string|min:5|max:255',
++                    'description' => 'required|string|min:10|max:10000',
++                    'location' => 'required|string|max:255',
++                    'reported_urgency' => 'required|in:normal,urgent,emergency',
++                ])->validate();
++                $before = $locked->only($fields);
++                $locked->fill($report);
++                if (! $locked->isDirty($fields)) {
++                    throw ValidationException::withMessages(['revision' => 'Perbaiki isi laporan sesuai alasan penolakan.']);
++                }
++                $locked->save();
++                $after = $locked->only($fields);
++            } else {
++                if ($report !== []) {
++                    throw ValidationException::withMessages(['revision' => 'Teknisi tidak boleh mengubah laporan pelapor.']);
++                }
++                $before = $case->only(['diagnosis', 'repair_actions', 'materials', 'outcome', 'work_finished_at', 'verified_by', 'verified_at']);
++                $case->forceFill(['work_finished_at' => null, 'verified_by' => null, 'verified_at' => null])->save();
++                $locked->forceFill(['status' => 'in_progress', 'resolved_at' => null])->save();
++                $after = ['status' => 'in_progress', 'requires_new_result_and_verification' => true];
++            }
++            // Preserve the workflow version, candidate snapshot and all prior decisions.
++            // A changed report invalidates every approval; rework invalidates final approvals only.
++            $steps = $locked->workOrderApprovals()
++                ->when($checkpoint === 'final', fn ($query) => $query->where('checkpoint', 'final'))
++                ->lockForUpdate()->get();
++            $revision = (int) $locked->workOrderApprovalHistory()->max('revision') + 1;
++            foreach ($steps as $step) {
++                $step->forceFill(['superseded_at' => now()])->save();
++                $next = $step->replicate(['decided_by', 'decided_at', 'notes', 'superseded_at', 'estimate_id']);
++                $next->forceFill(['revision' => $revision, 'status' => 'pending'])->save();
++            }
++            $locked->workOrderRevisions()->create([
++                'rejected_approval_id' => $rejectionId, 'actor_id' => $actor->id,
++                'revision' => $revision, 'checkpoint' => $checkpoint, 'reason' => $reason,
++                'before' => $before, 'after' => $after,
++            ]);
++            $locked->events()->create([
++                'actor_id' => $actor->id, 'action' => 'work_order_revision_submitted',
++                'from_value' => (string) $rejectionId, 'to_value' => (string) $revision, 'notes' => $reason,
++            ]);
++        }, 3);
++    }
++}
+diff --git a/database/migrations/2026_11_03_120000_add_work_order_revision_history.php b/database/migrations/2026_11_03_120000_add_work_order_revision_history.php
+new file mode 100644
+index 0000000..52a674e
+--- /dev/null
++++ b/database/migrations/2026_11_03_120000_add_work_order_revision_history.php
+@@ -0,0 +1,43 @@
++<?php
++
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\Schema;
++
++return new class extends Migration
++{
++    public function up(): void
++    {
++        Schema::table('work_order_approvals', function (Blueprint $table): void {
++            $table->unsignedInteger('revision')->default(1);
++            $table->timestamp('superseded_at')->nullable();
++            $table->dropUnique('wo_approval_ticket_step');
++            $table->unique(['ticket_id', 'step_key', 'revision'], 'wo_approval_ticket_step_revision');
++        });
++        Schema::create('work_order_revisions', function (Blueprint $table): void {
++            $table->id();
++            $table->foreignUuid('ticket_id')->constrained('tickets')->restrictOnDelete();
++            $table->foreignId('rejected_approval_id')->unique()->constrained('work_order_approvals')->restrictOnDelete();
++            $table->foreignId('actor_id')->constrained('users')->restrictOnDelete();
++            $table->unsignedInteger('revision');
++            $table->string('checkpoint', 24);
++            $table->text('reason');
++            $table->json('before');
++            $table->json('after');
++            $table->timestamps();
++        });
++    }
++
++    public function down(): void
++    {
++        if (\Illuminate\Support\Facades\DB::table('work_order_revisions')->exists()) {
++            throw new RuntimeException('Riwayat revisi sudah digunakan. Bekukan penulisan dan lakukan forward-fix atau restore konsisten.');
++        }
++        Schema::dropIfExists('work_order_revisions');
++        Schema::table('work_order_approvals', function (Blueprint $table): void {
++            $table->dropUnique('wo_approval_ticket_step_revision');
++            $table->dropColumn(['revision', 'superseded_at']);
++            $table->unique(['ticket_id', 'step_key'], 'wo_approval_ticket_step');
++        });
++    }
++};
+diff --git a/database/migrations/2026_11_03_121000_add_explicit_work_order_dispatch_title.php b/database/migrations/2026_11_03_121000_add_explicit_work_order_dispatch_title.php
+new file mode 100644
+index 0000000..3c00112
+--- /dev/null
++++ b/database/migrations/2026_11_03_121000_add_explicit_work_order_dispatch_title.php
+@@ -0,0 +1,21 @@
++<?php
++
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\Schema;
++
++return new class extends Migration
++{
++    public function up(): void
++    {
++        Schema::table('work_order_workflows', function (Blueprint $table): void {
++            $table->foreignId('dispatch_job_title_id')->nullable()->constrained('work_order_job_titles')->restrictOnDelete();
++        });
++    }
++    public function down(): void
++    {
++        Schema::table('work_order_workflows', function (Blueprint $table): void {
++            $table->dropConstrainedForeignId('dispatch_job_title_id');
++        });
++    }
++};
+diff --git a/database/migrations/2026_11_03_122000_create_work_order_estimates.php b/database/migrations/2026_11_03_122000_create_work_order_estimates.php
+new file mode 100644
+index 0000000..e5ece8b
+--- /dev/null
++++ b/database/migrations/2026_11_03_122000_create_work_order_estimates.php
+@@ -0,0 +1,37 @@
++<?php
++
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\Schema;
++
++return new class extends Migration
++{
++    public function up(): void
++    {
++        Schema::create('work_order_estimates', function (Blueprint $table): void {
++            $table->id();
++            $table->foreignUuid('ticket_id')->constrained('tickets')->restrictOnDelete();
++            $table->unsignedInteger('revision');
++            $table->unsignedInteger('version');
++            $table->string('execution_mode', 16);
++            $table->string('vendor_name', 200)->nullable();
++            $table->text('diagnosis');
++            $table->json('materials');
++            $table->decimal('amount', 14, 0);
++            $table->foreignId('recorded_by')->constrained('users')->restrictOnDelete();
++            $table->timestamps();
++            $table->unique(['ticket_id', 'version']);
++        });
++        Schema::table('work_order_approvals', function (Blueprint $table): void {
++            $table->foreignId('estimate_id')->nullable()->constrained('work_order_estimates')->restrictOnDelete();
++        });
++    }
++    public function down(): void
++    {
++        if (\Illuminate\Support\Facades\DB::table('work_order_estimates')->exists()) {
++            throw new RuntimeException('Estimasi sudah digunakan. Gunakan forward-fix atau restore konsisten.');
++        }
++        Schema::table('work_order_approvals', fn (Blueprint $table) => $table->dropConstrainedForeignId('estimate_id'));
++        Schema::dropIfExists('work_order_estimates');
++    }
++};
+diff --git a/docs/audit/FOLLOWUP-READINESS-2026-11-03.md b/docs/audit/FOLLOWUP-READINESS-2026-11-03.md
+new file mode 100644
+index 0000000..a54f03c
+--- /dev/null
++++ b/docs/audit/FOLLOWUP-READINESS-2026-11-03.md
+@@ -0,0 +1,71 @@
++# InvMan — Lanjutan PR #33, 3 November 2026
++
++**Keputusan diperbarui: NO-GO untuk production.** Tiga FAIL bisnis awal telah diperbaiki dan lulus pada lapisan backend/Livewire. DEP-07 berhasil diuji melalui HTTP normal dengan provider CAPTCHA asli. Tujuh BLOCKED masih terbuka. Tidak ada merge atau deployment.
++
++Pembaruan ini memakai baseline PR #33 `182c12e5b8e9f5ede7bc239a409a9e745187d516`. Audit A–G awal tidak diulang. Pengujian regresi diulang karena ada perubahan pada approval, schema, otorisasi teknisi dan histori. **Kode, dokumen dan evidence lanjutan masih lokal; head PR #33 belum berubah dan belum ada CI GitHub untuk perubahan ini.** CI baseline tidak boleh dipakai untuk menyatakan perubahan baru lulus CI.
++
++## Hasil untuk tiga FAIL
++
++| Skenario | Hasil lokal dan batas |
++| --- | --- |
++| WO-06: rejected → revisi → resubmit | PASS backend/Livewire. Pelapor aktif memperbaiki isi laporan pada tiket sama. Keputusan terdahulu tidak dihapus/ditimpa; langkah lama diarsipkan dan langkah baru dimulai pending. Semua persetujuan laporan diulang ketika isi laporan berubah. Penolakan akhir dikoreksi oleh teknisi yang ditugaskan, kembali ke in_progress, wajib hasil baru dan verifikasi pelapor baru sebelum pengesahan ulang. Safety hold tidak dilepas saat revisi. |
++| WO-07: vendor/tinjauan/estimasi/approval nominal | PASS backend/Livewire. Pelaksana internal/vendor eksternal, diagnosis awal, material dan total rupiah dicatat dalam versi estimasi immutable. Admin dapat mewajibkan tahap `requires_estimate` sebelum penugasan. Keputusan nominal mengikat ID estimasi yang diperiksa, pencatat tidak boleh menyetujui nominal sendiri, perubahan estimasi saat modal lama terbuka ditolak. Estimasi tidak bisa diganti sesudah nominal disetujui; revisi laporan membuat estimasi lama tidak berlaku untuk siklus baru. Ini belum menjadi sistem pembelian/pembayaran, pencatatan realisasi biaya, akun vendor, atau routing otomatis berdasarkan ambang nominal. |
++| WO-08: laporan tanpa aset → teknisi pusat | PASS backend/Livewire. Workflow mempunyai `dispatch_job_title_id` opsional. Teknisi lintas unit harus anggota tim aktif, memiliki assignment/jabatan aktif sesuai cakupan, dan memperoleh penugasan sah. Versi workflow milik tiket dipertahankan. Kolom kosong tidak memberi hak lintas unit baru. Revokasi/salah unit/anggota nonaktif ditolak. Seeder demo mencontohkan jabatan terpisah “Teknisi Laporan Umum”; tidak memberi role Fasilitas atau membership inventaris kepada teknisi. |
++
++## Tindak lanjut delapan BLOCKED
++
++| ID | Status lanjutan | Bukti atau kebutuhan tersisa |
++| --- | --- | --- |
++| AUTH-08 | BLOCKED | Reload aktor di dalam transaksi tiket dan guard stale approval/estimasi ditambahkan. Dua proses resubmit hanya menghasilkan satu revisi/event. Namun seluruh urutan revokasi role/jabatan/publish lintas transaksi belum dibuktikan. Lock tiket tidak diklaim mengunci seluruh konfigurasi organisasi. Perlu spesifikasi ordering revokasi dan probe interleaving tambahan. |
++| UI-04 | BLOCKED | Aksi baru diuji dengan komponen Filament asli, bukan browser. Playwright tersedia tetapi Chromium tidak ada dan unduhan runtime gagal sebagai arsip tidak lengkap. Belum ada UAT browser semua role, form/publish/approval/revisi/PDF pada 360/390/430/1366. Tidak ada screenshot dashboard baru yang diklaim. |
++| UI-05 | BLOCKED | Login HTTP normal dan tiga refresh Livewire authenticated memperoleh 200; missing/wrong CSRF dan forged snapshot memperoleh 419. Ini tidak membuktikan polling JS, modal, console atau failed requests pada browser sesungguhnya. |
++| UI-06 | BLOCKED | Suite backend booking/QR/handover/return lulus ulang. UAT browser transaksi end-to-end tetap memerlukan runtime browser. |
++| DEP-04 | BLOCKED | Tidak ada akses staging/infra setara production untuk SMTP/push/broadcast, worker daemon, cron, lisensi/domain produksi, TLS/proxy/session/cookie dan storage produksi. QA memakai mail array/fake dan lisensi fixture yang validasi middleware-nya tetap berjalan. |
++| DEP-05 | BLOCKED | Upgrade sintetis lulus, termasuk baris approval rejected sebelum migration baru. Backup/PITR/restore volume produksi belum tersedia, sehingga rehearsal pemulihan konsisten produksi belum dibuktikan. |
++| DEP-06 | BLOCKED | Race approval/draft/resubmit terarah lulus. Tidak ada hasil stress/load, disk full, failover atau SLA kapasitas produksi; tidak ada angka kapasitas yang dikarang. |
++| DEP-07 | PASS — HTTP QA | GET login 200 → normal Livewire authenticate 200 → dashboard authenticated 200, session cookies berubah. Validasi server-side benar-benar menghubungi Cloudflare siteverify dengan kunci uji resmi, tanpa Http fake atau bypass auth/CSRF. Token dummy resmi disuplai ke komponen login; tidak mengklaim widget browser telah diuji. Kunci/provider produksi belum divalidasi. |
++
++**Matriks 59 skenario lokal: 52 PASS / 0 FAIL / 7 BLOCKED.** PASS tetap dibatasi lapisan yang disebutkan; bukan keputusan GO. Matriks remote pada baseline tetap 48/3/8 hingga perubahan disimpan.
++
++## Bukti pengujian akhir
++
++| Pengujian | Hasil |
++| --- | --- |
++| Suite MySQL 8.0.46, kode aplikasi akhir | **269 PASS, 2.124 assertions** — [log](evidence/2026-11-03-followup/mysql-tests.txt) |
++| Suite SQLite, kode aplikasi akhir | **268 PASS, 1 skipped khusus MySQL, 2.116 assertions** — [log](evidence/2026-11-03-followup/sqlite-tests.txt) |
++| Regresi keamanan/bisnis terarah | **40 PASS, 662 assertions** — [log](evidence/2026-11-03-followup/security-business-tests.txt). Subset, tidak dijumlahkan dengan suite penuh. |
++| Concurrency dua proses MySQL | Approval: committed + rejected, satu event; resubmit: committed + rejected, satu revisi/event; draft global: committed + rejected, satu draft — [JSON](evidence/2026-11-03-followup/concurrency.json) |
++| Upgrade | 64 migration main → schema awal #32 berisi rejected approval → tiga migration baru: data/kredensial/role/histori tetap, rejected approval tetap revision 1 aktif dengan aktor/alasan/waktu lama. Tiket legacy tidak otomatis didaftarkan ke workflow. Seeder dua kali idempotent, contoh tidak auto-publish, production demo guard PASS — [log](evidence/2026-11-03-followup/upgrade.txt) |
++| HTTP provider/session/CSRF | Authenticated true, dashboard 200, refresh [200,200,200], negative checks 419 — [JSON](evidence/2026-11-03-followup/provider-login.json) |
++| PHP syntax / whitespace | Seluruh file PHP yang berubah lulus lint; git diff --check bersih — [lint](evidence/2026-11-03-followup/php-lint.txt) |
++| Browser | BLOCKED, bukan hasil UAT — [alasan](evidence/2026-11-03-followup/browser-blocker.txt) |
++| CI/build/advisory terbaru | CI GitHub baru belum dijalankan karena penyimpanan remote ditolak peninjau otomatis. Baseline punya CI/build/advisory evidence sebelumnya; itu bukan bukti CI untuk patch baru. Dependency lock/frontend source tidak berubah. |
++
++Tes baru: `WorkOrderRevisionTest` dan `WorkOrderEstimateTest`; perluasan `WorkOrderReadinessTest`, probe concurrency dan probe upgrade. Suite existing juga menegakkan mass assignment allowlist, batas unit/role, private attachment/PDF, self-approval, akun nonaktif, gate final dan safety hold.
++
++## Perubahan dan kontrol integritas
++
++- Approval aktif terpisah dari history melalui `superseded_at` dan `revision`; unique key menjadi ticket/step/revision. Keputusan finalized dan langkah arsip tidak bisa dimutasi melalui model kecuali pengarsipan sah saat revisi. Revision dan estimate history tidak dapat diubah/dihapus melalui model. Proteksi model tidak melawan DBA/raw SQL.
++- Revision menyimpan aktor, rejected approval ID, alasan serta snapshot before/after isi laporan atau hasil pekerjaan. Referensi workflow dan kandidat lama dipertahankan; admin harus memakai pengalihan beralasan jika assignment kandidat berubah. Versi published baru tidak dipakai diam-diam untuk tiket lama.
++- Service mengunci tiket, memeriksa kembali otorisasi/status, menolak resubmit duplikat/ID lama, dan menolak perubahan reporter/unit/status/aset melalui payload revisi. Tidak ada endpoint reset approval.
++- Modal persetujuan menyimpan ID approval dan ID estimasi yang diperiksa; submit tidak otomatis mengambil tahap/nominal baru yang muncul setelah modal dibuka.
++- Histori keputusan, alasan penolakan/revisi dan estimasi dicetak pada PDF dan ditampilkan melalui komponen Filament native. Output string tetap di-escape dan PDF tetap privat dengan remote access nonaktif.
++- Tidak ada dependency baru atau perubahan auth/CSRF/CAPTCHA produk. QA HTTP menggunakan fixture lisensi dan kredensial sintetis yang dibuat lokal, bukan data/akun produksi. Fixture/kredensial tersebut tidak dimasukkan ke perubahan repository.
++
++## Migration dan konfigurasi saat nanti diizinkan rilis
++
++Tiga migration additive baru:
++
++1. `2026_11_03_120000_add_work_order_revision_history.php`: revision/superseded approval + tabel snapshot revisi.
++2. `2026_11_03_121000_add_explicit_work_order_dispatch_title.php`: jabatan dispatch opsional pada workflow.
++3. `2026_11_03_122000_create_work_order_estimates.php`: tabel versi estimasi + referensi estimasi yang disetujui.
++
++Default tiket/workflow lama tidak otomatis mewajibkan estimasi atau mengizinkan dispatch baru. Published workflow immutable: buat versi baru lalu konfigurasi jabatan dispatch dan tahap approval nominal dengan pemegang jabatan yang sesuai. Demo tetap draft dan opt-in non-production; seeder tidak menimpa akun atau konfigurasi published existing.
++
++Sebelum deploy tetap wajib backup DB+storage, write freeze terencana saat perubahan DDL, pemeriksaan konfigurasi dan smoke di staging setara produksi, serta backup/restore rehearsal. Down migration revision/estimate **menolak** penghapusan ketika history telah dipakai; jangan memaksa hapus data agar rollback lolos. Gunakan forward-fix atau restore kode+DB+storage yang konsisten. Menjalankan kode baseline yang tidak memfilter history revisi pada DB baru dapat salah membaca gate; jangan rollback kode saja ketika data revisi sudah aktif.
++
++## Status penyimpanan dan pekerjaan berikutnya
++
++Peninjau persetujuan otomatis menolak pembuatan GitHub tree karena menilai belum ada izin eksplisit mengunggah perubahan ke remote. Tujuan sudah diperiksa: repository publik `yusufbayuw/invman` (ID 1008496621), akun terhubung pemilik `yusufbayuw` dengan izin admin, head PR #33 cocok baseline. Payload hanya source/tes proyek, tanpa .env/kredensial/data produksi. Penolakan tetap berlaku; tidak dicoba jalur alternatif untuk melewatinya.
++
++Hasil konkret siap ditinjau lokal. Langkah remote yang memerlukan persetujuan: simpan kode, tes dan laporan ke **branch PR #33 yang sama**, jalankan CI dan periksa hasilnya; **tanpa merge/deploy**. Setelah itu lanjutkan tujuh gate yang masih BLOCKED. Keputusan rilis harus diperbarui lagi dengan evidence gate yang tersisa; CI hijau sendiri tidak cukup.
+diff --git a/docs/audit/evidence/2026-11-03-followup/README.md b/docs/audit/evidence/2026-11-03-followup/README.md
+new file mode 100644
+index 0000000..35aa0a2
+--- /dev/null
++++ b/docs/audit/evidence/2026-11-03-followup/README.md
+@@ -0,0 +1,13 @@
++# Evidence lanjutan — 3 November 2026
++
++Baseline PR #33: `182c12e`. Source/tes lanjutan masih lokal, belum ada commit remote atau CI baru.
++
++Lihat [laporan lanjutan](../../FOLLOWUP-READINESS-2026-11-03.md) untuk batas tiap bukti. Suite DB memakai database disposable, tidak diarahkan ke produksi.
++
++Reproduksi suite: `php artisan test --no-ansi`. Untuk MySQL siapkan DB disposable dan set DB_CONNECTION/DB_HOST/DB_PORT/DB_DATABASE/DB_USERNAME/DB_PASSWORD sesuai QA. Unit khusus foreign-key MySQL memang dilewati pada SQLite.
++
++Probe concurrency: database bersih bernama `*_tests` atau `*_ci`, APP_ENV=testing, INVMAN_CONCURRENCY_TEST=1, jalankan `php tests/Support/work-order-concurrency.php` setelah migrate. Probe upgrade: database benar-benar kosong bernama `*_upgrade`, APP_ENV=testing, INVMAN_UPGRADE_TEST=1, jalankan `php tests/Support/work-order-upgrade.php`. Probe menolak lingkungan yang tidak sesuai. Jangan memakai migrate:fresh pada DB yang berisi data pengguna.
++
++HTTP dilakukan pada PHP web server lokal dengan SQLite terisolasi, session cookie nyata, CSRF normal, route/Livewire login normal, fixture lisensi valid seperti baseline tests, dan kredensial QA acak. Turnstile memakai test keys resmi serta dummy token dari dokumentasi Cloudflare: https://developers.cloudflare.com/turnstile/troubleshooting/testing/ . Backend menghubungi provider asli tanpa Http fake. Ini bukan UAT widget/browser, bukan bukti provider produksi; credential/license QA tidak disertakan.
++
++source-checksums.txt mengidentifikasi tepat file source/tes yang telah diperiksa. SHA256SUMS mencakup evidence lokal ini, bukan tanda tangan tersertifikasi.
+diff --git a/docs/audit/evidence/2026-11-03-followup/SHA256SUMS b/docs/audit/evidence/2026-11-03-followup/SHA256SUMS
+new file mode 100644
+index 0000000..be4aed5
+--- /dev/null
++++ b/docs/audit/evidence/2026-11-03-followup/SHA256SUMS
+@@ -0,0 +1,10 @@
++444ad02aeb30545f8afe92e6f5ac4b1e06f39fc8cbf5b38699902e1a90ac1268  README.md
++14d96e6c49917f67daf8a3c1e4efe136f828993ba3ce86a4472da50a163fcd5b  browser-blocker.txt
++adfaaf913d1f0165cea87c9aa7d35553bd50594001c67fbb3f1bc99a17cdf30d  concurrency.json
++c79404624d2d69737da79912cf404d85cb7ef9d0e8d8d57a26e6f61a25db70e5  mysql-tests.txt
++8aea7859b7dd6ad33c46fceee2f55bae1bafcc11ea14db4d18998895ad09a811  php-lint.txt
++9f9c500faa394ff16efcc28f2c686927d240abbc1a18166eb53676af80d038df  provider-login.json
++28927616fe72391c3fb6dcd6c2e33c151408cd554689e4b46b5b6604ab809492  security-business-tests.txt
++29ffcb0d10cebece27734a9d32b5d5b728d65ced3c00d341f393f325fdc4e774  source-checksums.txt
++3ca6239581e426dc366b7411507f75bc97bb5b00fa89a1fe4e913460dfa0e6aa  sqlite-tests.txt
++49c08aa70f0c972b638a2afe40d892f7629929011fe7e5bce3514d4b58f34f6e  upgrade.txt
+diff --git a/docs/audit/evidence/2026-11-03-followup/browser-blocker.txt b/docs/audit/evidence/2026-11-03-followup/browser-blocker.txt
+new file mode 100644
+index 0000000..26a83fa
+--- /dev/null
++++ b/docs/audit/evidence/2026-11-03-followup/browser-blocker.txt
+@@ -0,0 +1,8 @@
++Authenticated browser UAT remains BLOCKED.
++Local runtime has Playwright JavaScript but no installed Chromium executable.
++Attempt: official Playwright CLI install chromium (v1234, Chrome for Testing 151.0.7922.34).
++Download from https://cdn.playwright.dev/builds/cft/151.0.7922.34/linux64/chrome-linux64.zip failed with:
++Error: End of central directory record signature not found. Either not a zip file, or file is truncated.
++Final: Failed to install browsers; Download failure, code=1.
++No screenshots or browser success results are claimed.
++Normal authenticated HTTP login is tested separately in provider-login.json; it is not browser UAT.
+diff --git a/docs/audit/evidence/2026-11-03-followup/concurrency.json b/docs/audit/evidence/2026-11-03-followup/concurrency.json
+new file mode 100644
+index 0000000..d2d5dc4
+--- /dev/null
++++ b/docs/audit/evidence/2026-11-03-followup/concurrency.json
+@@ -0,0 +1,27 @@
++{
++    "mysql": "8.0.46-0ubuntu0.24.04.3",
++    "approval_race": {
++        "pass": true,
++        "outcomes": [
++            "committed",
++            "rejected"
++        ],
++        "committed_events": 1
++    },
++    "revision_race": {
++        "pass": true,
++        "outcomes": [
++            "committed",
++            "rejected"
++        ],
++        "revisions": 1
++    },
++    "global_draft_race": {
++        "pass": true,
++        "outcomes": [
++            "committed",
++            "rejected"
++        ],
++        "drafts": 1
++    }
++}
+diff --git a/docs/audit/evidence/2026-11-03-followup/mysql-tests.txt b/docs/audit/evidence/2026-11-03-followup/mysql-tests.txt
+new file mode 100644
+index 0000000..d121032
+--- /dev/null
++++ b/docs/audit/evidence/2026-11-03-followup/mysql-tests.txt
+@@ -0,0 +1,377 @@
++
++   PASS  Tests\Unit\ExampleTest
++  ✓ that true is true                                                    0.01s  
++
++   PASS  Tests\Unit\LicenseAllowlistTest
++  ✓ allowlists are canonical sets                                        0.01s  
++  ✓ wildcard matches subdomains but not apex or unrelated suffixes
++  ✓ unsafe domain patterns are rejected with data set "loose wildcard"
++  ✓ unsafe domain patterns are rejected with data set "scheme"
++  ✓ unsafe domain patterns are rejected with data set "port"
++  ✓ unsafe domain patterns are rejected with data set "path"
++  ✓ unsafe domain patterns are rejected with data set "embedded wildcard"
++  ✓ ipv4 and ipv6 cidr boundaries are enforced
++  ✓ bracketed ipv6 request host with port is normalized
++
++   PASS  Tests\Unit\LicenseVerificationTest
++  ✓ reordering case whitespace and duplicates do not invalidate license  0.36s  
++  ✓ a semantic allowlist change invalidates the existing token           0.04s  
++  ✓ corrupted signature is rejected                                      0.03s  
++  ✓ malformed token and wrong product are distinguished                  0.03s  
++  ✓ noncanonical signed payload is rejected                              0.03s  
++  ✓ wrong signed payload version is rejected                             0.03s  
++
++   PASS  Tests\Feature\AuditP1HardeningTest
++  ✓ default seeder is read only in production                           28.93s  
++  ✓ enabled account is separate from chat presence and revocation kicks… 0.10s  
++  ✓ strong password policy matches provisioning and profile              0.05s  
++  ✓ new ticket reports require maintenance category but explicit legacy… 0.09s  
++
++   PASS  Tests\Feature\AuthCaptchaParityTest
++  ✓ login uses the custom filament auth page                             0.08s  
++  ✓ local captcha matches spmb readable defaults                         0.06s  
++  ✓ local captcha provides light and dark images and rejects invalid co… 0.05s  
++
++   PASS  Tests\Feature\AuthSessionReadinessTest
++  ✓ normal filament login regenerates session for enabled user           0.39s  
++  ✓ disabled user cannot authenticate even with valid password and loca… 0.62s  
++
++   PASS  Tests\Feature\BootstrapTrustedProxiesTest
++  ✓ http kernel resolves before config repository is loaded              0.13s  
++  ✓ trusted proxy is read from laravel config when request arrives       0.04s  
++  ✓ untrusted proxy and wildcard configuration are fail closed           0.04s  
++  ✓ cidr config and invalid proxy ranges                                 0.04s  
++
++   PASS  Tests\Feature\BrandingAndAvatarTest
++  ✓ login logo is centered                                               0.10s  
++  ✓ chatify uses application name and logo                               0.21s  
++  ✓ default avatar uses fav image                                        0.05s  
++  ✓ uploaded avatar uses chatify public storage url                      0.07s  
++  ✓ filament does not prefix an avatar url formatted by chatify          0.06s  
++  ✓ chatify formatted default avatar still uses fav image                0.05s  
++  ✓ chatify uses application logo for default avatar                     0.04s  
++  ✓ chatify does not duplicate the avatar folder                         0.05s  
++
++   PASS  Tests\Feature\ChatPushNotificationTest
++  ✓ new chat message queues a sanitized push for the recipient only      0.08s  
++  ✓ attachment only message uses a generic preview                       0.07s  
++
++   PASS  Tests\Feature\ChatifyContactsTest
++  ✓ contacts route uses the mysql compatible controller                  0.04s  
++  ✓ contacts are returned in latest conversation order                   0.07s  
++
++   PASS  Tests\Feature\DatabaseSeederTest
++  ✓ database seeder creates reference data and is idempotent             1.12s  
++
++   PASS  Tests\Feature\DynamicWorkOrderApprovalFlowTest
++  ✓ dynamic work order runs full approval and maintenance sequence       0.28s  
++  ✓ revoked title cannot approve and admin reassigns with audit          0.22s  
++
++   PASS  Tests\Feature\ExampleTest
++  ✓ the application returns a successful response                        0.17s  
++
++   PASS  Tests\Feature\FilamentExperienceTest
++  ✓ dashboard renders native operational widgets                         0.40s  
++  ✓ recent requests widget respects sarpras unit scope                   0.25s  
++  ✓ global search finds core inventory and activity records              0.23s  
++
++   PASS  Tests\Feature\GroupedLoanActivityTest
++  ✓ two quick requests share one canonical activity but have independen… 1.65s  
++  ✓ root picker only contains eligible unit activities not child or dra… 0.09s  
++  ✓ service rejects forged other unit and nested group references        0.07s  
++  ✓ quick request cannot link to another unit even when id is forged     0.48s  
++
++   PASS  Tests\Feature\Laravel12CompatibilityTest
++  ✓ framework and filament plugins remain compatible                     0.04s  
++
++   PASS  Tests\Feature\LicenseEnforcementTest
++  ✓ exact domain wildcard and ip hosts are allowed                       0.33s  
++  ✓ missing token returns generic locked html without leaking configura… 0.05s  
++  ✓ json and major route groups are locked before application logic      0.05s  
++  ✓ health check remains available when license is invalid               0.05s  
++  ✓ forwarded host cannot spoof an unlicensed host                       0.05s  
++  ✓ license commands work while locked and business command stops        0.06s  
++  ✓ scheduler filter rejects business schedule when license is invalid   0.04s  
++  ✓ valid license allows business command and schedule                   0.04s  
++  ✓ status uses app url host for console validation                      0.04s  
++
++   PASS  Tests\Feature\LoanAccessAndHistoryTest
++  ✓ sarpras and manager visibility is consistent across resources dashb… 0.26s  
++  ✓ database rejects deleting actors units or assets that have loan his… 0.12s  
++
++   PASS  Tests\Feature\LoanBookingLifecycleTest
++  ✓ active submitted hold blocks items rooms and vehicles                0.27s  
++  ✓ draft and elapsed submitted holds do not block availability          0.28s  
++  ✓ unavailable assets can remain in a draft but cannot be submitted     0.29s  
++  ✓ expiry releases all pending needs and marks the activity expired     0.28s  
++  ✓ expiry keeps approved needs and only releases pending needs          0.42s  
++  ✓ decision is rejected after the hold deadline                         0.43s  
++  ✓ expiry command processes elapsed holds                               0.38s  
++  ✓ item availability follows the complete status matrix                 0.36s  
++  ✓ open overdue usage blocks future item room and vehicle availability  0.26s  
++
++   PASS  Tests\Feature\LoanEventMasterTest
++  ✓ every request gets a master event and it outlives cancelled request… 1.30s  
++  ✓ full request can reference existing event and mixed assets keep sep… 0.72s  
++  ✓ cross unit master id is rejected even by direct service call         0.07s  
++  ✓ quick picker hides foreign events even if they are submitted or can… 0.53s  
++  ✓ master resource is scoped and existing requests still get master li… 0.38s  
++
++   PASS  Tests\Feature\LoanHandoverPdfTest
++  ✓ pdf download requires auth and specific reservation ownership        1.08s  
++  ✓ complete evidence displays real roles times condition and notes      0.76s  
++  ✓ incomplete and exception do not forge borrower confirmation          0.45s  
++  ✓ item instance and vehicle specific details are in document           0.22s  
++  ✓ only local safe images are inlined and notes are escaped             0.26s  
++  ✓ visible unit can find pdf action in familiar loan pages              0.53s  
++
++   PASS  Tests\Feature\LoanNotificationTest
++  ✓ submission creates actionable database notifications for requester…  0.22s  
++  ✓ requester is notified when aggregate loan status changes             0.24s  
++  ✓ cancellation notifies requester and clears the reviewers pending co… 0.21s  
++  ✓ submission queues device push for subscribed requester and reviewer  0.26s  
++
++   PASS  Tests\Feature\LoanRequestServiceTest
++  ✓ it creates one activity with multiple types of needs                 0.72s  
++  ✓ return request requires a checklist                                  0.27s  
++  ✓ failed item allocation rolls back the checkout                       0.27s  
++  ✓ bad return keeps allocated item instances out of service             0.68s  
++  ✓ a stale second decision cannot overwrite the first decision          0.22s  
++  ✓ it rejects an item quantity that is not available for an overlappin… 0.26s  
++  ✓ it rejects the same item twice in one request                        0.17s  
++
++   PASS  Tests\Feature\LoanReturnControlsTest
++  ✓ overdue reminder is sent to borrower and manager at most once per d… 0.23s  
++  ✓ item return records each instance and requires two party confirmati… 0.37s  
++  ✓ admin correction reopens return without deleting original history    0.23s  
++
++   PASS  Tests\Feature\LoanReviewServiceTest
++  ✓ it saves overall and returned asset reviews atomically               0.26s  
++  ✓ empty values remove only integrated reviews and leave checklist unt… 0.23s  
++  ✓ it updates existing reviews without creating duplicates              0.24s  
++  ✓ borrower can submit the integrated filament action                   1.58s  
++  ✓ review is available for mixed terminal statuses but not blocking st… 0.27s  
++  ✓ it rejects expired unauthorized invalid and tampered submissions     0.36s  
++
++   PASS  Tests\Feature\MassAssignmentHardeningTest
++  ✓ every persisted application model has an explicit attribute allowli… 0.06s  
++  ✓ untrusted assignment cannot forge reservation approval audit         0.05s  
++  ✓ untrusted payload cannot override workflow owner unit or status      0.25s  
++  ✓ audit status history cannot be edited or deleted                     0.06s  
++  ✓ master record identifier is not fillable                             0.04s  
++
++   PASS  Tests\Feature\ObserverBusinessFlowTest
++  ✓ item instance is the source of truth for stock totals                0.13s  
++  ✓ master quantity cannot be changed directly after creation            0.08s  
++  ✓ reservation created under a draft does not hold inventory            0.11s  
++  ✓ monthly generation does not mark a placeholder as inspected          0.17s  
++  ✓ first inspection is stamped once for both good and bad results       0.06s  
++  ✓ monthly checklist is unique per item instance                        0.08s  
++  ✓ assets with checklist history cannot be deleted                      0.08s  
++  ✓ submitted requests and reservations cannot be deleted                0.07s  
++
++   PASS  Tests\Feature\OperationalPriorityDashboardTest
++  ✓ unit sees all six real time operational states and overdue not hidd… 1.34s  
++  ✓ facility can filter unit but nonfacility cannot widen scope          0.69s  
++  ✓ missing second party checkout is visible even when approval is not   0.86s  
++  ✓ dashboard keeps actions and moves complete monitoring to summary     3.48s  
++  ✓ one submission with two assets is counted once in summary and twice… 0.91s  
++
++   PASS  Tests\Feature\OutboundHandoverV2Test
++  ✓ manager initial checklist does not checkout until different borrowe… 0.34s  
++  ✓ checkout confirmation is scoped and concurrent resubmission is reje… 0.45s  
++  ✓ fallback requires reason and records single party exception          0.37s  
++  ✓ initial item conditions are bound to exact allocated instances       0.47s  
++  ✓ outbound vehicle optional odometer and no status change until confi… 0.16s  
++  ✓ legacy direct checkout is annotated as unverified without forged bo… 0.24s  
++  ✓ production style guard blocks direct checkout but allows audited fa… 0.35s  
++  ✓ qr screen shows initial condition form and borrower acceptance       3.35s  
++
++   PASS  Tests\Feature\ProductionHardeningTest
++  ✓ demo accounts are opt in and production always disables them         0.45s  
++  ✓ reseeding never resets existing password role or identity            0.33s  
++  ✓ weak demo password is rejected                                       0.16s  
++  ✓ admin provisioning requires strong credentials and never resets exi… 0.16s  
++  ✓ unguarded models are disabled and record identifiers cannot be mass… 0.05s  
++  ✓ admin panel requires operational role or managed assets              0.14s  
++  ✓ production audit rejects debug http insecure cookies and open proxi… 0.06s  
++
++   PASS  Tests\Feature\ProductionReadinessSecurityTest
++  ✓ revoked candidate loses ticket and private pdf access                0.25s  
++  ✓ inactive job title revokes candidate visibility                      0.24s  
++  ✓ title candidate visibility preserves legacy ticket with null report… 0.20s  
++  ✓ disabled facility cannot assign legacy maintenance via service       0.17s  
++  ✓ disabled facility cannot cancel legacy maintenance via service       0.19s  
++  ✓ disabled reporter cannot verify completed work via service           0.25s  
++  ✓ assignment authority is checked inside ticket transaction            0.21s  
++  ✓ reporter with facility role cannot approve own legacy report         0.20s  
++  ✓ approval only user sees pending ticket on dashboard                  0.30s  
++  ✓ multi position hierarchy cannot hide a cycle on second assignment    0.24s  
++  ✓ default active assignment cannot reference disabled user             0.06s  
++  ✓ reporter holding required title and multiple roles cannot decide ow… 0.50s  
++  ✓ disabled approver cannot decide pending dynamic step                 0.23s  
++  ✓ all start steps must precede any final step                          0.06s  
++
++   PASS  Tests\Feature\PublicLoanScheduleTest
++  ✓ public page only shows approved or checked out current and upcoming… 1.09s  
++
++   PASS  Tests\Feature\PublicRoomScheduleTest
++  ✓ room qr code is generated automatically with a public schedule url   0.76s  
++  ✓ public room page shows current status and only confirmed current or… 0.27s  
++  ✓ room qr code can be downloaded as an a4 pdf                          0.55s  
++
++   PASS  Tests\Feature\PushSubscriptionTest
++  ✓ subscription endpoints require authentication                        0.09s  
++  ✓ user can register multiple devices and update an existing endpoint   0.10s  
++  ✓ endpoint moves to the current user and unsubscribe only removes own… 0.12s  
++  ✓ subscription payload is validated                                    0.10s  
++
++   PASS  Tests\Feature\PwaAssetsTest
++  ✓ manifest defines installable application scope and icons             0.06s  
++  ✓ service worker handles push without caching pages                    0.06s  
++
++   PASS  Tests\Feature\QrHandoverFlowTest
++  ✓ signed qr opens exact reservation for authorized manager and borrow… 0.34s  
++  ✓ tampered or expired qr is rejected                                   0.21s  
++  ✓ qr checkout then borrower return then manager confirmation           5.85s  
++  ✓ manager records physical return and borrower confirms from qr        2.82s  
++  ✓ unrelated user cannot mutate checkout or return by changing query    0.53s  
++  ✓ unit list exposes qr action for authorized reservations              0.47s  
++
++   PASS  Tests\Feature\QuickActionsWidgetTest
++  ✓ manager queue only contains actionable assets from assigned managem… 0.51s  
++  ✓ sarpras queue is scoped to own unit and counterparty confirmation    0.56s  
++  ✓ widget actions validate and transition reservations                  2.03s  
++  ✓ dashboard renders empty queue for operational role regardless of fi… 0.65s  
++  ✓ widget completes checkout and two party return flow                  3.59s  
++  ✓ widget prefills item instances and supports manager initiated retur… 2.48s  
++
++   PASS  Tests\Feature\QuickLoanRequestTest
++  ✓ borrower sees quick request as primary dashboard action and full fo… 1.32s  
++  ✓ one item can be requested with only one purpose and asset selection  0.61s  
++  ✓ vehicle request uses same workflow without driver or assistant inpu… 0.58s  
++  ✓ room request is available without compromising single need flow      0.66s  
++  ✓ unavailable asset cannot be reserved twice                           1.08s  
++  ✓ untrusted form state cannot assign a different user unit or status   0.88s  
++  ✓ quick request blocks unauthorized accounts and invalid time          0.54s  
++
++   PASS  Tests\Feature\ReservationFilterTabsTest
++  ✓ all reservation lists have the same status filter tabs               0.09s  
++
++   PASS  Tests\Feature\RoleAndUnitAccessTest
++  ✓ seeders create expected units roles and accounts                     0.27s  
++  ✓ sarpras policy is scoped to unit and locks approved activity         0.08s  
++  ✓ facility can access and manage all reservation types                 0.16s  
++  ✓ facility can decide reservation without asset manager assignment     0.10s  
++  ✓ facility approval action advances the reservation                    0.36s  
++  ✓ assigned manager can record a direct return from activity relation…  0.80s  
++  ✓ manager status changes record actor and full history                 0.08s  
++
++   PASS  Tests\Feature\RoleDashboardTest
++  ✓ sarpras dashboard starts with daily actions and has no technical or… 0.77s  
++  ✓ facility and administrator keep operational access and secondary to… 1.80s  
++  ✓ technician dashboard contains only own work and cannot open loan to… 0.72s  
++  ✓ asset manager keeps managed work without gaining loan creation       0.94s  
++  ✓ combined sarpras and technician keeps both workflows                 0.68s  
++  ✓ ticket widget preserves reporter visibility and never leaks other r… 0.45s  
++  ✓ technician work queue is assigned to self even for a team lead       0.31s  
++  ✓ navigation groups are native collapsible and all old urls are regis… 0.12s  
++  ✓ technician links open the exact ticket and preserve existing work g… 6.03s  
++  ✓ administrative access alone does not offer technician work           0.93s  
++  ✓ completed or foreign work does not make technician shortcut relevan… 0.26s  
++  ✓ ticket unit filter is local and cannot expand nonfacility scope      0.48s  
++  ✓ work action is hidden after assignment or qualification changes      0.29s  
++
++   PASS  Tests\Feature\TicketMaintenanceV3Test
++  ✓ full maintenance signoffs and safety release                         0.27s  
++  ✓ temporary repair cannot release asset and role boundaries apply      0.22s  
++  ✓ protected pdf marks incomplete and does not leak to other users      0.44s  
++  ✓ sla business calendar and escalations are idempotent                 0.17s  
++  ✓ single item safety hold reduces available stock without disabling o… 0.24s  
++  ✓ batched picker limits safety queries and preserves option order      0.20s  
++  ✓ safety batch preserves room and instance blocking                    0.21s  
++  ✓ legacy ticket can continue v1 flow without v3 signoffs               0.15s  
++
++   PASS  Tests\Feature\TicketReportingUxTest
++  ✓ short report without inventory uses auto title and preserves report… 0.40s  
++  ✓ search is server side scoped and finds assets after old 250 limit    0.17s  
++  ✓ room lookup searches only existing name column and preserves unit s… 0.13s  
++  ✓ code and license plate search still work for supported asset types   0.13s  
++  ✓ manager can link unidentified asset with audit and access guards     0.15s  
++  ✓ existing room qr offers scoped reporting entry                       0.14s  
++  ✓ item qr scans open prefilled report only for authorized users        0.19s  
++
++   PASS  Tests\Feature\TicketTeamHierarchyTest
++  ✓ field hierarchy delegates to descendants without granting approval…  1.25s  
++  ✓ cycles foreign supervisors and unassigned technicians are rejected   0.32s  
++  ✓ disabling field member removes delegation but does not change old t… 0.19s  
++  ✓ field workspace is scoped to the assignee and can start task withou… 0.72s  
++  ✓ disabled technician cannot accept or continue existing task          0.20s  
++  ✓ team hierarchy cannot orphan active subordinates                     0.13s  
++  ✓ general field teams cannot cross unit scope when tickets have no as… 0.17s  
++
++   PASS  Tests\Feature\TicketingCoreTest
++  ✓ ticket created with asset assignment scope and immutable audit       0.22s  
++  ✓ no cross unit asset forgery or non activated category                0.17s  
++  ✓ ticket workflow assignment and internal notes are guarded            0.30s  
++  ✓ private attachments require ticket permissions                       0.25s  
++  ✓ damaged room return opens one ticket without modifying loan status   0.21s  
++  ✓ filament ticket resource is visible to authorized user and scopes t… 1.20s  
++  ✓ comment images render through authorized native filament entries     0.78s  
++  ✓ attachment validation rejects spoofed content and unsafe file paths  0.21s  
++  ✓ private pdf can preview inline but internal comments remain hidden   1.34s  
++
++   PASS  Tests\Feature\UnitLoanPageTest
++  ✓ sarpras can open the unified request page and only see its unit loa… 0.54s  
++  ✓ unit user can submit the unified form                                0.85s  
++  ✓ request page rejects an end time before the start time               0.59s  
++  ✓ draft owner can reopen complete form and see stale asset availabili… 0.60s  
++  ✓ unified loan page shows return actions for the correct role          2.02s  
++
++   PASS  Tests\Feature\UsageReportPageTest
++  ✓ facility can view and filter the usage report                        1.03s  
++  ✓ sarpras report is scoped to its own unit                             0.25s  
++  ✓ user without an authorized role cannot open the report               0.05s  
++
++   PASS  Tests\Feature\VehicleCrewWorkflowTest
++  ✓ bus can be requested without staff but needs driver and assistant t… 0.16s  
++  ✓ overlapping vehicles cannot assign same driver                       0.22s  
++  ✓ mid trip reassignment keeps history and master default               0.24s  
++  ✓ draft rechecks vehicle availability before creating its hold         0.12s  
++
++   PASS  Tests\Feature\WorkOrderConfigurationTest
++  ✓ published configuration is immutable and requires admin              0.12s  
++  ✓ supervisor cannot be own supervisor                                  0.05s  
++  ✓ publishing requires an active approver assignment                    0.09s  
++  ✓ indirect supervisor cycle is rejected                                0.04s  
++  ✓ invalid or duplicate workflow steps are rejected                     0.03s  
++
++   PASS  Tests\Feature\WorkOrderEstimateTest
++  ✓ budget approval binds exact immutable vendor quote before assignmen… 0.17s  
++  ✓ estimate cannot self approve and reject resubmit does not reuse pri… 0.19s  
++  ✓ estimate validates amount vendor scope and fresh actor               0.17s  
++  ✓ changed quote requires explicit new version and cannot be approved…  0.15s  
++  ✓ native filament estimate action records the explicit amount          3.57s  
++
++   PASS  Tests\Feature\WorkOrderReadinessTest
++  ✓ configured ytb backend sequence completes for all six units with ma… 8.75s  
++  ✓ explicit dispatch title enables assetless central work without faci… 0.88s  
++  ✓ dispatch title scope revocation and inactive team remain fail close… 0.82s  
++  ✓ assetless report does not grant central technician cross unit autho… 0.75s  
++  ✓ rejection is fail closed and duplicate decision is not replayed      0.80s  
++  ✓ administrator can manage titles assignments and publish using filam… 1.70s  
++  ✓ job title named administrator does not grant system administration   0.79s  
++  ✓ new published workflow does not rewrite existing ticket snapshot     1.19s  
++  ✓ missing supervisor is blocked until active assignment and audited r… 1.06s  
++  ✓ unit transfer revokes snapshot candidate and multi role cannot skip… 1.51s  
++
++   PASS  Tests\Feature\WorkOrderRevisionTest
++  ✓ rejected report resubmits on same ticket and preserves decisions an… 0.73s  
++  ✓ revision rejects foreign actor disabled stale identity and protecte… 0.47s  
++  ✓ superseded pending id and revoked candidates cannot decide or reass… 0.50s  
++  ✓ final rejection requires rework new reporter verification and fresh… 0.86s  
++  ✓ native filament revision action revalidates and submits corrected r… 9.66s  
++
++  Tests:    269 passed (2124 assertions)
++  Duration: 171.00s
++
+diff --git a/docs/audit/evidence/2026-11-03-followup/php-lint.txt b/docs/audit/evidence/2026-11-03-followup/php-lint.txt
+new file mode 100644
+index 0000000..f077f81
+--- /dev/null
++++ b/docs/audit/evidence/2026-11-03-followup/php-lint.txt
+@@ -0,0 +1,25 @@
++No syntax errors detected in app/Models/WorkOrderEstimate.php
++No syntax errors detected in app/Models/WorkOrderRevision.php
++No syntax errors detected in app/Services/WorkOrderEstimateService.php
++No syntax errors detected in app/Services/WorkOrderRevisionService.php
++No syntax errors detected in database/migrations/2026_11_03_120000_add_work_order_revision_history.php
++No syntax errors detected in database/migrations/2026_11_03_121000_add_explicit_work_order_dispatch_title.php
++No syntax errors detected in database/migrations/2026_11_03_122000_create_work_order_estimates.php
++No syntax errors detected in tests/Feature/WorkOrderEstimateTest.php
++No syntax errors detected in tests/Feature/WorkOrderRevisionTest.php
++No syntax errors detected in app/Filament/Resources/TicketResource.php
++No syntax errors detected in app/Filament/Resources/TicketResource/Pages/ViewTicket.php
++No syntax errors detected in app/Filament/Resources/WorkOrderWorkflowResource.php
++No syntax errors detected in app/Http/Controllers/TicketMaintenancePdfController.php
++No syntax errors detected in app/Models/Ticket.php
++No syntax errors detected in app/Models/TicketTeamMember.php
++No syntax errors detected in app/Models/WorkOrderApproval.php
++No syntax errors detected in app/Models/WorkOrderWorkflow.php
++No syntax errors detected in app/Services/WorkOrderWorkflowService.php
++No syntax errors detected in database/seeders/WorkOrderDemoSeeder.php
++No syntax errors detected in resources/views/pdf/tickets/maintenance.blade.php
++No syntax errors detected in tests/Feature/DatabaseSeederTest.php
++No syntax errors detected in tests/Feature/WorkOrderReadinessTest.php
++No syntax errors detected in tests/Support/work-order-concurrency.php
++No syntax errors detected in tests/Support/work-order-upgrade.php
++PASS: 24 changed/new PHP files; git diff --check clean.
+diff --git a/docs/audit/evidence/2026-11-03-followup/provider-login.json b/docs/audit/evidence/2026-11-03-followup/provider-login.json
+new file mode 100644
+index 0000000..7162816
+--- /dev/null
++++ b/docs/audit/evidence/2026-11-03-followup/provider-login.json
+@@ -0,0 +1,19 @@
++{
++    "qa_only": true,
++    "provider": "Cloudflare official test keys; live server-side siteverify, no Http fake",
++    "frontend_token": "Official dummy test token supplied to normal Livewire login; not a browser\/widget UAT",
++    "login_get": 200,
++    "livewire_login": 200,
++    "redirect_present": true,
++    "dashboard": 200,
++    "session_cookies_changed": true,
++    "authenticated": true,
++    "authenticated_livewire_refresh": [
++        200,
++        200,
++        200
++    ],
++    "missing_csrf": 419,
++    "wrong_csrf": 419,
++    "forged_snapshot": 419
++}
+diff --git a/docs/audit/evidence/2026-11-03-followup/security-business-tests.txt b/docs/audit/evidence/2026-11-03-followup/security-business-tests.txt
+new file mode 100644
+index 0000000..b4585a6
+--- /dev/null
++++ b/docs/audit/evidence/2026-11-03-followup/security-business-tests.txt
+@@ -0,0 +1,56 @@
++
++   PASS  Tests\Feature\DatabaseSeederTest
++  ✓ database seeder creates reference data and is idempotent             1.24s  
++
++   PASS  Tests\Feature\MassAssignmentHardeningTest
++  ✓ every persisted application model has an explicit attribute allowli… 0.05s  
++  ✓ untrusted assignment cannot forge reservation approval audit         0.03s  
++  ✓ untrusted payload cannot override workflow owner unit or status      0.09s  
++  ✓ audit status history cannot be edited or deleted                     0.03s  
++  ✓ master record identifier is not fillable                             0.03s  
++
++   PASS  Tests\Feature\ProductionReadinessSecurityTest
++  ✓ revoked candidate loses ticket and private pdf access                0.14s  
++  ✓ inactive job title revokes candidate visibility                      0.13s  
++  ✓ title candidate visibility preserves legacy ticket with null report… 0.13s  
++  ✓ disabled facility cannot assign legacy maintenance via service       0.09s  
++  ✓ disabled facility cannot cancel legacy maintenance via service       0.09s  
++  ✓ disabled reporter cannot verify completed work via service           0.13s  
++  ✓ assignment authority is checked inside ticket transaction            0.15s  
++  ✓ reporter with facility role cannot approve own legacy report         0.11s  
++  ✓ approval only user sees pending ticket on dashboard                  0.26s  
++  ✓ multi position hierarchy cannot hide a cycle on second assignment    0.09s  
++  ✓ default active assignment cannot reference disabled user             0.07s  
++  ✓ reporter holding required title and multiple roles cannot decide ow… 0.11s  
++  ✓ disabled approver cannot decide pending dynamic step                 0.09s  
++  ✓ all start steps must precede any final step                          0.05s  
++
++   PASS  Tests\Feature\WorkOrderEstimateTest
++  ✓ budget approval binds exact immutable vendor quote before assignmen… 0.15s  
++  ✓ estimate cannot self approve and reject resubmit does not reuse pri… 0.11s  
++  ✓ estimate validates amount vendor scope and fresh actor               0.09s  
++  ✓ changed quote requires explicit new version and cannot be approved…  0.11s  
++  ✓ native filament estimate action records the explicit amount          3.53s  
++
++   PASS  Tests\Feature\WorkOrderReadinessTest
++  ✓ configured ytb backend sequence completes for all six units with ma… 7.53s  
++  ✓ explicit dispatch title enables assetless central work without faci… 0.50s  
++  ✓ dispatch title scope revocation and inactive team remain fail close… 0.49s  
++  ✓ assetless report does not grant central technician cross unit autho… 0.50s  
++  ✓ rejection is fail closed and duplicate decision is not replayed      0.54s  
++  ✓ administrator can manage titles assignments and publish using filam… 1.41s  
++  ✓ job title named administrator does not grant system administration   0.45s  
++  ✓ new published workflow does not rewrite existing ticket snapshot     0.54s  
++  ✓ missing supervisor is blocked until active assignment and audited r… 0.51s  
++  ✓ unit transfer revokes snapshot candidate and multi role cannot skip… 0.52s  
++
++   PASS  Tests\Feature\WorkOrderRevisionTest
++  ✓ rejected report resubmits on same ticket and preserves decisions an… 0.12s  
++  ✓ revision rejects foreign actor disabled stale identity and protecte… 0.10s  
++  ✓ superseded pending id and revoked candidates cannot decide or reass… 0.08s  
++  ✓ final rejection requires rework new reporter verification and fresh… 0.11s  
++  ✓ native filament revision action revalidates and submits corrected r… 9.44s  
++
++  Tests:    40 passed (662 assertions)
++  Duration: 30.07s
++
+diff --git a/docs/audit/evidence/2026-11-03-followup/source-checksums.txt b/docs/audit/evidence/2026-11-03-followup/source-checksums.txt
+new file mode 100644
+index 0000000..11a87ce
+--- /dev/null
++++ b/docs/audit/evidence/2026-11-03-followup/source-checksums.txt
+@@ -0,0 +1,24 @@
++5e0e75a6fe62357b9e2067415a7993b9c2278a9ba2670d38cf3c2422a46d830b  app/Filament/Resources/TicketResource.php
++369eb312ee7d85881d99df47d489902d70948c89727c96acf8b76f7cc3491214  app/Filament/Resources/TicketResource/Pages/ViewTicket.php
++4c4d51f1177f29ee8999b76df86c8b110c7abbc5438cf3ce260b5aef6f50f80b  app/Filament/Resources/WorkOrderWorkflowResource.php
++262d4f3cb93548055c64164e09d739476f971e6d8d4946d2a61bb2073d2dcb33  app/Http/Controllers/TicketMaintenancePdfController.php
++1779a31078b22553182111c2ccad006b6a3b3bb16351569f39e3b031427ff64d  app/Models/Ticket.php
++7a69fed90cc2864acb673bae1e58085895ee249477155094cfa3a466fcff8cbc  app/Models/TicketTeamMember.php
++80d8e9cada85179194df546fa62370cc3b308379908141ffc5df8c3bdab24937  app/Models/WorkOrderApproval.php
++67a3ab2d8a2856c423a52a6d626d7db43432d727bd1b63c825435978312c3fd0  app/Models/WorkOrderEstimate.php
++5779ceccabbcecd59750cc5bab7fcc8ff1e7e5399b68f7f32519c7b7bbe6423a  app/Models/WorkOrderRevision.php
++619d2526e6e3e0dcdf873c2754bf07afad6b4066e3d9ae79385a64ca2c79ad82  app/Models/WorkOrderWorkflow.php
++0afee0f68d79d6f4c07fb3c78331fc9ca951253f9d9408c4c5aac25fe9286cbe  app/Services/WorkOrderEstimateService.php
++28a19931033fa986bb39f46c35447713b1b00e86970064ddd48a18d1aec639ea  app/Services/WorkOrderRevisionService.php
++0cfbd5e17d7f2d07829b2f1f53cf7c90a0e3dfccdd284f7ec72b18cced8eed62  app/Services/WorkOrderWorkflowService.php
++2d925fe700e827b0f6dfe33d4eca63581aa8914232d78b5ed82e5b59c131784c  database/migrations/2026_11_03_120000_add_work_order_revision_history.php
++abbee702f2016c27ba2526aac5b7b6523e7e9cc05eacfd1b929b59aa5f4a8888  database/migrations/2026_11_03_121000_add_explicit_work_order_dispatch_title.php
++d8ffe9c40dbd8caa4a2666c956059aace31ad97737b8c7dd15d668f3e35b0266  database/migrations/2026_11_03_122000_create_work_order_estimates.php
++0b0c843b08a24d730715e76135061cfa8a178769761883cc76b4b0cf640f052c  database/seeders/WorkOrderDemoSeeder.php
++804877f5011da0717c7bb553d6fd068ce9620e889149ab7e2010878e9c94dbb3  resources/views/pdf/tickets/maintenance.blade.php
++1ffb066f81f222e3103650ec719fbe1ed3ffd58a5f566f0911e60028cfd177e4  tests/Feature/DatabaseSeederTest.php
++e8655888a3999b572fec1f8f06102f82b2f24f5bbbfd2f4804efdbb388cc15dc  tests/Feature/WorkOrderEstimateTest.php
++4fb658c25953117049840bd0b044af1dae9141e035cd1b674ce1df96e13a29ec  tests/Feature/WorkOrderReadinessTest.php
++31f9962e491b3707c1548fe1b74c99af801712cc8ea1c1ca67732974c1fb1c65  tests/Feature/WorkOrderRevisionTest.php
++e661df3cf07c7c79f643a1c3886b71f2d81ce376344f0eeeb9fb0bdaa24d288d  tests/Support/work-order-concurrency.php
++4534ba31dd5b16bdd06374550fdcc157230aa1fa604c9ae1b364a8cd89a5387e  tests/Support/work-order-upgrade.php
+diff --git a/docs/audit/evidence/2026-11-03-followup/sqlite-tests.txt b/docs/audit/evidence/2026-11-03-followup/sqlite-tests.txt
+new file mode 100644
+index 0000000..e5212bb
+--- /dev/null
++++ b/docs/audit/evidence/2026-11-03-followup/sqlite-tests.txt
+@@ -0,0 +1,377 @@
++
++   PASS  Tests\Unit\ExampleTest
++  ✓ that true is true
++
++   PASS  Tests\Unit\LicenseAllowlistTest
++  ✓ allowlists are canonical sets                                        0.01s  
++  ✓ wildcard matches subdomains but not apex or unrelated suffixes
++  ✓ unsafe domain patterns are rejected with data set "loose wildcard"
++  ✓ unsafe domain patterns are rejected with data set "scheme"
++  ✓ unsafe domain patterns are rejected with data set "port"
++  ✓ unsafe domain patterns are rejected with data set "path"
++  ✓ unsafe domain patterns are rejected with data set "embedded wildcard"
++  ✓ ipv4 and ipv6 cidr boundaries are enforced
++  ✓ bracketed ipv6 request host with port is normalized
++
++   PASS  Tests\Unit\LicenseVerificationTest
++  ✓ reordering case whitespace and duplicates do not invalidate license  0.39s  
++  ✓ a semantic allowlist change invalidates the existing token           0.05s  
++  ✓ corrupted signature is rejected                                      0.04s  
++  ✓ malformed token and wrong product are distinguished                  0.05s  
++  ✓ noncanonical signed payload is rejected                              0.05s  
++  ✓ wrong signed payload version is rejected                             0.04s  
++
++   PASS  Tests\Feature\AuditP1HardeningTest
++  ✓ default seeder is read only in production                            0.46s  
++  ✓ enabled account is separate from chat presence and revocation kicks… 0.08s  
++  ✓ strong password policy matches provisioning and profile              0.04s  
++  ✓ new ticket reports require maintenance category but explicit legacy… 0.06s  
++
++   PASS  Tests\Feature\AuthCaptchaParityTest
++  ✓ login uses the custom filament auth page                             0.04s  
++  ✓ local captcha matches spmb readable defaults                         0.03s  
++  ✓ local captcha provides light and dark images and rejects invalid co… 0.04s  
++
++   PASS  Tests\Feature\AuthSessionReadinessTest
++  ✓ normal filament login regenerates session for enabled user           0.41s  
++  ✓ disabled user cannot authenticate even with valid password and loca… 0.52s  
++
++   PASS  Tests\Feature\BootstrapTrustedProxiesTest
++  ✓ http kernel resolves before config repository is loaded              0.14s  
++  ✓ trusted proxy is read from laravel config when request arrives       0.04s  
++  ✓ untrusted proxy and wildcard configuration are fail closed           0.05s  
++  ✓ cidr config and invalid proxy ranges                                 0.04s  
++
++   PASS  Tests\Feature\BrandingAndAvatarTest
++  ✓ login logo is centered                                               0.13s  
++  ✓ chatify uses application name and logo                               0.16s  
++  ✓ default avatar uses fav image                                        0.06s  
++  ✓ uploaded avatar uses chatify public storage url                      0.05s  
++  ✓ filament does not prefix an avatar url formatted by chatify          0.04s  
++  ✓ chatify formatted default avatar still uses fav image                0.05s  
++  ✓ chatify uses application logo for default avatar                     0.04s  
++  ✓ chatify does not duplicate the avatar folder                         0.04s  
++
++   PASS  Tests\Feature\ChatPushNotificationTest
++  ✓ new chat message queues a sanitized push for the recipient only      0.06s  
++  ✓ attachment only message uses a generic preview                       0.07s  
++
++   PASS  Tests\Feature\ChatifyContactsTest
++  ✓ contacts route uses the mysql compatible controller                  0.04s  
++  ✓ contacts are returned in latest conversation order                   0.06s  
++
++   PASS  Tests\Feature\DatabaseSeederTest
++  ✓ database seeder creates reference data and is idempotent             0.53s  
++
++   PASS  Tests\Feature\DynamicWorkOrderApprovalFlowTest
++  ✓ dynamic work order runs full approval and maintenance sequence       0.12s  
++  ✓ revoked title cannot approve and admin reassigns with audit          0.09s  
++
++   PASS  Tests\Feature\ExampleTest
++  ✓ the application returns a successful response                        0.16s  
++
++   PASS  Tests\Feature\FilamentExperienceTest
++  ✓ dashboard renders native operational widgets                         0.31s  
++  ✓ recent requests widget respects sarpras unit scope                   0.15s  
++  ✓ global search finds core inventory and activity records              0.11s  
++
++   PASS  Tests\Feature\GroupedLoanActivityTest
++  ✓ two quick requests share one canonical activity but have independen… 1.68s  
++  ✓ root picker only contains eligible unit activities not child or dra… 0.06s  
++  ✓ service rejects forged other unit and nested group references        0.06s  
++  ✓ quick request cannot link to another unit even when id is forged     0.50s  
++
++   PASS  Tests\Feature\Laravel12CompatibilityTest
++  ✓ framework and filament plugins remain compatible                     0.04s  
++
++   PASS  Tests\Feature\LicenseEnforcementTest
++  ✓ exact domain wildcard and ip hosts are allowed                       0.36s  
++  ✓ missing token returns generic locked html without leaking configura… 0.05s  
++  ✓ json and major route groups are locked before application logic      0.05s  
++  ✓ health check remains available when license is invalid               0.05s  
++  ✓ forwarded host cannot spoof an unlicensed host                       0.05s  
++  ✓ license commands work while locked and business command stops        0.05s  
++  ✓ scheduler filter rejects business schedule when license is invalid   0.04s  
++  ✓ valid license allows business command and schedule                   0.04s  
++  ✓ status uses app url host for console validation                      0.04s  
++
++   WARN  Tests\Feature\LoanAccessAndHistoryTest
++  ✓ sarpras and manager visibility is consistent across resources dashb… 0.14s  
++  - database rejects deleting actors units or assets that have loan his… 0.04s  
++
++   PASS  Tests\Feature\LoanBookingLifecycleTest
++  ✓ active submitted hold blocks items rooms and vehicles                0.15s  
++  ✓ draft and elapsed submitted holds do not block availability          0.16s  
++  ✓ unavailable assets can remain in a draft but cannot be submitted     0.15s  
++  ✓ expiry releases all pending needs and marks the activity expired     0.17s  
++  ✓ expiry keeps approved needs and only releases pending needs          0.19s  
++  ✓ decision is rejected after the hold deadline                         0.16s  
++  ✓ expiry command processes elapsed holds                               0.20s  
++  ✓ item availability follows the complete status matrix                 0.21s  
++  ✓ open overdue usage blocks future item room and vehicle availability  0.18s  
++
++   PASS  Tests\Feature\LoanEventMasterTest
++  ✓ every request gets a master event and it outlives cancelled request… 1.40s  
++  ✓ full request can reference existing event and mixed assets keep sep… 0.88s  
++  ✓ cross unit master id is rejected even by direct service call         0.10s  
++  ✓ quick picker hides foreign events even if they are submitted or can… 3.44s  
++  ✓ master resource is scoped and existing requests still get master li… 1.81s  
++
++   PASS  Tests\Feature\LoanHandoverPdfTest
++  ✓ pdf download requires auth and specific reservation ownership        2.33s  
++  ✓ complete evidence displays real roles times condition and notes      0.39s  
++  ✓ incomplete and exception do not forge borrower confirmation          0.35s  
++  ✓ item instance and vehicle specific details are in document           0.09s  
++  ✓ only local safe images are inlined and notes are escaped             0.17s  
++  ✓ visible unit can find pdf action in familiar loan pages              0.35s  
++
++   PASS  Tests\Feature\LoanNotificationTest
++  ✓ submission creates actionable database notifications for requester…  0.09s  
++  ✓ requester is notified when aggregate loan status changes             0.09s  
++  ✓ cancellation notifies requester and clears the reviewers pending co… 0.08s  
++  ✓ submission queues device push for subscribed requester and reviewer  0.09s  
++
++   PASS  Tests\Feature\LoanRequestServiceTest
++  ✓ it creates one activity with multiple types of needs                 0.31s  
++  ✓ return request requires a checklist                                  0.15s  
++  ✓ failed item allocation rolls back the checkout                       0.16s  
++  ✓ bad return keeps allocated item instances out of service             0.33s  
++  ✓ a stale second decision cannot overwrite the first decision          0.12s  
++  ✓ it rejects an item quantity that is not available for an overlappin… 0.18s  
++  ✓ it rejects the same item twice in one request                        0.09s  
++
++   PASS  Tests\Feature\LoanReturnControlsTest
++  ✓ overdue reminder is sent to borrower and manager at most once per d… 0.12s  
++  ✓ item return records each instance and requires two party confirmati… 0.11s  
++  ✓ admin correction reopens return without deleting original history    0.09s  
++
++   PASS  Tests\Feature\LoanReviewServiceTest
++  ✓ it saves overall and returned asset reviews atomically               0.12s  
++  ✓ empty values remove only integrated reviews and leave checklist unt… 0.12s  
++  ✓ it updates existing reviews without creating duplicates              0.12s  
++  ✓ borrower can submit the integrated filament action                   1.09s  
++  ✓ review is available for mixed terminal statuses but not blocking st… 0.10s  
++  ✓ it rejects expired unauthorized invalid and tampered submissions     0.14s  
++
++   PASS  Tests\Feature\MassAssignmentHardeningTest
++  ✓ every persisted application model has an explicit attribute allowli… 0.05s  
++  ✓ untrusted assignment cannot forge reservation approval audit         0.03s  
++  ✓ untrusted payload cannot override workflow owner unit or status      0.07s  
++  ✓ audit status history cannot be edited or deleted                     0.03s  
++  ✓ master record identifier is not fillable                             0.03s  
++
++   PASS  Tests\Feature\ObserverBusinessFlowTest
++  ✓ item instance is the source of truth for stock totals                0.06s  
++  ✓ master quantity cannot be changed directly after creation            0.04s  
++  ✓ reservation created under a draft does not hold inventory            0.04s  
++  ✓ monthly generation does not mark a placeholder as inspected          0.04s  
++  ✓ first inspection is stamped once for both good and bad results       0.03s  
++  ✓ monthly checklist is unique per item instance                        0.04s  
++  ✓ assets with checklist history cannot be deleted                      0.03s  
++  ✓ submitted requests and reservations cannot be deleted                0.07s  
++
++   PASS  Tests\Feature\OperationalPriorityDashboardTest
++  ✓ unit sees all six real time operational states and overdue not hidd… 0.67s  
++  ✓ facility can filter unit but nonfacility cannot widen scope          0.51s  
++  ✓ missing second party checkout is visible even when approval is not   0.42s  
++  ✓ dashboard keeps actions and moves complete monitoring to summary     0.40s  
++  ✓ one submission with two assets is counted once in summary and twice… 0.21s  
++
++   PASS  Tests\Feature\OutboundHandoverV2Test
++  ✓ manager initial checklist does not checkout until different borrowe… 0.10s  
++  ✓ checkout confirmation is scoped and concurrent resubmission is reje… 0.12s  
++  ✓ fallback requires reason and records single party exception          0.11s  
++  ✓ initial item conditions are bound to exact allocated instances       0.08s  
++  ✓ outbound vehicle optional odometer and no status change until confi… 0.04s  
++  ✓ legacy direct checkout is annotated as unverified without forged bo… 0.09s  
++  ✓ production style guard blocks direct checkout but allows audited fa… 0.11s  
++  ✓ qr screen shows initial condition form and borrower acceptance       1.31s  
++
++   PASS  Tests\Feature\ProductionHardeningTest
++  ✓ demo accounts are opt in and production always disables them         0.14s  
++  ✓ reseeding never resets existing password role or identity            0.18s  
++  ✓ weak demo password is rejected                                       0.12s  
++  ✓ admin provisioning requires strong credentials and never resets exi… 0.12s  
++  ✓ unguarded models are disabled and record identifiers cannot be mass… 0.05s  
++  ✓ admin panel requires operational role or managed assets              0.18s  
++  ✓ production audit rejects debug http insecure cookies and open proxi… 0.17s  
++
++   PASS  Tests\Feature\ProductionReadinessSecurityTest
++  ✓ revoked candidate loses ticket and private pdf access                0.14s  
++  ✓ inactive job title revokes candidate visibility                      0.14s  
++  ✓ title candidate visibility preserves legacy ticket with null report… 0.12s  
++  ✓ disabled facility cannot assign legacy maintenance via service       0.12s  
++  ✓ disabled facility cannot cancel legacy maintenance via service       0.09s  
++  ✓ disabled reporter cannot verify completed work via service           0.13s  
++  ✓ assignment authority is checked inside ticket transaction            0.09s  
++  ✓ reporter with facility role cannot approve own legacy report         0.13s  
++  ✓ approval only user sees pending ticket on dashboard                  0.20s  
++  ✓ multi position hierarchy cannot hide a cycle on second assignment    0.14s  
++  ✓ default active assignment cannot reference disabled user             0.05s  
++  ✓ reporter holding required title and multiple roles cannot decide ow… 0.13s  
++  ✓ disabled approver cannot decide pending dynamic step                 0.13s  
++  ✓ all start steps must precede any final step                          0.05s  
++
++   PASS  Tests\Feature\PublicLoanScheduleTest
++  ✓ public page only shows approved or checked out current and upcoming… 0.65s  
++
++   PASS  Tests\Feature\PublicRoomScheduleTest
++  ✓ room qr code is generated automatically with a public schedule url   0.21s  
++  ✓ public room page shows current status and only confirmed current or… 0.18s  
++  ✓ room qr code can be downloaded as an a4 pdf                          0.49s  
++
++   PASS  Tests\Feature\PushSubscriptionTest
++  ✓ subscription endpoints require authentication                        0.09s  
++  ✓ user can register multiple devices and update an existing endpoint   0.10s  
++  ✓ endpoint moves to the current user and unsubscribe only removes own… 0.08s  
++  ✓ subscription payload is validated                                    0.06s  
++
++   PASS  Tests\Feature\PwaAssetsTest
++  ✓ manifest defines installable application scope and icons             0.07s  
++  ✓ service worker handles push without caching pages                    0.06s  
++
++   PASS  Tests\Feature\QrHandoverFlowTest
++  ✓ signed qr opens exact reservation for authorized manager and borrow… 0.23s  
++  ✓ tampered or expired qr is rejected                                   0.19s  
++  ✓ qr checkout then borrower return then manager confirmation           2.87s  
++  ✓ manager records physical return and borrower confirms from qr        1.46s  
++  ✓ unrelated user cannot mutate checkout or return by changing query    0.37s  
++  ✓ unit list exposes qr action for authorized reservations              0.29s  
++
++   PASS  Tests\Feature\QuickActionsWidgetTest
++  ✓ manager queue only contains actionable assets from assigned managem… 0.23s  
++  ✓ sarpras queue is scoped to own unit and counterparty confirmation    0.28s  
++  ✓ widget actions validate and transition reservations                  0.99s  
++  ✓ dashboard renders empty queue for operational role regardless of fi… 0.37s  
++  ✓ widget completes checkout and two party return flow                  2.52s  
++  ✓ widget prefills item instances and supports manager initiated retur… 1.09s  
++
++   PASS  Tests\Feature\QuickLoanRequestTest
++  ✓ borrower sees quick request as primary dashboard action and full fo… 0.75s  
++  ✓ one item can be requested with only one purpose and asset selection  0.47s  
++  ✓ vehicle request uses same workflow without driver or assistant inpu… 0.51s  
++  ✓ room request is available without compromising single need flow      0.51s  
++  ✓ unavailable asset cannot be reserved twice                           2.50s  
++  ✓ untrusted form state cannot assign a different user unit or status   0.69s  
++  ✓ quick request blocks unauthorized accounts and invalid time          0.58s  
++
++   PASS  Tests\Feature\ReservationFilterTabsTest
++  ✓ all reservation lists have the same status filter tabs               0.06s  
++
++   PASS  Tests\Feature\RoleAndUnitAccessTest
++  ✓ seeders create expected units roles and accounts                     0.15s  
++  ✓ sarpras policy is scoped to unit and locks approved activity         0.07s  
++  ✓ facility can access and manage all reservation types                 0.12s  
++  ✓ facility can decide reservation without asset manager assignment     0.09s  
++  ✓ facility approval action advances the reservation                    0.37s  
++  ✓ assigned manager can record a direct return from activity relation…  1.06s  
++  ✓ manager status changes record actor and full history                 0.09s  
++
++   PASS  Tests\Feature\RoleDashboardTest
++  ✓ sarpras dashboard starts with daily actions and has no technical or… 0.72s  
++  ✓ facility and administrator keep operational access and secondary to… 1.59s  
++  ✓ technician dashboard contains only own work and cannot open loan to… 0.58s  
++  ✓ asset manager keeps managed work without gaining loan creation       0.79s  
++  ✓ combined sarpras and technician keeps both workflows                 0.45s  
++  ✓ ticket widget preserves reporter visibility and never leaks other r… 0.33s  
++  ✓ technician work queue is assigned to self even for a team lead       0.19s  
++  ✓ navigation groups are native collapsible and all old urls are regis… 0.43s  
++  ✓ technician links open the exact ticket and preserve existing work g… 3.93s  
++  ✓ administrative access alone does not offer technician work           3.48s  
++  ✓ completed or foreign work does not make technician shortcut relevan… 1.04s  
++  ✓ ticket unit filter is local and cannot expand nonfacility scope      1.63s  
++  ✓ work action is hidden after assignment or qualification changes      1.47s  
++
++   PASS  Tests\Feature\TicketMaintenanceV3Test
++  ✓ full maintenance signoffs and safety release                         0.20s  
++  ✓ temporary repair cannot release asset and role boundaries apply      0.17s  
++  ✓ protected pdf marks incomplete and does not leak to other users      1.04s  
++  ✓ sla business calendar and escalations are idempotent                 0.16s  
++  ✓ single item safety hold reduces available stock without disabling o… 0.16s  
++  ✓ batched picker limits safety queries and preserves option order      0.14s  
++  ✓ safety batch preserves room and instance blocking                    0.16s  
++  ✓ legacy ticket can continue v1 flow without v3 signoffs               0.12s  
++
++   PASS  Tests\Feature\TicketReportingUxTest
++  ✓ short report without inventory uses auto title and preserves report… 0.44s  
++  ✓ search is server side scoped and finds assets after old 250 limit    0.11s  
++  ✓ room lookup searches only existing name column and preserves unit s… 0.21s  
++  ✓ code and license plate search still work for supported asset types   0.10s  
++  ✓ manager can link unidentified asset with audit and access guards     0.11s  
++  ✓ existing room qr offers scoped reporting entry                       0.13s  
++  ✓ item qr scans open prefilled report only for authorized users        0.17s  
++
++   PASS  Tests\Feature\TicketTeamHierarchyTest
++  ✓ field hierarchy delegates to descendants without granting approval…  0.91s  
++  ✓ cycles foreign supervisors and unassigned technicians are rejected   0.33s  
++  ✓ disabling field member removes delegation but does not change old t… 0.13s  
++  ✓ field workspace is scoped to the assignee and can start task withou… 0.77s  
++  ✓ disabled technician cannot accept or continue existing task          0.14s  
++  ✓ team hierarchy cannot orphan active subordinates                     0.10s  
++  ✓ general field teams cannot cross unit scope when tickets have no as… 0.10s  
++
++   PASS  Tests\Feature\TicketingCoreTest
++  ✓ ticket created with asset assignment scope and immutable audit       0.22s  
++  ✓ no cross unit asset forgery or non activated category                0.19s  
++  ✓ ticket workflow assignment and internal notes are guarded            0.31s  
++  ✓ private attachments require ticket permissions                       0.28s  
++  ✓ damaged room return opens one ticket without modifying loan status   0.28s  
++  ✓ filament ticket resource is visible to authorized user and scopes t… 1.89s  
++  ✓ comment images render through authorized native filament entries     1.38s  
++  ✓ attachment validation rejects spoofed content and unsafe file paths  0.21s  
++  ✓ private pdf can preview inline but internal comments remain hidden   1.29s  
++
++   PASS  Tests\Feature\UnitLoanPageTest
++  ✓ sarpras can open the unified request page and only see its unit loa… 1.09s  
++  ✓ unit user can submit the unified form                                1.17s  
++  ✓ request page rejects an end time before the start time               0.74s  
++  ✓ draft owner can reopen complete form and see stale asset availabili… 0.64s  
++  ✓ unified loan page shows return actions for the correct role          1.92s  
++
++   PASS  Tests\Feature\UsageReportPageTest
++  ✓ facility can view and filter the usage report                        1.37s  
++  ✓ sarpras report is scoped to its own unit                             0.32s  
++  ✓ user without an authorized role cannot open the report               0.07s  
++
++   PASS  Tests\Feature\VehicleCrewWorkflowTest
++  ✓ bus can be requested without staff but needs driver and assistant t… 0.13s  
++  ✓ overlapping vehicles cannot assign same driver                       0.13s  
++  ✓ mid trip reassignment keeps history and master default               0.15s  
++  ✓ draft rechecks vehicle availability before creating its hold         0.09s  
++
++   PASS  Tests\Feature\WorkOrderConfigurationTest
++  ✓ published configuration is immutable and requires admin              0.11s  
++  ✓ supervisor cannot be own supervisor                                  0.06s  
++  ✓ publishing requires an active approver assignment                    0.10s  
++  ✓ indirect supervisor cycle is rejected                                0.06s  
++  ✓ invalid or duplicate workflow steps are rejected                     0.06s  
++
++   PASS  Tests\Feature\WorkOrderEstimateTest
++  ✓ budget approval binds exact immutable vendor quote before assignmen… 0.16s  
++  ✓ estimate cannot self approve and reject resubmit does not reuse pri… 0.14s  
++  ✓ estimate validates amount vendor scope and fresh actor               0.15s  
++  ✓ changed quote requires explicit new version and cannot be approved…  0.18s  
++  ✓ native filament estimate action records the explicit amount          4.88s  
++
++   PASS  Tests\Feature\WorkOrderReadinessTest
++  ✓ configured ytb backend sequence completes for all six units with m… 10.35s  
++  ✓ explicit dispatch title enables assetless central work without faci… 0.78s  
++  ✓ dispatch title scope revocation and inactive team remain fail close… 0.75s  
++  ✓ assetless report does not grant central technician cross unit autho… 0.68s  
++  ✓ rejection is fail closed and duplicate decision is not replayed      0.53s  
++  ✓ administrator can manage titles assignments and publish using filam… 2.03s  
++  ✓ job title named administrator does not grant system administration   0.70s  
++  ✓ new published workflow does not rewrite existing ticket snapshot     0.73s  
++  ✓ missing supervisor is blocked until active assignment and audited r… 0.80s  
++  ✓ unit transfer revokes snapshot candidate and multi role cannot skip… 0.74s  
++
++   PASS  Tests\Feature\WorkOrderRevisionTest
++  ✓ rejected report resubmits on same ticket and preserves decisions an… 0.22s  
++  ✓ revision rejects foreign actor disabled stale identity and protecte… 0.15s  
++  ✓ superseded pending id and revoked candidates cannot decide or reass… 0.13s  
++  ✓ final rejection requires rework new reporter verification and fresh… 0.19s  
++  ✓ native filament revision action revalidates and submits corrected r… 5.66s  
++
++  Tests:    1 skipped, 268 passed (2116 assertions)
++  Duration: 120.06s
++
+diff --git a/docs/audit/evidence/2026-11-03-followup/upgrade.txt b/docs/audit/evidence/2026-11-03-followup/upgrade.txt
+new file mode 100644
+index 0000000..6de3f93
+--- /dev/null
++++ b/docs/audit/evidence/2026-11-03-followup/upgrade.txt
+@@ -0,0 +1,17 @@
++{
++    "mysql": "8.0.46-0ubuntu0.24.04.3",
++    "legacy_migrations": 64,
++    "upgrade": "PASS",
++    "existing_rows_password_roles_history": "unchanged",
++    "legacy_approval_rows": 0,
++    "existing_rejected_approval_preserved_as_revision_one": true,
++    "seed_twice": {
++        "users": 24,
++        "work_order_job_titles": 12,
++        "work_order_assignments": 23,
++        "work_order_workflows": 2,
++        "ticket_team_members": 2
++    },
++    "automatic_publish": false,
++    "production_demo_guard": "PASS"
++}
+diff --git a/tests/Feature/WorkOrderEstimateTest.php b/tests/Feature/WorkOrderEstimateTest.php
+new file mode 100644
+index 0000000..be381a2
+--- /dev/null
++++ b/tests/Feature/WorkOrderEstimateTest.php
+@@ -0,0 +1,167 @@
++<?php
++
++namespace Tests\Feature;
++
++use App\Models\G001M001Unit;
++use App\Models\TicketCategory;
++use App\Models\User;
++use App\Models\WorkOrderAssignment;
++use App\Models\WorkOrderJobTitle;
++use App\Models\WorkOrderWorkflow;
++use App\Services\TicketMaintenanceService;
++use App\Services\TicketService;
++use App\Services\WorkOrderEstimateService;
++use App\Filament\Resources\TicketResource\Pages\ViewTicket;
++use Filament\Facades\Filament;
++use Livewire\Livewire;
++use App\Services\WorkOrderWorkflowService;
++use Database\Seeders\RoleSeeder;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Illuminate\Validation\ValidationException;
++use Tests\TestCase;
++
++class WorkOrderEstimateTest extends TestCase
++{
++    use RefreshDatabase;
++
++    private function setupFlow(): array
++    {
++        $this->seed(RoleSeeder::class);
++        $unit = G001M001Unit::query()->create(['name' => 'SMA Simulasi WO']);
++        $reporter = User::factory()->create(['g001_m001_unit_id' => $unit->id]);
++        $reporter->assignRole(config('role.sarpras'));
++        $supervisor = User::factory()->create(['g001_m001_unit_id' => $unit->id]);
++        $manager = User::factory()->create();
++        $manager->assignRole(config('role.fasilitas'));
++        $technician = User::factory()->create();
++        $technician->assignRole(config('role.fasilitas'));
++        $other = User::factory()->create();
++
++        $headTitle = WorkOrderJobTitle::query()->create(['name' => 'Kepala Sarpras']);
++        $managerTitle = WorkOrderJobTitle::query()->create(['name' => 'Manager Fasilitas']);
++        WorkOrderAssignment::query()->create([
++            'user_id' => $reporter->id, 'work_order_job_title_id' => $headTitle->id,
++            'g001_m001_unit_id' => $unit->id, 'supervisor_user_id' => $supervisor->id,
++        ]);
++        $assignment = WorkOrderAssignment::query()->create([
++            'user_id' => $manager->id, 'work_order_job_title_id' => $managerTitle->id,
++            'g001_m001_unit_id' => $unit->id,
++        ]);
++        $workflow = WorkOrderWorkflow::query()->create([
++            'g001_m001_unit_id' => $unit->id, 'version' => 1,
++            'status' => 'published', 'published_at' => now(), 'created_by' => $manager->id,
++            'assign_job_title_id' => $managerTitle->id,
++            'close_job_title_id' => $managerTitle->id,
++            'steps' => [
++                ['key' => 'supervisor', 'label' => 'Diketahui Atasan', 'checkpoint' => 'start',
++                    'resolver' => 'reporter_supervisor', 'requires_estimate' => true],
++                ['key' => 'manager', 'label' => 'Pengesahan Manager', 'checkpoint' => 'final',
++                    'resolver' => 'job_title', 'job_title_id' => $managerTitle->id],
++            ],
++        ]);
++        $ticket = app(TicketService::class)->open($reporter, [
++            'ticket_category_id' => TicketCategory::query()->where('slug', 'maintenance_hvac')->firstOrFail()->id,
++            'title' => 'Perbaikan fasilitas ruang sekolah',
++            'description' => 'Plafon ruangan rusak dan perlu ditinjau oleh petugas.',
++            'location' => 'Gedung SMA Ruang 101',
++        ]);
++        return compact('unit', 'reporter', 'supervisor', 'manager', 'technician', 'other',
++            'assignment', 'ticket', 'workflow');
++    }
++
++
++
++    private function quote(string $amount = '2500000'): array
++    {
++        return ['execution_mode' => 'external', 'vendor_name' => 'Vendor QA <script>test</script>',
++            'diagnosis' => 'Penggantian komponen oleh vendor', 'amount' => $amount,
++            'materials' => [['name' => 'Panel', 'quantity' => 2, 'unit' => 'pcs']]];
++    }
++
++    private function deny(callable $callback): void
++    {
++        try { $callback(); $this->fail('Invalid estimate operation accepted'); }
++        catch (ValidationException $exception) { $this->assertNotEmpty($exception->errors()); }
++    }
++
++    public function test_budget_approval_binds_exact_immutable_vendor_quote_before_assignment(): void
++    {
++        $d = $this->setupFlow(); $s = app(WorkOrderEstimateService::class); $w = app(WorkOrderWorkflowService::class);
++        $first = $w->next($d['ticket'], 'start');
++        $this->deny(fn () => $w->decide($first, $d['supervisor'], true, 'Tidak ada estimasi.'));
++        $s->record($d['ticket'], $d['manager'], $this->quote(), 0);
++        $estimate = $s->current($d['ticket']);
++        $this->assertSame('2500000', $estimate->amount);
++        $this->deny(fn () => $s->record($d['ticket'], $d['manager'], $this->quote('5000000'), 0));
++        $w->decide($first, $d['supervisor'], true, 'Vendor dan Rp 2.500.000 disetujui.', $estimate->id);
++        $this->assertSame($estimate->id, $first->fresh()->estimate_id);
++        $this->deny(fn () => $s->record($d['ticket'], $d['manager'], $this->quote('5000000'), 1));
++        $this->deny(fn () => $estimate->update(['amount' => '1']));
++        app(TicketMaintenanceService::class)->approve($d['ticket'], $d['manager'], $d['technician']->id);
++        $html = view('pdf.tickets.maintenance', ['ticket' => $d['ticket']->fresh()])->render();
++        $this->assertStringContainsString('Rp 2.500.000', $html);
++        $this->assertStringContainsString('Estimasi #'.$estimate->id, $html);
++        $this->assertStringNotContainsString('<script>test</script>', $html);
++        $this->assertStringContainsString('&lt;script&gt;test&lt;/script&gt;', $html);
++    }
++
++    public function test_estimate_cannot_self_approve_and_reject_resubmit_does_not_reuse_prior_quote(): void
++    {
++        $d = $this->setupFlow(); $s = app(WorkOrderEstimateService::class); $w = app(WorkOrderWorkflowService::class);
++        $d['supervisor']->assignRole(config('role.fasilitas'));
++        $s->record($d['ticket'], $d['supervisor'], $this->quote(), 0);
++        $first = $w->next($d['ticket'], 'start');
++        $this->deny(fn () => $w->decide($first, $d['supervisor'], true, 'Pencatat menyetujui sendiri.', $s->current($d['ticket'])->id));
++        $w->decide($first, $d['supervisor'], false, 'Perbaiki laporan dan estimasi awal.');
++        app(\App\Services\WorkOrderRevisionService::class)->resubmit($d['ticket'], $d['reporter'], $first->id,
++            'Detail kerusakan sudah diperbaiki.', array_merge($d['ticket']->only(['title', 'location', 'reported_urgency']), [
++                'description' => 'Komponen rusak diperjelas pada lokasi plafon lantai dua.',
++            ]));
++        $this->assertNull($s->current($d['ticket']));
++        $next = $w->next($d['ticket'], 'start');
++        $this->deny(fn () => $w->decide($next, $d['supervisor'], true, 'Mencoba memakai estimasi lama.'));
++        $s->record($d['ticket'], $d['manager'], $this->quote('2000000'), 1);
++        $w->decide($next, $d['supervisor'], true, 'Estimasi baru disetujui.', $s->current($d['ticket'])->id);
++        $this->assertSame(2, $d['ticket']->workOrderEstimates()->count());
++        $this->assertSame($s->current($d['ticket'])->id, $next->fresh()->estimate_id);
++    }
++
++    public function test_estimate_validates_amount_vendor_scope_and_fresh_actor(): void
++    {
++        $d = $this->setupFlow(); $s = app(WorkOrderEstimateService::class);
++        foreach (['-1', '2.50', '1e4', '1000000000000', '10,000'] as $amount) {
++            $this->deny(fn () => $s->record($d['ticket'], $d['manager'], $this->quote($amount), 0));
++        }
++        $this->deny(fn () => $s->record($d['ticket'], $d['manager'], array_merge($this->quote(), ['vendor_name' => '']), 0));
++        foreach ([$d['reporter'], $d['other'], $d['supervisor']] as $actor) {
++            $this->deny(fn () => $s->record($d['ticket'], $actor, $this->quote(), 0));
++        }
++        User::whereKey($d['manager']->id)->update(['is_enabled' => false]);
++        $this->deny(fn () => $s->record($d['ticket'], $d['manager'], $this->quote(), 0));
++        $this->assertSame(0, $d['ticket']->workOrderEstimates()->count());
++    }
++
++
++    public function test_changed_quote_requires_explicit_new_version_and_cannot_be_approved_from_stale_modal(): void
++    {
++        $d = $this->setupFlow(); $s = app(WorkOrderEstimateService::class); $w = app(WorkOrderWorkflowService::class);
++        $s->record($d['ticket'], $d['manager'], $this->quote(), 0);
++        $old = $s->current($d['ticket']);
++        $s->record($d['ticket'], $d['manager'], $this->quote('5000000'), 1);
++        $step = $w->next($d['ticket'], 'start');
++        $this->deny(fn () => $w->decide($step, $d['supervisor'], true, 'Menyetujui modal lama.', $old->id));
++        $this->assertSame('pending', $step->fresh()->status);
++        $w->decide($step, $d['supervisor'], true, 'Menyetujui Rp 5.000.000.', $s->current($d['ticket'])->id);
++        $this->assertNotSame($old->id, $step->fresh()->estimate_id);
++    }
++
++    public function test_native_filament_estimate_action_records_the_explicit_amount(): void
++    {
++        $d = $this->setupFlow();
++        Filament::setCurrentPanel(Filament::getPanel('admin')); $this->actingAs($d['manager']);
++        Livewire::test(ViewTicket::class, ['record' => $d['ticket']->id])
++            ->assertActionVisible('recordWorkOrderEstimate')
++            ->callAction('recordWorkOrderEstimate', $this->quote() + ['expected_version' => 0])->assertHasNoActionErrors();
++        $this->assertSame('2500000', app(WorkOrderEstimateService::class)->current($d['ticket'])->amount);
++    }
++}
+diff --git a/tests/Feature/WorkOrderRevisionTest.php b/tests/Feature/WorkOrderRevisionTest.php
+new file mode 100644
+index 0000000..69b3e96
+--- /dev/null
++++ b/tests/Feature/WorkOrderRevisionTest.php
+@@ -0,0 +1,210 @@
++<?php
++
++namespace Tests\Feature;
++
++use App\Models\G001M001Unit;
++use App\Models\TicketCategory;
++use App\Models\User;
++use App\Models\WorkOrderAssignment;
++use App\Models\WorkOrderJobTitle;
++use App\Models\WorkOrderWorkflow;
++use App\Services\TicketMaintenanceService;
++use App\Services\TicketService;
++use App\Services\WorkOrderRevisionService;
++use App\Filament\Resources\TicketResource\Pages\ViewTicket;
++use Filament\Facades\Filament;
++use Livewire\Livewire;
++use App\Services\WorkOrderWorkflowService;
++use Database\Seeders\RoleSeeder;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Illuminate\Validation\ValidationException;
++use Tests\TestCase;
++
++class WorkOrderRevisionTest extends TestCase
++{
++    use RefreshDatabase;
++
++    private function setupFlow(): array
++    {
++        $this->seed(RoleSeeder::class);
++        $unit = G001M001Unit::query()->create(['name' => 'SMA Simulasi WO']);
++        $reporter = User::factory()->create(['g001_m001_unit_id' => $unit->id]);
++        $reporter->assignRole(config('role.sarpras'));
++        $supervisor = User::factory()->create(['g001_m001_unit_id' => $unit->id]);
++        $manager = User::factory()->create();
++        $manager->assignRole(config('role.fasilitas'));
++        $technician = User::factory()->create();
++        $technician->assignRole(config('role.fasilitas'));
++        $other = User::factory()->create();
++
++        $headTitle = WorkOrderJobTitle::query()->create(['name' => 'Kepala Sarpras']);
++        $managerTitle = WorkOrderJobTitle::query()->create(['name' => 'Manager Fasilitas']);
++        WorkOrderAssignment::query()->create([
++            'user_id' => $reporter->id, 'work_order_job_title_id' => $headTitle->id,
++            'g001_m001_unit_id' => $unit->id, 'supervisor_user_id' => $supervisor->id,
++        ]);
++        $assignment = WorkOrderAssignment::query()->create([
++            'user_id' => $manager->id, 'work_order_job_title_id' => $managerTitle->id,
++            'g001_m001_unit_id' => $unit->id,
++        ]);
++        $workflow = WorkOrderWorkflow::query()->create([
++            'g001_m001_unit_id' => $unit->id, 'version' => 1,
++            'status' => 'published', 'published_at' => now(), 'created_by' => $manager->id,
++            'assign_job_title_id' => $managerTitle->id,
++            'close_job_title_id' => $managerTitle->id,
++            'steps' => [
++                ['key' => 'supervisor', 'label' => 'Diketahui Atasan', 'checkpoint' => 'start',
++                    'resolver' => 'reporter_supervisor'],
++                ['key' => 'manager', 'label' => 'Pengesahan Manager', 'checkpoint' => 'final',
++                    'resolver' => 'job_title', 'job_title_id' => $managerTitle->id],
++            ],
++        ]);
++        $ticket = app(TicketService::class)->open($reporter, [
++            'ticket_category_id' => TicketCategory::query()->where('slug', 'maintenance_hvac')->firstOrFail()->id,
++            'title' => 'Perbaikan fasilitas ruang sekolah',
++            'description' => 'Plafon ruangan rusak dan perlu ditinjau oleh petugas.',
++            'location' => 'Gedung SMA Ruang 101',
++        ]);
++        return compact('unit', 'reporter', 'supervisor', 'manager', 'technician', 'other',
++            'assignment', 'ticket', 'workflow');
++    }
++
++
++    private function rejectStart(array $d): \App\Models\WorkOrderApproval
++    {
++        $step = $d['ticket']->workOrderApprovals()->where('checkpoint', 'start')->firstOrFail();
++        app(WorkOrderWorkflowService::class)->decide($step, $d['supervisor'], false, 'Lengkapi keterangan lokasi kerusakan.');
++        return $step->fresh();
++    }
++
++    private function corrected(array $d): array
++    {
++        return $d['ticket']->only(['title', 'description', 'location', 'reported_urgency'])
++            + []; // retain the original reporting context
++    }
++
++    private function resubmit(array $d, int $id): void
++    {
++        $report = $this->corrected($d);
++        $report['description'] = 'Panel plafon lantai dua rusak, terdapat dua sambungan longgar.';
++        app(WorkOrderRevisionService::class)->resubmit($d['ticket'], $d['reporter'], $id,
++            'Lokasi dan kondisi kerusakan sudah dilengkapi.', $report);
++    }
++
++    private function deny(callable $action): void
++    {
++        try { $action(); $this->fail('Unauthorized or stale mutation accepted'); }
++        catch (ValidationException $exception) { $this->assertNotEmpty($exception->errors()); }
++    }
++
++    private function finishAndVerify(array $d): void
++    {
++        $m = app(TicketMaintenanceService::class);
++        $m->finish($d['ticket'], $d['technician'], 'Panel plafon longgar', 'Sambungan diganti dan diuji', [], 'complete');
++        $m->verify($d['ticket'], $d['reporter'], true, 'Hasil sudah diperiksa.');
++    }
++
++    public function test_rejected_report_resubmits_on_same_ticket_and_preserves_decisions_and_workflow(): void
++    {
++        $d = $this->setupFlow(); $w = app(WorkOrderWorkflowService::class);
++        $old = $this->rejectStart($d);
++        $this->resubmit($d, $old->id);
++        $ticket = $d['ticket']->fresh();
++        $this->assertSame('open', $ticket->status);
++        $this->assertSame('rejected', $old->fresh()->status);
++        $this->assertNotNull($old->fresh()->superseded_at);
++        $this->assertSame('Lengkapi keterangan lokasi kerusakan.', $old->fresh()->notes);
++        $this->assertSame(4, $ticket->workOrderApprovalHistory()->count());
++        $this->assertSame(2, $ticket->workOrderApprovals()->count());
++        $this->assertSame(2, $ticket->workOrderApprovals()->min('revision'));
++        $revision = $ticket->workOrderRevisions()->firstOrFail();
++        $this->assertSame($d['ticket']->description, $revision->before['description']);
++        $this->assertSame($ticket->description, $revision->after['description']);
++        $this->assertSame($d['workflow']->id, $w->next($ticket, 'start')->work_order_workflow_id);
++        $this->deny(fn () => $w->decide($old, $d['supervisor'], true, 'Stale replay'));
++        $this->deny(fn () => $this->resubmit($d, $old->id));
++        $this->deny(fn () => app(TicketMaintenanceService::class)->approve($ticket, $d['manager'], $d['technician']->id));
++        $w->decide($w->next($ticket, 'start'), $d['supervisor'], true, 'Laporan revisi disetujui.');
++        $m = app(TicketMaintenanceService::class);
++        $m->approve($ticket, $d['manager'], $d['technician']->id);
++        $m->accept($ticket, $d['technician']);
++        $this->finishAndVerify($d);
++        $w->decide($w->next($ticket, 'final'), $d['manager'], true, 'Pengesahan akhir.');
++        $m->close($ticket, $d['manager'], true);
++        $this->assertSame('closed', $ticket->fresh()->status);
++        $this->assertSame(1, $ticket->events()->where('action', 'work_order_revision_submitted')->count());
++        $html = view('pdf.tickets.maintenance', ['ticket' => $ticket->fresh()])->render();
++        $this->assertStringContainsString('Revisi 1 · Arsip', $html);
++        $this->assertStringContainsString('Lengkapi keterangan lokasi kerusakan.', $html);
++        $this->assertStringContainsString('Pengiriman ulang revisi 2', $html);
++    }
++
++    public function test_revision_rejects_foreign_actor_disabled_stale_identity_and_protected_payload(): void
++    {
++        $d = $this->setupFlow(); $old = $this->rejectStart($d); $s = app(WorkOrderRevisionService::class);
++        $before = $d['ticket']->fresh()->toArray();
++        foreach ([$d['other'], $d['supervisor'], $d['manager'], $d['technician']] as $actor) {
++            $this->deny(fn () => $s->resubmit($d['ticket'], $actor, $old->id, 'Mencoba mengganti data.', $this->corrected($d)));
++        }
++        $this->deny(fn () => $s->resubmit($d['ticket'], $d['reporter'], $old->id, 'Mencoba mengganti data.', $this->corrected($d) + ['status' => 'closed']));
++        $this->deny(fn () => $s->resubmit($d['ticket'], $d['reporter'], $old->id, 'Tidak mengubah laporan.', $this->corrected($d)));
++        User::whereKey($d['reporter']->id)->update(['is_enabled' => false]);
++        $this->deny(fn () => $this->resubmit($d, $old->id));
++        $this->assertSame($before, $d['ticket']->fresh()->toArray());
++        $this->assertSame(0, $d['ticket']->workOrderRevisions()->count());
++    }
++
++    public function test_superseded_pending_id_and_revoked_candidates_cannot_decide_or_reassign(): void
++    {
++        $d = $this->setupFlow(); $oldFinal = $d['ticket']->workOrderApprovals()->where('checkpoint', 'final')->firstOrFail();
++        $rejected = $this->rejectStart($d); $this->resubmit($d, $rejected->id);
++        $w = app(WorkOrderWorkflowService::class);
++        $admin = User::factory()->create(); $admin->assignRole(config('role.admin'));
++        $this->deny(fn () => $w->reassign($oldFinal, $admin, $d['manager'], 'Tidak boleh mengubah tahap arsip.'));
++        $d['reporter']->workOrderAssignments()->firstOrFail()->update(['is_active' => false]);
++        $pending = $w->next($d['ticket'], 'start');
++        $this->deny(fn () => $w->decide($pending, $d['supervisor'], true, 'Tidak berwenang lagi.'));
++        $this->assertSame('pending', $pending->fresh()->status);
++    }
++
++    public function test_final_rejection_requires_rework_new_reporter_verification_and_fresh_signoff(): void
++    {
++        $d = $this->setupFlow(); $w = app(WorkOrderWorkflowService::class); $m = app(TicketMaintenanceService::class);
++        $w->decide($w->next($d['ticket'], 'start'), $d['supervisor'], true, 'Laporan sesuai.');
++        $m->approve($d['ticket'], $d['manager'], $d['technician']->id);
++        $m->accept($d['ticket'], $d['technician']); $this->finishAndVerify($d);
++        $old = $w->next($d['ticket'], 'final');
++        $w->decide($old, $d['manager'], false, 'Perbaiki sambungan sebelum disahkan.');
++        $s = app(WorkOrderRevisionService::class);
++        $this->deny(fn () => $s->resubmit($d['ticket'], $d['reporter'], $old->id, 'Pelapor mencoba melewati pengerjaan.'));
++        $s->resubmit($d['ticket'], $d['technician'], $old->id, 'Akan mengganti sambungan sesuai catatan manager.');
++        $ticket = $d['ticket']->fresh();
++        $this->assertSame('in_progress', $ticket->status);
++        $this->assertNull($ticket->maintenance->verified_at);
++        $this->assertNull($ticket->maintenance->work_finished_at);
++        $this->assertNull($ticket->maintenance->asset_released_at);
++        $this->assertSame(1, $ticket->workOrderApprovals()->where('checkpoint', 'start')->where('status', 'approved')->count());
++        $this->deny(fn () => $m->close($ticket, $d['manager'], true));
++        $this->deny(fn () => $w->decide($w->next($ticket, 'final'), $d['manager'], true, 'Belum diverifikasi ulang.'));
++        $this->finishAndVerify($d);
++        $w->decide($w->next($ticket, 'final'), $d['manager'], true, 'Revisi hasil sudah sesuai.');
++        $m->close($ticket, $d['manager'], true);
++        $this->assertSame('closed', $ticket->fresh()->status);
++        $this->assertSame('rejected', $old->fresh()->status);
++        $this->assertSame(1, $ticket->workOrderRevisions()->count());
++    }
++
++    public function test_native_filament_revision_action_revalidates_and_submits_corrected_report(): void
++    {
++        $d = $this->setupFlow(); $old = $this->rejectStart($d);
++        Filament::setCurrentPanel(Filament::getPanel('admin'));
++        $this->actingAs($d['reporter']);
++        Livewire::test(ViewTicket::class, ['record' => $d['ticket']->id])
++            ->assertActionVisible('reviseWorkOrder')
++            ->callAction('reviseWorkOrder', array_merge($this->corrected($d), [
++                'description' => 'Detail baru sesuai penolakan untuk diperiksa kembali.',
++                'rejection_id' => $old->id, 'reason' => 'Melengkapi data sesuai hasil pemeriksaan.',
++            ]))->assertHasNoActionErrors();
++        $this->assertSame(1, $d['ticket']->workOrderRevisions()->count());
++    }
++}

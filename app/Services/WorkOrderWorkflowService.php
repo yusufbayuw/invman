@@ -45,6 +45,12 @@ final class WorkOrderWorkflowService
             }
             $seen[$key] = true;
             $normalized[] = compact('key', 'label', 'checkpoint', 'resolver') + ['job_title_id' => $resolver === 'job_title' ? $titleId : null];
+            if (filter_var($step['requires_estimate'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                if ($checkpoint !== 'start') {
+                    throw ValidationException::withMessages(['steps' => 'Persetujuan estimasi harus sebelum penugasan.']);
+                }
+                $normalized[array_key_last($normalized)]['requires_estimate'] = true;
+            }
         }
         $finalSeen = false;
         foreach ($normalized as $step) {
@@ -90,7 +96,7 @@ final class WorkOrderWorkflowService
             // Do not activate a role-based workflow with no active person to approve.
             $titleIds = array_values(array_filter(array_unique(array_merge(
                 array_column($steps, 'job_title_id'),
-                [$locked->assign_job_title_id, $locked->close_job_title_id],
+                [$locked->assign_job_title_id, $locked->close_job_title_id, $locked->dispatch_job_title_id],
             ))));
             foreach ($titleIds as $titleId) {
                 if (! WorkOrderAssignment::query()->where('work_order_job_title_id', $titleId)
@@ -105,7 +111,7 @@ final class WorkOrderWorkflowService
                     throw ValidationException::withMessages(['steps' => 'Jabatan approver belum memiliki pegawai aktif sesuai cakupan workflow.']);
                 }
             }
-            foreach (['assign_job_title_id', 'close_job_title_id'] as $field) {
+            foreach (['assign_job_title_id', 'close_job_title_id', 'dispatch_job_title_id'] as $field) {
                 if ($locked->{$field} && ! DB::table('work_order_job_titles')->where('id', $locked->{$field})->where('is_active', true)->exists()) {
                     throw ValidationException::withMessages([$field => 'Jabatan yang tidak aktif tidak dapat dipakai.']);
                 }
@@ -175,7 +181,7 @@ final class WorkOrderWorkflowService
 
     public function canDecide(WorkOrderApproval $approval, User $user): bool
     {
-        if (! $user->is_enabled || $approval->status !== 'pending') {
+        if (! $user->is_enabled || $approval->status !== 'pending' || $approval->superseded_at) {
             return false;
         }
         if ($approval->checkpoint === 'start' && $approval->ticket->status !== 'open') {
@@ -197,10 +203,14 @@ final class WorkOrderWorkflowService
             && $this->currentlyEligible($approval, $user);
     }
 
-    public function decide(WorkOrderApproval $approval, User $user, bool $approved, ?string $notes): void
+    public function decide(WorkOrderApproval $approval, User $user, bool $approved, ?string $notes, ?int $expectedEstimateId = null): void
     {
-        DB::transaction(function () use ($approval, $user, $approved, $notes): void {
+        if (mb_strlen((string) $notes) > 2000) {
+            throw ValidationException::withMessages(['notes' => 'Catatan maksimal 2.000 karakter.']);
+        }
+        DB::transaction(function () use ($approval, $user, $approved, $notes, $expectedEstimateId): void {
             $ticket = Ticket::query()->lockForUpdate()->findOrFail($approval->ticket_id);
+            $user = User::query()->findOrFail($user->id);
             $locked = WorkOrderApproval::query()->lockForUpdate()->findOrFail($approval->id);
             $locked->setRelation('ticket', $ticket);
             if (! $this->canDecide($locked, $user)) {
@@ -209,11 +219,21 @@ final class WorkOrderWorkflowService
             if (! $approved && mb_strlen(trim((string) $notes)) < 5) {
                 throw ValidationException::withMessages(['notes' => 'Alasan penolakan minimal lima karakter.']);
             }
+            $estimateId = null;
+            $estimates = app(WorkOrderEstimateService::class);
+            if ($approved && $estimates->requiresEstimate($locked)) {
+                $estimate = $estimates->current($ticket);
+                if (! $estimate || $estimate->recorded_by === $user->id || $estimate->id !== $expectedEstimateId) {
+                    throw ValidationException::withMessages(['estimate' => 'Periksa versi estimasi terbaru; pencatat dan penyetuju harus berbeda.']);
+                }
+                $estimateId = $estimate->id;
+            }
             $locked->forceFill([
                 'status' => $approved ? 'approved' : 'rejected',
                 'decided_by' => $user->id,
                 'decided_at' => now(),
                 'notes' => $notes,
+                'estimate_id' => $estimateId,
             ])->save();
             $ticket->events()->create([
                 'actor_id' => $user->id,
@@ -240,7 +260,7 @@ final class WorkOrderWorkflowService
         if (! $user->is_enabled) {
             return $query->whereRaw('1=0');
         }
-        return $query->where('status', 'pending')
+        return $query->whereNull('superseded_at')->where('status', 'pending')
             ->whereJsonContains('candidate_user_ids', (int) $user->id)
             ->whereHas('ticket', fn (Builder $tickets) => $tickets->where(fn (Builder $reporter) =>
                 $reporter->whereNull('reporter_id')->orWhere('reporter_id', '!=', $user->id)))
@@ -325,8 +345,11 @@ final class WorkOrderWorkflowService
         }
         DB::transaction(function () use ($approval, $admin, $replacement, $reason): void {
             $ticket = Ticket::query()->lockForUpdate()->findOrFail($approval->ticket_id);
+            $admin = User::query()->findOrFail($admin->id);
+            $replacement = User::query()->findOrFail($replacement->id);
+            abort_unless($admin->is_enabled && $admin->isAdmin(), 403);
             $locked = WorkOrderApproval::query()->lockForUpdate()->findOrFail($approval->id);
-            if ($locked->status !== 'pending' || ! $replacement->is_enabled
+            if ($locked->status !== 'pending' || $locked->superseded_at || ! $replacement->is_enabled
                 || $replacement->id === $ticket->reporter_id) {
                 throw ValidationException::withMessages(['approval' => 'Hanya approval tertunda dapat dialihkan kepada pegawai aktif selain pelapor.']);
             }
@@ -357,6 +380,7 @@ final class WorkOrderWorkflowService
 
     public function canPerform(Ticket $ticket, User $user, string $action): bool
     {
+        $user = User::query()->findOrFail($user->id);
         if (! $user->is_enabled || (int) $user->id === (int) $ticket->reporter_id) {
             return false;
         }
@@ -370,5 +394,17 @@ final class WorkOrderWorkflowService
         }
         return $user->is_enabled && $user->id !== $ticket->reporter_id
             && $this->hasActiveTitle($ticket, $user, (int) $titleId);
+    }
+
+    public function canDispatchAcrossUnits(Ticket $ticket, User $technician): bool
+    {
+        if (! $technician->is_enabled || $technician->id === $ticket->reporter_id
+            || $ticket->g002_m003_item_management_id || $ticket->assets()->exists()) {
+            return false;
+        }
+        // Authority comes from the ticket's immutable version, never the latest configuration.
+        $workflow = $ticket->workOrderApprovals()->with('workflow')->first()?->workflow;
+        return $workflow?->dispatch_job_title_id
+            && $this->hasActiveTitle($ticket, $technician, (int) $workflow->dispatch_job_title_id);
     }
 }

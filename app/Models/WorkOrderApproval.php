@@ -11,13 +11,15 @@ class WorkOrderApproval extends Model
     protected $fillable = [
         'ticket_id', 'work_order_workflow_id', 'step_key', 'label', 'checkpoint',
         'resolver', 'job_title_id', 'target_user_id', 'candidate_user_ids',
-        'sequence', 'status', 'decided_by', 'decided_at', 'notes',
+        'sequence', 'status', 'decided_by', 'decided_at', 'notes', 'revision', 'superseded_at', 'estimate_id',
     ];
 
     protected $casts = [
         'candidate_user_ids' => 'array',
         'decided_at' => 'datetime',
         'sequence' => 'integer',
+        'revision' => 'integer',
+        'superseded_at' => 'datetime',
     ];
 
     public function ticket(): BelongsTo { return $this->belongsTo(Ticket::class); }
@@ -26,6 +28,13 @@ class WorkOrderApproval extends Model
 
     protected static function booted(): void
     {
+        static::updating(function (self $approval): void {
+            $allowed = $approval->getOriginal('superseded_at') ? ['updated_at'] : ['superseded_at', 'updated_at'];
+            if (($approval->getOriginal('status') !== 'pending' || $approval->getOriginal('superseded_at'))
+                && array_diff(array_keys($approval->getDirty()), $allowed)) {
+                throw ValidationException::withMessages(['approval' => 'Keputusan terdahulu tidak dapat ditimpa. Buat revisi yang sah.']);
+            }
+        });
         static::deleting(fn (): never => throw ValidationException::withMessages([
             'approval' => 'Langkah approval dan audit tidak dapat dihapus.',
         ]));

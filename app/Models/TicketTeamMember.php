@@ -138,7 +138,8 @@ class TicketTeamMember extends Model
 
     public static function qualifiesFor(Ticket $ticket, User $technician): bool
     {
-        if (! $technician->is_enabled || (int) $ticket->reporter_id === (int) $technician->id) {
+        if (! User::query()->whereKey($technician->id)->where('is_enabled', true)->exists()
+            || (int) $ticket->reporter_id === (int) $technician->id) {
             return false;
         }
         // Existing asset managers and facility roles continue to work without
@@ -157,7 +158,8 @@ class TicketTeamMember extends Model
         // units merely because both records had no management identifier.
         if (! $ticket->g002_m003_item_management_id) {
             return ! $ticket->g001_m001_unit_id
-                || (int) $technician->g001_m001_unit_id === (int) $ticket->g001_m001_unit_id;
+                || (int) $technician->g001_m001_unit_id === (int) $ticket->g001_m001_unit_id
+                || app(\App\Services\WorkOrderWorkflowService::class)->canDispatchAcrossUnits($ticket, $technician);
         }
 
         return (int) $member->g002_m003_item_management_id

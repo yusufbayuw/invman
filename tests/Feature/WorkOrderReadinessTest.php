@@ -99,6 +99,45 @@ class WorkOrderReadinessTest extends TestCase
         }
     }
 
+
+    public function test_explicit_dispatch_title_enables_assetless_central_work_without_facility_role(): void
+    {
+        $d = $this->organization(); $w = app(WorkOrderWorkflowService::class); $m = app(TicketMaintenanceService::class);
+        $w->publish($d['workflow'], $d['admin']);
+        $reporter = User::where('username', 'sarpras.sma')->firstOrFail(); $ticket = $this->report($reporter, false);
+        $this->assertFalse($d['technician']->isFacility());
+        $this->assertTrue(\App\Models\TicketTeamMember::qualifiesFor($ticket, $d['technician']));
+        $head = $reporter->workOrderAssignments()->whereNotNull('supervisor_user_id')->firstOrFail()->supervisor;
+        foreach ([$head, $d['staff'], $d['supervisor']] as $actor) {
+            $w->decide($w->next($ticket, 'start'), $actor, true, 'Laporan diperiksa.');
+        }
+        $m->approve($ticket, $d['supervisor'], $d['technician']->id);
+        $m->accept($ticket, $d['technician']);
+        $m->finish($ticket, $d['technician'], 'Plafon rusak tanpa aset', 'Plafon diperbaiki dan diuji', [], 'complete');
+        $m->verify($ticket, $reporter, true);
+        $w->decide($w->next($ticket, 'final'), $d['manager'], true, 'Sesuai hasil pemeriksaan.');
+        $m->close($ticket, $d['manager'], true);
+        $this->assertSame('closed', $ticket->fresh()->status);
+    }
+
+    public function test_dispatch_title_scope_revocation_and_inactive_team_remain_fail_closed(): void
+    {
+        $d = $this->organization(); $w = app(WorkOrderWorkflowService::class);
+        $w->publish($d['workflow'], $d['admin']);
+        $reporter = User::where('username', 'sarpras.sma')->firstOrFail(); $ticket = $this->report($reporter, false);
+        $technician = $d['technician'];
+        $assignment = $technician->workOrderAssignments()->where('work_order_job_title_id', $d['workflow']->dispatch_job_title_id)->firstOrFail();
+        $assignment->update(['g001_m001_unit_id' => G001M001Unit::where('name', 'SD')->value('id')]);
+        $this->assertFalse(\App\Models\TicketTeamMember::qualifiesFor($ticket, $technician));
+        $assignment->update(['g001_m001_unit_id' => $reporter->g001_m001_unit_id]);
+        $this->assertTrue(\App\Models\TicketTeamMember::qualifiesFor($ticket, $technician));
+        $assignment->update(['is_active' => false]);
+        $this->assertFalse(\App\Models\TicketTeamMember::qualifiesFor($ticket, $technician));
+        $assignment->update(['is_active' => true]);
+        $technician->ticketTeamMember->update(['is_active' => false]);
+        $this->assertFalse(\App\Models\TicketTeamMember::qualifiesFor($ticket, $technician));
+    }
+
     public function test_assetless_report_does_not_grant_central_technician_cross_unit_authority(): void
     {
         $d = $this->organization();
