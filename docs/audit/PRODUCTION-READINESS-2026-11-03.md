@@ -31,6 +31,14 @@ Seluruh diff kedua PR diperiksa, termasuk perubahan Filament, model, service, mi
 
 SPMB digunakan sebagai pembanding konkret: draft/published immutable, normalisasi dan validasi konfigurasi, versi yang melekat pada transaksi, serta penguncian scope bersama. Tidak ada konfigurasi atau data SPMB yang disalin ke InvMan.
 
+### Remediasi dan CI yang sudah diverifikasi
+
+- [PR integrasi #33](https://github.com/yusufbayuw/invman/pull/33), draft/terbuka; [commit remediasi](https://github.com/yusufbayuw/invman/commit/439bfb593857f03a41c5b9a2faffa424ccb41f48).
+- [InvMan Quality Guard #139](https://github.com/yusufbayuw/invman/actions/runs/41569321046) **SUCCESS** pada commit `49023044d6e220fb5f0c01cf1ca7c00217107d25`: `php-tests` dan `mysql-regression` lulus. Log CI mengonfirmasi 256 SQLite + 1 skipped (2.009 assertions), 257 MySQL (2.017 assertions), kedua probe concurrency true, upgrade PASS, histori/kredensial tetap, dan production demo guard PASS. [Bukti CI](CI-RESULTS-2026-11-03.md).
+- Head asli [#31 CI #130](https://github.com/yusufbayuw/invman/actions/runs/41450095610) dan [#32 CI #138](https://github.com/yusufbayuw/invman/actions/runs/41559146599) juga SUCCESS. Temuan negatif tambahan audit menjelaskan mengapa CI lama tidak cukup untuk GO.
+- Penambahan bukti CI ke dokumen ini tidak mengubah kode yang diuji. Status check head dokumen terakhir ditautkan pada PR #33. **Keputusan tetap NO-GO** karena OPEN-01, UAT dan gate operasional.
+- Runtime cloud menjadi unavailable setelah bukti dan perbaikan tersimpan di GitHub. Penautan bukti CI diselesaikan melalui GitHub; tidak ada hasil browser tambahan yang diklaim setelah runtime berhenti.
+
 ### Matriks fitur dan dampak
 
 | Area | Existing `main` | #31 | #32 / integrasi | Risiko perubahan |
