@@ -151,6 +151,21 @@ class LoanRequestService
                 throw ValidationException::withMessages(['status' => 'Hanya draf milik unit Anda yang dapat diajukan.']);
             }
 
+            // A draft may sit in the browser/database past its intended start.
+            // Validate against the clock again under the activity lock, not
+            // only when the draft was originally created.
+            if (! $locked->start_time || $locked->start_time->lessThanOrEqualTo(now())) {
+                throw ValidationException::withMessages([
+                    'data.start_time' => 'Waktu mulai sudah lewat. Perbarui jadwal draf sebelum mengajukan.',
+                ]);
+            }
+
+            if (! $locked->end_time || ! $locked->end_time->greaterThan($locked->start_time)) {
+                throw ValidationException::withMessages([
+                    'data.end_time' => 'Waktu selesai harus setelah waktu mulai.',
+                ]);
+            }
+
             // Lock asset rows in a stable order across concurrent submissions.
             // Concurrent requests for any of the same assets now serialize.
             // Read child IDs without locking first: locking a draft reservation

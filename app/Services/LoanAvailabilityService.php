@@ -21,12 +21,6 @@ class LoanAvailabilityService
         }
 
         [$start, $end] = $period;
-        $reserved = G005M009ItemReservation::query()
-            ->selectRaw('g002_m007_item_id, COALESCE(SUM(quantity), 0) as reserved_quantity')
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
-            ->groupBy('g002_m007_item_id')
-            ->pluck('reserved_quantity', 'g002_m007_item_id');
-
         $options = [];
         $safety = app(TicketAssetSafetyService::class);
 
@@ -40,8 +34,9 @@ class LoanAvailabilityService
                 'item_instance as borrowable_instance_count' => fn (Builder $query) => $query->where('is_borrowable', true),
             ])
             ->orderBy('name')->orderBy('id')
-            ->chunk(200, function ($items) use (&$options, $reserved, $safety): void {
+            ->chunk(200, function ($items) use (&$options, $start, $end, $safety): void {
                 $ids = $items->modelKeys();
+                $reserved = $this->peakReservedItemQuantities($ids, $start, $end);
                 $blocked = array_fill_keys($safety->blockedAssetIds('item', $ids), true);
                 $blockedQuantities = $safety->blockedBorrowableItemQuantities($ids);
 
@@ -137,15 +132,103 @@ class LoanAvailabilityService
 
     public function reservedItemQuantity(int $itemId, Carbon $start, Carbon $end, bool $locking = false): int
     {
+        return (int) ($this->peakReservedItemQuantities([$itemId], $start, $end, $locking)[$itemId] ?? 0);
+    }
+
+    /**
+     * Peak simultaneous quantity in the requested half-open interval [start, end).
+     *
+     * Adding every reservation that touches a long interval is too restrictive:
+     * three projectors at 09-10 and three at 11-12 only need three units, not six.
+     * Every matching row is inspected in one batch; exits at the same timestamp
+     * cancel starts, so adjacent bookings never count as overlapping.
+     *
+     * Unreturned, overdue checkouts occupy stock for every future interval.
+     * An on-time checkout occupies it until its scheduled return, enabling
+     * a *future reservation* afterwards; physical checkout still requires
+     * actually available item instances at handover.
+     *
+     * Locking reads are mandatory for submitDraft() inside the transaction.
+     * They preserve current-read semantics of the parent activity subquery
+     * under MySQL REPEATABLE READ, preventing oversubscription.
+     *
+     * @param list<int> $itemIds
+     * @return array<int, int>
+     */
+    private function peakReservedItemQuantities(array $itemIds, Carbon $start, Carbon $end, bool $locking = false): array
+    {
+        if ($itemIds === [] || ! $end->greaterThan($start)) {
+            return [];
+        }
+
         $query = G005M009ItemReservation::query()
-            ->where('g002_m007_item_id', $itemId)
+            ->whereIn('g002_m007_item_id', $itemIds)
             ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end, $locking));
 
-        // Only transactional acceptance needs locking reads. UI queries retain
-        // the original database-side SUM for constant-memory reporting.
-        return $locking
-            ? (int) $query->lockForUpdate()->get(['quantity'])->sum('quantity')
-            : (int) $query->sum('quantity');
+        if ($locking) {
+            $query->lockForUpdate();
+        }
+
+        $now = now();
+        $permanent = [];
+        $events = [];
+        foreach ($query->get(['g002_m007_item_id', 'quantity', 'status', 'start_time', 'end_time']) as $reservation) {
+            $itemId = (int) $reservation->g002_m007_item_id;
+            $quantity = max(0, (int) $reservation->quantity);
+            if ($quantity === 0) {
+                continue;
+            }
+
+            $outstanding = in_array($reservation->status, [
+                ReservationStatus::CheckedOut->value,
+                ReservationStatus::ReturnRequested->value,
+            ], true);
+
+            // A late physical return cannot be promised for any future booking.
+            if ($outstanding && (! $reservation->end_time || $reservation->end_time->lessThanOrEqualTo($now))) {
+                $permanent[$itemId] = ($permanent[$itemId] ?? 0) + $quantity;
+
+                continue;
+            }
+
+            $windowStart = $reservation->start_time;
+            $windowEnd = $reservation->end_time;
+            if (! $windowStart || ! $windowEnd) {
+                continue;
+            }
+
+            // Early handover means the equipment is physically out already.
+            if ($outstanding && $windowStart->greaterThan($now)) {
+                $windowStart = $now;
+            }
+
+            $left = $windowStart->greaterThan($start) ? $windowStart : $start;
+            $right = $windowEnd->lessThan($end) ? $windowEnd : $end;
+            if (! $right->greaterThan($left)) {
+                continue;
+            }
+
+            $starts = $left->getTimestamp();
+            $ends = $right->getTimestamp();
+            $events[$itemId][$starts] = ($events[$itemId][$starts] ?? 0) + $quantity;
+            $events[$itemId][$ends] = ($events[$itemId][$ends] ?? 0) - $quantity;
+        }
+
+        $peaks = [];
+        foreach ($itemIds as $id) {
+            $timeline = $events[$id] ?? [];
+            ksort($timeline, SORT_NUMERIC);
+            $running = 0;
+            $peak = 0;
+            foreach ($timeline as $change) {
+                $running += $change;
+                $peak = max($peak, $running);
+            }
+
+            $peaks[$id] = ($permanent[$id] ?? 0) + $peak;
+        }
+
+        return $peaks;
     }
 
     public function availableItemQuantity(int|string|null $itemId, Carbon|string|null $startTime, Carbon|string|null $endTime, bool $locking = false): int
