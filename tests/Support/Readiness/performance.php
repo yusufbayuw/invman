@@ -61,6 +61,14 @@ if (($argv[1] ?? '') === 'worker') {
             case 'loan':$a = app(LoanRequestService::class)->submit($u, ['name' => 'QA parallel booking', 'description' => 'Controlled quantity contention', 'start_time' => $p['start'], 'end_time' => $p['end'], 'needs' => [['type' => 'item', 'item_id' => $p['item'], 'quantity' => 1]]]);
                 $id = $a->id;
                 break;
+            case 'return_request':
+                $reservation = App\Models\G005M009ItemReservation::findOrFail($p['reservation']);
+                $rows = $reservation->item_reservation_detail()->get()->map(fn ($d) => ['item_instance_id' => $d->g002_m015_item_instance_id, 'is_ok' => true])->all();
+                app(LoanRequestService::class)->requestReservationReturn('item', $reservation->id, ['instances' => $rows, 'receipt_notes' => 'Parallel QA return']);
+                break;
+            case 'return_confirm':
+                app(LoanRequestService::class)->confirmReturn('item', $p['reservation']);
+                break;
             case 'cancel':app(LoanRequestService::class)->cancel(G004M008Activity::findOrFail($p['activity']));
                 break;
         }
@@ -112,6 +120,7 @@ function batch(array $tasks, int $concurrency): array
 
     return ['workers' => $concurrency, 'requests' => count($results), 'outcomes' => array_count_values(array_column($results, 'outcome')), 'wall_seconds' => round($wall, 3), 'process_throughput_per_second' => round(count($results) / $wall, 3), 'service_latency_ms' => ['p50' => $ms[(int) floor((count($ms) - 1) * .5)], 'p95' => $ms[(int) floor((count($ms) - 1) * .95)], 'max' => max($ms)], 'queries' => ['min' => min($q), 'max' => max($q)], 'peak_worker_php_bytes' => max(array_column($results, 'peak_php_bytes')), 'results' => $results];
 }
+if (defined('INVMAN_PERFORMANCE_HELPERS_ONLY')) { return; }
 $title = WorkOrderJobTitle::create(['name' => 'QA Perf Reviewer '.bin2hex(random_bytes(4))]);
 $manager = User::factory()->create();
 $manager->assignRole(config('role.admin'));

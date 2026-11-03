@@ -179,7 +179,9 @@ jobs:
           INVMAN_FINAL_QA: '1'
           QUEUE_CONNECTION: sync
           CACHE_STORE: array
-        run: php tests/Support/Readiness/performance.php
+        run: |
+          php tests/Support/Readiness/performance.php
+          php tests/Support/Readiness/return-load.php
       - name: Create disposable upgrade database
         run: |
           mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE DATABASE invman_ci_upgrade; GRANT ALL ON invman_ci_upgrade.* TO 'invman'@'%';"
