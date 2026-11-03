@@ -24,6 +24,7 @@ class TicketMaintenanceService
     public function initialize(Ticket $ticket): TicketMaintenanceCase
     {
         $deadlines = $this->sla->deadlines($ticket);
+
         return TicketMaintenanceCase::query()->firstOrCreate(['ticket_id' => $ticket->id], [
             ...$deadlines,
             'asset_hold_at' => $ticket->assets()->exists() ? now() : null,
@@ -61,7 +62,9 @@ class TicketMaintenanceService
         }
         DB::transaction(function () use ($ticket, $manager, $technicianId, $priority, $notes): void {
             $locked = $this->locked($ticket);
-            if (! app(WorkOrderWorkflowService::class)->canPerform($locked, $manager, 'assign')) {
+            $authority = WorkOrderAuthoritySnapshot::lock([$manager->id, $locked->reporter_id, $technicianId]);
+            $manager = $authority->user($manager->id);
+            if (! app(WorkOrderWorkflowService::class)->canPerform($locked, $manager, 'assign', $authority)) {
                 $this->reject('Tidak berwenang menyetujui atau menugaskan perbaikan ini.');
             }
             app(WorkOrderWorkflowService::class)->assertReady($locked, 'start');
@@ -104,6 +107,7 @@ class TicketMaintenanceService
             return true;
         }
         $descendants = TicketTeamMember::descendantsOf($actor);
+
         return $descendants !== [] && (
             (int) $ticket->assigned_to === (int) $actor->id
             || in_array((int) $ticket->assigned_to, $descendants, true)
@@ -120,10 +124,12 @@ class TicketMaintenanceService
             ? TicketTeamMember::query()->where('is_active', true)->pluck('user_id')->all()
             : TicketTeamMember::descendantsOf($actor);
         $ids = array_values(array_diff(array_map('intval', $ids), [(int) $ticket->reporter_id]));
+
         return User::query()->whereKey($ids)->where('is_enabled', true)->orderBy('name')
             ->get()->filter(fn (User $user): bool => TicketTeamMember::qualifiesFor($ticket, $user))
             ->mapWithKeys(function (User $user): array {
                 $member = $user->ticketTeamMember;
+
                 return [$user->id => $user->name.' · '.($member?->team_type === 'field' ? 'Lapangan' : 'Pendukung')
                     .' / '.($member?->position === 'lead' ? 'Koordinator' : 'Teknisi')];
             })->all();
@@ -272,7 +278,9 @@ class TicketMaintenanceService
     {
         DB::transaction(function () use ($ticket, $manager, $safe, $notes): void {
             $locked = $this->locked($ticket);
-            if (! app(WorkOrderWorkflowService::class)->canPerform($locked, $manager, 'close')) {
+            $authority = WorkOrderAuthoritySnapshot::lock([$manager->id, $locked->reporter_id]);
+            $manager = $authority->user($manager->id);
+            if (! app(WorkOrderWorkflowService::class)->canPerform($locked, $manager, 'close', $authority)) {
                 $this->reject('Tidak berwenang mengesahkan perbaikan ini.');
             }
             app(WorkOrderWorkflowService::class)->assertReady($locked, 'final');

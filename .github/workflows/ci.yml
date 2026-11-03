@@ -151,6 +151,32 @@ jobs:
           # Isolate the opt-in two-process probe from fixtures left by tests.
           php artisan migrate:fresh --force --no-interaction
           php tests/Support/work-order-concurrency.php
+      - name: Permit read-only lock-wait observation in isolated CI
+        run: mysql -h127.0.0.1 -P3306 -uroot -proot -e "GRANT SELECT ON performance_schema.* TO 'invman'@'%';"
+      - name: Verify authority revocation ordering with real MySQL workers
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: invman_ci
+          DB_USERNAME: invman
+          DB_PASSWORD: local-ci-only
+          INVMAN_FINAL_QA: '1'
+        run: php tests/Support/Readiness/authority-concurrency.php
+      - name: Controlled cross-unit and booking contention regression
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: invman_ci
+          DB_USERNAME: invman
+          DB_PASSWORD: local-ci-only
+          INVMAN_FINAL_QA: '1'
+          QUEUE_CONNECTION: sync
+          CACHE_STORE: array
+        run: php tests/Support/Readiness/performance.php
       - name: Create disposable upgrade database
         run: |
           mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE DATABASE invman_ci_upgrade; GRANT ALL ON invman_ci_upgrade.* TO 'invman'@'%';"

@@ -3,10 +3,27 @@
 // Explicitly opt-in, disposable database only. Never drops an existing table.
 require dirname(__DIR__, 2).'/vendor/autoload.php';
 $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
-$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+$app->make(Kernel::class)->bootstrap();
+set_exception_handler(function (Throwable $e): never {
+    fwrite(STDERR, 'Readiness probe failed: '.$e->getMessage().PHP_EOL);
+    exit(1);
+});
 
-use Illuminate\Support\Facades\{Artisan, DB, Mail, Notification, Schema};
-use App\Models\{User, G001M001Unit, G002M007Item, G004M008Activity, G005M009ItemReservation, Ticket};
+use App\Models\G001M001Unit;
+use App\Models\G002M007Item;
+use App\Models\G004M008Activity;
+use App\Models\G005M009ItemReservation;
+use App\Models\Ticket;
+use App\Models\User;
+use App\Models\WorkOrderWorkflow;
+use Database\Seeders\RoleSeeder;
+use Database\Seeders\WorkOrderDemoSeeder;
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 
 if (! app()->environment('testing') || getenv('INVMAN_UPGRADE_TEST') !== '1'
     || DB::getDriverName() !== 'mysql' || ! str_ends_with(DB::getDatabaseName(), '_upgrade')) {
@@ -15,12 +32,17 @@ if (! app()->environment('testing') || getenv('INVMAN_UPGRADE_TEST') !== '1'
 if (Schema::hasTable('migrations')) {
     throw new RuntimeException('Upgrade probe requires an EMPTY disposable database; no automatic deletion.');
 }
-Mail::fake(); Notification::fake();
-$assert = function (bool $condition, string $message): void { if (! $condition) throw new RuntimeException($message); };
+Mail::fake();
+Notification::fake();
+$assert = function (bool $condition, string $message): void {
+    if (! $condition) {
+        throw new RuntimeException($message);
+    }
+};
 $paths = array_values(array_filter(glob(database_path('migrations/*.php')), fn ($p) => basename($p) < '2026_11_02_210000'));
 $assert(Artisan::call('migrate', ['--path' => $paths, '--realpath' => true, '--force' => true]) === 0, 'Legacy migrations failed');
 $assert(! Schema::hasTable('work_order_approvals'), 'Not a legacy schema');
-Artisan::call('db:seed', ['--class' => Database\Seeders\RoleSeeder::class, '--force' => true]);
+Artisan::call('db:seed', ['--class' => RoleSeeder::class, '--force' => true]);
 $unit = G001M001Unit::create(['name' => 'Synthetic legacy unit']);
 $user = User::factory()->create(['username' => 'admin', 'email' => 'legacy@example.test', 'g001_m001_unit_id' => $unit->id]);
 $user->assignRole(config('role.sarpras'));
@@ -43,8 +65,9 @@ $assert(Artisan::call('migrate', ['--path' => 'database/migrations/2026_11_02_21
 $historicalApprover = User::factory()->create();
 $dynamicTicket = Ticket::create(['number' => 'UPGRADE-DYNAMIC', 'ticket_category_id' => $ticket->ticket_category_id,
     'reporter_id' => $user->id, 'g001_m001_unit_id' => $unit->id, 'title' => 'Existing dynamic repair', 'description' => 'Preserve rejected decision', 'status' => 'open']);
-$dynamicCase = $dynamicTicket->maintenance()->make(); $dynamicCase->forceFill(['approval_notes' => 'Dynamic legacy history'])->save();
-$workflow = \App\Models\WorkOrderWorkflow::create(['g001_m001_unit_id' => $unit->id, 'version' => 1, 'status' => 'published',
+$dynamicCase = $dynamicTicket->maintenance()->make();
+$dynamicCase->forceFill(['approval_notes' => 'Dynamic legacy history'])->save();
+$workflow = WorkOrderWorkflow::create(['g001_m001_unit_id' => $unit->id, 'version' => 1, 'status' => 'published',
     'created_by' => $historicalApprover->id, 'steps' => [['key' => 'review', 'label' => 'Legacy review', 'checkpoint' => 'start', 'resolver' => 'reporter_supervisor']]]);
 $approvalId = DB::table('work_order_approvals')->insertGetId(['ticket_id' => $dynamicTicket->id, 'work_order_workflow_id' => $workflow->id,
     'step_key' => 'review', 'label' => 'Legacy review', 'checkpoint' => 'start', 'resolver' => 'reporter_supervisor',
@@ -58,7 +81,8 @@ $upgradedApproval = (array) DB::table('work_order_approvals')->where('id', $appr
 $assert(array_intersect_key($upgradedApproval, $originalApproval) === $originalApproval, 'Original approval identity/decision changed');
 $assert((int) $upgradedApproval['revision'] === 1 && $upgradedApproval['superseded_at'] === null, 'Original approval not retained as active revision one');
 $assert($ticket->workOrderApprovals()->count() === 0, 'Legacy ticket unexpectedly enrolled');
-$legacyUser = $user->fresh()->getRawOriginal(); $roles = $user->roles->pluck('name')->all();
+$legacyUser = $user->fresh()->getRawOriginal();
+$roles = $user->roles->pluck('name')->all();
 config(['security.seed_demo_users' => true, 'security.seed_demo_password' => 'Synthetic!Upgrade2026']);
 Artisan::call('db:seed', ['--force' => true]);
 $counts = fn () => collect(['users', 'work_order_job_titles', 'work_order_assignments', 'work_order_workflows', 'ticket_team_members'])->mapWithKeys(fn ($table) => [$table => DB::table($table)->count()])->all();
@@ -71,7 +95,7 @@ $assert(DB::table('work_order_workflows')->where('status', 'published')->count()
 $assert($ticket->events()->count() === 1 && $ticket->fresh()->maintenance->approval_notes === 'Existing history', 'History changed');
 config(['app.env' => 'production']);
 Artisan::call('db:seed', ['--force' => true]);
-Artisan::call('db:seed', ['--class' => Database\Seeders\WorkOrderDemoSeeder::class, '--force' => true]);
+Artisan::call('db:seed', ['--class' => WorkOrderDemoSeeder::class, '--force' => true]);
 $assert($first === $counts(), 'Production guards did not stop example seeders');
 echo json_encode(['mysql' => DB::selectOne('select version() v')->v, 'legacy_migrations' => count($paths),
     'upgrade' => 'PASS', 'existing_rows_password_roles_history' => 'unchanged', 'legacy_approval_rows' => 0,

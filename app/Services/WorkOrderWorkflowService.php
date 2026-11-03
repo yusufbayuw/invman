@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\G001M001Unit;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\WorkOrderApproval;
 use App\Models\WorkOrderAssignment;
 use App\Models\WorkOrderWorkflow;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 final class WorkOrderWorkflowService
@@ -60,6 +61,7 @@ final class WorkOrderWorkflowService
                 throw ValidationException::withMessages(['steps' => 'Persetujuan sebelum pekerjaan harus mendahului pengesahan akhir.']);
             }
         }
+
         return $normalized;
     }
 
@@ -67,7 +69,7 @@ final class WorkOrderWorkflowService
     public function lockScope(?int $unitId): void
     {
         if ($unitId) {
-            \App\Models\G001M001Unit::query()->lockForUpdate()->findOrFail($unitId);
+            G001M001Unit::query()->lockForUpdate()->findOrFail($unitId);
         } else {
             // A global scope has no unit row. Lock one shared principal, not
             // the current administrator (different admins must serialize).
@@ -80,9 +82,12 @@ final class WorkOrderWorkflowService
         if (! $actor->is_enabled || ! $actor->isAdmin()) {
             abort(403);
         }
-        DB::transaction(function () use ($workflow): void {
+        DB::transaction(function () use ($workflow, $actor): void {
             $scope = WorkOrderWorkflow::query()->findOrFail($workflow->id)->g001_m001_unit_id;
             $this->lockScope($scope);
+            $authority = WorkOrderAuthoritySnapshot::lock([$actor->id]);
+            $actor = $authority->user($actor->id);
+            abort_unless($actor->is_enabled && $actor->isAdmin(), 403);
             $locked = WorkOrderWorkflow::query()->lockForUpdate()->findOrFail($workflow->id);
             if ($locked->status !== 'draft') {
                 throw ValidationException::withMessages(['workflow' => 'Hanya draft yang dapat dipublikasikan.']);
@@ -150,8 +155,10 @@ final class WorkOrderWorkflowService
             $candidate = $this->reporterAssignments($ticket)->whereNotNull('supervisor_user_id')
                 ->whereHas('supervisor', fn (Builder $query) => $query->where('is_enabled', true))
                 ->orderBy('id')->value('supervisor_user_id');
+
             return $candidate ? [(int) $candidate] : [];
         }
+
         return WorkOrderAssignment::query()->where('work_order_job_title_id', $step['job_title_id'])
             ->where('is_active', true)
             ->where(function ($query) use ($ticket): void {
@@ -179,7 +186,7 @@ final class WorkOrderWorkflowService
             ->where('status', 'pending')->orderBy('sequence')->first();
     }
 
-    public function canDecide(WorkOrderApproval $approval, User $user): bool
+    public function canDecide(WorkOrderApproval $approval, User $user, ?WorkOrderAuthoritySnapshot $authority = null): bool
     {
         if (! $user->is_enabled || $approval->status !== 'pending' || $approval->superseded_at) {
             return false;
@@ -198,9 +205,10 @@ final class WorkOrderWorkflowService
         if (! $first || $first->id !== $approval->id) {
             return false;
         }
+
         return $user->id !== $approval->ticket->reporter_id
             && in_array($user->id, array_map('intval', $approval->candidate_user_ids ?? []), true)
-            && $this->currentlyEligible($approval, $user);
+            && $this->currentlyEligible($approval, $user, $authority);
     }
 
     public function decide(WorkOrderApproval $approval, User $user, bool $approved, ?string $notes, ?int $expectedEstimateId = null): void
@@ -210,10 +218,11 @@ final class WorkOrderWorkflowService
         }
         DB::transaction(function () use ($approval, $user, $approved, $notes, $expectedEstimateId): void {
             $ticket = Ticket::query()->lockForUpdate()->findOrFail($approval->ticket_id);
-            $user = User::query()->findOrFail($user->id);
             $locked = WorkOrderApproval::query()->lockForUpdate()->findOrFail($approval->id);
             $locked->setRelation('ticket', $ticket);
-            if (! $this->canDecide($locked, $user)) {
+            $authority = WorkOrderAuthoritySnapshot::lock([$user->id, $ticket->reporter_id], [$locked->job_title_id]);
+            $user = $authority->user($user->id);
+            if (! $this->canDecide($locked, $user, $authority)) {
                 throw ValidationException::withMessages(['approval' => 'Tidak berwenang atau bukan tahap persetujuan yang aktif.']);
             }
             if (! $approved && mb_strlen(trim((string) $notes)) < 5) {
@@ -222,7 +231,7 @@ final class WorkOrderWorkflowService
             $estimateId = null;
             $estimates = app(WorkOrderEstimateService::class);
             if ($approved && $estimates->requiresEstimate($locked)) {
-                $estimate = $estimates->current($ticket);
+                $estimate = $estimates->current($ticket, true, $locked->revision);
                 if (! $estimate || $estimate->recorded_by === $user->id || $estimate->id !== $expectedEstimateId) {
                     throw ValidationException::withMessages(['estimate' => 'Periksa versi estimasi terbaru; pencatat dan penyetuju harus berbeda.']);
                 }
@@ -253,17 +262,16 @@ final class WorkOrderWorkflowService
         }
     }
 
-
     /** Apply the same current authority boundary to list/detail/files as decisions. */
     public function scopeEligibleCandidates(Builder $query, User $user): Builder
     {
         if (! $user->is_enabled) {
             return $query->whereRaw('1=0');
         }
+
         return $query->whereNull('superseded_at')->where('status', 'pending')
             ->whereJsonContains('candidate_user_ids', (int) $user->id)
-            ->whereHas('ticket', fn (Builder $tickets) => $tickets->where(fn (Builder $reporter) =>
-                $reporter->whereNull('reporter_id')->orWhere('reporter_id', '!=', $user->id)))
+            ->whereHas('ticket', fn (Builder $tickets) => $tickets->where(fn (Builder $reporter) => $reporter->whereNull('reporter_id')->orWhere('reporter_id', '!=', $user->id)))
             ->where(function (Builder $candidates) use ($user): void {
                 $candidates->where(function (Builder $byTitle) use ($user): void {
                     $byTitle->where('resolver', 'job_title')->whereHas('ticket', function (Builder $tickets) use ($user): void {
@@ -307,17 +315,27 @@ final class WorkOrderWorkflowService
                 ->when($ticket->g002_m003_item_management_id, fn (Builder $scope) => $scope->orWhere('g002_m003_item_management_id', $ticket->g002_m003_item_management_id)));
     }
 
-    private function currentlyEligible(WorkOrderApproval $approval, User $user): bool
+    private function currentlyEligible(WorkOrderApproval $approval, User $user, ?WorkOrderAuthoritySnapshot $authority = null): bool
     {
+        if ($authority) {
+            return $approval->resolver === 'reporter_supervisor'
+                ? $authority->isReporterSupervisor($approval->ticket, $user)
+                : ($approval->resolver === 'job_title' && $approval->job_title_id && $authority->hasTitle($approval->ticket, $user, (int) $approval->job_title_id));
+        }
         if ($approval->resolver === 'reporter_supervisor') {
             return $this->reporterAssignments($approval->ticket)->where('supervisor_user_id', $user->id)->exists();
         }
+
         return $approval->resolver === 'job_title' && $approval->job_title_id
             && $this->hasActiveTitle($approval->ticket, $user, (int) $approval->job_title_id);
     }
 
-    private function hasActiveTitle(Ticket $ticket, User $user, int $titleId): bool
+    private function hasActiveTitle(Ticket $ticket, User $user, int $titleId, ?WorkOrderAuthoritySnapshot $authority = null): bool
     {
+        if ($authority) {
+            return $authority->hasTitle($ticket, $user, $titleId);
+        }
+
         return WorkOrderAssignment::query()->where('user_id', $user->id)
             ->where('work_order_job_title_id', $titleId)->where('is_active', true)
             ->whereHas('jobTitle', fn ($query) => $query->where('is_active', true))
@@ -334,7 +352,7 @@ final class WorkOrderWorkflowService
             })->exists();
     }
 
-    public function reassign(WorkOrderApproval $approval, User $admin, User $replacement, string $reason): void
+    public function reassign(WorkOrderApproval $approval, User $admin, User $replacement, string $reason, ?string $expectedCandidates = null): void
     {
         if (! $admin->isAdmin() || ! $admin->is_enabled) {
             abort(403);
@@ -343,12 +361,17 @@ final class WorkOrderWorkflowService
         if (mb_strlen($reason) < 10 || mb_strlen($reason) > 2000) {
             throw ValidationException::withMessages(['reason' => 'Alasan pengalihan minimal sepuluh karakter.']);
         }
-        DB::transaction(function () use ($approval, $admin, $replacement, $reason): void {
+        $expectedCandidates ??= $this->candidateFingerprint($approval);
+        DB::transaction(function () use ($approval, $admin, $replacement, $reason, $expectedCandidates): void {
             $ticket = Ticket::query()->lockForUpdate()->findOrFail($approval->ticket_id);
-            $admin = User::query()->findOrFail($admin->id);
-            $replacement = User::query()->findOrFail($replacement->id);
-            abort_unless($admin->is_enabled && $admin->isAdmin(), 403);
             $locked = WorkOrderApproval::query()->lockForUpdate()->findOrFail($approval->id);
+            $authority = WorkOrderAuthoritySnapshot::lock([$admin->id, $replacement->id, $ticket->reporter_id], [$locked->job_title_id]);
+            $admin = $authority->user($admin->id);
+            $replacement = $authority->user($replacement->id);
+            abort_unless($admin->is_enabled && $admin->isAdmin(), 403);
+            if (! hash_equals($expectedCandidates, $this->candidateFingerprint($locked))) {
+                throw ValidationException::withMessages(['approval' => 'Kandidat sudah berubah. Muat ulang sebelum mengalihkan.']);
+            }
             if ($locked->status !== 'pending' || $locked->superseded_at || ! $replacement->is_enabled
                 || $replacement->id === $ticket->reporter_id) {
                 throw ValidationException::withMessages(['approval' => 'Hanya approval tertunda dapat dialihkan kepada pegawai aktif selain pelapor.']);
@@ -358,12 +381,12 @@ final class WorkOrderWorkflowService
                 || ($locked->checkpoint === 'final' && $ticket->status !== 'resolved')) {
                 throw ValidationException::withMessages(['approval' => 'Status tiket tidak cocok untuk pengalihan persetujuan.']);
             }
-            if ($locked->resolver === 'job_title' && ! $this->hasActiveTitle($ticket, $replacement, (int) $locked->job_title_id)) {
+            if ($locked->resolver === 'job_title' && ! $this->hasActiveTitle($ticket, $replacement, (int) $locked->job_title_id, $authority)) {
                 throw ValidationException::withMessages(['approval' => 'Pengganti harus memegang jabatan aktif pada cakupan ini.']);
             }
             if ($locked->resolver === 'reporter_supervisor') {
                 $locked->setRelation('ticket', $ticket);
-                if (! $this->currentlyEligible($locked, $replacement)) {
+                if (! $this->currentlyEligible($locked, $replacement, $authority)) {
                     throw ValidationException::withMessages(['approval' => 'Tetapkan pengganti sebagai atasan aktif pelapor terlebih dahulu.']);
                 }
             }
@@ -378,9 +401,17 @@ final class WorkOrderWorkflowService
         }, 3);
     }
 
-    public function canPerform(Ticket $ticket, User $user, string $action): bool
+    public function candidateFingerprint(WorkOrderApproval $approval): string
     {
-        $user = User::query()->findOrFail($user->id);
+        $ids = array_map('intval', $approval->candidate_user_ids ?? []);
+        sort($ids);
+
+        return hash('sha256', json_encode($ids));
+    }
+
+    public function canPerform(Ticket $ticket, User $user, string $action, ?WorkOrderAuthoritySnapshot $authority = null): bool
+    {
+        $user = $authority ? $authority->user($user->id) : User::query()->findOrFail($user->id);
         if (! $user->is_enabled || (int) $user->id === (int) $ticket->reporter_id) {
             return false;
         }
@@ -392,8 +423,9 @@ final class WorkOrderWorkflowService
         if (! $titleId) {
             return $user->isFacility();
         }
+
         return $user->is_enabled && $user->id !== $ticket->reporter_id
-            && $this->hasActiveTitle($ticket, $user, (int) $titleId);
+            && $this->hasActiveTitle($ticket, $user, (int) $titleId, $authority);
     }
 
     public function canDispatchAcrossUnits(Ticket $ticket, User $technician): bool
@@ -404,6 +436,7 @@ final class WorkOrderWorkflowService
         }
         // Authority comes from the ticket's immutable version, never the latest configuration.
         $workflow = $ticket->workOrderApprovals()->with('workflow')->first()?->workflow;
+
         return $workflow?->dispatch_job_title_id
             && $this->hasActiveTitle($ticket, $technician, (int) $workflow->dispatch_job_title_id);
     }

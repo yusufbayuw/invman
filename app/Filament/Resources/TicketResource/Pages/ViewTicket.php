@@ -3,19 +3,27 @@
 namespace App\Filament\Resources\TicketResource\Pages;
 
 use App\Filament\Resources\TicketResource;
+use App\Filament\Support\TicketWorkForms;
 use App\Models\TicketTeamMember;
+use App\Models\User;
+use App\Models\WorkOrderApproval;
+use App\Services\TicketMaintenanceService;
 use App\Services\TicketService;
 use App\Services\TicketVisibility;
+use App\Services\WorkOrderEstimateService;
+use App\Services\WorkOrderRevisionService;
+use App\Services\WorkOrderWorkflowService;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Database\Eloquent\Model;
 
 class ViewTicket extends ViewRecord
 {
     protected static string $resource = TicketResource::class;
 
-    public function getRecord(): \Illuminate\Database\Eloquent\Model
+    public function getRecord(): Model
     {
         $record = parent::getRecord();
 
@@ -33,7 +41,7 @@ class ViewTicket extends ViewRecord
                     Forms\Components\Textarea::make('body')->label('Komentar')->required()->minLength(2)->maxLength(10000),
                     Forms\Components\FileUpload::make('files')->label('Foto/PDF (opsional)')
                         ->multiple()->maxFiles(3)->maxSize(5120)
-                        ->acceptedFileTypes(['image/jpeg','image/png','application/pdf'])
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'application/pdf'])
                         ->disk('local')->directory('tickets/attachments')->visibility('private'),
                     Forms\Components\Toggle::make('internal')->label('Catatan khusus pengelola')
                         ->visible(fn (): bool => $this->getRecord()->maintenance === null
@@ -62,7 +70,7 @@ class ViewTicket extends ViewRecord
                 }),
             Actions\Action::make('recordWorkOrderEstimate')
                 ->label('Catat Tinjauan & Estimasi')->icon('heroicon-o-calculator')
-                ->visible(fn (): bool => app(\App\Services\WorkOrderEstimateService::class)->canRecord($this->getRecord(), auth()->user()))
+                ->visible(fn (): bool => app(WorkOrderEstimateService::class)->canRecord($this->getRecord(), auth()->user()))
                 ->fillForm(fn (): array => [
                     'expected_version' => (int) $this->getRecord()->workOrderEstimates()->max('version'),
                     'materials' => [], 'execution_mode' => 'internal',
@@ -84,18 +92,20 @@ class ViewTicket extends ViewRecord
                         ->regex('/^(0|[1-9][0-9]{0,11})$/D')->helperText('Rupiah bulat, tanpa titik atau koma.'),
                 ])
                 ->action(function (array $data): void {
-                    $version = (int) $data['expected_version']; unset($data['expected_version']);
-                    app(\App\Services\WorkOrderEstimateService::class)->record($this->getRecord(), auth()->user(), $data, $version);
+                    $version = (int) $data['expected_version'];
+                    unset($data['expected_version']);
+                    app(WorkOrderEstimateService::class)->record($this->getRecord(), auth()->user(), $data, $version);
                     $this->getRecord()->refresh();
                     Notification::make()->title('Tinjauan dan estimasi tercatat')->success()->send();
                 }),
             Actions\Action::make('workOrderApproval')
                 ->label('Persetujuan Work Order')->icon('heroicon-o-document-check')->color('warning')
                 ->visible(fn (): bool => ($step = $this->nextWorkOrderApproval()) !== null
-                    && app(\App\Services\WorkOrderWorkflowService::class)->canDecide($step, auth()->user()))
+                    && app(WorkOrderWorkflowService::class)->canDecide($step, auth()->user()))
                 ->modalHeading(fn (): string => $this->nextWorkOrderApproval()?->label ?? 'Persetujuan Work Order')
                 ->fillForm(function (): array {
-                    $estimate = app(\App\Services\WorkOrderEstimateService::class)->current($this->getRecord());
+                    $estimate = app(WorkOrderEstimateService::class)->current($this->getRecord());
+
                     return ['approval_id' => $this->nextWorkOrderApproval()?->id, 'estimate_id' => $estimate?->id,
                         'estimate_summary' => $estimate ? 'Estimasi #'.$estimate->id.' · '.($estimate->vendor_name ?? 'Tim internal').' · Rp '.$estimate->amount : 'Belum ada estimasi'];
                 })
@@ -111,14 +121,14 @@ class ViewTicket extends ViewRecord
                 ->action(function (array $data): void {
                     $step = $this->getRecord()->workOrderApprovals()->find($data['approval_id']);
                     abort_unless($step, 404);
-                    app(\App\Services\WorkOrderWorkflowService::class)
+                    app(WorkOrderWorkflowService::class)
                         ->decide($step, auth()->user(), $data['decision'] === 'approve', $data['notes'] ?? null,
                             filled($data['estimate_id'] ?? null) ? (int) $data['estimate_id'] : null);
                     Notification::make()->title('Keputusan Work Order dicatat')->success()->send();
                 }),
             Actions\Action::make('reviseWorkOrder')
                 ->label('Revisi & Kirim Ulang')->icon('heroicon-o-arrow-path')->color('warning')
-                ->visible(fn (): bool => app(\App\Services\WorkOrderRevisionService::class)
+                ->visible(fn (): bool => app(WorkOrderRevisionService::class)
                     ->canRevise($this->getRecord(), auth()->user(), 'start'))
                 ->fillForm(fn (): array => $this->getRecord()->only(['title', 'description', 'location', 'reported_urgency']) + [
                     'rejection_id' => $this->getRecord()->workOrderApprovals()->where('checkpoint', 'start')->where('status', 'rejected')->value('id'),
@@ -133,7 +143,7 @@ class ViewTicket extends ViewRecord
                     Forms\Components\Textarea::make('reason')->label('Penjelasan perbaikan')->required()->minLength(10)->maxLength(2000),
                 ])
                 ->action(function (array $data): void {
-                    app(\App\Services\WorkOrderRevisionService::class)->resubmit(
+                    app(WorkOrderRevisionService::class)->resubmit(
                         $this->getRecord(), auth()->user(), (int) $data['rejection_id'], $data['reason'],
                         array_intersect_key($data, array_flip(['title', 'description', 'location', 'reported_urgency'])),
                     );
@@ -143,7 +153,7 @@ class ViewTicket extends ViewRecord
                 }),
             Actions\Action::make('reworkRejectedWorkOrder')
                 ->label('Perbaiki Hasil yang Ditolak')->icon('heroicon-o-wrench-screwdriver')->color('warning')
-                ->visible(fn (): bool => app(\App\Services\WorkOrderRevisionService::class)
+                ->visible(fn (): bool => app(WorkOrderRevisionService::class)
                     ->canRevise($this->getRecord(), auth()->user(), 'final'))
                 ->fillForm(fn (): array => [
                     'rejection_id' => $this->getRecord()->workOrderApprovals()->where('checkpoint', 'final')->where('status', 'rejected')->value('id'),
@@ -154,7 +164,7 @@ class ViewTicket extends ViewRecord
                     Forms\Components\Textarea::make('reason')->label('Rencana perbaikan')->required()->minLength(10)->maxLength(2000),
                 ])
                 ->action(function (array $data): void {
-                    app(\App\Services\WorkOrderRevisionService::class)->resubmit(
+                    app(WorkOrderRevisionService::class)->resubmit(
                         $this->getRecord(), auth()->user(), (int) $data['rejection_id'], $data['reason'],
                     );
                     $this->getRecord()->refresh();
@@ -164,19 +174,25 @@ class ViewTicket extends ViewRecord
                 ->label('Alihkan Persetujuan')->icon('heroicon-o-arrow-path')->color('gray')
                 ->visible(fn (): bool => (auth()->user()?->isAdmin() ?? false)
                     && $this->nextWorkOrderApproval() !== null)
+                ->fillForm(fn (): array => [
+                    'approval_id' => $this->nextWorkOrderApproval()?->id,
+                    'expected_candidates' => ($step = $this->nextWorkOrderApproval()) ? app(WorkOrderWorkflowService::class)->candidateFingerprint($step) : null,
+                ])
                 ->form([
+                    Forms\Components\Hidden::make('approval_id')->required(),
+                    Forms\Components\Hidden::make('expected_candidates')->required(),
                     Forms\Components\Select::make('replacement_id')->label('Pengganti')
-                        ->options(fn (): array => \App\Models\User::query()->where('is_enabled', true)
+                        ->options(fn (): array => User::query()->where('is_enabled', true)
                             ->where('id', '!=', $this->getRecord()->reporter_id)
                             ->orderBy('name')->pluck('name', 'id')->all())->searchable()->required(),
                     Forms\Components\Textarea::make('reason')->label('Alasan pengalihan')
                         ->required()->minLength(10)->maxLength(2000),
                 ])->action(function (array $data): void {
-                    $step = $this->nextWorkOrderApproval();
+                    $step = $this->getRecord()->workOrderApprovals()->find($data['approval_id']);
                     abort_unless($step, 404);
-                    app(\App\Services\WorkOrderWorkflowService::class)->reassign(
-                        $step, auth()->user(), \App\Models\User::query()->findOrFail($data['replacement_id']),
-                        $data['reason'],
+                    app(WorkOrderWorkflowService::class)->reassign(
+                        $step, auth()->user(), User::query()->findOrFail($data['replacement_id']),
+                        $data['reason'], $data['expected_candidates'],
                     );
                     Notification::make()->title('Pengalihan persetujuan tercatat')->success()->send();
                 }),
@@ -184,19 +200,19 @@ class ViewTicket extends ViewRecord
                 ->label('Setujui & Tetapkan PIC')->icon('heroicon-o-check-badge')->color('success')
                 ->visible(fn (): bool => $this->getRecord()->maintenance !== null
                     && $this->getRecord()->status === 'open'
-                    && app(\App\Services\WorkOrderWorkflowService::class)->canPerform($this->getRecord(), auth()->user(), 'assign')
+                    && app(WorkOrderWorkflowService::class)->canPerform($this->getRecord(), auth()->user(), 'assign')
                     && ! $this->getRecord()->workOrderApprovals()->where('checkpoint', 'start')->whereIn('status', ['pending', 'rejected'])->exists())
                 ->form([
                     Forms\Components\Select::make('technician')->label('Koordinator / teknisi penanggung jawab')
                         ->helperText('Bisa pilih koordinator terlebih dahulu. Setelah disetujui, koordinator dapat mendelegasikan kepada petugas lapangan.')
                         ->options(fn (): array => $this->maintenanceTechnicians())->searchable()->required(),
                     Forms\Components\Select::make('priority')->label('Prioritas SLA')->required()
-                        ->options(['low'=>'Rendah','normal'=>'Normal','high'=>'Tinggi','critical'=>'Kritis'])
+                        ->options(['low' => 'Rendah', 'normal' => 'Normal', 'high' => 'Tinggi', 'critical' => 'Kritis'])
                         ->default(fn (): string => $this->getRecord()->priority),
                     Forms\Components\Textarea::make('notes')->label('Catatan persetujuan')->maxLength(2000),
                 ])
                 ->action(function (array $data): void {
-                    app(\App\Services\TicketMaintenanceService::class)->approve(
+                    app(TicketMaintenanceService::class)->approve(
                         $this->getRecord(), auth()->user(), (int) $data['technician'],
                         $data['priority'], $data['notes'] ?? null,
                     );
@@ -204,13 +220,13 @@ class ViewTicket extends ViewRecord
                 }),
             Actions\Action::make('delegateMaintenance')
                 ->label('Delegasikan ke Tim')->icon('heroicon-o-user-group')->color('info')
-                ->visible(fn (): bool => app(\App\Services\TicketMaintenanceService::class)
+                ->visible(fn (): bool => app(TicketMaintenanceService::class)
                     ->canDelegate($this->getRecord(), auth()->user()))
                 ->modalHeading('Tugaskan petugas dalam hierarki')
                 ->modalDescription('Tiket sudah disetujui. Koordinator hanya dapat memilih anggota aktif di bawahnya; tugas yang sudah diterima tidak boleh dipindahkan tanpa proses koreksi.')
                 ->form([
                     Forms\Components\Select::make('technician')->label('Anggota tim')
-                        ->options(fn (): array => app(\App\Services\TicketMaintenanceService::class)
+                        ->options(fn (): array => app(TicketMaintenanceService::class)
                             ->delegationOptions($this->getRecord(), auth()->user()))
                         ->searchable()->required(),
                     Forms\Components\Textarea::make('reason')->label('Instruksi / alasan delegasi')
@@ -218,7 +234,7 @@ class ViewTicket extends ViewRecord
                         ->placeholder('Contoh: Periksa instalasi listrik di lokasi dan dokumentasikan hasil.'),
                 ])
                 ->action(function (array $data): void {
-                    app(\App\Services\TicketMaintenanceService::class)->delegate(
+                    app(TicketMaintenanceService::class)->delegate(
                         $this->getRecord(), auth()->user(), (int) $data['technician'], (string) $data['reason'],
                     );
                     Notification::make()->title('Tugas berhasil didelegasikan')->success()->send();
@@ -229,7 +245,7 @@ class ViewTicket extends ViewRecord
                     && $this->getRecord()->status === 'triaged'
                     && $this->getRecord()->assigned_to === auth()->id())
                 ->requiresConfirmation()
-                ->action(fn () => app(\App\Services\TicketMaintenanceService::class)
+                ->action(fn () => app(TicketMaintenanceService::class)
                     ->accept($this->getRecord(), auth()->user())),
             Actions\Action::make('waitParts')
                 ->label('Menunggu Material')->icon('heroicon-o-clock')
@@ -237,7 +253,7 @@ class ViewTicket extends ViewRecord
                     && $this->getRecord()->status === 'in_progress'
                     && $this->getRecord()->assigned_to === auth()->id())
                 ->form([Forms\Components\Textarea::make('reason')->label('Alasan')->required()->minLength(3)])
-                ->action(fn (array $data) => app(\App\Services\TicketMaintenanceService::class)
+                ->action(fn (array $data) => app(TicketMaintenanceService::class)
                     ->waiting($this->getRecord(), auth()->user(), true, $data['reason'])),
             Actions\Action::make('resumeWork')
                 ->label('Lanjutkan Pekerjaan')->icon('heroicon-o-arrow-path')
@@ -245,16 +261,16 @@ class ViewTicket extends ViewRecord
                     && $this->getRecord()->status === 'waiting_parts'
                     && $this->getRecord()->assigned_to === auth()->id())
                 ->form([Forms\Components\Textarea::make('reason')->label('Keterangan')->required()->minLength(3)])
-                ->action(fn (array $data) => app(\App\Services\TicketMaintenanceService::class)
+                ->action(fn (array $data) => app(TicketMaintenanceService::class)
                     ->waiting($this->getRecord(), auth()->user(), false, $data['reason'])),
             Actions\Action::make('finishMaintenance')
                 ->label('Catat Hasil Perbaikan')->icon('heroicon-o-wrench-screwdriver')
                 ->visible(fn (): bool => $this->getRecord()->maintenance !== null
                     && $this->getRecord()->status === 'in_progress'
                     && $this->getRecord()->assigned_to === auth()->id())
-                ->form(\App\Filament\Support\TicketWorkForms::finish())
+                ->form(TicketWorkForms::finish())
                 ->action(function (array $data): void {
-                    app(\App\Services\TicketMaintenanceService::class)->finish(
+                    app(TicketMaintenanceService::class)->finish(
                         $this->getRecord(), auth()->user(), $data['diagnosis'],
                         $data['actions'], $data['materials'] ?? [], $data['outcome'],
                     );
@@ -268,10 +284,10 @@ class ViewTicket extends ViewRecord
                     && $this->getRecord()->reporter_id === auth()->id())
                 ->form([
                     Forms\Components\Select::make('accepted')->label('Hasil pemeriksaan')->required()
-                        ->options(['yes'=>'Sudah Baik', 'no'=>'Masih Bermasalah']),
+                        ->options(['yes' => 'Sudah Baik', 'no' => 'Masih Bermasalah']),
                     Forms\Components\Textarea::make('notes')->label('Catatan / alasan jika menolak'),
                 ])
-                ->action(fn (array $data) => app(\App\Services\TicketMaintenanceService::class)
+                ->action(fn (array $data) => app(TicketMaintenanceService::class)
                     ->verify($this->getRecord(), auth()->user(),
                         $data['accepted'] === 'yes', $data['notes'] ?? null)),
             Actions\Action::make('closeMaintenance')
@@ -279,7 +295,7 @@ class ViewTicket extends ViewRecord
                 ->visible(fn (): bool => $this->getRecord()->maintenance !== null
                     && $this->getRecord()->status === 'resolved'
                     && $this->getRecord()->maintenance->verified_at !== null
-                    && app(\App\Services\WorkOrderWorkflowService::class)->canPerform($this->getRecord(), auth()->user(), 'close')
+                    && app(WorkOrderWorkflowService::class)->canPerform($this->getRecord(), auth()->user(), 'close')
                     && ! $this->getRecord()->workOrderApprovals()->where('checkpoint', 'final')->whereIn('status', ['pending', 'rejected'])->exists())
                 ->form([
                     Forms\Components\Toggle::make('safe')
@@ -288,15 +304,15 @@ class ViewTicket extends ViewRecord
                         ->default(false),
                     Forms\Components\Textarea::make('notes')->label('Catatan pengesahan'),
                 ])
-                ->action(fn (array $data) => app(\App\Services\TicketMaintenanceService::class)
+                ->action(fn (array $data) => app(TicketMaintenanceService::class)
                     ->close($this->getRecord(), auth()->user(), (bool) $data['safe'], $data['notes'] ?? null)),
             Actions\Action::make('cancelMaintenance')
                 ->label('Batalkan Pengajuan')->icon('heroicon-o-x-circle')->color('danger')
                 ->visible(fn (): bool => $this->getRecord()->maintenance !== null
-                    && in_array($this->getRecord()->status, ['open','triaged'], true)
+                    && in_array($this->getRecord()->status, ['open', 'triaged'], true)
                     && (auth()->user()?->isFacility() ?? false))
                 ->form([Forms\Components\Textarea::make('notes')->label('Alasan pembatalan')->required()->minLength(5)])
-                ->action(fn (array $data) => app(\App\Services\TicketMaintenanceService::class)
+                ->action(fn (array $data) => app(TicketMaintenanceService::class)
                     ->cancel($this->getRecord(), auth()->user(), $data['notes'])),
             Actions\Action::make('maintenancePdf')
                 ->label('Form Perawatan PDF')->icon('heroicon-o-document-arrow-down')
@@ -311,7 +327,7 @@ class ViewTicket extends ViewRecord
                     Forms\Components\Select::make('user_id')->label('Petugas')
                         ->options(fn (): array => $this->assigneeOptions())->searchable()->nullable(),
                     Forms\Components\Select::make('priority')->label('Prioritas')
-                        ->options(['low'=>'Rendah','normal'=>'Normal','high'=>'Tinggi','critical'=>'Kritis'])
+                        ->options(['low' => 'Rendah', 'normal' => 'Normal', 'high' => 'Tinggi', 'critical' => 'Kritis'])
                         ->visible(fn (): bool => auth()->user()->isFacility()),
                 ])
                 ->action(function (array $data): void {
@@ -335,7 +351,7 @@ class ViewTicket extends ViewRecord
         ];
     }
 
-    private function nextWorkOrderApproval(): ?\App\Models\WorkOrderApproval
+    private function nextWorkOrderApproval(): ?WorkOrderApproval
     {
         return $this->getRecord()->workOrderApprovals()->where('status', 'pending')
             ->orderBy('sequence')->first();
@@ -345,13 +361,14 @@ class ViewTicket extends ViewRecord
     {
         $ticket = $this->getRecord();
         $management = $ticket->management?->users()->pluck('users.id') ?? collect();
-        $facilities = \App\Models\User::role(config('role.fasilitas'))->pluck('id')
-            ->merge(\App\Models\User::role(config('role.admin'))->pluck('id'))
-            ->merge(\App\Models\User::role('super_admin')->pluck('id'));
+        $facilities = User::role(config('role.fasilitas'))->pluck('id')
+            ->merge(User::role(config('role.admin'))->pluck('id'))
+            ->merge(User::role('super_admin')->pluck('id'));
         $members = TicketTeamMember::query()->where('is_active', true)->pluck('user_id');
         $ids = $management->merge($facilities)->merge($members)->unique()
             ->reject(fn ($id) => (int) $id === (int) $ticket->reporter_id);
-        return \App\Models\User::query()->whereKey($ids)->where('is_enabled', true)->orderBy('name')
+
+        return User::query()->whereKey($ids)->where('is_enabled', true)->orderBy('name')
             ->get()->filter(fn ($user): bool => TicketTeamMember::qualifiesFor($ticket, $user))
             ->mapWithKeys(function ($user): array {
                 $member = $user->ticketTeamMember;
@@ -359,6 +376,7 @@ class ViewTicket extends ViewRecord
                     ? ' · '.($member->position === 'lead' ? 'Koordinator' : 'Teknisi')
                         .' / '.($member->team_type === 'field' ? 'Lapangan' : 'Pendukung')
                     : ' · Pengelola';
+
                 return [$user->id => $user->name.$suffix];
             })->all();
     }
@@ -376,7 +394,8 @@ class ViewTicket extends ViewRecord
         if ($actor->isFacility() || $actor->isAssetManager()) {
             $ids = $ids->merge($ticket->management?->users()->pluck('users.id') ?? collect());
         }
-        return \App\Models\User::query()->whereKey($ids->unique()->all())->where('is_enabled', true)
+
+        return User::query()->whereKey($ids->unique()->all())->where('is_enabled', true)
             ->orderBy('name')->get()->filter(fn ($user): bool => TicketTeamMember::qualifiesFor($ticket, $user))
             ->pluck('name', 'id')->all();
     }

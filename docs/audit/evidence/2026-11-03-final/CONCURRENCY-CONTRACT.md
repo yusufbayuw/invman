@@ -1,0 +1,15 @@
+# AUTH-08 ordering contract and remediation
+
+Baseline: `d35b49e2f068ee9d9bb1e15c37174e3ba548f6a9`. Disposable MySQL 8.0.46, real independent PHP processes; no production credentials or database.
+
+A revocation, disabling, supervisor transfer or assignment change becomes effective at its database COMMIT. An approval that already acquired the current authority rows must retain them until its own COMMIT. A concurrent revocation then waits, and the approval is ordered before effective revocation. If revocation acquired those rows first, approval waits and rechecks their committed CURRENT values before deciding. A transaction's earlier REPEATABLE READ snapshot must never authorize a later decision.
+
+Ticket and active approval rows serialize decisions, resubmission, estimates and reassignment. Publishing a new version does not rewrite an existing ticket's snapshot. Reassignment requires the candidate fingerprint observed when its form opened. A stale reassignment conflicts instead of overwriting another administrator's change. Expected conflicts are validation failures with no decision/event writes.
+
+`authority-before.json` reproduces an unauthorized post-revocation approval on the baseline: revocation completed while approval was paused immediately before writing. The repaired implementation uses locking current reads for users, title assignments, titles, team membership and role pivots, and holds those locks through commit. Revision/estimate decisions also read current locked state, including when called inside an older outer transaction snapshot.
+
+`authority-after.json`: 19 passing cases, covering both orderings of title revocation, unit reassignment, reporter supervisor change, employee disabling, and multi-role assignment removal; administrator role revocation/reassignment in both orders; two approvers; rejection/resubmit in both orders; estimate/amount approval in both orders; publication during an existing ticket; and two competing reassignments. Explicit ready/release signals and `performance_schema.data_lock_waits` establish overlap. Delays are not success criteria.
+
+`performance-before.json` additionally reproduces an unhandled SQLSTATE 40001 in simultaneous stock bookings. Submit locked its own draft reservation before the shared asset, while draft creation and availability locked the asset before reservations. Submit now obtains the stable asset set before locking child reservations. Its activity lock prevents concurrent edits to that set. No added sleep or increased retry count. `performance-qa.json` records the rerun and stock/event invariants.
+
+These cases establish the listed ordering contract, not a proof of every possible database schedule or production capacity. Real production backup, availability and infrastructure rehearsal remain separate release gates. No merge or deployment is authorized by these results.

@@ -61,6 +61,7 @@ class DynamicWorkOrderApprovalFlowTest extends TestCase
             'description' => 'Plafon ruangan rusak dan perlu ditinjau oleh petugas.',
             'location' => 'Gedung SMA Ruang 101',
         ]);
+
         return compact('unit', 'reporter', 'supervisor', 'manager', 'technician', 'other',
             'assignment', 'ticket', 'workflow');
     }
@@ -122,5 +123,24 @@ class DynamicWorkOrderApprovalFlowTest extends TestCase
         $final = $d['ticket']->workOrderApprovals()->where('step_key', 'manager')->firstOrFail();
         $this->assertFalse($workflow->canPerform($d['ticket'], $d['manager'], 'close'));
         $this->assertFalse($workflow->canDecide($final, $d['manager']));
+    }
+
+    public function test_stale_reassignment_cannot_overwrite_a_new_candidate_or_duplicate_the_event(): void
+    {
+        $d = $this->setupFlow();
+        $w = app(WorkOrderWorkflowService::class);
+        $old = $d['ticket']->workOrderApprovals()->where('checkpoint', 'start')->firstOrFail();
+        $admin = User::factory()->create();
+        $admin->assignRole(config('role.admin'));
+        $d['reporter']->workOrderAssignments()->firstOrFail()->update(['supervisor_user_id' => $d['other']->id]);
+        $w->reassign($old, $admin, $d['other'], 'Pengganti telah ditetapkan sesuai rotasi.');
+        try {
+            $w->reassign($old, $admin, $d['other'], 'Modal lama mencoba menimpa pengalihan baru.');
+            $this->fail('Stale candidate snapshot accepted');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('approval', $exception->errors());
+        }
+        $this->assertSame([(int) $d['other']->id], $old->fresh()->candidate_user_ids);
+        $this->assertSame(1, $d['ticket']->events()->where('action', 'work_order_approver_reassigned')->count());
     }
 }
