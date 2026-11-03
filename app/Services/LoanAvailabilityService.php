@@ -139,7 +139,7 @@ class LoanAvailabilityService
     {
         $query = G005M009ItemReservation::query()
             ->where('g002_m007_item_id', $itemId)
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end, $locking));
 
         // Only transactional acceptance needs locking reads. UI queries retain
         // the original database-side SUM for constant-memory reporting.
@@ -186,7 +186,7 @@ class LoanAvailabilityService
         }
         $query = G005M010RoomReservation::query()
             ->where('g003_m006_room_id', $roomId)
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end, $locking));
 
         return $locking ? $query->lockForUpdate()->first(['id']) === null : ! $query->exists();
     }
@@ -198,7 +198,7 @@ class LoanAvailabilityService
         }
         $query = G005M019VehicleReservation::query()
             ->where('g008_m017_vehicle_id', $vehicleId)
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end, $locking));
 
         return $locking ? $query->lockForUpdate()->first(['id']) === null : ! $query->exists();
     }
@@ -208,7 +208,7 @@ class LoanAvailabilityService
         return G005M019VehicleReservation::query()
             ->where('g008_m018_driver_id', $driverId)
             ->when($exceptReservationId, fn (Builder $query) => $query->whereKeyNot($exceptReservationId))
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end, true))
             ->lockForUpdate()->first(['id']) === null;
     }
 
@@ -217,7 +217,7 @@ class LoanAvailabilityService
         return G005M019VehicleReservation::query()
             ->where('vehicle_assistant_id', $assistantId)
             ->when($exceptReservationId, fn (Builder $query) => $query->whereKeyNot($exceptReservationId))
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end, true))
             ->lockForUpdate()->first(['id']) === null;
     }
 
@@ -227,12 +227,12 @@ class LoanAvailabilityService
             ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
     }
 
-    private function applyReservationWindow(Builder $query, Carbon $start, Carbon $end): void
+    private function applyReservationWindow(Builder $query, Carbon $start, Carbon $end, bool $locking = false): void
     {
         $query
-            ->where(function (Builder $query) use ($end, $start): void {
+            ->where(function (Builder $query) use ($end, $start, $locking): void {
                 $query
-                    ->where(fn (Builder $query) => $this->applyBlockingScope($query))
+                    ->where(fn (Builder $query) => $this->applyBlockingScope($query, $locking))
                     ->where('start_time', '<', $end)
                     ->where('end_time', '>', $start);
             })
@@ -242,21 +242,24 @@ class LoanAvailabilityService
             ]);
     }
 
-    public function applyBlockingScope(Builder $query): void
+    public function applyBlockingScope(Builder $query, bool $locking = false): void
     {
         $query
             ->whereIn('status', ReservationStatus::confirmedBlockingValues())
-            ->orWhere(function (Builder $query): void {
+            ->orWhere(function (Builder $query) use ($locking): void {
                 $query
                     ->where('status', ReservationStatus::Submitted->value)
-                    ->whereHas('activity', function (Builder $query): void {
+                    ->whereHas('activity', function (Builder $query) use ($locking): void {
                         $query
                             ->where('status', ReservationStatus::Submitted->value)
                             ->where(function (Builder $query): void {
                                 $query
                                     ->whereNull('hold_expires_at')
                                     ->orWhere('hold_expires_at', '>', now());
-                            });
+                            })
+                            // FOR UPDATE on the outer query does not make an
+                            // EXISTS subquery a current read in MySQL.
+                            ->when($locking, fn (Builder $query) => $query->lockForUpdate());
                     });
             });
     }

@@ -1,0 +1,10 @@
+{
+    "interleaving": "B establishes REPEATABLE READ snapshot; A books and commits all stock; B submits its preexisting draft in the older transaction",
+    "worker": {
+        "outcome": "conflict"
+    },
+    "worker_exit": 0,
+    "stock": 1,
+    "submitted_quantity": 1,
+    "pass": true
+}

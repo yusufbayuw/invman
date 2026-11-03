@@ -163,7 +163,10 @@ jobs:
           DB_USERNAME: invman
           DB_PASSWORD: local-ci-only
           INVMAN_FINAL_QA: '1'
-        run: php tests/Support/Readiness/authority-concurrency.php
+        run: |
+          php tests/Support/Readiness/authority-concurrency.php
+          php tests/Support/Readiness/loan-snapshot.php
+          php tests/Support/Readiness/resilience.php
       - name: Controlled cross-unit and booking contention regression
         env:
           APP_ENV: testing
