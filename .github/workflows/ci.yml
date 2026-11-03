@@ -181,6 +181,7 @@ jobs:
           CACHE_STORE: array
         run: |
           php tests/Support/Readiness/performance.php
+          php tests/Support/Readiness/item-counter-snapshot.php
           php tests/Support/Readiness/return-load.php
       - name: Create disposable upgrade database
         run: |

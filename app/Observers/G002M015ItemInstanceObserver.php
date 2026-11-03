@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\G002M007Item;
 use App\Models\G002M015ItemInstance;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
 
 class G002M015ItemInstanceObserver
 {
@@ -50,7 +51,7 @@ class G002M015ItemInstanceObserver
      */
     public function created(G002M015ItemInstance $instance): void
     {
-        $this->syncItemTotals($instance->g002_m007_item_id);
+        $this->applyTotalChanges([$instance->g002_m007_item_id => [1, $this->ready($instance->is_available, $instance->is_borrowable)]]);
     }
 
     /**
@@ -61,12 +62,14 @@ class G002M015ItemInstanceObserver
         if (! $instance->wasChanged(['g002_m007_item_id', 'is_borrowable', 'is_available'])) {
             return;
         }
-
-        $this->syncItemTotals($instance->g002_m007_item_id);
-
-        $originalItemId = $instance->getOriginal('g002_m007_item_id');
-        if ($originalItemId && (string) $originalItemId !== (string) $instance->g002_m007_item_id) {
-            $this->syncItemTotals($originalItemId);
+        $oldId = $instance->getOriginal('g002_m007_item_id');
+        $newId = $instance->g002_m007_item_id;
+        $oldReady = $this->ready($instance->getOriginal('is_available'), $instance->getOriginal('is_borrowable'));
+        $newReady = $this->ready($instance->is_available, $instance->is_borrowable);
+        if ((string) $oldId === (string) $newId) {
+            $this->applyTotalChanges([$newId => [0, $newReady - $oldReady]]);
+        } else {
+            $this->applyTotalChanges([$oldId => [-1, -$oldReady], $newId => [1, $newReady]]);
         }
     }
 
@@ -75,7 +78,7 @@ class G002M015ItemInstanceObserver
      */
     public function deleted(G002M015ItemInstance $instance): void
     {
-        $this->syncItemTotals($instance->g002_m007_item_id);
+        $this->applyTotalChanges([$instance->g002_m007_item_id => [-1, -$this->ready($instance->is_available, $instance->is_borrowable)]]);
     }
 
     /**
@@ -94,24 +97,28 @@ class G002M015ItemInstanceObserver
         //
     }
 
-    private function syncItemTotals(int|string|null $itemId): void
+    private function ready(mixed $available, mixed $borrowable): int
     {
-        if (! $itemId) {
-            return;
+        return $available && $borrowable ? 1 : 0;
+    }
+
+    /** Use committed-row arithmetic, not counts from a caller's older snapshot. */
+    private function applyTotalChanges(array $changes): void
+    {
+        ksort($changes, SORT_NUMERIC);
+        foreach ($changes as $itemId => [$quantity, $available]) {
+            if (! $itemId || ($quantity === 0 && $available === 0)) {
+                continue;
+            }
+            $updates = [];
+            if ($quantity !== 0) {
+                $updates['quantity'] = DB::raw('quantity + ('.(int) $quantity.')');
+            }
+            if ($available !== 0) {
+                $updates['available_quantity'] = DB::raw('available_quantity + ('.(int) $available.')');
+            }
+            // One UPDATE retains concurrent increments and rolls back with the instance.
+            G002M007Item::query()->whereKey($itemId)->update($updates);
         }
-
-        $item = G002M007Item::query()->find($itemId);
-
-        if (! $item) {
-            return;
-        }
-
-        $instances = $item->item_instance();
-        $item->quantity = (clone $instances)->count();
-        $item->available_quantity = (clone $instances)
-            ->where('is_available', true)
-            ->where('is_borrowable', true)
-            ->count();
-        $item->saveQuietly();
     }
 }
