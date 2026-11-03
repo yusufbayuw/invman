@@ -8,6 +8,9 @@ use App\Models\G002M015ItemInstance;
 use App\Models\G004M008Activity;
 use App\Models\G008M017Vehicle;
 use App\Models\User;
+use App\Models\WorkOrderAssignment;
+use App\Models\WorkOrderJobTitle;
+use App\Models\WorkOrderWorkflow;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -25,7 +28,12 @@ class DatabaseSeederTest extends TestCase
         $this->seed(DatabaseSeeder::class);
 
         $this->assertSame(7, G001M001Unit::query()->count());
-        $this->assertSame(8, User::query()->count());
+        $this->assertSame(23, User::query()->count());
+        $this->assertSame(11, WorkOrderJobTitle::query()->count());
+        $this->assertSame(19, WorkOrderAssignment::query()->count());
+        $this->assertDatabaseHas('work_order_workflows', ['version' => 1, 'status' => 'draft', 'g001_m001_unit_id' => null]);
+        $this->assertSame(0, WorkOrderWorkflow::query()->where('status', 'published')->count());
+        $this->assertDatabaseHas('ticket_team_members', ['team_name' => 'Tim Fasilitas Demo', 'position' => 'lead']);
         $this->assertTrue(Hash::check('DemoPass!2026#Secure', User::query()->where('username', 'admin')->firstOrFail()->password));
         $this->assertTrue(Hash::check('DemoPass!2026#Secure', User::query()->where('username', 'sarpras.sd')->firstOrFail()->password));
         $this->assertSame(0, G002M007Item::query()->count());
