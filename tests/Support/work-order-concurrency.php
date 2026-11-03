@@ -1,14 +1,5 @@
 <?php
 
-// Opt-in, non-destructive MySQL concurrency probe for disposable test databases.
-require dirname(__DIR__, 2).'/vendor/autoload.php';
-$app = require dirname(__DIR__, 2).'/bootstrap/app.php';
-$app->make(Kernel::class)->bootstrap();
-set_exception_handler(function (Throwable $e): never {
-    fwrite(STDERR, 'Readiness probe failed: '.$e->getMessage().PHP_EOL);
-    exit(1);
-});
-
 use App\Filament\Resources\WorkOrderWorkflowResource\Pages\CreateWorkflow;
 use App\Models\G001M001Unit;
 use App\Models\Ticket;
@@ -26,6 +17,16 @@ use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
+
+// Opt-in, non-destructive MySQL concurrency probe for disposable test databases.
+require dirname(__DIR__, 2).'/vendor/autoload.php';
+$app = require dirname(__DIR__, 2).'/bootstrap/app.php';
+$app->make(Kernel::class)->bootstrap();
+set_exception_handler(function (Throwable $e): never {
+    fwrite(STDERR, 'Readiness probe failed: '.$e->getMessage().PHP_EOL);
+    exit(1);
+});
+
 
 if (! app()->environment('testing') || getenv('INVMAN_CONCURRENCY_TEST') !== '1'
     || DB::getDriverName() !== 'mysql' || ! preg_match('/_(tests?|ci)$/D', DB::getDatabaseName())) {

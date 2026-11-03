@@ -1,14 +1,5 @@
 <?php
 
-// Real MySQL workers on disposable QA data. Barriers observe database lock waits, not timing guesses.
-require dirname(__DIR__, 3).'/vendor/autoload.php';
-$app = require dirname(__DIR__, 3).'/bootstrap/app.php';
-$app->make(Kernel::class)->bootstrap();
-set_exception_handler(function (Throwable $e): never {
-    fwrite(STDERR, 'Readiness probe failed: '.$e->getMessage().PHP_EOL);
-    exit(1);
-});
-
 use App\Models\G001M001Unit;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
@@ -27,6 +18,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+
+// Real MySQL workers on disposable QA data. Barriers observe database lock waits, not timing guesses.
+require dirname(__DIR__, 3).'/vendor/autoload.php';
+$app = require dirname(__DIR__, 3).'/bootstrap/app.php';
+$app->make(Kernel::class)->bootstrap();
+set_exception_handler(function (Throwable $e): never {
+    fwrite(STDERR, 'Readiness probe failed: '.$e->getMessage().PHP_EOL);
+    exit(1);
+});
+
 
 if (getenv('INVMAN_FINAL_QA') !== '1' || ! in_array(app()->environment(), ['testing', 'local'], true)
     || DB::getDriverName() !== 'mysql' || ! preg_match('/^invman_(?:final_(qa|tests|ci)|ci)$/D', DB::getDatabaseName())) {

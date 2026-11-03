@@ -1,14 +1,5 @@
 <?php
 
-// Explicitly opt-in, disposable database only. Never drops an existing table.
-require dirname(__DIR__, 2).'/vendor/autoload.php';
-$app = require dirname(__DIR__, 2).'/bootstrap/app.php';
-$app->make(Kernel::class)->bootstrap();
-set_exception_handler(function (Throwable $e): never {
-    fwrite(STDERR, 'Readiness probe failed: '.$e->getMessage().PHP_EOL);
-    exit(1);
-});
-
 use App\Models\G001M001Unit;
 use App\Models\G002M007Item;
 use App\Models\G004M008Activity;
@@ -24,6 +15,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
+
+// Explicitly opt-in, disposable database only. Never drops an existing table.
+require dirname(__DIR__, 2).'/vendor/autoload.php';
+$app = require dirname(__DIR__, 2).'/bootstrap/app.php';
+$app->make(Kernel::class)->bootstrap();
+set_exception_handler(function (Throwable $e): never {
+    fwrite(STDERR, 'Readiness probe failed: '.$e->getMessage().PHP_EOL);
+    exit(1);
+});
+
 
 if (! app()->environment('testing') || getenv('INVMAN_UPGRADE_TEST') !== '1'
     || DB::getDriverName() !== 'mysql' || ! str_ends_with(DB::getDatabaseName(), '_upgrade')) {

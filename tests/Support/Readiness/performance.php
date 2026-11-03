@@ -1,12 +1,5 @@
 <?php
 
-require dirname(__DIR__, 3).'/vendor/autoload.php';
-$app = require dirname(__DIR__, 3).'/bootstrap/app.php';
-$app->make(Kernel::class)->bootstrap();
-set_exception_handler(function (Throwable $e): never {
-    fwrite(STDERR, 'QA performance failed: '.$e->getMessage().PHP_EOL);
-    exit(1);
-});
 use App\Filament\Resources\WorkOrderWorkflowResource\Pages\CreateWorkflow;
 use App\Models\G001M001Unit;
 use App\Models\G002M007Item;
@@ -26,6 +19,14 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
+
+require dirname(__DIR__, 3).'/vendor/autoload.php';
+$app = require dirname(__DIR__, 3).'/bootstrap/app.php';
+$app->make(Kernel::class)->bootstrap();
+set_exception_handler(function (Throwable $e): never {
+    fwrite(STDERR, 'QA performance failed: '.$e->getMessage().PHP_EOL);
+    exit(1);
+});
 
 if (getenv('INVMAN_FINAL_QA') !== '1' || DB::getDriverName() !== 'mysql' || ! in_array(DB::getDatabaseName(), ['invman_final_ci', 'invman_ci'], true)) {
     throw new RuntimeException('Isolated CI QA database required');
