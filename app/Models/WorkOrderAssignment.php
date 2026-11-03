@@ -27,6 +27,32 @@ class WorkOrderAssignment extends Model
             if ($assignment->supervisor_user_id && (int) $assignment->supervisor_user_id === (int) $assignment->user_id) {
                 throw ValidationException::withMessages(['supervisor_user_id' => 'Pengguna tidak boleh menjadi atasan dirinya sendiri.']);
             }
+            if ($assignment->is_active && ! User::query()->whereKey($assignment->user_id)->where('is_enabled', true)->exists()) {
+                throw ValidationException::withMessages(['user_id' => 'Penugasan aktif membutuhkan pegawai yang aktif.']);
+            }
+            if ($assignment->supervisor_user_id && ! User::query()->whereKey($assignment->supervisor_user_id)->where('is_enabled', true)->exists()) {
+                throw ValidationException::withMessages(['supervisor_user_id' => 'Atasan harus merupakan pegawai aktif.']);
+            }
+            if ($assignment->supervisor_user_id) {
+                $seen = [(int) $assignment->user_id => true];
+                $cursor = (int) $assignment->supervisor_user_id;
+                for ($depth = 0; $depth < 100; $depth++) {
+                    if (isset($seen[$cursor])) {
+                        throw ValidationException::withMessages(['supervisor_user_id' => 'Hierarki jabatan tidak boleh membentuk siklus.']);
+                    }
+                    $seen[$cursor] = true;
+                    $next = self::query()->where('user_id', $cursor)->where('is_active', true)
+                        ->where('id', '!=', $assignment->id ?: 0)->orderBy('id')
+                        ->value('supervisor_user_id');
+                    if (! $next) {
+                        break;
+                    }
+                    $cursor = (int) $next;
+                }
+                if ($depth === 100) {
+                    throw ValidationException::withMessages(['supervisor_user_id' => 'Hierarki terlalu dalam.']);
+                }
+            }
         });
         static::deleting(fn (): never => throw ValidationException::withMessages([
             'penugasan' => 'Histori penugasan tidak dapat dihapus. Nonaktifkan saja.',

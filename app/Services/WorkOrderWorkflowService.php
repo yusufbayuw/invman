@@ -64,6 +64,24 @@ final class WorkOrderWorkflowService
                 throw ValidationException::withMessages(['workflow' => 'Hanya draft yang dapat dipublikasikan.']);
             }
             $steps = $this->validateSteps($locked->steps ?? []);
+            // Do not activate a role-based workflow with no active person to approve.
+            $titleIds = array_values(array_filter(array_unique(array_merge(
+                array_column($steps, 'job_title_id'),
+                [$locked->assign_job_title_id, $locked->close_job_title_id],
+            ))));
+            foreach ($titleIds as $titleId) {
+                if (! WorkOrderAssignment::query()->where('work_order_job_title_id', $titleId)
+                    ->where('is_active', true)
+                    ->whereHas('user', fn ($query) => $query->where('is_enabled', true))
+                    ->where(function ($query) use ($locked): void {
+                        $query->whereNull('g001_m001_unit_id');
+                        if ($locked->g001_m001_unit_id) {
+                            $query->orWhere('g001_m001_unit_id', $locked->g001_m001_unit_id);
+                        }
+                    })->exists()) {
+                    throw ValidationException::withMessages(['steps' => 'Jabatan approver belum memiliki pegawai aktif sesuai cakupan workflow.']);
+                }
+            }
             foreach (['assign_job_title_id', 'close_job_title_id'] as $field) {
                 if ($locked->{$field} && ! DB::table('work_order_job_titles')->where('id', $locked->{$field})->where('is_active', true)->exists()) {
                     throw ValidationException::withMessages([$field => 'Jabatan yang tidak aktif tidak dapat dipakai.']);
@@ -153,7 +171,8 @@ final class WorkOrderWorkflowService
             return false;
         }
         return $user->id !== $approval->ticket->reporter_id
-            && in_array($user->id, array_map('intval', $approval->candidate_user_ids ?? []), true);
+            && in_array($user->id, array_map('intval', $approval->candidate_user_ids ?? []), true)
+            && $this->currentlyEligible($approval, $user);
     }
 
     public function decide(WorkOrderApproval $approval, User $user, bool $approved, ?string $notes): void
@@ -192,6 +211,84 @@ final class WorkOrderWorkflowService
         }
     }
 
+
+    private function currentlyEligible(WorkOrderApproval $approval, User $user): bool
+    {
+        if ($approval->resolver === 'reporter_supervisor') {
+            return WorkOrderAssignment::query()
+                ->where('user_id', $approval->ticket->reporter_id)
+                ->where('supervisor_user_id', $user->id)
+                ->where('is_active', true)
+                ->where(function ($query) use ($approval): void {
+                    $query->whereNull('g001_m001_unit_id');
+                    if ($approval->ticket->g001_m001_unit_id) {
+                        $query->orWhere('g001_m001_unit_id', $approval->ticket->g001_m001_unit_id);
+                    }
+                })->exists();
+        }
+        return $approval->resolver === 'job_title' && $approval->job_title_id
+            && $this->hasActiveTitle($approval->ticket, $user, (int) $approval->job_title_id);
+    }
+
+    private function hasActiveTitle(Ticket $ticket, User $user, int $titleId): bool
+    {
+        return WorkOrderAssignment::query()->where('user_id', $user->id)
+            ->where('work_order_job_title_id', $titleId)->where('is_active', true)
+            ->whereHas('jobTitle', fn ($query) => $query->where('is_active', true))
+            ->where(function ($query) use ($ticket): void {
+                $query->whereNull('g001_m001_unit_id');
+                if ($ticket->g001_m001_unit_id) {
+                    $query->orWhere('g001_m001_unit_id', $ticket->g001_m001_unit_id);
+                }
+            })->where(function ($query) use ($ticket): void {
+                $query->whereNull('g002_m003_item_management_id');
+                if ($ticket->g002_m003_item_management_id) {
+                    $query->orWhere('g002_m003_item_management_id', $ticket->g002_m003_item_management_id);
+                }
+            })->exists();
+    }
+
+    public function reassign(WorkOrderApproval $approval, User $admin, User $replacement, string $reason): void
+    {
+        if (! $admin->isAdmin() || ! $admin->is_enabled) {
+            abort(403);
+        }
+        $reason = trim($reason);
+        if (mb_strlen($reason) < 10 || mb_strlen($reason) > 2000) {
+            throw ValidationException::withMessages(['reason' => 'Alasan pengalihan minimal sepuluh karakter.']);
+        }
+        DB::transaction(function () use ($approval, $admin, $replacement, $reason): void {
+            $ticket = Ticket::query()->lockForUpdate()->findOrFail($approval->ticket_id);
+            $locked = WorkOrderApproval::query()->lockForUpdate()->findOrFail($approval->id);
+            if ($locked->status !== 'pending' || ! $replacement->is_enabled
+                || $replacement->id === $ticket->reporter_id) {
+                throw ValidationException::withMessages(['approval' => 'Hanya approval tertunda dapat dialihkan kepada pegawai aktif selain pelapor.']);
+            }
+            $locked->setRelation('ticket', $ticket);
+            if (($locked->checkpoint === 'start' && $ticket->status !== 'open')
+                || ($locked->checkpoint === 'final' && $ticket->status !== 'resolved')) {
+                throw ValidationException::withMessages(['approval' => 'Status tiket tidak cocok untuk pengalihan persetujuan.']);
+            }
+            if ($locked->resolver === 'job_title' && ! $this->hasActiveTitle($ticket, $replacement, (int) $locked->job_title_id)) {
+                throw ValidationException::withMessages(['approval' => 'Pengganti harus memegang jabatan aktif pada cakupan ini.']);
+            }
+            if ($locked->resolver === 'reporter_supervisor') {
+                $locked->setRelation('ticket', $ticket);
+                if (! $this->currentlyEligible($locked, $replacement)) {
+                    throw ValidationException::withMessages(['approval' => 'Tetapkan pengganti sebagai atasan aktif pelapor terlebih dahulu.']);
+                }
+            }
+            $old = json_encode($locked->candidate_user_ids);
+            $locked->forceFill(['candidate_user_ids' => [(int) $replacement->id],
+                'target_user_id' => $replacement->id])->save();
+            $ticket->events()->create([
+                'actor_id' => $admin->id, 'action' => 'work_order_approver_reassigned',
+                'from_value' => $locked->step_key, 'to_value' => (string) $replacement->id,
+                'notes' => $reason.'; kandidat lama: '.$old,
+            ]);
+        }, 3);
+    }
+
     public function canPerform(Ticket $ticket, User $user, string $action): bool
     {
         $record = $ticket->workOrderApprovals()->with('workflow')->orderBy('sequence')->first();
@@ -203,18 +300,6 @@ final class WorkOrderWorkflowService
             return $user->isFacility();
         }
         return $user->is_enabled && $user->id !== $ticket->reporter_id
-            && WorkOrderAssignment::query()->where('user_id', $user->id)->where('work_order_job_title_id', $titleId)
-                ->where('is_active', true)
-                ->where(function ($q) use ($ticket): void {
-                    $q->whereNull('g001_m001_unit_id');
-                    if ($ticket->g001_m001_unit_id) {
-                        $q->orWhere('g001_m001_unit_id', $ticket->g001_m001_unit_id);
-                    }
-                })->where(function ($q) use ($ticket): void {
-                    $q->whereNull('g002_m003_item_management_id');
-                    if ($ticket->g002_m003_item_management_id) {
-                        $q->orWhere('g002_m003_item_management_id', $ticket->g002_m003_item_management_id);
-                    }
-                })->exists();
+            && $this->hasActiveTitle($ticket, $user, (int) $titleId);
     }
 }

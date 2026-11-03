@@ -533,6 +533,7 @@ class TicketService
             $ticket->assets()->create(['asset_type' => $assetType, 'asset_id' => $assetId]);
             $this->event($ticket, auth()->id(), 'created_from_return', null, 'open', $sourceKey);
             app(TicketMaintenanceService::class)->initialize($ticket);
+            app(WorkOrderWorkflowService::class)->snapshot($ticket);
             DB::afterCommit(fn () => $this->notifyTeam($ticket));
         }
     }

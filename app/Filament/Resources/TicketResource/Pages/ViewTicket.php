@@ -78,6 +78,26 @@ class ViewTicket extends ViewRecord
                         ->decide($step, auth()->user(), $data['decision'] === 'approve', $data['notes'] ?? null);
                     Notification::make()->title('Keputusan Work Order dicatat')->success()->send();
                 }),
+            Actions\Action::make('reassignWorkOrderApproval')
+                ->label('Alihkan Persetujuan')->icon('heroicon-o-arrow-path')->color('gray')
+                ->visible(fn (): bool => (auth()->user()?->isAdmin() ?? false)
+                    && $this->nextWorkOrderApproval() !== null)
+                ->form([
+                    Forms\Components\Select::make('replacement_id')->label('Pengganti')
+                        ->options(fn (): array => \App\Models\User::query()->where('is_enabled', true)
+                            ->where('id', '!=', $this->getRecord()->reporter_id)
+                            ->orderBy('name')->pluck('name', 'id')->all())->searchable()->required(),
+                    Forms\Components\Textarea::make('reason')->label('Alasan pengalihan')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])->action(function (array $data): void {
+                    $step = $this->nextWorkOrderApproval();
+                    abort_unless($step, 404);
+                    app(\App\Services\WorkOrderWorkflowService::class)->reassign(
+                        $step, auth()->user(), \App\Models\User::query()->findOrFail($data['replacement_id']),
+                        $data['reason'],
+                    );
+                    Notification::make()->title('Pengalihan persetujuan tercatat')->success()->send();
+                }),
             Actions\Action::make('approveMaintenance')
                 ->label('Setujui & Tetapkan PIC')->icon('heroicon-o-check-badge')->color('success')
                 ->visible(fn (): bool => $this->getRecord()->maintenance !== null

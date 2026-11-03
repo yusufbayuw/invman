@@ -33,6 +33,10 @@ class WorkOrderConfigurationTest extends TestCase
                     'resolver' => 'job_title', 'job_title_id' => $title->id],
             ],
         ]);
+        WorkOrderAssignment::query()->create([
+            'user_id' => $admin->id, 'work_order_job_title_id' => $title->id,
+            'g001_m001_unit_id' => $unit->id,
+        ]);
         $this->assertSame('draft', $workflow->status);
         try {
             app(WorkOrderWorkflowService::class)->publish($workflow, $staff);
@@ -56,6 +60,36 @@ class WorkOrderConfigurationTest extends TestCase
             'work_order_job_title_id' => $title->id,
             'supervisor_user_id' => $user->id,
         ]);
+    }
+
+    public function test_publishing_requires_an_active_approver_assignment(): void
+    {
+        $this->seed(RoleSeeder::class);
+        $admin = User::factory()->create();
+        $admin->assignRole(config('role.admin'));
+        $title = WorkOrderJobTitle::query()->create(['name' => 'SPV Perpustakaan']);
+        $workflow = WorkOrderWorkflow::query()->create([
+            'version' => 1, 'status' => 'draft', 'created_by' => $admin->id,
+            'steps' => [
+                ['key' => 'spv', 'label' => 'Approval SPV', 'checkpoint' => 'start',
+                 'resolver' => 'job_title', 'job_title_id' => $title->id],
+            ],
+        ]);
+        $this->expectException(ValidationException::class);
+        app(WorkOrderWorkflowService::class)->publish($workflow, $admin);
+    }
+
+    public function test_indirect_supervisor_cycle_is_rejected(): void
+    {
+        $title = WorkOrderJobTitle::query()->create(['name' => 'Koordinator Teknisi']);
+        $a = User::factory()->create();
+        $b = User::factory()->create();
+        WorkOrderAssignment::query()->create(['user_id' => $a->id,
+            'work_order_job_title_id' => $title->id, 'supervisor_user_id' => $b->id]);
+        $assignment = WorkOrderAssignment::query()->create(['user_id' => $b->id,
+            'work_order_job_title_id' => $title->id]);
+        $this->expectException(ValidationException::class);
+        $assignment->update(['supervisor_user_id' => $a->id]);
     }
 
     public function test_invalid_or_duplicate_workflow_steps_are_rejected(): void
