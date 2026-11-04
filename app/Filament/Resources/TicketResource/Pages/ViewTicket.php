@@ -99,6 +99,45 @@ class ViewTicket extends ViewRecord
                     $this->getRecord()->refresh();
                     Notification::make()->title('Tinjauan dan estimasi tercatat')->success()->send();
                 }),
+            Actions\Action::make('overrideWorkOrderEstimate')
+                ->label('Override Input Estimasi')->icon('heroicon-o-calculator')->color('warning')
+                ->visible(fn (): bool => app(WorkOrderEstimateService::class)
+                    ->canRecordOverride($this->getRecord(), auth()->user()))
+                ->modalDescription('Tinjauan dan estimasi dicatat atas tanggung jawab Anda, termasuk jika Anda pelapor. Semua tindakan ditandai sebagai override.')
+                ->fillForm(fn (): array => [
+                    'expected_version' => (int) $this->getRecord()->workOrderEstimates()->max('version'),
+                    'materials' => [], 'execution_mode' => 'internal',
+                ])
+                ->form([
+                    Forms\Components\Hidden::make('expected_version')->required(),
+                    Forms\Components\Select::make('execution_mode')->label('Pelaksana')->required()->live()
+                        ->options(['internal' => 'Tim internal', 'external' => 'Vendor eksternal']),
+                    Forms\Components\TextInput::make('vendor_name')->label('Nama vendor')->maxLength(200)
+                        ->required(fn (Forms\Get $get): bool => $get('execution_mode') === 'external')
+                        ->visible(fn (Forms\Get $get): bool => $get('execution_mode') === 'external'),
+                    Forms\Components\Textarea::make('diagnosis')->label('Diagnosis / tinjauan awal')
+                        ->required()->minLength(5)->maxLength(10000),
+                    Forms\Components\Repeater::make('materials')->label('Rencana material')->schema([
+                        Forms\Components\TextInput::make('name')->label('Material')->required()->maxLength(200),
+                        Forms\Components\TextInput::make('quantity')->label('Jumlah')->numeric()
+                            ->gt(0)->maxValue(100000)->required(),
+                        Forms\Components\TextInput::make('unit')->label('Satuan')->required()->maxLength(25)->default('pcs'),
+                    ])->columns(3)->default([])->maxItems(30),
+                    Forms\Components\TextInput::make('amount')->label('Total estimasi (Rp)')->required()
+                        ->regex('/^(0|[1-9][0-9]{0,11})$/D'),
+                    Forms\Components\Textarea::make('override_reason')->label('Alasan override')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(function (array $data): void {
+                    $version = (int) $data['expected_version'];
+                    $reason = $data['override_reason'];
+                    unset($data['expected_version'], $data['override_reason']);
+                    app(WorkOrderEstimateService::class)->record(
+                        $this->getRecord(), auth()->user(), $data, $version, $reason,
+                    );
+                    $this->getRecord()->refresh();
+                    Notification::make()->title('Estimasi override tercatat')->success()->send();
+                }),
             Actions\Action::make('workOrderApproval')
                 ->label('Persetujuan Work Order')->icon('heroicon-o-document-check')->color('warning')
                 ->visible(fn (): bool => ($step = $this->nextWorkOrderApproval()) !== null
