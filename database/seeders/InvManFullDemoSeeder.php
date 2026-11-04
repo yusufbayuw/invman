@@ -191,6 +191,17 @@ class InvManFullDemoSeeder extends Seeder
                 ]);
             }
 
+            if ($privileged) {
+                // Demo-only unit: publish BEFORE creating tickets so their immutable
+                // approval snapshots include realistic delegated approvers.
+                $admin = User::query()->where('username', 'invman.demo.admin')->firstOrFail();
+                $demoWorkflow = WorkOrderWorkflow::query()
+                    ->where('g001_m001_unit_id', $unitA->id)->orderByDesc('version')->firstOrFail();
+                if ($demoWorkflow->status === 'draft') {
+                    app(\App\Services\WorkOrderWorkflowService::class)->publish($demoWorkflow, $admin);
+                }
+            }
+
             $this->draft($borrowerA, 'Pinjam Proyektor', [
                 ['type' => 'item', 'item_id' => $projector->id, 'quantity' => 2],
             ]);
@@ -215,7 +226,7 @@ class InvManFullDemoSeeder extends Seeder
         }, 3);
 
         $this->command?->info('Fixture [DEMO-INVMAN] tersedia: 2 unit, satu akun per jabatan/peran (9 + opsional Admin), aset, 3 draf pinjaman, 2 tiket dan workflow DRAFT.');
-        $this->command?->warn('Tidak ada peminjaman yang otomatis diajukan/disetujui, dan workflow tidak dipublikasikan.');
+        $this->command?->warn('Peminjaman tetap draf; workflow unit demo dipublikasikan hanya dengan --include-privileged agar approval dapat diperagakan.');
     }
 
     private function demoUser(string $suffix, string $name, G001M001Unit $unit, string $password, ?string $role = null): User
