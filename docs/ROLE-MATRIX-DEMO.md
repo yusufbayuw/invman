@@ -11,6 +11,7 @@ Bertujuan mengeksplorasi alur lintas unit, jabatan dinamis Work Order, dan penge
 - Tiga akun `staf.fas`, `spv.fas`, dan `man.fas` dengan role existing `fasilitas` dan penugasan jabatan global.
 - Satu akun `teknisi` **tanpa role fasilitas global**, dengan jabatan Teknisi. Atasan langsung adalah Staf Fasilitas; staf merupakan lead tim lapangan `[DEMO-ORG] Tim Teknis Fasilitas`. Hierarki: Manager → Supervisor → Staf → Teknisi.
 - Dua akun `it` dan `perpus`, terhubung ke pengelola barang `[DEMO-ORG] IT` dan `[DEMO-ORG] Perpustakaan`, tanpa role fasilitas.
+- Akun **`driver`** dengan data SIM A demonstrasi dan kendaraan contoh, tanpa role `fasilitas` global. Akun ini adalah identitas pengemudi, bukan admin peminjaman.
 - Tiap unit memiliki kursi lipat (4), laptop (2), buku referensi (3), total 15 master barang dan 45 barang satuan.
 - Satu draf peminjaman campuran laptop + buku di tiap unit (5 draf); semua masih `draft` dan **belum memblokir stok**.
 - Lima workflow Work Order per unit, semuanya `draft`, dengan jabatan **Teknisi** sebagai target dispatch. TK: staf + pengesahan manager. SD/SMP/SMA: staf + supervisor + pengesahan manager. Universitas: sama dengan tambahan checkpoint estimasi pada supervisor. Teknisi bukan approver final.
@@ -37,6 +38,23 @@ Username dibuat singkat agar mudah login untuk UAT lokal. Password `password` **
 
 **Perhatian:** semua pengguna dengan role existing `fasilitas` saat ini memiliki akses fasilitas global melalui `User::isFacility()`. Jabatan `Staf Fasilitas`, `Supervisor Fasilitas`, dan `Manager Fasilitas` membedakan Work Order, **bukan** memisahkan akses ke seluruh modul. Jika diperlukan hierarki RBAC ketat, lakukan redesign policy + test terpisah. Jangan menganggap role `fasilitas` saat ini least-privilege.
 
+## Skenario operasional tambahan (opt-in)
+
+Seeder `InvManBusinessScenarioSeeder` adalah pendamping `InvManRoleMatrixDemoSeeder`, dan tidak berjalan otomatis. Setelah seeder utama:
+
+```bash
+php artisan db:seed --class=InvManBusinessScenarioSeeder
+php artisan test --filter=InvManBusinessScenarioSeederTest
+```
+
+Seeder pendamping menambah 5 kendaraan (termasuk bus dengan kebutuhan kenek), 10 ruangan pada 5 gedung/lantai, 10 draf peminjaman ruangan/kendaraan, serta 9 pengajuan yang mencakup `submitted`, `approved`, `rejected`, `partially_approved`, `cancelled`, `checked_out`, `return_requested`, dan `returned`. Persetujuan dilakukan melalui `LoanRequestService`; serah-terima awal melalui `LoanCheckoutService` oleh pengelola dan dikonfirmasi peminjam; pengembalian juga memerlukan konfirmasi pihak kedua.
+
+Terdapat 7 tiket laporan kerusakan melalui `TicketService` dan `TicketMaintenanceService`: `open`, `triaged`, `in_progress`, `waiting_parts`, `resolved`, `closed`, dan `cancelled`. Semua contoh menggunakan identitas `[DEMO-ORG]` dan `source_key` tersendiri untuk idempotensi. Workflow yang dikonfigurasi seeder utama tetap DRAFT, sehingga tiket menggunakan fallback kewenangan fasilitas existing; **ini belum memverifikasi approval Work Order bertingkat yang dipublikasikan**.
+
+**Batas cakupan:** bukan matriks lengkap seluruh pengecualian. Belum ada dataset khusus stok habis/overbooking, kerusakan saat pengembalian, pergantian pengemudi di tengah perjalanan, pembayaran/tarif, serta approval Work Order versi published dengan seluruh riwayat keputusan. Pengujian atas skenario negatif dilakukan dengan automated test terpisah dan tidak boleh dibuat sebagai keadaan database yang melanggar invariant.
+
+Seeder pendamping hanya dapat dijalankan di local/testing terisolasi (`SEED_DEMO_USERS=true`). Transaksi terkirim memicu hold dan notifikasi aplikasi sebagaimana proses normal. Menjalankannya di production tidak diizinkan karena risiko transaksi demo dan akun berkredensial publik; untuk UAT dengan konfigurasi production, gunakan salinan database terisolasi tanpa data pengguna asli.
+
 ## Eksplorasi yang disarankan
 
 1. **Isolasi unit**: login Sarpras TK dan pastikan tidak bisa melihat/mengubah pengajuan SD, SMP, SMA, dan Universitas; coba URL langsung dan payload Livewire yang dimodifikasi.
@@ -49,7 +67,7 @@ Username dibuat singkat agar mudah login untuk UAT lokal. Password `password` **
 
 ## Kriteria pengujian
 
-`InvManRoleMatrixDemoSeederTest` memeriksa guard opt-in/production, jumlah 5 unit/11 pengguna/inventaris/draf, hubungan atasan langsung dan keanggotaan tim teknisi, scoped membership IT vs Perpustakaan, idempotensi, akun existing tidak diubah, serta penolakan collision. Ini belum menggantikan integrasi penuh CI MySQL dan browser UAT.
+`InvManRoleMatrixDemoSeederTest` dan `InvManBusinessScenarioSeederTest` memeriksa guard opt-in/production, jumlah 5 unit/12 pengguna/inventaris/draf, hubungan atasan langsung dan keanggotaan tim teknisi, scoped membership IT vs Perpustakaan, idempotensi, akun existing tidak diubah, serta penolakan collision. Ini belum menggantikan integrasi penuh CI MySQL dan browser UAT.
 
 **Status:** branch implementasi tersedia sebagai PR review; tidak langsung merge ke main dan belum dinyatakan siap produksi.
 
