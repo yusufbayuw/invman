@@ -24,13 +24,11 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
     private function enableDemo(): void
     {
         config()->set('security.seed_demo_users', true);
-        config()->set('security.seed_demo_password', 'SafeTest!Demo2026#Password');
         $this->seed(RoleSeeder::class);
     }
 
     public function test_demo_is_opt_in_and_refuses_production(): void
     {
-        config()->set('security.seed_demo_password', 'SafeTest!Demo2026#Password');
         $this->expectException(RuntimeException::class);
         $this->seed(InvManRoleMatrixDemoSeeder::class);
     }
@@ -40,7 +38,7 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
         $this->enableDemo();
         config()->set('app.env', 'production');
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('production');
+        $this->expectExceptionMessage('staging/production');
         $this->seed(InvManRoleMatrixDemoSeeder::class);
     }
 
@@ -50,8 +48,8 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
         $this->seed(InvManRoleMatrixDemoSeeder::class);
 
         $this->assertSame(5, G001M001Unit::query()->where('name', 'like', '[DEMO-ORG]%')->count());
-        $this->assertSame(11, User::query()->where('username', 'like', 'invman.orgdemo.%')->count());
-        $this->assertSame(5, User::query()->where('username', 'like', 'invman.orgdemo.sarpras.%')->count());
+        $this->assertSame(11, User::query()->whereIn('username', ['sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ', 'staf.fas', 'spv.fas', 'man.fas', 'teknisi', 'it', 'perpus'])->count());
+        $this->assertSame(5, User::query()->whereIn('username', ['sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ'])->count());
         $this->assertSame(15, G002M007Item::query()->where('code', 'like', 'INVMAN-ORG-%')->count());
         $this->assertSame(45, G002M015ItemInstance::query()->whereHas('item',
             fn ($query) => $query->where('code', 'like', 'INVMAN-ORG-%'))->count());
@@ -61,18 +59,18 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
         $this->assertSame(5, WorkOrderWorkflow::query()->where('status', 'draft')->count());
         $this->assertSame(0, WorkOrderWorkflow::query()->where('status', 'published')->count());
 
-        foreach (['tk', 'sd', 'smp', 'sma', 'universitas'] as $slug) {
-            $borrower = User::query()->where('username', 'invman.orgdemo.sarpras.'.$slug)->firstOrFail();
+        foreach (['tk', 'sd', 'smp', 'sma', 'univ'] as $slug) {
+            $borrower = User::query()->where('username', 'sarpras.'.$slug)->firstOrFail();
             $this->assertTrue($borrower->isSarpras());
             $this->assertNotNull($borrower->g001_m001_unit_id);
         }
-        foreach (['staf', 'supervisor', 'manager'] as $suffix) {
-            $facility = User::query()->where('username', 'invman.orgdemo.fasilitas.'.$suffix)->firstOrFail();
+        foreach (['staf.fas', 'spv.fas', 'man.fas'] as $username) {
+            $facility = User::query()->where('username', $username)->firstOrFail();
             $this->assertTrue($facility->isFacility());
         }
 
-        $technician = User::query()->where('username', 'invman.orgdemo.fasilitas.teknisi')->firstOrFail();
-        $staff = User::query()->where('username', 'invman.orgdemo.fasilitas.staf')->firstOrFail();
+        $technician = User::query()->where('username', 'teknisi')->firstOrFail();
+        $staff = User::query()->where('username', 'staf.fas')->firstOrFail();
         $this->assertFalse($technician->isFacility());
         $this->assertFalse($technician->isSarpras());
         $assignment = WorkOrderAssignment::query()->where('user_id', $technician->id)->firstOrFail();
@@ -88,8 +86,8 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
             $this->assertNotNull($workflow->dispatch_job_title_id);
         }
 
-        $it = User::query()->where('username', 'invman.orgdemo.pengelola.it')->firstOrFail();
-        $library = User::query()->where('username', 'invman.orgdemo.pengelola.perpustakaan')->firstOrFail();
+        $it = User::query()->where('username', 'it')->firstOrFail();
+        $library = User::query()->where('username', 'perpus')->firstOrFail();
         $this->assertFalse($it->isFacility());
         $this->assertFalse($library->isFacility());
         $this->assertSame(1, $it->itemManagements()->count());
@@ -108,7 +106,7 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
         $this->enableDemo();
         $real = User::factory()->create();
         $this->seed(InvManRoleMatrixDemoSeeder::class);
-        $user = User::query()->where('username', 'invman.orgdemo.sarpras.sd')->firstOrFail();
+        $user = User::query()->where('username', 'sarpras.sd')->firstOrFail();
         $hash = $user->password;
         $counts = [
             User::query()->count(),
@@ -120,7 +118,6 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
             TicketTeamMember::query()->count(),
             WorkOrderWorkflow::query()->count(),
         ];
-        config()->set('security.seed_demo_password', 'AnotherValid!Demo2026#Password');
         $this->seed(InvManRoleMatrixDemoSeeder::class);
         $this->assertSame($counts, [
             User::query()->count(),
@@ -133,7 +130,10 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
             WorkOrderWorkflow::query()->count(),
         ]);
         $this->assertSame($hash, $user->fresh()->password);
-        $this->assertTrue(Hash::check('SafeTest!Demo2026#Password', $user->password));
+        $this->assertTrue(Hash::check('password', $user->password));
+        foreach (['sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ', 'staf.fas', 'spv.fas', 'man.fas', 'teknisi', 'it', 'perpus'] as $username) {
+            $this->assertTrue(Hash::check('password', User::query()->where('username', $username)->firstOrFail()->password));
+        }
         $this->assertNotNull($real->fresh());
     }
 
@@ -141,7 +141,7 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
     {
         $this->enableDemo();
         $real = User::factory()->create([
-            'username' => 'invman.orgdemo.sarpras.tk',
+            'username' => 'sarpras.tk',
             'email' => 'real-person@example.org',
         ]);
         $hash = $real->password;
