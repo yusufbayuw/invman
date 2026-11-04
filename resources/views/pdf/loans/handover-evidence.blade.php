@@ -193,7 +193,7 @@
         <p class="small muted">Bukti ini dihasilkan otomatis dari pencatatan InvMan saat diunduh. Nama dan waktu adalah catatan konfirmasi akun pada aplikasi, <strong>bukan tanda tangan elektronik tersertifikasi</strong>. Dokumen dapat berubah apabila histori transaksinya diperbarui secara sah. Periksa nomor reservasi dan bukti asli di aplikasi untuk validasi.</p>
     </section>
     @if($overrides->isNotEmpty())
-    <section class="block long">
+    <section class="block">
         <h2>Audit Pengecualian</h2>
         <table class="data">
             <thead><tr><th>Aktor sebenarnya</th><th>Pihak yang diwakili</th><th>Tindakan / waktu</th><th>Alasan</th></tr></thead>
