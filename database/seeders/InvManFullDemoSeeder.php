@@ -134,6 +134,12 @@ class InvManFullDemoSeeder extends Seeder
                     'requires_assistant' => true, 'is_borrowable' => true, 'status' => 'tersedia'],
             );
 
+            foreach (['D 9901 DMO' => self::PREFIX.' Minibus Demo', 'D 9902 DMO' => self::PREFIX.' Bus Demo'] as $plate => $expected) {
+                if (G008M017Vehicle::query()->where('license_plate', $plate)->where('name', '!=', $expected)->exists()) {
+                    throw new RuntimeException("Nomor kendaraan demo {$plate} sudah dipakai aset lain.");
+                }
+            }
+
             $projector = $this->demoItem('PRJ-01', 'Proyektor Latihan', 4, $unitA, $management, $itemType, $room);
             $this->demoItem('LTP-01', 'Laptop Latihan', 3, $unitB, $management, $itemType, $roomB);
             $damaged = $this->demoItem('AC-01', 'AC Perlu Perbaikan', 1, $unitA, $management, $itemType, $room);
@@ -223,6 +229,10 @@ class InvManFullDemoSeeder extends Seeder
             if ($user->email !== $email || (int) $user->g001_m001_unit_id !== (int) $unit->id) {
                 throw new RuntimeException("Username demo {$username} sudah digunakan akun dengan identitas atau unit berbeda.");
             }
+            // Never silently escalate existing credentials to an admin/facility role.
+            if ($role && ! $user->hasRole($role)) {
+                throw new RuntimeException("Akun demo {$username} sudah ada tanpa role {$role}; tidak ada eskalasi akses otomatis.");
+            }
             // Never reset an existing user's password, role, unit, enablement or name.
             return $user;
         }
@@ -240,7 +250,13 @@ class InvManFullDemoSeeder extends Seeder
     private function demoItem(string $suffix, string $name, int $quantity, G001M001Unit $unit,
         G002M003ItemManagement $management, G002M002ItemType $type, G003M006Room $room): G002M007Item
     {
-        return G002M007Item::query()->firstOrCreate(['code' => 'INVMAN-DEMO-'.$suffix], [
+        $code = 'INVMAN-DEMO-'.$suffix;
+        $existing = G002M007Item::query()->where('code', $code)->first();
+        if ($existing && ($existing->name !== self::PREFIX.' '.$name
+            || (int) $existing->g001_m001_unit_id !== (int) $unit->id)) {
+            throw new RuntimeException("Kode barang demo {$code} sudah digunakan barang lain.");
+        }
+        return G002M007Item::query()->firstOrCreate(['code' => $code], [
             'name' => self::PREFIX.' '.$name,
             'g001_m001_unit_id' => $unit->id,
             'g002_m003_item_management_id' => $management->id,
