@@ -32,6 +32,16 @@ class ViewTicket extends ViewRecord
         return $record;
     }
 
+    protected function afterActionCalled(): void
+    {
+        parent::afterActionCalled();
+
+        // Services update a separately locked model. Refresh this page's model
+        // so the same Livewire response renders the new status and next action.
+        if ($this->record instanceof Model) {
+            $this->record->refresh();
+        }
+    }
     protected function getHeaderActions(): array
     {
         return [
@@ -412,3 +422,4 @@ class ViewTicket extends ViewRecord
         return app(TicketService::class)->availableTransitions($this->getRecord(), auth()->user());
     }
 }
+

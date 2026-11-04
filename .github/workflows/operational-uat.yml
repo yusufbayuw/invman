@@ -63,6 +63,19 @@ jobs:
         env:
           UAT_BROWSER_CHANNEL: chromium
         run: node tests/Support/OperationalUat/browser-smoke.cjs
+      - name: Operational browser roles and Work Order
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-operational.cjs
+      - name: Controlled authenticated read load
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/http-load.cjs
+      - name: Concurrent inventory transaction probes
+        if: always()
+        run: php tests/Support/OperationalUat/transaction-probes.php
       - name: Queue scheduler and backup restore rehearsal
         if: always()
         run: php tests/Support/OperationalUat/infra-recovery.php
@@ -73,5 +86,6 @@ jobs:
           name: operational-uat-${{ github.sha }}
           path: docs/operational-readiness/evidence/2026-11-04
           retention-days: 30
+
 
 
