@@ -96,9 +96,15 @@ class HierarchyOverrideTest extends TestCase
     {
         $d = $this->context();
         $authorization = app(HierarchyOverrideService::class);
+        $this->actingAs($d['admin']);
         $this->assertTrue($authorization->can($d['admin'], $d['facility'], $d['unit']->id));
+        $this->actingAs($d['facility']);
         $this->assertTrue($authorization->can($d['facility'], $d['reporter'], $d['unit']->id));
+        $this->assertFalse($authorization->can($d['admin'], $d['facility'], $d['unit']->id),
+            'An actor cannot pass another user identity to an override service.');
+        $this->actingAs($d['reporter']);
         $this->assertFalse($authorization->can($d['reporter'], $d['facility'], $d['unit']->id));
+        $this->actingAs($d['outsider']);
         $this->assertFalse($authorization->can($d['outsider'], $d['technician'], $d['unit']->id));
 
         $this->actingAs($d['outsider']);
@@ -137,6 +143,7 @@ class HierarchyOverrideTest extends TestCase
             ]],
         ]);
         // The existing ticket predates the workflow. Snapshot is intentionally explicit.
+        $this->actingAs($d['facility']);
         app(WorkOrderWorkflowService::class)->snapshot($d['ticket']);
         $approval = $d['ticket']->workOrderApprovals()->where('status', 'pending')->firstOrFail();
         $this->assertContains($supervisor->id, $approval->candidate_user_ids);
