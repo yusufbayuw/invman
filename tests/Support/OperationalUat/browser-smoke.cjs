@@ -19,7 +19,7 @@ let browser;
   result.loginText=(await page.locator('body').innerText()).slice(0,4000);
   const env=await fs.readFile(path.join(qa,'.env'),'utf8');
   const password=env.match(/^SEEDED_USER_PASSWORD="([^"]+)"/m)?.[1]; if(!password)throw Error('Missing synthetic password');
-  await page.getByLabel('Email/Username',{exact:true}).fill('admin');
+  await page.locator('input[id="data.email"]').fill('admin');
   await page.locator('input[type=password]').fill(password);
   await page.waitForFunction(()=>!!document.querySelector('input[name="cf-turnstile-response"]')?.value,{},{timeout:30000});
   await page.getByRole('button',{name:/Masuk|Sign in/i}).click();
@@ -33,3 +33,4 @@ let browser;
  result.errors=errors;await fs.writeFile(path.join(out,'browser-smoke.json'),JSON.stringify(result,null,2));
  console.log(JSON.stringify(result,null,2));await browser.close();if(!result.pass)process.exitCode=1;
 })().catch(async e=>{console.error(e.message);if(browser)await browser.close().catch(()=>{});process.exit(1)});
+

@@ -45,6 +45,8 @@ jobs:
           cp -r public/build output/operational-uat-runtime/app/public/build
           php tests/Support/OperationalUat/prepare.php
           php tests/Support/OperationalUat/use-mysql.php
+          php output/operational-uat-runtime/app/artisan livewire:publish --assets
+          php output/operational-uat-runtime/app/artisan filament:upgrade
           php output/operational-uat-runtime/app/artisan migrate --force --no-interaction
           php output/operational-uat-runtime/app/artisan db:seed --force --no-interaction
           php tests/Support/OperationalUat/fixtures.php
@@ -71,4 +73,5 @@ jobs:
           name: operational-uat-${{ github.sha }}
           path: docs/operational-readiness/evidence/2026-11-04
           retention-days: 30
+
 
