@@ -7,10 +7,10 @@ Seeder khusus: `InvManRoleMatrixDemoSeeder` (TIDAK dimasukkan ke `DatabaseSeeder
 Bertujuan mengeksplorasi alur lintas unit, jabatan dinamis Work Order, dan pengelola barang berbasis kelompok. **Bukan konfigurasi operasional final.**
 
 - Lima unit contoh terisolasi: `[DEMO-ORG] TK`, SD, SMP, SMA, Universitas.
-- Lima akun `invman.orgdemo.sarpras.{tk|sd|smp|sma|universitas}` dengan role existing `sarpras`, masing-masing tepat satu unit.
-- Tiga akun `invman.orgdemo.fasilitas.{staf|supervisor|manager}` dengan role existing `fasilitas` dan penugasan jabatan global.
-- Satu akun `invman.orgdemo.fasilitas.teknisi` **tanpa role fasilitas global**, dengan jabatan Teknisi. Atasan langsung adalah Staf Fasilitas; staf merupakan lead tim lapangan `[DEMO-ORG] Tim Teknis Fasilitas`. Hierarki: Manager → Supervisor → Staf → Teknisi.
-- Dua akun `invman.orgdemo.pengelola.{it|perpustakaan}`, terhubung ke pengelola barang `[DEMO-ORG] IT` dan `[DEMO-ORG] Perpustakaan`, tanpa role fasilitas.
+- Lima akun `sarpras.tk`, `sarpras.sd`, `sarpras.smp`, `sarpras.sma`, dan `sarpras.univ` dengan role existing `sarpras`, masing-masing tepat satu unit.
+- Tiga akun `staf.fas`, `spv.fas`, dan `man.fas` dengan role existing `fasilitas` dan penugasan jabatan global.
+- Satu akun `teknisi` **tanpa role fasilitas global**, dengan jabatan Teknisi. Atasan langsung adalah Staf Fasilitas; staf merupakan lead tim lapangan `[DEMO-ORG] Tim Teknis Fasilitas`. Hierarki: Manager → Supervisor → Staf → Teknisi.
+- Dua akun `it` dan `perpus`, terhubung ke pengelola barang `[DEMO-ORG] IT` dan `[DEMO-ORG] Perpustakaan`, tanpa role fasilitas.
 - Tiap unit memiliki kursi lipat (4), laptop (2), buku referensi (3), total 15 master barang dan 45 barang satuan.
 - Satu draf peminjaman campuran laptop + buku di tiap unit (5 draf); semua masih `draft` dan **belum memblokir stok**.
 - Lima workflow Work Order per unit, semuanya `draft`, dengan jabatan **Teknisi** sebagai target dispatch. TK: staf + pengesahan manager. SD/SMP/SMA: staf + supervisor + pengesahan manager. Universitas: sama dengan tambahan checkpoint estimasi pada supervisor. Teknisi bukan approver final.
@@ -18,21 +18,22 @@ Bertujuan mengeksplorasi alur lintas unit, jabatan dinamis Work Order, dan penge
 
 ## Pengamanan
 
-**Jangan jalankan di production.** Seeder menolak production dan mengharuskan `SEED_DEMO_USERS=true` serta sandi demo kuat. Wajib memakai database pengujian terpisah. Tidak ada perintah otomatis untuk membersihkan data atau mengubah data asli.
+**Gunakan hanya pada lingkungan local/testing terisolasi.** Seeder menolak production maupun staging dan mengharuskan `SEED_DEMO_USERS=true`. Semua akun menggunakan password demo yang sama, yaitu `password` (disimpan sebagai hash). Jangan menjalankan seeder di server yang dapat diakses publik, termasuk staging. Tidak ada perintah otomatis untuk membersihkan data atau mengubah data asli.
 
 Jalankan dari root aplikasi **setelah migration dan RoleSeeder**:
 
 ```bash
-# .env pada lingkungan development/staging yang TERISOLASI:
+# .env pada lingkungan LOCAL atau TESTING terisolasi saja:
+# APP_ENV=local (atau testing)
 # SEED_DEMO_USERS=true
-# SEEDED_USER_PASSWORD=<masukkan sandi uji kuat melalui pengelolaan secret>
+# Password tetap untuk seluruh akun demo: password
 
 php artisan db:seed --class=RoleSeeder
 php artisan db:seed --class=InvManRoleMatrixDemoSeeder
 php artisan test --filter=InvManRoleMatrixDemoSeederTest
 ```
 
-Jangan menaruh password sungguhan pada dokumentasi, Git, atau percakapan publik. Akun yang sudah ada tidak di-reset. Identitas yang bertabrakan menyebabkan seeding ditolak. Pemanggilan ulang tidak menambah duplikasi. Seeder tidak mempublikasikan approval workflow, mengirim pinjaman, atau menjalankan transaksi riil. Karena PHP observer bisa membuat data turunan, gunakan hanya database disposable.
+Username dibuat singkat agar mudah login untuk UAT lokal. Password `password` **hanya layak untuk database disposable yang tidak dapat diakses publik**. Akun yang sudah ada tidak di-reset. Identitas yang bertabrakan menyebabkan seeding ditolak. Pemanggilan ulang tidak menambah duplikasi. Seeder tidak mempublikasikan approval workflow, mengirim pinjaman, atau menjalankan transaksi riil. Karena PHP observer bisa membuat data turunan, gunakan hanya database disposable.
 
 **Perhatian:** semua pengguna dengan role existing `fasilitas` saat ini memiliki akses fasilitas global melalui `User::isFacility()`. Jabatan `Staf Fasilitas`, `Supervisor Fasilitas`, dan `Manager Fasilitas` membedakan Work Order, **bukan** memisahkan akses ke seluruh modul. Jika diperlukan hierarki RBAC ketat, lakukan redesign policy + test terpisah. Jangan menganggap role `fasilitas` saat ini least-privilege.
 
