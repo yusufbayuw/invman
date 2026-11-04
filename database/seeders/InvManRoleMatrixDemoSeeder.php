@@ -7,6 +7,7 @@ use App\Models\G002M002ItemType;
 use App\Models\G002M003ItemManagement;
 use App\Models\G002M007Item;
 use App\Models\G004M008Activity;
+use App\Models\TicketTeamMember;
 use App\Models\User;
 use App\Models\WorkOrderAssignment;
 use App\Models\WorkOrderJobTitle;
@@ -75,7 +76,7 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             $titles = [];
             foreach ([
                 'Kepala Sarpras', 'Staf Fasilitas', 'Supervisor Fasilitas',
-                'Manager Fasilitas', 'Pengelola IT', 'Pengelola Perpustakaan',
+                'Manager Fasilitas', 'Teknisi', 'Pengelola IT', 'Pengelola Perpustakaan',
             ] as $title) {
                 $record = WorkOrderJobTitle::query()->firstOrCreate(
                     ['name' => self::PREFIX.' '.$title],
@@ -92,6 +93,7 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             $staff = $this->account('fasilitas.staf', 'Staf Fasilitas', null, $password, config('role.fasilitas'));
             $supervisor = $this->account('fasilitas.supervisor', 'Supervisor Fasilitas', null, $password, config('role.fasilitas'));
             $manager = $this->account('fasilitas.manager', 'Manager Fasilitas', null, $password, config('role.fasilitas'));
+            $technician = $this->account('fasilitas.teknisi', 'Teknisi Fasilitas', null, $password);
             $itManager = $this->account('pengelola.it', 'Pengelola Barang IT', null, $password);
             $libraryManager = $this->account('pengelola.perpustakaan', 'Pengelola Barang Perpustakaan', null, $password);
 
@@ -106,6 +108,10 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             $this->assignment($staff, $titles['Staf Fasilitas'], null, null, $supervisor);
             $this->assignment($supervisor, $titles['Supervisor Fasilitas'], null, null, $manager);
             $this->assignment($manager, $titles['Manager Fasilitas']);
+            // Technicians report to staff in both the Work Order hierarchy and the field team.
+            $this->assignment($technician, $titles['Teknisi'], null, null, $staff);
+            $this->teamMember($staff, 'lead', $groups['fasilitas']);
+            $this->teamMember($technician, 'technician', $groups['fasilitas'], $staff);
             $this->assignment($itManager, $titles['Pengelola IT'], null, $groups['it']);
             $this->assignment($libraryManager, $titles['Pengelola Perpustakaan'], null, $groups['perpustakaan']);
 
@@ -128,7 +134,7 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             }
         }, 3);
 
-        $this->command?->info('Demo organisasi dibuat: 5 unit, 10 akun, 3 pengelola aset, 15 barang, 5 draf peminjaman, 5 workflow DRAFT.');
+        $this->command?->info('Demo organisasi dibuat: 5 unit, 11 akun, 3 pengelola aset, 15 barang, 5 draf peminjaman, 5 workflow DRAFT.');
         $this->command?->warn('Akun Staf/Supervisor/Manager memiliki role fasilitas GLOBAL. Gunakan hanya di database uji terisolasi.');
     }
 
@@ -199,6 +205,38 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             'g002_m003_item_management_id' => $group?->id,
         ], [
             'supervisor_user_id' => $supervisor?->id,
+            'is_active' => true,
+        ]);
+    }
+
+    /** The dispatch team is separate from the Work Order approval hierarchy. */
+    private function teamMember(
+        User $user,
+        string $position,
+        G002M003ItemManagement $group,
+        ?User $lead = null,
+    ): void {
+        $teamName = self::PREFIX.' Tim Teknis Fasilitas';
+        $existing = TicketTeamMember::query()->where('user_id', $user->id)->first();
+        if ($existing) {
+            if ($existing->team_name !== $teamName
+                || $existing->team_type !== 'field'
+                || $existing->position !== $position
+                || (int) $existing->g002_m003_item_management_id !== (int) $group->id
+                || (int) $existing->supervisor_user_id !== (int) ($lead?->id ?? 0)
+                || ! $existing->is_active) {
+                throw new RuntimeException("Keanggotaan tim {$user->username} telah berubah; seeder tidak menimpanya.");
+            }
+            return;
+        }
+
+        TicketTeamMember::query()->create([
+            'user_id' => $user->id,
+            'team_name' => $teamName,
+            'team_type' => 'field',
+            'position' => $position,
+            'supervisor_user_id' => $lead?->id,
+            'g002_m003_item_management_id' => $group->id,
             'is_active' => true,
         ]);
     }
@@ -292,7 +330,7 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             'created_by' => $manager->id,
             'assign_job_title_id' => $titles['Supervisor Fasilitas']->id,
             'close_job_title_id' => $titles['Manager Fasilitas']->id,
-            'dispatch_job_title_id' => null,
+            'dispatch_job_title_id' => $titles['Teknisi']->id,
             'steps' => app(WorkOrderWorkflowService::class)->validateSteps($steps),
         ]);
     }
