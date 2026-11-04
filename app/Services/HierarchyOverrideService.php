@@ -18,7 +18,9 @@ class HierarchyOverrideService
 {
     public function can(User $actor, ?User $subject, ?int $unitId = null, ?int $managementId = null): bool
     {
-        if (! $actor->is_enabled || ($subject && ! $subject->is_enabled)) {
+        // The actor must be the REAL authenticated employee; never grant authority
+        // from a forged User argument or impersonate a locked/disabled subordinate.
+        if (! auth()->check() || (int) auth()->id() !== (int) $actor->id || ! $actor->is_enabled) {
             return false;
         }
 
@@ -120,6 +122,9 @@ class HierarchyOverrideService
             throw new \LogicException('Audit override harus berada dalam transaksi bisnis.');
         }
         $reason = $this->validateReason($reason);
+        if (! auth()->check() || (int) auth()->id() !== (int) $actor->id) {
+            throw new \LogicException('Pelaku audit harus sesuai akun pegawai yang login.');
+        }
         $request = app()->runningInConsole() ? null : request();
         return OperationalOverride::query()->create([
             'actor_id' => $actor->id,
