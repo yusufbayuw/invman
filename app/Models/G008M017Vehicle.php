@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class G008M017Vehicle extends Model
 {
+    use \App\Models\Concerns\RetainsTicketAssetHistory;
+
     /** Explicit, audited mass-assignment allowlist. */
     protected $fillable = [
         'g001_m001_unit_id',

@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[ObservedBy(G002M015ItemInstanceObserver::class)]
 class G002M015ItemInstance extends Model
 {
+    use \App\Models\Concerns\RetainsTicketAssetHistory;
+
     /** Keep inventory writes and observer-maintained quantities atomic. */
     public function save(array $options = [])
     {

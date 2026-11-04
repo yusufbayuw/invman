@@ -10,6 +10,8 @@ use Illuminate\Support\Str;
 
 class G003M006Room extends Model
 {
+    use \App\Models\Concerns\RetainsTicketAssetHistory;
+
     /** Explicit, audited mass-assignment allowlist. */
     protected $fillable = [
         'g003_m005_floor_id',
