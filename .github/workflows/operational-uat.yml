@@ -54,13 +54,8 @@ jobs:
         run: |
           npm install --prefix output/operational-uat-runtime/browser --no-package-lock --no-audit --no-fund playwright
           output/operational-uat-runtime/browser/node_modules/.bin/playwright install --with-deps chromium
-      - name: Start isolated HTTP application
-        run: |
-          cd output/operational-uat-runtime/app/public
-          PHP_CLI_SERVER_WORKERS=4 nohup php -d opcache.enable_cli=1 -S 127.0.0.1:8876 "$GITHUB_WORKSPACE/output/operational-uat-runtime/app/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php" > ../../http.log 2>&1 &
-          echo $! > ../../http.pid
-          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8876/up && break; sleep 1; done
-          curl -fsS http://127.0.0.1:8876/up
+      - name: Start isolated Nginx and PHP-FPM
+        run: bash tests/Support/OperationalUat/serve-ci.sh
       - name: Real browser UAT
         env:
           UAT_BROWSER_CHANNEL: chromium
