@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\G001M001Unit;
 use App\Models\G002M003ItemManagement;
 use App\Models\G002M007Item;
+use App\Enums\ReservationStatus;
 use App\Models\G003M006Room;
 use App\Models\OperationalOverride;
 use App\Models\Ticket;
@@ -189,6 +190,49 @@ class HierarchyOverrideTest extends TestCase
             'description' => 'Akun lain tidak berwenang membuat laporan pada unit ini.',
             'location' => 'Gedung E',
         ], 'Mencoba lapor lintas unit tanpa izin.');
+    }
+
+    public function test_facility_can_complete_return_without_forging_borrower_confirmation(): void
+    {
+        $d = $this->context();
+        $room = G003M006Room::withoutEvents(fn () => G003M006Room::query()->create([
+            'name' => 'Ruang Pinjam Override',
+            'g001_m001_unit_id' => $d['unit']->id,
+            'g002_m003_item_management_id' => $d['management']->id,
+            'is_borrowable' => true, 'status' => 'tersedia',
+        ]));
+        $start = now()->addDays(4);
+        $this->actingAs($d['reporter']);
+        $loans = app(LoanRequestService::class);
+        $activity = $loans->submit($d['reporter'], [
+            'name' => 'Kegiatan peminjaman ruang', 'description' => 'Uji perawatan dan pengembalian.',
+            'start_time' => $start, 'end_time' => $start->copy()->addHours(3),
+            'needs' => [['type' => 'room', 'room_id' => $room->id]],
+        ]);
+        $reservation = $activity->room_reservation()->firstOrFail();
+        $this->actingAs($d['facility']);
+        $loans->processReservation('room', $reservation->id, ReservationStatus::Approved);
+        $loans->processReservation('room', $reservation->id, ReservationStatus::CheckedOut);
+        $loans->completeManagedReturn('room', $reservation->id, [
+            'is_ok' => true,
+            'notes' => 'Ruang telah kembali dan diperiksa secara fisik.',
+            'receipt_notes' => 'Petugas pengelola menerima ruang secara langsung.',
+        ]);
+        $reservation->refresh();
+        $this->assertSame(ReservationStatus::ReturnRequested->value, $reservation->status);
+        $this->assertNull($reservation->returnReceipt?->borrower_confirmed_at);
+
+        $loans->confirmReturnOverride('room', $reservation->id, $d['facility'],
+            'Sarpras belum melakukan konfirmasi meski ruangan telah diperiksa.');
+        $reservation->refresh();
+        $this->assertSame(ReservationStatus::Returned->value, $reservation->status);
+        $this->assertNull($reservation->returnReceipt?->borrower_confirmed_at);
+        $this->assertNotNull($reservation->returnReceipt?->completed_at);
+        $this->assertDatabaseHas('operational_overrides', [
+            'entity_type' => 'loan', 'entity_id' => $activity->id,
+            'actor_id' => $d['facility']->id, 'subject_user_id' => $d['reporter']->id,
+            'action' => 'return_receipt_override',
+        ]);
     }
 
     public function test_facility_can_create_and_submit_loan_as_named_sarpras_without_account_impersonation(): void
