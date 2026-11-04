@@ -67,6 +67,25 @@ jobs:
         env:
           UAT_BROWSER_CHANNEL: chromium
         run: node tests/Support/OperationalUat/browser-smoke.cjs
+      - name: Two-party item room and vehicle browser lifecycle
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-loans.cjs
+      - name: Reconcile browser stock and two-party receipts
+        if: always()
+        run: php tests/Support/OperationalUat/browser-invariants.php
+      - name: Preserve early loan diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loan-diagnostic-${{ github.sha }}
+          path: |
+            docs/operational-readiness/evidence/2026-11-04/source-revision.json
+            docs/operational-readiness/evidence/2026-11-04/browser-loan-lifecycle.json
+            docs/operational-readiness/evidence/2026-11-04/browser-database-invariants.json
+            docs/operational-readiness/evidence/2026-11-04/LOAN-*-error.png
+          retention-days: 30
       - name: Operational browser roles and Work Order
         if: always()
         env:
@@ -87,14 +106,6 @@ jobs:
         env:
           UAT_BROWSER_CHANNEL: chromium
         run: node tests/Support/OperationalUat/browser-cost.cjs
-      - name: Two-party item room and vehicle browser lifecycle
-        if: always()
-        env:
-          UAT_BROWSER_CHANNEL: chromium
-        run: node tests/Support/OperationalUat/browser-loans.cjs
-      - name: Reconcile browser stock and two-party receipts
-        if: always()
-        run: php tests/Support/OperationalUat/browser-invariants.php
       - name: Browser session revocation and Livewire polling
         if: always()
         env:
