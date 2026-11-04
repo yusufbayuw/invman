@@ -186,6 +186,40 @@ class LoanHandoverPdfTest extends TestCase
         $this->actingAs($borrower)->get($this->url('room', $reservation->id))->assertOk();
     }
 
+    public function test_return_exception_is_visible_in_pdf_with_real_actor_and_scoped_audit(): void
+    {
+        [$borrower, $manager, , $reservation] = $this->room();
+        foreach (['checkout', 'return'] as $direction) {
+            LoanHandoverReceipt::create([
+                'receipt_number' => 'AUDIT-'.$direction, 'reservation_type' => 'room',
+                'reservation_id' => $reservation->id, 'g004_m008_activity_id' => $reservation->g004_m008_activity_id,
+                'direction' => $direction, 'initiated_by' => $manager->id,
+                'manager_confirmed_by' => $manager->id, 'manager_confirmed_at' => now(),
+                'borrower_confirmed_by' => $direction === 'checkout' ? $borrower->id : null,
+                'borrower_confirmed_at' => $direction === 'checkout' ? now() : null,
+                'completed_at' => now(), 'fallback_reason' => $direction === 'return' ? 'Peminjam tidak hadir untuk konfirmasi pengembalian.' : null,
+            ]);
+        }
+        foreach ([$reservation->id, 'unrelated-reservation'] as $id) {
+            \App\Models\OperationalOverride::create([
+                'entity_type' => 'loan', 'entity_id' => $reservation->g004_m008_activity_id,
+                'actor_id' => $manager->id, 'subject_user_id' => $borrower->id,
+                'action' => 'return_receipt_override', 'reason' => $id === $reservation->id ? 'Alasan audit sebenarnya.' : 'RAHASIA TRANSAKSI LAIN',
+                'details' => ['reservation_id' => $id],
+            ]);
+        }
+        $data = app(LoanHandoverDocumentService::class)->document('room', $reservation);
+        $this->assertTrue($data['hasException']);
+        $this->assertCount(1, $data['overrides']);
+        $html = view('pdf.loans.handover-evidence', $data)->render();
+        $this->assertStringContainsString('Alasan pengecualian pengembalian', $html);
+        $this->assertStringContainsString('Alasan audit sebenarnya.', $html);
+        $this->assertStringContainsString($manager->name, $html);
+        $this->assertStringContainsString($borrower->name, $html);
+        $this->assertStringNotContainsString('RAHASIA TRANSAKSI LAIN', $html);
+        $this->assertStringNotContainsString('RIWAYAT SERAH-TERIMA LENGKAP', $html);
+    }
+
     public function test_item_instance_and_vehicle_specific_details_are_in_document(): void
     {
         [$borrower, $manager, , $unit, $management, $activity] = $this->context();
