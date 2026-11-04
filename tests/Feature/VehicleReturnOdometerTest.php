@@ -70,6 +70,24 @@ class VehicleReturnOdometerTest extends TestCase
         }
     }
 
+    public function test_additive_migration_preserves_legacy_receipt_and_backfills_only_null(): void
+    {
+        [, , $reservation] = $this->context();
+        $migration = require database_path('migrations/2026_11_05_000002_add_return_odometer_to_handover_receipts.php');
+        // Execute DDL outside the RefreshDatabase wrapper on MySQL only in its
+        // dedicated upgrade job; SQLite supports transactional DDL here.
+        if (\Illuminate\Support\Facades\DB::getDriverName() !== 'sqlite') {
+            $this->markTestSkipped('MySQL upgrade is executed in the disposable CI upgrade database.');
+        }
+        $migration->down();
+        $before = (array) \Illuminate\Support\Facades\DB::table('loan_handover_receipts')->where('id', $reservation->outboundReceipt->id)->first();
+        $migration->up();
+        $after = (array) \Illuminate\Support\Facades\DB::table('loan_handover_receipts')->where('id', $reservation->outboundReceipt->id)->first();
+        $this->assertNull($after['return_odometer']);
+        unset($after['return_odometer']);
+        $this->assertSame($before, $after);
+    }
+
     public function test_final_reading_is_optional_and_available_in_the_native_return_form(): void
     {
         [, $manager, $reservation] = $this->context();
