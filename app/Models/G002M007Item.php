@@ -11,6 +11,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[ObservedBy(G002M007ItemObserver::class)]
 class G002M007Item extends Model
 {
+    /** Keep inventory writes and observer-maintained quantities atomic. */
+    public function save(array $options = [])
+    {
+        return \Illuminate\Support\Facades\DB::transaction(fn () => parent::save($options));
+    }
+
     /** Explicit, audited mass-assignment allowlist. */
     protected $fillable = [
         'g001_m001_unit_id',

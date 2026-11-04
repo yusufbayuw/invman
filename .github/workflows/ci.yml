@@ -183,6 +183,17 @@ jobs:
           php tests/Support/Readiness/performance.php
           php tests/Support/Readiness/item-counter-snapshot.php
           php tests/Support/Readiness/return-load.php
+      - name: Concurrent inventory identity and counter integrity
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: invman_ci
+          DB_USERNAME: invman
+          DB_PASSWORD: local-ci-only
+          INVMAN_FINAL_QA: '1'
+        run: php tests/Support/Readiness/inventory-identities.php
       - name: Create disposable upgrade database
         run: |
           mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE DATABASE invman_ci_upgrade; GRANT ALL ON invman_ci_upgrade.* TO 'invman'@'%';"

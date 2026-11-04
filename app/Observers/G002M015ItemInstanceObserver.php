@@ -29,13 +29,7 @@ class G002M015ItemInstanceObserver
             return;
         }
 
-        $sequence = 1;
-        $existingCodes = $item->item_instance()->pluck('code');
-        $codePrefix = filled($item->code) ? $item->code.'-' : '';
-
-        while ($existingCodes->contains($codePrefix.$sequence)) {
-            $sequence++;
-        }
+        [$sequence, $generatedCode] = app(\App\Services\InventoryIdentityService::class)->nextInstance($item);
 
         $instance->g001_m001_unit_id ??= $item->g001_m001_unit_id;
         $instance->g003_m006_room_id ??= $item->g003_m006_room_id;
@@ -43,7 +37,7 @@ class G002M015ItemInstanceObserver
         $instance->is_available ??= true;
         $instance->status ??= 'tersedia';
         $instance->name ??= trim($item->name.' '.$sequence);
-        $instance->code ??= $codePrefix.$sequence;
+        $instance->code ??= $generatedCode;
     }
 
     /**

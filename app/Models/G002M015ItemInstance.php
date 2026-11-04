@@ -11,6 +11,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[ObservedBy(G002M015ItemInstanceObserver::class)]
 class G002M015ItemInstance extends Model
 {
+    /** Keep inventory writes and observer-maintained quantities atomic. */
+    public function save(array $options = [])
+    {
+        return \Illuminate\Support\Facades\DB::transaction(fn () => parent::save($options));
+    }
+
     /** Explicit, audited mass-assignment allowlist. */
     protected $fillable = [
         'name',

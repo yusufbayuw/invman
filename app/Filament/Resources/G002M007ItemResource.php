@@ -129,7 +129,7 @@ class G002M007ItemResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Barang'),
                 Forms\Components\TextInput::make('code')
-                    ->label('Kode Barang'),
+                    ->label('Kode Barang')->unique(ignoreRecord: true),
                 Forms\Components\TextInput::make('quantity')
                     ->label('Jumlah Barang')
                     ->numeric()
