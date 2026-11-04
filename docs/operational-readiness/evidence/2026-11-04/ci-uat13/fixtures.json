@@ -1,0 +1,365 @@
+{
+    "database_driver": "mysql",
+    "database_is_isolated": true,
+    "units": [
+        "Daycare, KB & TK",
+        "SD",
+        "SMP",
+        "SMA",
+        "TBU",
+        "ADM",
+        "Organ Yayasan"
+    ],
+    "users": [
+        {
+            "id": 1,
+            "username": "admin",
+            "enabled": true,
+            "roles": [
+                "admin"
+            ],
+            "titles": []
+        },
+        {
+            "id": 2,
+            "username": "fasilitas",
+            "enabled": true,
+            "roles": [
+                "fasilitas"
+            ],
+            "titles": []
+        },
+        {
+            "id": 3,
+            "username": "sarpras.daycare",
+            "enabled": true,
+            "roles": [
+                "sarpras"
+            ],
+            "titles": [
+                "Kepala Sarpras"
+            ]
+        },
+        {
+            "id": 4,
+            "username": "sarpras.sd",
+            "enabled": true,
+            "roles": [
+                "sarpras"
+            ],
+            "titles": [
+                "Kepala Sarpras"
+            ]
+        },
+        {
+            "id": 5,
+            "username": "sarpras.smp",
+            "enabled": true,
+            "roles": [
+                "sarpras"
+            ],
+            "titles": [
+                "Kepala Sarpras"
+            ]
+        },
+        {
+            "id": 6,
+            "username": "sarpras.sma",
+            "enabled": true,
+            "roles": [
+                "sarpras"
+            ],
+            "titles": [
+                "Kepala Sarpras"
+            ]
+        },
+        {
+            "id": 7,
+            "username": "sarpras.tbu",
+            "enabled": true,
+            "roles": [
+                "sarpras"
+            ],
+            "titles": [
+                "Kepala Sarpras"
+            ]
+        },
+        {
+            "id": 8,
+            "username": "sarpras.adm",
+            "enabled": true,
+            "roles": [
+                "sarpras"
+            ],
+            "titles": [
+                "Kepala Sarpras"
+            ]
+        },
+        {
+            "id": 9,
+            "username": "wo.demo.fasilitas.staff",
+            "enabled": true,
+            "roles": [
+                "fasilitas"
+            ],
+            "titles": [
+                "Staf Fasilitas"
+            ]
+        },
+        {
+            "id": 10,
+            "username": "wo.demo.fasilitas.spv",
+            "enabled": true,
+            "roles": [
+                "fasilitas"
+            ],
+            "titles": [
+                "Supervisor Fasilitas"
+            ]
+        },
+        {
+            "id": 11,
+            "username": "wo.demo.fasilitas.manager",
+            "enabled": true,
+            "roles": [
+                "fasilitas"
+            ],
+            "titles": [
+                "Manager Fasilitas"
+            ]
+        },
+        {
+            "id": 12,
+            "username": "wo.demo.it.staff",
+            "enabled": true,
+            "roles": [],
+            "titles": [
+                "Staf IT"
+            ]
+        },
+        {
+            "id": 13,
+            "username": "wo.demo.it.spv",
+            "enabled": true,
+            "roles": [],
+            "titles": [
+                "Supervisor IT"
+            ]
+        },
+        {
+            "id": 14,
+            "username": "wo.demo.perpustakaan.staff",
+            "enabled": true,
+            "roles": [],
+            "titles": [
+                "Staf Perpustakaan"
+            ]
+        },
+        {
+            "id": 15,
+            "username": "wo.demo.perpustakaan.spv",
+            "enabled": true,
+            "roles": [],
+            "titles": [
+                "Supervisor Perpustakaan"
+            ]
+        },
+        {
+            "id": 16,
+            "username": "wo.demo.teknisi.koordinator",
+            "enabled": true,
+            "roles": [],
+            "titles": [
+                "Koordinator Teknisi",
+                "Teknisi Laporan Umum"
+            ]
+        },
+        {
+            "id": 17,
+            "username": "wo.demo.teknisi.petugas",
+            "enabled": true,
+            "roles": [],
+            "titles": [
+                "Teknisi",
+                "Teknisi Laporan Umum"
+            ]
+        },
+        {
+            "id": 18,
+            "username": "wo.demo.unit.daycare.atasan",
+            "enabled": true,
+            "roles": [],
+            "titles": [
+                "Atasan Unit"
+            ]
+        },
+        {
+            "id": 19,
+            "username": "wo.demo.unit.sd.atasan",
+            "enabled": true,
+            "roles": [],
+            "titles": [
+                "Atasan Unit"
+            ]
+        },
+        {
+            "id": 20,
+            "username": "wo.demo.unit.smp.atasan",
+            "enabled": true,
+            "roles": [],
+            "titles": [
+                "Atasan Unit"
+            ]
+        },
+        {
+            "id": 21,
+            "username": "wo.demo.unit.sma.atasan",
+            "enabled": true,
+            "roles": [],
+            "titles": [
+                "Atasan Unit"
+            ]
+        },
+        {
+            "id": 22,
+            "username": "wo.demo.unit.tbu.atasan",
+            "enabled": true,
+            "roles": [],
+            "titles": [
+                "Atasan Unit"
+            ]
+        },
+        {
+            "id": 23,
+            "username": "wo.demo.unit.adm.atasan",
+            "enabled": true,
+            "roles": [],
+            "titles": [
+                "Atasan Unit"
+            ]
+        },
+        {
+            "id": 24,
+            "username": "qa.employee",
+            "enabled": true,
+            "roles": [],
+            "titles": []
+        },
+        {
+            "id": 25,
+            "username": "qa.disabled",
+            "enabled": false,
+            "roles": [],
+            "titles": []
+        },
+        {
+            "id": 26,
+            "username": "qa.multi",
+            "enabled": true,
+            "roles": [
+                "fasilitas",
+                "sarpras"
+            ],
+            "titles": []
+        },
+        {
+            "id": 27,
+            "username": "qa.driver",
+            "enabled": true,
+            "roles": [],
+            "titles": []
+        },
+        {
+            "id": 28,
+            "username": "qa.security",
+            "enabled": true,
+            "roles": [
+                "sarpras"
+            ],
+            "titles": []
+        }
+    ],
+    "items": [
+        {
+            "id": 1,
+            "name": "QA Stock 10",
+            "quantity": "10",
+            "available_quantity": 10
+        },
+        {
+            "id": 2,
+            "name": "QA Stock 5",
+            "quantity": "5",
+            "available_quantity": 5
+        },
+        {
+            "id": 3,
+            "name": "QA Stock 1",
+            "quantity": "1",
+            "available_quantity": 1
+        },
+        {
+            "id": 4,
+            "name": "QA Damaged",
+            "quantity": "1",
+            "available_quantity": 0
+        },
+        {
+            "id": 5,
+            "name": "QA Repair",
+            "quantity": "1",
+            "available_quantity": 0
+        },
+        {
+            "id": 6,
+            "name": "QA Managed IT",
+            "quantity": "1",
+            "available_quantity": 1
+        },
+        {
+            "id": 7,
+            "name": "QA Managed Perpustakaan",
+            "quantity": "1",
+            "available_quantity": 1
+        }
+    ],
+    "tickets": [
+        {
+            "id": "01a1a576-6530-713f-b052-2dc2eaef2404",
+            "number": "TKT-2026-OLPDYLWNKRJC",
+            "title": "QA Operational daycare",
+            "status": "open"
+        },
+        {
+            "id": "01a1a576-654b-7024-b0c7-98d573e5851d",
+            "number": "TKT-2026-YUNXZEBOK3CM",
+            "title": "QA Operational sd",
+            "status": "open"
+        },
+        {
+            "id": "01a1a576-655a-7327-9a4a-a1cd4ea22259",
+            "number": "TKT-2026-IGIOWJNM8FCQ",
+            "title": "QA Operational smp",
+            "status": "open"
+        },
+        {
+            "id": "01a1a576-6568-7286-a75f-c18aad1c11bb",
+            "number": "TKT-2026-M494ICV022RB",
+            "title": "QA Operational sma",
+            "status": "open"
+        },
+        {
+            "id": "01a1a576-6577-7251-8779-d94500b35724",
+            "number": "TKT-2026-QJHJU3WTOCIX",
+            "title": "QA Operational tbu",
+            "status": "open"
+        },
+        {
+            "id": "01a1a576-6593-7246-a73a-cebdda95ed73",
+            "number": "TKT-2026-A2GIPG1KB1IA",
+            "title": "QA Operational adm",
+            "status": "open"
+        }
+    ],
+    "workflow_published": true
+}

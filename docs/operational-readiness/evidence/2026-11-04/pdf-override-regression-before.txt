@@ -1,0 +1,117 @@
+PHPUnit 11.5.57 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.14
+Configuration: D:\herd\invman\output\operational-uat-runtime\app\phpunit.xml
+
+F                                                                   1 / 1 (100%)
+
+Time: 00:10.290, Memory: 80.00 MB
+
+There was 1 failure:
+
+1) Tests\Feature\HierarchyOverrideTest::test_maintenance_pdf_distinguishes_assigned_technician_from_actual_override_recorder
+Failed asserting that '<!DOCTYPE html>\n
+<html lang="id">\n
+<head>\n
+<meta charset="utf-8">\n
+<title>Formulir Perawatan TKT-2026-5F9QRQI0Y9XJ</title>\n
+<style>\n
+@page { margin: 24px 30px; }\n
+body { font-family: DejaVu Sans, sans-serif; font-size: 9px; color: #121722; line-height: 1.4; }\n
+h1 { text-align:center; font-size: 13px; margin-bottom: 2px; }\n
+small { color: #667085; }\n
+.subtitle { text-align: center; margin: 0 0 14px; }\n
+h2 { color: #19416e; font-size: 10px; padding: 6px 0 3px; border-bottom: 1px solid #b6c4d5; }\n
+table { width: 100%; border-collapse: collapse; }\n
+td,th { text-align:left; vertical-align:top; padding: 3px 5px; }\n
+th { background: #eef2f8; }\n
+.bordered td,.bordered th { border:1px solid #c7cbd1; }\n
+.key { width: 150px; color: #475467; }\n
+.long { white-space: pre-wrap; word-wrap: break-word; }\n
+.page-break { page-break-before: always; }\n
+.note { border: 1px solid #b7bdc9; padding: 8px; margin-top: 12px; font-size: 8px; }\n
+.status { text-align:center; font-weight:bold; font-size:10px; padding:7px; border:1px solid #adb8c9; }\n
+</style>\n
+</head>\n
+<body>\n
+<h1>FORMULIR PERMINTAAN PERAWATAN / PERBAIKAN</h1>\n
+<div class="subtitle">\n
+    Dokumen: TKT-2026-5F9QRQI0Y9XJ · Dicetak 04/11/2026 14:21<br>\n
+    <small>Rekaman digital InvMan · Persetujuan dan identitas bersumber dari akun login</small>\n
+</div>\n
+\n
+<div class="status">DOKUMEN DALAM PROSES — BELUM DISETUJUI SEPENUHNYA</div>\n
+\n
+<h2>I. DATA PEMOHON (DIISI OLEH PELAPOR)</h2>\n
+<table>\n
+<tr><td class="key">Nama pelapor</td><td>Ms. Emelia Sanford</td></tr>\n
+<tr><td class="key">Unit kerja</td><td>Unit Override</td></tr>\n
+<tr><td class="key">Tanggal / jam laporan</td><td>04/11/2026 14:21</td></tr>\n
+<tr><td class="key">Lokasi kerusakan</td><td>-</td></tr>\n
+</table>\n
+<h2>II. DESKRIPSI KERUSAKAN</h2>\n
+<table>\n
+<tr><td class="key">Jenis masalah</td><td>AC &amp; Tata Udara</td></tr>\n
+<tr><td class="key">Urgensi pelapor</td><td>normal</td></tr>\n
+<tr><td class="key">Prioritas operasional</td><td>normal</td></tr>\n
+<tr><td class="key">Uraian kerusakan</td><td class="long">AC tidak dingin dan berdengung keras sejak pagi.</td></tr>\n
+<tr><td class="key">Inventaris terkait</td><td>\n
+Ruang Demo Override (room #1)</td></tr>\n
+</table>\n
+<h2>III. VALIDASI & PERSETUJUAN</h2>\n
+<table class="bordered">\n
+<tr><th>Diajukan oleh</th><th>Disetujui oleh</th><th>Diterima teknisi</th></tr>\n
+<tr>\n
+<td>Ms. Emelia Sanford<br><small>04/11/2026 14:21</small></td>\n
+<td>Trisha Reilly<br><small>04/11/2026 14:21</small></td>\n
+<td>Trisha Reilly<br><small>04/11/2026 14:21</small></td>\n
+</tr>\n
+</table>\n
+<p><b>Catatan persetujuan:</b> -</p>\n
+<p><b>Deadline respons:</b> 05/11/2026 13:22 &nbsp;\n
+<b>Deadline penyelesaian:</b> 09/11/2026 11:22</p>\n
+\n
+\n
+<h2>IV. TINDAKAN PERBAIKAN (DIISI OLEH TEKNISI / MAINTENANCE)</h2>\n
+<table>\n
+<tr><td class="key">Nama teknisi</td><td>Trisha Reilly</td></tr>\n
+<tr><td class="key">Tanggal mulai</td><td>04/11/2026 14:21</td></tr>\n
+<tr><td class="key">Tanggal selesai</td><td>04/11/2026 14:21</td></tr>\n
+<tr><td class="key">Analisis masalah</td><td class="long">Diagnosis tercatat oleh atasan.</td></tr>\n
+<tr><td class="key">Tindakan perbaikan</td><td class="long">Hasil lapangan dimasukkan oleh atasan.</td></tr>\n
+</table>\n
+<p><b>Material / Sparepart:</b></p>\n
+<table class="bordered">\n
+<tr><th>Nama material</th><th>Qty</th><th>Satuan</th></tr>\n
+<tr><td colspan="3">Tidak ada material tercatat.</td></tr>\n
+</table>\n
+<p><b>Status akhir:</b>\n
+ Selesai sempurna </p>\n
+\n
+<h2>V. SERAH TERIMA & PENYELESAIAN</h2>\n
+<table class="bordered">\n
+<tr><th>Teknisi yang mengerjakan</th><th>Pelapor (verifikasi)</th><th>Manajer (mengetahui)</th></tr>\n
+<tr>\n
+<td>Trisha Reilly<br><small>04/11/2026 14:21</small></td>\n
+<td>Belum diverifikasi<br><small>-</small></td>\n
+<td>Belum disahkan<br><small>-</small></td>\n
+</tr>\n
+</table>\n
+<p><b>Kondisi kelayakan:</b> Belum dinyatakan layak pakai / penahanan aset tetap berlaku</p>\n
+<p><b>Catatan pengesahan:</b> -</p>\n
+<div class="note">\n
+    Ini adalah catatan persetujuan elektronik internal berdasarkan identitas login dan waktu server,\n
+    bukan tanda tangan digital tersertifikasi. Kolom yang belum diproses tidak direkayasa menjadi persetujuan.\n
+    Detail histori dan lampiran bukti tersimpan privat di InvMan; perubahan yang sah setelah cetak\n
+    akan tercermin pada versi PDF berikutnya.\n
+</div>\n
+</body>\n
+</html>\n
+' [UTF-8](length: 4229) contains "Penerimaan dicatat oleh: <strong>Trisha Reilly</strong>" [ASCII](length: 55).
+
+D:\herd\invman\output\operational-uat-runtime\app\tests\Feature\HierarchyOverrideTest.php:74
+D:\herd\invman\output\operational-uat-runtime\app\vendor\phpunit\phpunit\phpunit:104
+D:\herd\invman\tests\Support\OperationalUat\suite.php:10
+
+FAILURES!
+Tests: 1, Assertions: 1, Failures: 1.

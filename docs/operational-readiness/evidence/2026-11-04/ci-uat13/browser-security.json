@@ -1,0 +1,107 @@
+{
+  "scope": "real browser and controlled isolated account/session invalidation; no auth injection",
+  "results": [
+    {
+      "id": "SECURITY-expire-session",
+      "description": "SECURITY-expire-session",
+      "preconditions": "Isolated synthetic QA; real normal-login browser session",
+      "steps": [
+        "Establish normal login",
+        "Execute stated negative/revocation/polling scenario",
+        "Inspect actual browser/server result"
+      ],
+      "expected": "Expired session redirects to normal login",
+      "status": "PASS",
+      "evidence": [
+        "SECURITY-expire-session.png"
+      ],
+      "actual": {
+        "path": "/admin/login"
+      }
+    },
+    {
+      "id": "SECURITY-disable",
+      "description": "SECURITY-disable",
+      "preconditions": "Isolated synthetic QA; real normal-login browser session",
+      "steps": [
+        "Establish normal login",
+        "Execute stated negative/revocation/polling scenario",
+        "Inspect actual browser/server result"
+      ],
+      "expected": "Disabled account is signed out on next request",
+      "status": "PASS",
+      "evidence": [
+        "SECURITY-disable.png"
+      ],
+      "actual": {
+        "path": "/admin/login"
+      }
+    },
+    {
+      "id": "SECURITY-revoke-role",
+      "description": "SECURITY-revoke-role",
+      "preconditions": "Isolated synthetic QA; real normal-login browser session",
+      "steps": [
+        "Establish normal login",
+        "Execute stated negative/revocation/polling scenario",
+        "Inspect actual browser/server result"
+      ],
+      "expected": "Revoked role cannot continue accessing panel",
+      "status": "PASS",
+      "evidence": [
+        "SECURITY-revoke-role.png"
+      ],
+      "actual": {
+        "status": 403
+      }
+    },
+    {
+      "id": "LIVEWIRE-POLLING",
+      "description": "LIVEWIRE-POLLING",
+      "preconditions": "Isolated synthetic QA; real normal-login browser session",
+      "steps": [
+        "Establish normal login",
+        "Execute stated negative/revocation/polling scenario",
+        "Inspect actual browser/server result"
+      ],
+      "expected": "At least three real JavaScript polling cycles return200 with no app errors",
+      "status": "PASS",
+      "evidence": [
+        "LIVEWIRE-POLLING.png"
+      ],
+      "actual": {
+        "polls": [
+          {
+            "status": 200,
+            "at": "2026-11-04T07:40:53.880Z"
+          },
+          {
+            "status": 200,
+            "at": "2026-11-04T07:41:08.939Z"
+          },
+          {
+            "status": 200,
+            "at": "2026-11-04T07:41:23.932Z"
+          }
+        ],
+        "javascriptErrors": []
+      }
+    },
+    {
+      "id": "QR-AUTH-ITEM",
+      "description": "QR-AUTH-ITEM",
+      "preconditions": "Isolated synthetic QA; real normal-login browser session",
+      "steps": [
+        "Establish normal login",
+        "Execute stated negative/revocation/polling scenario",
+        "Inspect actual browser/server result"
+      ],
+      "expected": "Signed loan QR requires normal login in anonymous browser",
+      "status": "PASS",
+      "evidence": [
+        "QR-AUTH-ITEM.png"
+      ],
+      "actual": "Normal login required; signed URL and QR payload excluded from evidence"
+    }
+  ]
+}

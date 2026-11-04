@@ -1,0 +1,714 @@
+{
+    "database": "mysql",
+    "tickets": [
+        {
+            "id": "01a1a576-6530-713f-b052-2dc2eaef2404",
+            "title": "QA Operational daycare",
+            "status": "open",
+            "assigned_to": null,
+            "verified_at": null,
+            "accepted_at": null,
+            "safe_at": null,
+            "approvals": [
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 18
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 9
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 10
+                },
+                {
+                    "checkpoint": "final",
+                    "status": "pending",
+                    "decided_by": null
+                }
+            ],
+            "events": [
+                {
+                    "action": "created",
+                    "actor_id": 3
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 18
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 9
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 10
+                }
+            ]
+        },
+        {
+            "id": "01a1a576-654b-7024-b0c7-98d573e5851d",
+            "title": "QA Operational sd",
+            "status": "closed",
+            "assigned_to": 17,
+            "verified_at": "2026-11-04T07:32:34.000000Z",
+            "accepted_at": "2026-11-04T07:32:19.000000Z",
+            "safe_at": null,
+            "approvals": [
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 19
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 9
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 10
+                },
+                {
+                    "checkpoint": "final",
+                    "status": "approved",
+                    "decided_by": 11
+                }
+            ],
+            "events": [
+                {
+                    "action": "created",
+                    "actor_id": 4
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 19
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 9
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 10
+                },
+                {
+                    "action": "maintenance_approved",
+                    "actor_id": 10
+                },
+                {
+                    "action": "maintenance_accepted",
+                    "actor_id": 17
+                },
+                {
+                    "action": "maintenance_work_finished",
+                    "actor_id": 17
+                },
+                {
+                    "action": "maintenance_verified",
+                    "actor_id": 4
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 11
+                },
+                {
+                    "action": "maintenance_closed",
+                    "actor_id": 11
+                },
+                {
+                    "action": "comment",
+                    "actor_id": 16
+                }
+            ]
+        },
+        {
+            "id": "01a1a576-655a-7327-9a4a-a1cd4ea22259",
+            "title": "QA Operational smp",
+            "status": "closed",
+            "assigned_to": 17,
+            "verified_at": "2026-11-04T07:37:32.000000Z",
+            "accepted_at": "2026-11-04T07:37:17.000000Z",
+            "safe_at": null,
+            "approvals": [
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 20
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 9
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 10
+                },
+                {
+                    "checkpoint": "final",
+                    "status": "approved",
+                    "decided_by": 11
+                }
+            ],
+            "events": [
+                {
+                    "action": "created",
+                    "actor_id": 5
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 20
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 9
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 10
+                },
+                {
+                    "action": "maintenance_approved",
+                    "actor_id": 10
+                },
+                {
+                    "action": "maintenance_accepted",
+                    "actor_id": 17
+                },
+                {
+                    "action": "maintenance_work_finished",
+                    "actor_id": 17
+                },
+                {
+                    "action": "maintenance_verified",
+                    "actor_id": 5
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 11
+                },
+                {
+                    "action": "maintenance_closed",
+                    "actor_id": 11
+                }
+            ]
+        },
+        {
+            "id": "01a1a576-6568-7286-a75f-c18aad1c11bb",
+            "title": "QA Operational sma",
+            "status": "open",
+            "assigned_to": null,
+            "verified_at": null,
+            "accepted_at": null,
+            "safe_at": null,
+            "approvals": [
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 21
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 9
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 10
+                },
+                {
+                    "checkpoint": "final",
+                    "status": "pending",
+                    "decided_by": null
+                }
+            ],
+            "events": [
+                {
+                    "action": "created",
+                    "actor_id": 6
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 21
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 9
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 10
+                }
+            ]
+        },
+        {
+            "id": "01a1a576-6577-7251-8779-d94500b35724",
+            "title": "QA Operational tbu",
+            "status": "open",
+            "assigned_to": null,
+            "verified_at": null,
+            "accepted_at": null,
+            "safe_at": null,
+            "approvals": [
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 22
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 9
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 10
+                },
+                {
+                    "checkpoint": "final",
+                    "status": "pending",
+                    "decided_by": null
+                }
+            ],
+            "events": [
+                {
+                    "action": "created",
+                    "actor_id": 7
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 22
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 9
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 10
+                }
+            ]
+        },
+        {
+            "id": "01a1a576-6593-7246-a73a-cebdda95ed73",
+            "title": "QA Operational adm",
+            "status": "open",
+            "assigned_to": null,
+            "verified_at": null,
+            "accepted_at": null,
+            "safe_at": null,
+            "approvals": [
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 23
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 9
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 10
+                },
+                {
+                    "checkpoint": "final",
+                    "status": "pending",
+                    "decided_by": null
+                }
+            ],
+            "events": [
+                {
+                    "action": "created",
+                    "actor_id": 8
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 23
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 9
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 10
+                }
+            ]
+        },
+        {
+            "id": "01a1a576-65c3-7231-89d7-d7562ac9d58d",
+            "title": "QA Managed IT",
+            "status": "open",
+            "assigned_to": null,
+            "verified_at": null,
+            "accepted_at": null,
+            "safe_at": null,
+            "approvals": [
+                {
+                    "checkpoint": "start",
+                    "status": "pending",
+                    "decided_by": null
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "pending",
+                    "decided_by": null
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "pending",
+                    "decided_by": null
+                },
+                {
+                    "checkpoint": "final",
+                    "status": "pending",
+                    "decided_by": null
+                }
+            ],
+            "events": [
+                {
+                    "action": "created",
+                    "actor_id": 4
+                },
+                {
+                    "action": "comment",
+                    "actor_id": 12
+                },
+                {
+                    "action": "comment",
+                    "actor_id": 13
+                }
+            ]
+        },
+        {
+            "id": "01a1a576-65e0-7343-b2d8-26bf74e98782",
+            "title": "QA Managed Perpustakaan",
+            "status": "open",
+            "assigned_to": null,
+            "verified_at": null,
+            "accepted_at": null,
+            "safe_at": null,
+            "approvals": [
+                {
+                    "checkpoint": "start",
+                    "status": "pending",
+                    "decided_by": null
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "pending",
+                    "decided_by": null
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "pending",
+                    "decided_by": null
+                },
+                {
+                    "checkpoint": "final",
+                    "status": "pending",
+                    "decided_by": null
+                }
+            ],
+            "events": [
+                {
+                    "action": "created",
+                    "actor_id": 4
+                },
+                {
+                    "action": "comment",
+                    "actor_id": 14
+                },
+                {
+                    "action": "comment",
+                    "actor_id": 15
+                }
+            ]
+        },
+        {
+            "id": "01a1a57e-28db-7376-8c0d-47a1f308e887",
+            "title": "QA Browser audited hierarchy default",
+            "status": "closed",
+            "assigned_to": 17,
+            "verified_at": "2026-11-04T07:38:31.000000Z",
+            "accepted_at": "2026-11-04T07:38:28.000000Z",
+            "safe_at": null,
+            "approvals": [
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 1
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 1
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 1
+                },
+                {
+                    "checkpoint": "final",
+                    "status": "approved",
+                    "decided_by": 1
+                }
+            ],
+            "events": [
+                {
+                    "action": "created",
+                    "actor_id": 6
+                },
+                {
+                    "action": "work_order_approval_overridden",
+                    "actor_id": 1
+                },
+                {
+                    "action": "work_order_approval_overridden",
+                    "actor_id": 1
+                },
+                {
+                    "action": "work_order_approval_overridden",
+                    "actor_id": 1
+                },
+                {
+                    "action": "maintenance_approval_overridden",
+                    "actor_id": 1
+                },
+                {
+                    "action": "maintenance_accept_overridden",
+                    "actor_id": 1
+                },
+                {
+                    "action": "maintenance_finish_overridden",
+                    "actor_id": 1
+                },
+                {
+                    "action": "maintenance_verification_overridden",
+                    "actor_id": 1
+                },
+                {
+                    "action": "work_order_approval_overridden",
+                    "actor_id": 1
+                },
+                {
+                    "action": "maintenance_close_overridden",
+                    "actor_id": 1
+                }
+            ]
+        },
+        {
+            "id": "01a1a57e-f7e9-70b2-839c-1b2eb49d9df8",
+            "title": "QA Browser cost approval",
+            "status": "open",
+            "assigned_to": null,
+            "verified_at": null,
+            "accepted_at": null,
+            "safe_at": null,
+            "approvals": [
+                {
+                    "checkpoint": "start",
+                    "status": "approved",
+                    "decided_by": 19
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "pending",
+                    "decided_by": null
+                },
+                {
+                    "checkpoint": "start",
+                    "status": "pending",
+                    "decided_by": null
+                },
+                {
+                    "checkpoint": "final",
+                    "status": "pending",
+                    "decided_by": null
+                }
+            ],
+            "events": [
+                {
+                    "action": "created",
+                    "actor_id": 4
+                },
+                {
+                    "action": "work_order_estimate_recorded",
+                    "actor_id": 9
+                },
+                {
+                    "action": "work_order_estimate_recorded",
+                    "actor_id": 9
+                },
+                {
+                    "action": "work_order_approval_granted",
+                    "actor_id": 19
+                }
+            ]
+        }
+    ],
+    "activities": [
+        {
+            "id": "01a1a579-59b5-717a-b13b-d2fbf1225c62",
+            "name": "QA Browser three-item lesson",
+            "status": "returned",
+            "user_id": 4,
+            "items": [
+                {
+                    "id": "01a1a579-59bf-729b-a4c0-19724150c902",
+                    "status": "returned",
+                    "quantity": 3,
+                    "item_id": 1,
+                    "instances": [
+                        1,
+                        2,
+                        3
+                    ]
+                }
+            ],
+            "rooms": [],
+            "vehicles": []
+        },
+        {
+            "id": "01a1a57f-f63b-7338-9f81-343ebe1c4004",
+            "name": "QA Browser room lifecycle",
+            "status": "returned",
+            "user_id": 4,
+            "items": [],
+            "rooms": [
+                {
+                    "id": "01a1a57f-f640-71a0-b1b1-35bdb09d230d",
+                    "status": "returned"
+                }
+            ],
+            "vehicles": []
+        },
+        {
+            "id": "01a1a580-1323-716f-8612-76824a7cb17a",
+            "name": "QA Browser vehicle lifecycle",
+            "status": "returned",
+            "user_id": 4,
+            "items": [],
+            "rooms": [],
+            "vehicles": [
+                {
+                    "id": "01a1a580-1328-71ab-af1a-8a1d33bcf7ad",
+                    "status": "returned"
+                }
+            ]
+        }
+    ],
+    "items": [
+        {
+            "id": 1,
+            "name": "QA Stock 10",
+            "quantity": "10",
+            "available_quantity": 9,
+            "is_borrowable": 1
+        },
+        {
+            "id": 2,
+            "name": "QA Stock 5",
+            "quantity": "5",
+            "available_quantity": 5,
+            "is_borrowable": 1
+        },
+        {
+            "id": 3,
+            "name": "QA Stock 1",
+            "quantity": "1",
+            "available_quantity": 1,
+            "is_borrowable": 1
+        },
+        {
+            "id": 4,
+            "name": "QA Damaged",
+            "quantity": "1",
+            "available_quantity": 0,
+            "is_borrowable": 1
+        },
+        {
+            "id": 5,
+            "name": "QA Repair",
+            "quantity": "1",
+            "available_quantity": 0,
+            "is_borrowable": 1
+        },
+        {
+            "id": 6,
+            "name": "QA Managed IT",
+            "quantity": "1",
+            "available_quantity": 1,
+            "is_borrowable": 1
+        },
+        {
+            "id": 7,
+            "name": "QA Managed Perpustakaan",
+            "quantity": "1",
+            "available_quantity": 1,
+            "is_borrowable": 1
+        },
+        {
+            "id": 8,
+            "name": "QA stock ten single",
+            "quantity": "10",
+            "available_quantity": 10,
+            "is_borrowable": 1
+        },
+        {
+            "id": 9,
+            "name": "QA parallel 5",
+            "quantity": "5",
+            "available_quantity": 5,
+            "is_borrowable": 1
+        },
+        {
+            "id": 10,
+            "name": "QA parallel 1",
+            "quantity": "1",
+            "available_quantity": 1,
+            "is_borrowable": 1
+        },
+        {
+            "id": 11,
+            "name": "QA sequential peak",
+            "quantity": "5",
+            "available_quantity": 5,
+            "is_borrowable": 1
+        },
+        {
+            "id": 12,
+            "name": "QA adjacent boundary",
+            "quantity": "5",
+            "available_quantity": 5,
+            "is_borrowable": 1
+        },
+        {
+            "id": 13,
+            "name": "QA stale draft stock",
+            "quantity": "5",
+            "available_quantity": 5,
+            "is_borrowable": 1
+        },
+        {
+            "id": 14,
+            "name": "QA disabled asset",
+            "quantity": "1",
+            "available_quantity": 1,
+            "is_borrowable": 0
+        }
+    ]
+}

@@ -1,0 +1,26 @@
+PHPUnit 11.5.57 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.14
+Configuration: D:\herd\invman\output\operational-uat-runtime\app\phpunit.xml
+
+F                                                                   1 / 1 (100%)
+
+Time: 00:10.534, Memory: 98.00 MB
+
+There was 1 failure:
+
+1) Tests\Feature\WorkOrderReadinessTest::test_browser_actions_refresh_work_order_state_and_next_action_without_reload
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'in_progress'
++'triaged'
+
+D:\herd\invman\output\operational-uat-runtime\app\vendor\livewire\livewire\src\Features\SupportTesting\MakesAssertions.php:110
+D:\herd\invman\output\operational-uat-runtime\app\tests\Feature\WorkOrderReadinessTest.php:40
+D:\herd\invman\output\operational-uat-runtime\app\vendor\phpunit\phpunit\phpunit:104
+D:\herd\invman\tests\Support\OperationalUat\suite.php:10
+
+FAILURES!
+Tests: 1, Assertions: 7, Failures: 1.

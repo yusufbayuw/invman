@@ -1,0 +1,86 @@
+{
+  "scope": "real-browser explicit hierarchical recovery; normal approval remains separate",
+  "results": [
+    {
+      "id": "HIERARCHY-LOWER-DENIED",
+      "description": "HIERARCHY-LOWER-DENIED",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Unit requester does not receive superior override controls",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-LOWER-DENIED.png"
+      ],
+      "actual": "No superior action exposed to unit requester"
+    },
+    {
+      "id": "HIERARCHY-REASON-REQUIRED",
+      "description": "HIERARCHY-REASON-REQUIRED",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Empty reason keeps approval pending",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-REASON-REQUIRED.png"
+      ],
+      "actual": "Invalid input rejected; first explicit approval recorded with reason"
+    },
+    {
+      "id": "HIERARCHY-APPROVAL-2",
+      "description": "HIERARCHY-APPROVAL-2",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Real admin approves pending stage with explicit audit",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-APPROVAL-2.png"
+      ],
+      "actual": "Pending stage advanced under admin identity"
+    },
+    {
+      "id": "HIERARCHY-APPROVAL-3",
+      "description": "HIERARCHY-APPROVAL-3",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Real admin approves pending stage with explicit audit",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-APPROVAL-3.png"
+      ],
+      "actual": "Pending stage advanced under admin identity"
+    },
+    {
+      "id": "HIERARCHY-ASSIGN",
+      "description": "HIERARCHY-ASSIGN",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Assign original technician through superior exception",
+      "status": "BLOCKED",
+      "evidence": [
+        "HIERARCHY-ASSIGN.png"
+      ],
+      "actual": "locator.click: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Override Penugasan', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" wire:loading.attr=\"disabled\" wire:click=\"mountAction('overrideApproveMaintenance')\" class=\"fi-btn relative grid-flow-col items-center justify-center font-semibold outline-none transition duration-75 focus-visible:ring-2 rounded-lg fi-color-custom fi-btn-color-warning fi-color-warning fi-size-md fi-btn-size-md gap-1.5 px-3 py-2 text-sm inline-grid shadow-sm bg-custom-600 text-white hover:bg-custom-500 focus-visible:ring-custom-500/50 dark:bg-custom-500 dark:hover:bg-custom-400 dar…>…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - element is outside of the viewport\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - element is outside of the viewport\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    29 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - element is outside of the viewport\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n",
+      "body": "Pencarian global\nCTRL+K\nBuka notifikasi\nTiket\nTKT-2026-LKSDIEQ7MXRB\nLihat\nLihat TKT-2026-LKSDIEQ7MXRB\nTambah Komentar\nCatat Tinjauan & Estimasi\nOverride Input Estimasi\nAlihkan Persetujuan\nOverride Penugasan\nBatalkan Pengajuan\nForm Perawatan PDF\nTiket\nNomor\nTKT-2026-LKSDIEQ7MXRB\nStatus\nopen\nPrioritas\nnormal\nKategori\nBangunan & Interior\nJudul\nQA Browser audited hierarchy\nLaporan\nSynthetic hierarchy exception; preserve real actor and safety hold.\nLokasi\nQA Safety Room\nUrgensi pelapor\nnormal\nPelapor\nSarpras SMA\nUnit\nSMA\nPengelola\nFasilitas\nPetugas\n-\nPengajuan terkait\n-\nDibuat\n04 Nov 2026 11:25\nPenanganan tiket\n\nLihat petugas penanggung jawab dan tahap pekerjaan saat ini. Hanya penugasan yang disetujui yang dapat dilanjutkan.\n\nDitugaskan kepada\nBelum ada petugas\nTahap saat ini\nopen\nDisetujui oleh\nMenunggu persetujuan\nDiterima petugas\nBelum diterima\nPerawatan / Perbaikan V3\nDisetujui oleh\nBelum\nWaktu persetujuan\n-\nDiterima teknisi\nBelum\nDiterima pada\n-\nDeadline respons\nNov 5, 2026 10:26:00\nDeadline perbaikan\nNov 9, 2026 08:26:00\nAnalisis masalah\n-\nTindakan perbaikan\n-\nHasil pekerjaan\nBelum\nPekerjaan selesai pada\n-\nMaterial / Sparepart\nDiverifikasi oleh\n-\nVerifikasi pada\n-\nDisahkan oleh\n-\nPengesahan akhir\n-\nDinyatakan layak pakai\nBelum\nPersetujuan & Riwayat Revisi\nSeluruh keputusan\nRevisi\n1\nID estimasi disetujui\n-\nTahap\nDiketahui Atasan Pelapor\nKeputusan\nDisetujui\nOleh\nAdministrator\nWaktu\nNov 4, 2026 11:25:53\nDigantikan revisi\nAktif\nCatatan / alasan\nRevisi\n1\nID estimasi disetujui\n-\nTahap\nDiterima Staf Fasilitas\nKeputusan\nDisetujui\nOleh\nAdministrator\nWaktu\nNov 4, 2026 11:25:58\nDigantikan revisi\nAktif\nCatatan / alasan\nRevisi\n1\nID estimasi disetujui\n-\nTahap\nPengesahan Manager Fasilitas\nKeputusan\nMenunggu\nOleh\n-\nWaktu\n-\nDigantikan revisi\nAktif\nCatatan / alasan\nRevisi\n1\nID estimasi disetujui\n-\nTahap\nDitinjau Supervisor Fasilitas\nKeputusan\nDisetujui\nOleh\nAdministrator\nWaktu\nNov 4, 2026 11:26:04\nDigantikan revisi\nAktif\nCatatan / alasan\nPengiriman ulang\nAset terkait\nAssets\nJenis\nroom\nNama aset\nQA Override Safety Room\nPercakapan\nKomentar\nSemua Lampiran\n\nLampiran awal dan lampiran komentar. Foto/PDF dibuka privat; gunakan tautan unduh bila ingin menyimpan file.\n\nAudit Override Hierarki\nAudit perubahan\nPersempit menu\nDasbor\nPeminjaman\nPeminjaman\nPeminjaman Dikelola\nDaftar Pengajuan\nLaporan & Perbaikan\nLaporan & Perbaikan\nLaporan Kerusakan\nKoordinasi\nKoordinasi\nChat\nLaporan\nLaporan\nRingkasan Peminjaman\nRekapan Penggunaan\n0\nKelola Peminjaman\nKelola Peminjaman\nOpsi Peminjaman\nOpsi Peminjaman\nData Aset\nData Aset\nPemeriksaan & Riwayat\nPemeriksaan & Riwayat\nPengaturan\nPengaturan\n×\nGunakan LIST sebagai aplikasi\nAktifkan notifikasi untuk pembaruan peminjaman dan chat.\nAktifkan notifikasi"
+    }
+  ]
+}

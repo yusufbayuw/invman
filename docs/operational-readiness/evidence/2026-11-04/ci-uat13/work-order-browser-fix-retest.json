@@ -1,0 +1,107 @@
+{
+  "scope": "real browser; distinct supervisor, technician, reporter and manager; SMP unit",
+  "results": [
+    {
+      "id": "WO-FIX-DISPATCH",
+      "description": "Work Order SMP WO-FIX-DISPATCH",
+      "preconditions": "Six unit start approvals completed through browser; UI record refresh fix installed",
+      "steps": [
+        "Normal login as Supervisor Fasilitas",
+        "Open assigned SMP ticket",
+        "Perform modal action",
+        "Check next action in the same response without reloading"
+      ],
+      "expected": "Ticket assigned and acceptance pending",
+      "status": "PASS",
+      "evidence": [
+        "WO-FIX-DISPATCH.png"
+      ],
+      "actual": "Expected state and next action observed without reload"
+    },
+    {
+      "id": "WO-FIX-ACCEPT",
+      "description": "Work Order SMP WO-FIX-ACCEPT",
+      "preconditions": "Six unit start approvals completed through browser; UI record refresh fix installed",
+      "steps": [
+        "Normal login as Teknisi",
+        "Open assigned SMP ticket",
+        "Perform modal action",
+        "Check next action in the same response without reloading"
+      ],
+      "expected": "Finish-work action appears in same Livewire response",
+      "status": "PASS",
+      "evidence": [
+        "WO-FIX-ACCEPT.png"
+      ],
+      "actual": "Expected state and next action observed without reload"
+    },
+    {
+      "id": "WO-FIX-FINISH",
+      "description": "Work Order SMP WO-FIX-FINISH",
+      "preconditions": "Six unit start approvals completed through browser; UI record refresh fix installed",
+      "steps": [
+        "Normal login as Teknisi",
+        "Open assigned SMP ticket",
+        "Perform modal action",
+        "Check next action in the same response without reloading"
+      ],
+      "expected": "Resolved result and finish action disappears without reload",
+      "status": "PASS",
+      "evidence": [
+        "WO-FIX-FINISH.png"
+      ],
+      "actual": "Expected state and next action observed without reload"
+    },
+    {
+      "id": "WO-FIX-VERIFY",
+      "description": "Work Order SMP WO-FIX-VERIFY",
+      "preconditions": "Six unit start approvals completed through browser; UI record refresh fix installed",
+      "steps": [
+        "Normal login as Pelapor SMP",
+        "Open assigned SMP ticket",
+        "Perform modal action",
+        "Check next action in the same response without reloading"
+      ],
+      "expected": "Verification action disappears without reload",
+      "status": "PASS",
+      "evidence": [
+        "WO-FIX-VERIFY.png"
+      ],
+      "actual": "Expected state and next action observed without reload"
+    },
+    {
+      "id": "WO-FIX-FINAL",
+      "description": "Work Order SMP WO-FIX-FINAL",
+      "preconditions": "Six unit start approvals completed through browser; UI record refresh fix installed",
+      "steps": [
+        "Normal login as Manager Fasilitas",
+        "Open assigned SMP ticket",
+        "Perform modal action",
+        "Check next action in the same response without reloading"
+      ],
+      "expected": "Close action appears after final approval",
+      "status": "PASS",
+      "evidence": [
+        "WO-FIX-FINAL.png"
+      ],
+      "actual": "Expected state and next action observed without reload"
+    },
+    {
+      "id": "WO-FIX-CLOSE",
+      "description": "Work Order SMP WO-FIX-CLOSE",
+      "preconditions": "Six unit start approvals completed through browser; UI record refresh fix installed",
+      "steps": [
+        "Normal login as Manager Fasilitas",
+        "Open assigned SMP ticket",
+        "Perform modal action",
+        "Check next action in the same response without reloading"
+      ],
+      "expected": "Work Order closed; close action disappears without reload",
+      "status": "PASS",
+      "evidence": [
+        "WO-FIX-CLOSE.png"
+      ],
+      "actual": "Expected state and next action observed without reload"
+    }
+  ]
+}

@@ -1,0 +1,611 @@
+{
+  "scope": "real-browser explicit hierarchical recovery; normal approval remains separate",
+  "results": [
+    {
+      "id": "HIERARCHY-LOWER-DENIED",
+      "description": "HIERARCHY-LOWER-DENIED",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Unit requester does not receive superior override controls",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-LOWER-DENIED.png"
+      ],
+      "actual": "No superior action exposed to unit requester"
+    },
+    {
+      "id": "HIERARCHY-HEADER-RESPONSIVE",
+      "description": "HIERARCHY-HEADER-RESPONSIVE",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Every visible ticket header action stays inside viewport at all five widths",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-HEADER-RESPONSIVE.png"
+      ],
+      "actual": [
+        {
+          "width": 360,
+          "buttons": [
+            {
+              "label": "Tambah Komentar",
+              "left": 16,
+              "right": 192,
+              "viewport": 360
+            },
+            {
+              "label": "Catat Tinjauan & Estimasi",
+              "left": 16,
+              "right": 241,
+              "viewport": 360
+            },
+            {
+              "label": "Override Input Estimasi",
+              "left": 16,
+              "right": 228,
+              "viewport": 360
+            },
+            {
+              "label": "Override Persetujuan",
+              "left": 16,
+              "right": 213,
+              "viewport": 360
+            },
+            {
+              "label": "Alihkan Persetujuan",
+              "left": 16,
+              "right": 205,
+              "viewport": 360
+            },
+            {
+              "label": "Override Penugasan",
+              "left": 16,
+              "right": 207,
+              "viewport": 360
+            },
+            {
+              "label": "Batalkan Pengajuan",
+              "left": 16,
+              "right": 202,
+              "viewport": 360
+            },
+            {
+              "label": "Form Perawatan PDF",
+              "left": 16,
+              "right": 210,
+              "viewport": 360
+            }
+          ]
+        },
+        {
+          "width": 390,
+          "buttons": [
+            {
+              "label": "Tambah Komentar",
+              "left": 16,
+              "right": 192,
+              "viewport": 390
+            },
+            {
+              "label": "Catat Tinjauan & Estimasi",
+              "left": 16,
+              "right": 241,
+              "viewport": 390
+            },
+            {
+              "label": "Override Input Estimasi",
+              "left": 16,
+              "right": 228,
+              "viewport": 390
+            },
+            {
+              "label": "Override Persetujuan",
+              "left": 16,
+              "right": 213,
+              "viewport": 390
+            },
+            {
+              "label": "Alihkan Persetujuan",
+              "left": 16,
+              "right": 205,
+              "viewport": 390
+            },
+            {
+              "label": "Override Penugasan",
+              "left": 16,
+              "right": 207,
+              "viewport": 390
+            },
+            {
+              "label": "Batalkan Pengajuan",
+              "left": 16,
+              "right": 202,
+              "viewport": 390
+            },
+            {
+              "label": "Form Perawatan PDF",
+              "left": 16,
+              "right": 210,
+              "viewport": 390
+            }
+          ]
+        },
+        {
+          "width": 430,
+          "buttons": [
+            {
+              "label": "Tambah Komentar",
+              "left": 16,
+              "right": 192,
+              "viewport": 430
+            },
+            {
+              "label": "Catat Tinjauan & Estimasi",
+              "left": 16,
+              "right": 241,
+              "viewport": 430
+            },
+            {
+              "label": "Override Input Estimasi",
+              "left": 16,
+              "right": 228,
+              "viewport": 430
+            },
+            {
+              "label": "Override Persetujuan",
+              "left": 16,
+              "right": 213,
+              "viewport": 430
+            },
+            {
+              "label": "Alihkan Persetujuan",
+              "left": 225,
+              "right": 414,
+              "viewport": 430
+            },
+            {
+              "label": "Override Penugasan",
+              "left": 16,
+              "right": 207,
+              "viewport": 430
+            },
+            {
+              "label": "Batalkan Pengajuan",
+              "left": 219,
+              "right": 405,
+              "viewport": 430
+            },
+            {
+              "label": "Form Perawatan PDF",
+              "left": 16,
+              "right": 210,
+              "viewport": 430
+            }
+          ]
+        },
+        {
+          "width": 768,
+          "buttons": [
+            {
+              "label": "Tambah Komentar",
+              "left": 24,
+              "right": 200,
+              "viewport": 768
+            },
+            {
+              "label": "Catat Tinjauan & Estimasi",
+              "left": 212,
+              "right": 437,
+              "viewport": 768
+            },
+            {
+              "label": "Override Input Estimasi",
+              "left": 449,
+              "right": 661,
+              "viewport": 768
+            },
+            {
+              "label": "Override Persetujuan",
+              "left": 24,
+              "right": 221,
+              "viewport": 768
+            },
+            {
+              "label": "Alihkan Persetujuan",
+              "left": 233,
+              "right": 422,
+              "viewport": 768
+            },
+            {
+              "label": "Override Penugasan",
+              "left": 434,
+              "right": 625,
+              "viewport": 768
+            },
+            {
+              "label": "Batalkan Pengajuan",
+              "left": 24,
+              "right": 210,
+              "viewport": 768
+            },
+            {
+              "label": "Form Perawatan PDF",
+              "left": 222,
+              "right": 416,
+              "viewport": 768
+            }
+          ]
+        },
+        {
+          "width": 1366,
+          "buttons": [
+            {
+              "label": "Tambah Komentar",
+              "left": 119,
+              "right": 295,
+              "viewport": 1366
+            },
+            {
+              "label": "Catat Tinjauan & Estimasi",
+              "left": 307,
+              "right": 532,
+              "viewport": 1366
+            },
+            {
+              "label": "Override Input Estimasi",
+              "left": 544,
+              "right": 756,
+              "viewport": 1366
+            },
+            {
+              "label": "Override Persetujuan",
+              "left": 768,
+              "right": 965,
+              "viewport": 1366
+            },
+            {
+              "label": "Alihkan Persetujuan",
+              "left": 977,
+              "right": 1166,
+              "viewport": 1366
+            },
+            {
+              "label": "Override Penugasan",
+              "left": 119,
+              "right": 310,
+              "viewport": 1366
+            },
+            {
+              "label": "Batalkan Pengajuan",
+              "left": 322,
+              "right": 508,
+              "viewport": 1366
+            },
+            {
+              "label": "Form Perawatan PDF",
+              "left": 520,
+              "right": 714,
+              "viewport": 1366
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "HIERARCHY-REASON-REQUIRED",
+      "description": "HIERARCHY-REASON-REQUIRED",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Empty reason keeps approval pending",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-REASON-REQUIRED.png"
+      ],
+      "actual": "Invalid input rejected; first explicit approval recorded with reason"
+    },
+    {
+      "id": "HIERARCHY-APPROVAL-2",
+      "description": "HIERARCHY-APPROVAL-2",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Real admin approves pending stage with explicit audit",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-APPROVAL-2.png"
+      ],
+      "actual": "Pending stage advanced under admin identity"
+    },
+    {
+      "id": "HIERARCHY-APPROVAL-3",
+      "description": "HIERARCHY-APPROVAL-3",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Real admin approves pending stage with explicit audit",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-APPROVAL-3.png"
+      ],
+      "actual": "Pending stage advanced under admin identity"
+    },
+    {
+      "id": "HIERARCHY-ASSIGN",
+      "description": "HIERARCHY-ASSIGN",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Assign original technician through superior exception",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-ASSIGN.png"
+      ],
+      "actual": "Assigned to technician; next action visible without reload"
+    },
+    {
+      "id": "HIERARCHY-ACCEPT",
+      "description": "HIERARCHY-ACCEPT",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Accept while retaining original assigned technician",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-ACCEPT.png"
+      ],
+      "actual": "In progress under actual admin audit"
+    },
+    {
+      "id": "HIERARCHY-FINISH",
+      "description": "HIERARCHY-FINISH",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Record result through explicit exceptional actor",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-FINISH.png"
+      ],
+      "actual": "Resolved; independent identity retained"
+    },
+    {
+      "id": "HIERARCHY-VERIFY",
+      "description": "HIERARCHY-VERIFY",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Verification records superior actor rather than forging reporter",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-VERIFY.png"
+      ],
+      "actual": "Explicit superior verification recorded"
+    },
+    {
+      "id": "HIERARCHY-FINAL-APPROVAL",
+      "description": "HIERARCHY-FINAL-APPROVAL",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Final workflow checkpoint remains required",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-FINAL-APPROVAL.png"
+      ],
+      "actual": "Final checkpoint approved with reason"
+    },
+    {
+      "id": "HIERARCHY-CLOSE-HELD",
+      "description": "HIERARCHY-CLOSE-HELD",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Close without safety release; actual actor and original subject preserved",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-CLOSE-HELD.png"
+      ],
+      "actual": {
+        "ticket": "01a1a57e-28db-7376-8c0d-47a1f308e887",
+        "room": 7,
+        "reporter": 6,
+        "admin": 1,
+        "technician": 17,
+        "status": "closed",
+        "reporter_unchanged": true,
+        "assignee_unchanged": true,
+        "audit_count": 9,
+        "actors": [
+          1
+        ],
+        "actions": [
+          "work_order_decision",
+          "work_order_decision",
+          "work_order_decision",
+          "approve_assign",
+          "accept_task",
+          "finish_work",
+          "verify_work",
+          "work_order_decision",
+          "close_work"
+        ],
+        "room_borrowable": 1,
+        "room_status": null,
+        "audit": [
+          {
+            "actor_id": 1,
+            "subject_user_id": 21,
+            "action": "work_order_decision",
+            "from_status": "pending",
+            "to_status": "approved",
+            "reason": "Synthetic justified approval recovery by actual admin actor",
+            "details": {
+              "step_key": "diketahui_atasan",
+              "checkpoint": "start",
+              "estimate_id": null,
+              "self_approval": false
+            }
+          },
+          {
+            "actor_id": 1,
+            "subject_user_id": 9,
+            "action": "work_order_decision",
+            "from_status": "pending",
+            "to_status": "approved",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+              "step_key": "diterima_fasilitas",
+              "checkpoint": "start",
+              "estimate_id": null,
+              "self_approval": false
+            }
+          },
+          {
+            "actor_id": 1,
+            "subject_user_id": 10,
+            "action": "work_order_decision",
+            "from_status": "pending",
+            "to_status": "approved",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+              "step_key": "tinjauan_supervisor",
+              "checkpoint": "start",
+              "estimate_id": null,
+              "self_approval": false
+            }
+          },
+          {
+            "actor_id": 1,
+            "subject_user_id": null,
+            "action": "approve_assign",
+            "from_status": "open",
+            "to_status": "triaged",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+              "self_approval": false,
+              "technician_id": 17
+            }
+          },
+          {
+            "actor_id": 1,
+            "subject_user_id": 17,
+            "action": "accept_task",
+            "from_status": "triaged",
+            "to_status": "in_progress",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": []
+          },
+          {
+            "actor_id": 1,
+            "subject_user_id": 17,
+            "action": "finish_work",
+            "from_status": "in_progress",
+            "to_status": "resolved",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+              "outcome": "complete"
+            }
+          },
+          {
+            "actor_id": 1,
+            "subject_user_id": 6,
+            "action": "verify_work",
+            "from_status": "resolved",
+            "to_status": "resolved",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+              "accepted": true,
+              "self_approval": false
+            }
+          },
+          {
+            "actor_id": 1,
+            "subject_user_id": 11,
+            "action": "work_order_decision",
+            "from_status": "pending",
+            "to_status": "approved",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+              "step_key": "pengesahan_manager",
+              "checkpoint": "final",
+              "estimate_id": null,
+              "self_approval": false
+            }
+          },
+          {
+            "actor_id": 1,
+            "subject_user_id": null,
+            "action": "close_work",
+            "from_status": "resolved",
+            "to_status": "closed",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+              "self_approval": false,
+              "asset_released": false
+            }
+          }
+        ],
+        "safety_hold_active": true,
+        "not_in_loan_options": true,
+        "asset_released_at": null,
+        "pass": true
+      }
+    },
+    {
+      "id": "HIERARCHY-PDF",
+      "description": "HIERARCHY-PDF",
+      "preconditions": "Current-main audited hierarchy policy; dedicated synthetic room held by maintenance ticket",
+      "steps": [
+        "Normal login under real actor",
+        "Operate explicit override form and mandatory reason",
+        "Inspect preserved identity, immutable history and safety hold"
+      ],
+      "expected": "Authorized PDF is generated from the actual audited override history",
+      "status": "PASS",
+      "evidence": [
+        "HIERARCHY-PDF.png"
+      ],
+      "actual": {
+        "status": 200,
+        "bytes": 884122,
+        "file": "hierarchy-browser.pdf"
+      }
+    }
+  ]
+}

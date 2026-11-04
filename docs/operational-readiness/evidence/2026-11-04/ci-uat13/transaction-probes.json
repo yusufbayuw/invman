@@ -1,0 +1,153 @@
+{
+    "scope": "real concurrent PHP services on isolated MySQL; not browser UAT or production load",
+    "mysql": "8.0.46",
+    "results": [
+        {
+            "id": "STOCK-10-3",
+            "expected": 7,
+            "actual": 7,
+            "pass": true
+        },
+        {
+            "id": "RACE-5-2",
+            "stock": 5,
+            "quantity_per_request": 3,
+            "simultaneous_processes": 2,
+            "outcomes": {
+                "committed": 1,
+                "rejected": 1
+            },
+            "peak_reserved": 3,
+            "rows": [
+                {
+                    "outcome": "committed",
+                    "activity": "01a1a584-06ca-722e-a038-a4cf901aa6c3",
+                    "ms": 83.798
+                },
+                {
+                    "outcome": "rejected",
+                    "validation_fields": [
+                        "status"
+                    ],
+                    "ms": 74.978
+                }
+            ],
+            "pass": true
+        },
+        {
+            "id": "RACE-1-10",
+            "stock": 1,
+            "quantity_per_request": 1,
+            "simultaneous_processes": 10,
+            "outcomes": {
+                "rejected": 9,
+                "committed": 1
+            },
+            "peak_reserved": 1,
+            "rows": [
+                {
+                    "outcome": "rejected",
+                    "validation_fields": [
+                        "status"
+                    ],
+                    "ms": 269.224
+                },
+                {
+                    "outcome": "rejected",
+                    "validation_fields": [
+                        "status"
+                    ],
+                    "ms": 220.006
+                },
+                {
+                    "outcome": "rejected",
+                    "validation_fields": [
+                        "status"
+                    ],
+                    "ms": 189.847
+                },
+                {
+                    "outcome": "rejected",
+                    "validation_fields": [
+                        "status"
+                    ],
+                    "ms": 250.554
+                },
+                {
+                    "outcome": "committed",
+                    "activity": "01a1a584-0aa3-70de-b262-4566d52d9654",
+                    "ms": 186.017
+                },
+                {
+                    "outcome": "rejected",
+                    "validation_fields": [
+                        "status"
+                    ],
+                    "ms": 236.638
+                },
+                {
+                    "outcome": "rejected",
+                    "validation_fields": [
+                        "status"
+                    ],
+                    "ms": 178.015
+                },
+                {
+                    "outcome": "rejected",
+                    "validation_fields": [
+                        "status"
+                    ],
+                    "ms": 228.647
+                },
+                {
+                    "outcome": "rejected",
+                    "validation_fields": [
+                        "status"
+                    ],
+                    "ms": 201.045
+                },
+                {
+                    "outcome": "rejected",
+                    "validation_fields": [
+                        "status"
+                    ],
+                    "ms": 279.902
+                }
+            ],
+            "pass": true
+        },
+        {
+            "id": "TIME-PEAK-LONG-WINDOW",
+            "peak_before": 3,
+            "actual_peak_before": 3,
+            "available_before": 2,
+            "actual_available_before": 2,
+            "pass": true
+        },
+        {
+            "id": "TIME-GENUINE-OVERLAP",
+            "expected": "reject capacity exceeded",
+            "actual": "rejected",
+            "pass": true
+        },
+        {
+            "id": "TIME-ADJACENT",
+            "expected_peak": 3,
+            "actual_peak": 3,
+            "pass": true
+        },
+        {
+            "id": "DRAFT-STOCK-CHANGED",
+            "expected": "reject stale draft",
+            "actual": "rejected",
+            "pass": true
+        },
+        {
+            "id": "ASSET-DISABLED",
+            "expected": "reject disabled asset",
+            "actual": "rejected",
+            "pass": true
+        }
+    ],
+    "pass": true
+}

@@ -1,0 +1,1345 @@
+{
+  "source": {
+    "sha": "81a966641888af4937da9cd1c02d4565a3f2b0cd",
+    "run": 150,
+    "url": "https://github.com/yusufbayuw/invman/actions/runs/41758114999",
+    "verifiedFrom": "GitHub job 126338954424 logs"
+  },
+  "note": "The legacy authority script's baseline label is historical; the Actions run SHA above identifies the source actually executed.",
+  "approvalConcurrency": {
+    "mysql": "8.0.46",
+    "approval_race": {
+      "pass": true,
+      "outcomes": [
+        "committed",
+        "rejected"
+      ],
+      "committed_events": 1
+    },
+    "revision_race": {
+      "pass": true,
+      "outcomes": [
+        "committed",
+        "rejected"
+      ],
+      "revisions": 1
+    },
+    "global_draft_race": {
+      "pass": true,
+      "outcomes": [
+        "committed",
+        "rejected"
+      ],
+      "drafts": 1
+    }
+  },
+  "authorityOrdering": {
+    "baseline": "d35b49e",
+    "mysql": "8.0.46",
+    "ordering": "Revocation effective at COMMIT. Current authority rows remain locked until approval commits; approval-first must block revoker, revocation-first must make approval wait and then deny.",
+    "barriers": "Explicit signals and performance_schema.data_lock_waits; no delay-based success criteria.",
+    "cases": [
+      {
+        "case": "title_revoke",
+        "order": "approval_first",
+        "pass": true,
+        "approval_events": 1,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "title_revoke",
+        "order": "revocation_first",
+        "pass": true,
+        "approval_events": 0,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "conflict",
+          "fields": [
+            "approval"
+          ],
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "assignment_move",
+        "order": "approval_first",
+        "pass": true,
+        "approval_events": 1,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "assignment_move",
+        "order": "revocation_first",
+        "pass": true,
+        "approval_events": 0,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "conflict",
+          "fields": [
+            "approval"
+          ],
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "supervisor_change",
+        "order": "approval_first",
+        "pass": true,
+        "approval_events": 1,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "supervisor_change",
+        "order": "revocation_first",
+        "pass": true,
+        "approval_events": 0,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "conflict",
+          "fields": [
+            "approval"
+          ],
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "disable",
+        "order": "approval_first",
+        "pass": true,
+        "approval_events": 1,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "disable",
+        "order": "revocation_first",
+        "pass": true,
+        "approval_events": 0,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "conflict",
+          "fields": [
+            "approval"
+          ],
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "assignment_revoke",
+        "order": "approval_first",
+        "pass": true,
+        "approval_events": 1,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "assignment_revoke",
+        "order": "revocation_first",
+        "pass": true,
+        "approval_events": 0,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "conflict",
+          "fields": [
+            "approval"
+          ],
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "admin_role_revocation",
+        "order": "reassignment_first",
+        "pass": true,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "admin_role_revocation",
+        "order": "role_revocation_first",
+        "pass": true,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "denied",
+          "status": 403,
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "two_approvers",
+        "pass": true,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "conflict",
+          "fields": [
+            "approval"
+          ],
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "reject_resubmit",
+        "pass": true,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "resubmit_before_rejection",
+        "pass": true,
+        "worker": {
+          "outcome": "conflict",
+          "fields": [
+            "revision"
+          ],
+          "exit_code": 0
+        }
+      },
+      {
+        "case": "estimate_approval",
+        "order": "estimate_first",
+        "pass": true,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "conflict",
+          "fields": [
+            "estimate"
+          ],
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "estimate_approval",
+        "order": "approval_first",
+        "pass": true,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "conflict",
+          "fields": [
+            "estimate"
+          ],
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      },
+      {
+        "case": "publish_does_not_rewrite_old_ticket",
+        "pass": true,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "contender_state": "completed_before_release"
+      },
+      {
+        "case": "double_reassign",
+        "pass": true,
+        "first": {
+          "outcome": "committed",
+          "exit_code": 0
+        },
+        "second": {
+          "outcome": "conflict",
+          "fields": [
+            "approval"
+          ],
+          "exit_code": 0
+        },
+        "contender_state": "mysql_lock_wait"
+      }
+    ],
+    "pass": true
+  },
+  "staleSnapshot": {
+    "interleaving": "B establishes REPEATABLE READ snapshot; A books and commits all stock; B submits its preexisting draft in the older transaction",
+    "worker": {
+      "outcome": "conflict"
+    },
+    "worker_exit": 0,
+    "stock": 1,
+    "submitted_quantity": 1,
+    "pass": true
+  },
+  "faultRecovery": {
+    "scope": "isolated QA fault injection; production outage/failover is not exercised",
+    "connection_killed": "only the owned disposable worker connection",
+    "worker_exit": 0,
+    "worker": {
+      "outcome": "interrupted",
+      "type": "PDOException",
+      "sqlstate": null
+    },
+    "interrupted_approval_rolled_back": true,
+    "retry_produces_one_event": true,
+    "duplicate_retry_rejected": true,
+    "storage_process_file_limit_bytes": 4096,
+    "storage_write_bytes": 8192,
+    "storage": {
+      "write_failed": true,
+      "type": "League\\Flysystem\\UnableToWriteFile"
+    },
+    "storage_exit": 0,
+    "pass": true,
+    "limits": "Per-process file size failure tests the private filesystem write primitive, not full-disk production upload recovery. No production database was interrupted."
+  },
+  "controlledServiceLoad": {
+    "scope": "controlled QA; not production capacity certification",
+    "thresholds": "Zero unexpected errors, no duplicate decision/event, no draft duplication or stock overcommit. Latency is descriptive; production latency/SLA and hardware targets were not supplied.",
+    "environment": {
+      "php": "8.3.36",
+      "mysql": "8.0.46",
+      "parallel_php_workers": 8,
+      "shared_host": true,
+      "proc_metrics_available": true
+    },
+    "sequential_open": {
+      "workers": 1,
+      "requests": 8,
+      "outcomes": {
+        "committed": 8
+      },
+      "wall_seconds": 1.725,
+      "process_throughput_per_second": 4.636,
+      "service_latency_ms": {
+        "p50": 23.37,
+        "p95": 24.448,
+        "max": 28.399
+      },
+      "queries": {
+        "min": 13,
+        "max": 13
+      },
+      "peak_worker_php_bytes": 50855936,
+      "results": [
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4052-724c-9d72-3a6fa04b0a94",
+          "service_ms": 23.37,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4128-73af-939c-53c5cff4211f",
+          "service_ms": 23.616,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-41fd-7381-a2c6-dbf448f144c5",
+          "service_ms": 22.89,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-42d8-73e5-a483-dcfa87776b45",
+          "service_ms": 22.334,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-43aa-706d-a67b-72993c3bdf95",
+          "service_ms": 23.95,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4482-7188-bed2-afcdd3dfd1fb",
+          "service_ms": 24.448,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4556-7041-b27a-206eb504264d",
+          "service_ms": 23.145,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4632-71af-9bd4-f156498b25bb",
+          "service_ms": 28.399,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        }
+      ]
+    },
+    "parallel_open": {
+      "workers": 8,
+      "requests": 32,
+      "outcomes": {
+        "committed": 32
+      },
+      "wall_seconds": 2.671,
+      "process_throughput_per_second": 11.981,
+      "service_latency_ms": {
+        "p50": 64.876,
+        "p95": 82.4,
+        "max": 96.945
+      },
+      "queries": {
+        "min": 13,
+        "max": 13
+      },
+      "peak_worker_php_bytes": 50855936,
+      "results": [
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-47a8-72ce-910f-5170dcf802f7",
+          "service_ms": 35.631,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-47d9-7276-8c94-0b8a2bac53b0",
+          "service_ms": 64.876,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4822-7011-8423-7388fdd32927",
+          "service_ms": 75.834,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4889-7158-80d3-ea315411265b",
+          "service_ms": 61.916,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-48df-70fb-a968-4b45cb1a66bb",
+          "service_ms": 58.039,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-48dc-72d4-afe0-2c990d40c297",
+          "service_ms": 56.781,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-48ff-7215-bcfc-7bf5f542df50",
+          "service_ms": 82.4,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4912-7189-9532-f1f1a9f11377",
+          "service_ms": 59.833,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4a70-70c6-9344-c526d1f86a01",
+          "service_ms": 96.945,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4a9e-73fd-bf12-70cd19ceee9d",
+          "service_ms": 74.208,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4ace-7165-9711-a510fc20391f",
+          "service_ms": 67.468,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4add-725e-b460-6e0ea20f0c71",
+          "service_ms": 61.471,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4b2c-705c-a4e5-7d300256afce",
+          "service_ms": 69.261,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4b72-7177-ba2e-400a0ea3cfe2",
+          "service_ms": 54.043,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4bb0-7269-b768-3410c89f4055",
+          "service_ms": 72.825,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4c22-7152-9f9e-4bcc1d2e94e0",
+          "service_ms": 76.964,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4cb7-705b-8142-f030c6a64db2",
+          "service_ms": 75.812,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4d42-71aa-81d3-08499945e7a0",
+          "service_ms": 54.129,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4d37-7297-8d99-d72b9f005184",
+          "service_ms": 61.349,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4d89-73fb-b5d5-92f527e6ce1e",
+          "service_ms": 75.246,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4e2f-71a9-8c22-7f1551b3903e",
+          "service_ms": 77.859,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4e70-73c7-a146-1512b4ea351a",
+          "service_ms": 63.58,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4e3b-73c5-b1b7-387d893c283c",
+          "service_ms": 92.583,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4e78-715b-8e89-6834b99728bc",
+          "service_ms": 76.031,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4e9f-7050-8de4-45707bec7319",
+          "service_ms": 55.623,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4fba-72df-bcef-8c95fdd1105b",
+          "service_ms": 70.403,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-4ff6-7021-85cb-564415a6374c",
+          "service_ms": 65.477,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-5038-7271-bbff-722cb94dcddf",
+          "service_ms": 36.507,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-503c-72b2-b544-c84eee02b0ec",
+          "service_ms": 41.767,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-5032-7010-8c03-75e831e7cdb9",
+          "service_ms": 72.058,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-5080-7333-b4b6-41b3dc7db8c9",
+          "service_ms": 26.807,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-50a4-7051-abe5-9e09f42aa51a",
+          "service_ms": 23.194,
+          "queries": 13,
+          "peak_php_bytes": 50855936
+        }
+      ]
+    },
+    "parallel_approvals": {
+      "workers": 8,
+      "requests": 32,
+      "outcomes": {
+        "committed": 32
+      },
+      "wall_seconds": 2.629,
+      "process_throughput_per_second": 12.172,
+      "service_latency_ms": {
+        "p50": 51.588,
+        "p95": 79.83,
+        "max": 108.763
+      },
+      "queries": {
+        "min": 15,
+        "max": 15
+      },
+      "peak_worker_php_bytes": 50855936,
+      "results": [
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 83.785,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 73.22,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 66.295,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 31.953,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 47.351,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 77.528,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 79.83,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 108.763,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 40.145,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 74.989,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 34.134,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 25.703,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 48.186,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 55.773,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 68.401,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 50.006,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 75.28,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 64.835,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 49.223,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 26.709,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 51.588,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 66.537,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 73.927,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 54.518,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 77.146,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 50.241,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 24.43,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 28.519,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 55.499,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 25.086,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 26.355,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 17.068,
+          "queries": 15,
+          "peak_php_bytes": 50855936
+        }
+      ]
+    },
+    "parallel_drafts": {
+      "workers": 8,
+      "requests": 8,
+      "outcomes": {
+        "committed": 1,
+        "validation_conflict": 7
+      },
+      "wall_seconds": 0.603,
+      "process_throughput_per_second": 13.263,
+      "service_latency_ms": {
+        "p50": 17.495,
+        "p95": 25.758,
+        "max": 27.04
+      },
+      "queries": {
+        "min": 3,
+        "max": 6
+      },
+      "peak_worker_php_bytes": 50855936,
+      "results": [
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 27.04,
+          "queries": 6,
+          "peak_php_bytes": 48758784
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 15.004,
+          "queries": 3,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 14.001,
+          "queries": 3,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 22.054,
+          "queries": 3,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 17.495,
+          "queries": 3,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 25.758,
+          "queries": 3,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 14.256,
+          "queries": 3,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 25.278,
+          "queries": 3,
+          "peak_php_bytes": 50855936
+        }
+      ]
+    },
+    "parallel_bookings": {
+      "workers": 6,
+      "requests": 12,
+      "outcomes": {
+        "committed": 4,
+        "validation_conflict": 8
+      },
+      "wall_seconds": 1.045,
+      "process_throughput_per_second": 11.478,
+      "service_latency_ms": {
+        "p50": 68.45,
+        "p95": 156.549,
+        "max": 179.721
+      },
+      "queries": {
+        "min": 9,
+        "max": 71
+      },
+      "peak_worker_php_bytes": 52953088,
+      "results": [
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-5e8a-7048-800d-dc7f2a898aaa",
+          "service_ms": 145.05,
+          "queries": 71,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-5e90-710b-aaa5-ff571c7c6906",
+          "service_ms": 179.721,
+          "queries": 71,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-5eee-708f-a7e4-ae57c3807e8f",
+          "service_ms": 146.49,
+          "queries": 71,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "committed",
+          "id": "01a1a44d-5f3a-71e0-bb79-2b9b06be13c4",
+          "service_ms": 156.549,
+          "queries": 71,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 96.331,
+          "queries": 31,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 39.57,
+          "queries": 9,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 68.45,
+          "queries": 9,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 88.737,
+          "queries": 9,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 49.064,
+          "queries": 9,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 35.586,
+          "queries": 9,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 24.898,
+          "queries": 9,
+          "peak_php_bytes": 50855936
+        },
+        {
+          "outcome": "validation_conflict",
+          "service_ms": 26.94,
+          "queries": 9,
+          "peak_php_bytes": 50855936
+        }
+      ]
+    },
+    "parallel_cancellations": {
+      "workers": 4,
+      "requests": 4,
+      "outcomes": {
+        "committed": 4
+      },
+      "wall_seconds": 0.338,
+      "process_throughput_per_second": 11.829,
+      "service_latency_ms": {
+        "p50": 61.406,
+        "p95": 62.034,
+        "max": 64.427
+      },
+      "queries": {
+        "min": 41,
+        "max": 41
+      },
+      "peak_worker_php_bytes": 52953088,
+      "results": [
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 61.406,
+          "queries": 41,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 60.267,
+          "queries": 41,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 62.034,
+          "queries": 41,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 64.427,
+          "queries": 41,
+          "peak_php_bytes": 52953088
+        }
+      ]
+    },
+    "invariants": {
+      "unexpected_errors": 0,
+      "parallel_tickets_committed": true,
+      "one_approval_event_per_ticket": true,
+      "one_draft_per_scope": true,
+      "stock_not_overcommitted": true
+    },
+    "production_load_verdict": "BLOCKED: no agreed production workload/SLA or matching infrastructure"
+  },
+  "atomicTotals": {
+    "interleaving": "B opens older repeatable-read snapshot; A makes instance A available and commits; B makes instance B available in its older transaction",
+    "worker_exit": 0,
+    "quantity": 2,
+    "available_quantity": 2,
+    "actual_ready_instances": 2,
+    "pass": true
+  },
+  "parallelReturns": {
+    "scope": "bounded real PHP/MySQL parallel two-party item returns; synthetic isolated data",
+    "request_returns": {
+      "workers": 4,
+      "requests": 4,
+      "outcomes": {
+        "committed": 4
+      },
+      "wall_seconds": 0.35,
+      "process_throughput_per_second": 11.441,
+      "service_latency_ms": {
+        "p50": 74.26,
+        "p95": 81.617,
+        "max": 83.754
+      },
+      "queries": {
+        "min": 58,
+        "max": 58
+      },
+      "peak_worker_php_bytes": 52953088,
+      "results": [
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 72.575,
+          "queries": 58,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 74.26,
+          "queries": 58,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 81.617,
+          "queries": 58,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 83.754,
+          "queries": 58,
+          "peak_php_bytes": 52953088
+        }
+      ]
+    },
+    "confirm_returns": {
+      "workers": 4,
+      "requests": 4,
+      "outcomes": {
+        "committed": 4
+      },
+      "wall_seconds": 0.339,
+      "process_throughput_per_second": 11.812,
+      "service_latency_ms": {
+        "p50": 59.486,
+        "p95": 63.637,
+        "max": 69.985
+      },
+      "queries": {
+        "min": 28,
+        "max": 28
+      },
+      "peak_worker_php_bytes": 52953088,
+      "results": [
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 55.703,
+          "queries": 28,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 59.486,
+          "queries": 28,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 63.637,
+          "queries": 28,
+          "peak_php_bytes": 52953088
+        },
+        {
+          "outcome": "committed",
+          "id": null,
+          "service_ms": 69.985,
+          "queries": 28,
+          "peak_php_bytes": 52953088
+        }
+      ]
+    },
+    "integrity": [
+      {
+        "id": "01a1a44d-666b-7301-bd37-a59d9739899c",
+        "status": "returned",
+        "returned_events": 1,
+        "two_party_outbound": true,
+        "two_party_return": true,
+        "pass": true
+      },
+      {
+        "id": "01a1a44d-66b3-703b-82d8-231009d37026",
+        "status": "returned",
+        "returned_events": 1,
+        "two_party_outbound": true,
+        "two_party_return": true,
+        "pass": true
+      },
+      {
+        "id": "01a1a44d-66ec-725d-b93a-0925a7fe4b5b",
+        "status": "returned",
+        "returned_events": 1,
+        "two_party_outbound": true,
+        "two_party_return": true,
+        "pass": true
+      },
+      {
+        "id": "01a1a44d-6725-72a8-8e73-b1ef5a143b25",
+        "status": "returned",
+        "returned_events": 1,
+        "two_party_outbound": true,
+        "two_party_return": true,
+        "pass": true
+      }
+    ],
+    "stock": {
+      "quantity": 4,
+      "available_quantity": 4,
+      "service_available": 4,
+      "instances_ready": 4
+    },
+    "pass": true
+  },
+  "syntheticUpgrade": {
+    "mysql": "8.0.46",
+    "legacy_migrations": 64,
+    "upgrade": "PASS",
+    "existing_rows_password_roles_history": "unchanged",
+    "legacy_approval_rows": 0,
+    "existing_rejected_approval_preserved_as_revision_one": true,
+    "seed_twice": {
+      "users": 24,
+      "work_order_job_titles": 12,
+      "work_order_assignments": 23,
+      "work_order_workflows": 2,
+      "ticket_team_members": 2
+    },
+    "automatic_publish": false,
+    "production_demo_guard": "PASS"
+  }
+}

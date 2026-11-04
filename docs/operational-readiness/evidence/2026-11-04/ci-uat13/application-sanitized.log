@@ -1,0 +1,10 @@
+[2026-11-04 14:44:18] local.DEBUG: From: ${APP_NAME} <hello@example.com>
+To: synthetic@example.invalid
+Subject: Synthetic queue evidence
+MIME-Version: 1.0
+Date: Wed, 04 Nov 2026 14:44:18 +0700
+Message-ID: <b417e728312d141203e73a85066d85a5@example.com>
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+UAT-QUEUE-112939b956023a2b  

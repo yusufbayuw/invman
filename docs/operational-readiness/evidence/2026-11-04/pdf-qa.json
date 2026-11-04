@@ -1,0 +1,57 @@
+{
+  "source": "work-order-fixed-browser.pdf",
+  "sourceRevision": "462565e (local browser SMP retest; historical inspection)",
+  "readOnly": true,
+  "textExtractedWith": "pdftotext",
+  "pagesRenderedWith": "pdftoppm",
+  "visualInspection": true,
+  "checks": {
+    "unitSupervisor": true,
+    "facilityStaff": true,
+    "facilitySupervisor": true,
+    "facilityManager": true,
+    "technician": true,
+    "reporter": true,
+    "safetyDeclaration": true,
+    "electronicApprovalDisclaimer": true
+  },
+  "finding": {
+    "id": "PDF-PAGEBREAK-01",
+    "severity": "P3",
+    "description": "Section V table header is on page one; names and timestamps continue on page two",
+    "recommendation": "Keep signature/receipt header with its first data row; no data is missing"
+  },
+  "evidence": [
+    "work-order-pdf-text.txt",
+    "work-order-render-1.png",
+    "work-order-render-2.png"
+  ],
+  "latest": {
+    "sourceRevision": "4345107993ad1dd83d678789ae34ab6546fa8f1b",
+    "normalSource": "work-order-pdf-after.pdf",
+    "overrideSource": "hierarchy-browser.pdf",
+    "pagesNormal": 2,
+    "pagesOverride": 2,
+    "normalLoginExport": "pdf-browser-export.json",
+    "checks": {
+      "originalTechnicianRetained": true,
+      "actualAcceptanceRecorder": true,
+      "actualResultRecorder": true,
+      "auditedActors": true,
+      "originalSubjects": true,
+      "safetyHoldPreserved": true,
+      "allNineAudits": true,
+      "normalApproversPreserved": true
+    },
+    "visualInspection": "Both override pages and normal receipt page inspected: no clipping or overlapping; receipt heading/header/data stay together.",
+    "timezoneLimitation": "Existing audit rows do not carry timezone. Raw stored timestamp preserved and explicitly labelled; no historical data rewritten.",
+    "evidence": [
+      "hierarchy-pdf-after-1.png",
+      "hierarchy-pdf-after-2.png",
+      "work-order-pdf-after-1.png",
+      "work-order-pdf-after-2.png",
+      "hierarchy-pdf-after.txt",
+      "work-order-pdf-after.txt"
+    ]
+  }
+}

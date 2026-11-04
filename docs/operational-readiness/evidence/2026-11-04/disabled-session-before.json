@@ -1,0 +1,8 @@
+{
+  "baseline": "81a9666 plus Work Order UI-only fix; no session guard fix yet",
+  "disabledResponse": 403,
+  "afterReenableResponse": 200,
+  "afterReenablePath": "/admin",
+  "oldSessionResumedWithoutLogin": true,
+  "cookieValuesRecorded": false
+}

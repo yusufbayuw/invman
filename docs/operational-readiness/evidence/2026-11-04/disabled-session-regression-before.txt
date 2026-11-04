@@ -1,0 +1,22 @@
+PHPUnit 11.5.57 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.14
+Configuration: D:\herd\invman\output\operational-uat-runtime\app\phpunit.xml
+
+F                                                                   1 / 1 (100%)
+
+Time: 00:16.571, Memory: 78.00 MB
+
+There was 1 failure:
+
+1) Tests\Feature\AuthSessionReadinessTest::test_disabled_existing_session_is_signed_out_on_admin_and_public_panel_requests
+The user is authenticated
+Failed asserting that true is false.
+
+D:\herd\invman\output\operational-uat-runtime\app\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\InteractsWithAuthentication.php:77
+D:\herd\invman\output\operational-uat-runtime\app\tests\Feature\AuthSessionReadinessTest.php:27
+D:\herd\invman\output\operational-uat-runtime\app\vendor\phpunit\phpunit\phpunit:104
+D:\herd\invman\tests\Support\OperationalUat\suite.php:10
+
+FAILURES!
+Tests: 1, Assertions: 2, Failures: 1.

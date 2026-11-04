@@ -1,0 +1,47 @@
+[
+  {
+    "width": 360,
+    "document": 360,
+    "sidebar": {
+      "right": 0.6268463134765625,
+      "transform": "matrix(1, 0, 0, 1, -86.3732, 0)",
+      "visibility": "visible"
+    }
+  },
+  {
+    "width": 390,
+    "document": 390,
+    "sidebar": {
+      "right": 0,
+      "transform": "matrix(1, 0, 0, 1, -87, 0)",
+      "visibility": "visible"
+    }
+  },
+  {
+    "width": 430,
+    "document": 430,
+    "sidebar": {
+      "right": 0,
+      "transform": "matrix(1, 0, 0, 1, -87, 0)",
+      "visibility": "visible"
+    }
+  },
+  {
+    "width": 768,
+    "document": 768,
+    "sidebar": {
+      "right": 0,
+      "transform": "matrix(1, 0, 0, 1, -87, 0)",
+      "visibility": "visible"
+    }
+  },
+  {
+    "width": 1366,
+    "document": 1366,
+    "sidebar": {
+      "right": 87,
+      "transform": "matrix(1, 0, 0, 1, 0, 0)",
+      "visibility": "visible"
+    }
+  }
+]

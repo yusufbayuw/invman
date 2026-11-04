@@ -1,0 +1,589 @@
+{
+    "scope": "isolated synthetic QA; not production rehearsal",
+    "php": "8.4.27",
+    "mysql": "8.0.46",
+    "stage": "complete",
+    "pass": true,
+    "queue_jobs_before_worker": 50,
+    "queue_jobs_after_worker": 0,
+    "failed_jobs_added": 0,
+    "queue_mail_log_delivered": true,
+    "queue_pass": true,
+    "scheduler_exit": 0,
+    "expired_activity_status": "expired",
+    "scheduler_pass": true,
+    "mysql_dump_bytes": 318459,
+    "mysql_dump_sha256": "724b673ac78dd966635c5c57bd02dc78ba7cef3313e927370e63708aabcd4deb",
+    "tables": {
+        "cache": {
+            "rows": 7,
+            "sha256": "964ff1297973ed89d3a3b95e3a54061ef048e59c039e5324bfc660624d2c94c2"
+        },
+        "cache_locks": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "ch_favorites": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "ch_messages": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "failed_jobs": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g001_m001_units": {
+            "rows": 7,
+            "sha256": "6c9f3f421ff1b25a3b3443699956c1ce4965052e72b607a86c1f6d18a1d46053"
+        },
+        "g002_m002_item_types": {
+            "rows": 6,
+            "sha256": "2355ca8375e92adf35eccccd49ab01fa71d2b9b60b3bc43b1a6bc19ba80ae91a"
+        },
+        "g002_m003_item_management": {
+            "rows": 4,
+            "sha256": "03854700cd32bd4e1a03bd0e64fc618e615bd23e53b7b3dbc64cbfb367a89ba8"
+        },
+        "g002_m003_item_management_user": {
+            "rows": 4,
+            "sha256": "2d66a4e60dde3ecab2767c35310b1bd69c147d1048c8fede5335e8236b174b97"
+        },
+        "g002_m007_items": {
+            "rows": 14,
+            "sha256": "e7632779661d884d23c00e70d7e0432301136ad5912c397aa5f0871d985d2510"
+        },
+        "g002_m015_item_instances": {
+            "rows": 52,
+            "sha256": "f0e64de49a9653a700bdbce4eaa24d4b9bfca0f527f701fa6494aa831c537b8c"
+        },
+        "g003_m004_buildings": {
+            "rows": 6,
+            "sha256": "671908a3590a4ec24d94dcd68eee0a81927b4569e68d3665d27da67ec775fc52"
+        },
+        "g003_m005_floors": {
+            "rows": 18,
+            "sha256": "5aac050bbca8fcda16b73a979bc9e6138f37f5aa91fc9c9dbe6d87064fd818ee"
+        },
+        "g003_m006_rooms": {
+            "rows": 7,
+            "sha256": "e68d8d3bd6922bac26a019c27d19a37120a526922ed9fe8af5aa200d18d11085"
+        },
+        "g004_m008_activities": {
+            "rows": 24,
+            "sha256": "c772841d6e6c10adfd08ff23bb5bd4ef6eec5403c2b0e5a27a60f9a4fa85d4b3"
+        },
+        "g005_m009_item_reservations": {
+            "rows": 22,
+            "sha256": "8b989540491eab5ecd6189ce94dbb65c9b354575902140e332398bdb8dd1b2b9"
+        },
+        "g005_m010_room_reservations": {
+            "rows": 1,
+            "sha256": "bdcde97d988507ad9daec6ceace7dc59f1dd9134eb02ccf732bb98e226e5445b"
+        },
+        "g005_m016_item_reservation_details": {
+            "rows": 3,
+            "sha256": "62392346717c63a4978ebccf36d37cf46912abdf8e0dfddff9c467faf13a1811"
+        },
+        "g005_m019_vehicle_reservations": {
+            "rows": 1,
+            "sha256": "a882c32bec92520b5d8199ac5049596ba8c0b541af18f66ebe8b2f100dad655f"
+        },
+        "g006_m011_item_reviews": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g006_m012_room_reviews": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g006_m020_vehicle_reviews": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g007_m013_item_histories": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g007_m014_room_histories": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g007_m021_vehicle_histories": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g008_m017_vehicles": {
+            "rows": 8,
+            "sha256": "9d91f7ece841bede3c3e488156d9fb028d194f45b8e1484c1f90e4d4b3235eae"
+        },
+        "g008_m018_drivers": {
+            "rows": 1,
+            "sha256": "52536a09badb7aa7990ae152f7e2a113ac8304a195b11047fcc4d063818478a7"
+        },
+        "g009_m022_item_instance_checklists": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g009_m023_room_checklists": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g009_m024_vehicle_checklists": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "job_batches": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "jobs": {
+            "rows": 4,
+            "sha256": "280bc304cc595a1c4bba6df343bd2cdb49ba98d0343b152f0e45391481a6d794"
+        },
+        "loan_checkout_checklists": {
+            "rows": 5,
+            "sha256": "0e21d73d61f4bac13fe2e3d3cb2e99f29dafe7e764eca713dfb30a82f89f3392"
+        },
+        "loan_events": {
+            "rows": 24,
+            "sha256": "e005897ef46c45f01f0db05236aa9a1e1351ec781450e981dc29f5f676835e83"
+        },
+        "loan_handover_receipts": {
+            "rows": 6,
+            "sha256": "f488ee59cd7123f730447b2224ad5a812ad2bf524576dc9147d9bbd19857a711"
+        },
+        "loan_request_checklists": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "loan_request_reviews": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "loan_reservation_checklists": {
+            "rows": 5,
+            "sha256": "291e79f479f2cf41ec6ec1edccf79df67154cbf774eb02938d1867d45cd7fdfc"
+        },
+        "loan_reservation_corrections": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "loan_reservation_status_histories": {
+            "rows": 26,
+            "sha256": "88f5ce91a9db05755f4233bdf1a9f6e1301f9af2c61d3e79a20a17127a40cad6"
+        },
+        "loan_settings": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "migrations": {
+            "rows": 69,
+            "sha256": "30d75acc49366af38c22113cd66815bfe23da178fb126ebb67048c7ea9248ec8"
+        },
+        "model_has_permissions": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "model_has_roles": {
+            "rows": 24,
+            "sha256": "51b06a8806de03f1ddbec16ad08d6efe2e2d8b4985f695ebfd88df6c5714d7d1"
+        },
+        "notifications": {
+            "rows": 49,
+            "sha256": "ec81680dc0a81400950a01981aadb2c28ff613a810f44b79a1651599ef55f1a7"
+        },
+        "operational_overrides": {
+            "rows": 9,
+            "sha256": "77029287097c6dc212b239002107743ef7858cc18f537e8d6c3e83cb75163ebc"
+        },
+        "password_reset_tokens": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "permissions": {
+            "rows": 20,
+            "sha256": "ffcc4e5b8c8268bb130cab64adb2364301a5d05f6f30fc349082af45d85f3ce4"
+        },
+        "pinned_menus": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "push_subscriptions": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "role_has_permissions": {
+            "rows": 51,
+            "sha256": "f216467ffa652748274f8b397ee008d8784b6e9b4501252405405980e57d98c5"
+        },
+        "roles": {
+            "rows": 3,
+            "sha256": "a5740260b22009daff3f0c184ca5661a12180be06ff45b7db88006708eaf06bf"
+        },
+        "sessions": {
+            "rows": 58,
+            "sha256": "1d628f872f0626b6cf344bc0bfa77e3c0494a12a946d8f3a89ee8becd0100557"
+        },
+        "ticket_asset_links": {
+            "rows": 4,
+            "sha256": "185583edb7d5cebc8a55bedde15977ef00502376a84f924538d6554d05168daf"
+        },
+        "ticket_attachments": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "ticket_categories": {
+            "rows": 12,
+            "sha256": "ee0d936430bfe8cee2fa1c9594831e29aea92f3deac595db789454368446c627"
+        },
+        "ticket_comments": {
+            "rows": 6,
+            "sha256": "c6c86168954f797058115d533916eecb188a9c2d927396ef118693aaa4d2de8e"
+        },
+        "ticket_events": {
+            "rows": 68,
+            "sha256": "be62367f1779a1d9523a455066605a4f4d8e9ccfbfcbde2d2502d6f29a5fb078"
+        },
+        "ticket_maintenance_cases": {
+            "rows": 20,
+            "sha256": "1b7982296e107f387a7c2934a9da4ebbeba413cc8441b07fd6d4f54eb567748a"
+        },
+        "ticket_team_members": {
+            "rows": 2,
+            "sha256": "80c251577707642f6b97e3dd51360e3ac99da7a29a21c1c81f067443992751ca"
+        },
+        "tickets": {
+            "rows": 20,
+            "sha256": "b6bdaa539b1d9086385152a1a1418f4f1bb9393d5cc424be50a39b294b59b743"
+        },
+        "users": {
+            "rows": 38,
+            "sha256": "cd82ea9ac66a2a995c566086f69943f18dca237a62608ae47880ea547f115eca"
+        },
+        "vehicle_assignment_histories": {
+            "rows": 1,
+            "sha256": "c7a66217f7301edcad74c056cb908e25ad06dca9d3bf528372d99364ccb332d8"
+        },
+        "vehicle_assistants": {
+            "rows": 1,
+            "sha256": "0488165b16b2a3569f0e1f59fdde0fd09255e51a667c3e84dac63a2e172a7b0f"
+        },
+        "work_order_approvals": {
+            "rows": 80,
+            "sha256": "ddd9b45b68765c08f165dd9defc79fc92f912948e9a44e832d8c38a340a3497f"
+        },
+        "work_order_assignments": {
+            "rows": 23,
+            "sha256": "a36db688dc3d02e5073c3abb34d00ad2eff6cf9ed415111176ba819ef161c891"
+        },
+        "work_order_estimates": {
+            "rows": 2,
+            "sha256": "932a8c8ee23878f5ca99a6c14565887ea9492ce6168b7ec54e41ec2226bf642c"
+        },
+        "work_order_job_titles": {
+            "rows": 13,
+            "sha256": "db5962503d819b0ecfe14783e40b4aa8762575c2710eb19f7affe290554d66bc"
+        },
+        "work_order_revisions": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "work_order_workflows": {
+            "rows": 2,
+            "sha256": "30b8ef5a5a0c1ee90b75d90a34461102543e088f8f5abe559a027c495e8648c0"
+        }
+    },
+    "restored_tables": {
+        "cache": {
+            "rows": 7,
+            "sha256": "964ff1297973ed89d3a3b95e3a54061ef048e59c039e5324bfc660624d2c94c2"
+        },
+        "cache_locks": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "ch_favorites": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "ch_messages": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "failed_jobs": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g001_m001_units": {
+            "rows": 7,
+            "sha256": "6c9f3f421ff1b25a3b3443699956c1ce4965052e72b607a86c1f6d18a1d46053"
+        },
+        "g002_m002_item_types": {
+            "rows": 6,
+            "sha256": "2355ca8375e92adf35eccccd49ab01fa71d2b9b60b3bc43b1a6bc19ba80ae91a"
+        },
+        "g002_m003_item_management": {
+            "rows": 4,
+            "sha256": "03854700cd32bd4e1a03bd0e64fc618e615bd23e53b7b3dbc64cbfb367a89ba8"
+        },
+        "g002_m003_item_management_user": {
+            "rows": 4,
+            "sha256": "2d66a4e60dde3ecab2767c35310b1bd69c147d1048c8fede5335e8236b174b97"
+        },
+        "g002_m007_items": {
+            "rows": 14,
+            "sha256": "e7632779661d884d23c00e70d7e0432301136ad5912c397aa5f0871d985d2510"
+        },
+        "g002_m015_item_instances": {
+            "rows": 52,
+            "sha256": "f0e64de49a9653a700bdbce4eaa24d4b9bfca0f527f701fa6494aa831c537b8c"
+        },
+        "g003_m004_buildings": {
+            "rows": 6,
+            "sha256": "671908a3590a4ec24d94dcd68eee0a81927b4569e68d3665d27da67ec775fc52"
+        },
+        "g003_m005_floors": {
+            "rows": 18,
+            "sha256": "5aac050bbca8fcda16b73a979bc9e6138f37f5aa91fc9c9dbe6d87064fd818ee"
+        },
+        "g003_m006_rooms": {
+            "rows": 7,
+            "sha256": "e68d8d3bd6922bac26a019c27d19a37120a526922ed9fe8af5aa200d18d11085"
+        },
+        "g004_m008_activities": {
+            "rows": 24,
+            "sha256": "c772841d6e6c10adfd08ff23bb5bd4ef6eec5403c2b0e5a27a60f9a4fa85d4b3"
+        },
+        "g005_m009_item_reservations": {
+            "rows": 22,
+            "sha256": "8b989540491eab5ecd6189ce94dbb65c9b354575902140e332398bdb8dd1b2b9"
+        },
+        "g005_m010_room_reservations": {
+            "rows": 1,
+            "sha256": "bdcde97d988507ad9daec6ceace7dc59f1dd9134eb02ccf732bb98e226e5445b"
+        },
+        "g005_m016_item_reservation_details": {
+            "rows": 3,
+            "sha256": "62392346717c63a4978ebccf36d37cf46912abdf8e0dfddff9c467faf13a1811"
+        },
+        "g005_m019_vehicle_reservations": {
+            "rows": 1,
+            "sha256": "a882c32bec92520b5d8199ac5049596ba8c0b541af18f66ebe8b2f100dad655f"
+        },
+        "g006_m011_item_reviews": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g006_m012_room_reviews": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g006_m020_vehicle_reviews": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g007_m013_item_histories": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g007_m014_room_histories": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g007_m021_vehicle_histories": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g008_m017_vehicles": {
+            "rows": 8,
+            "sha256": "9d91f7ece841bede3c3e488156d9fb028d194f45b8e1484c1f90e4d4b3235eae"
+        },
+        "g008_m018_drivers": {
+            "rows": 1,
+            "sha256": "52536a09badb7aa7990ae152f7e2a113ac8304a195b11047fcc4d063818478a7"
+        },
+        "g009_m022_item_instance_checklists": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g009_m023_room_checklists": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "g009_m024_vehicle_checklists": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "job_batches": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "jobs": {
+            "rows": 4,
+            "sha256": "280bc304cc595a1c4bba6df343bd2cdb49ba98d0343b152f0e45391481a6d794"
+        },
+        "loan_checkout_checklists": {
+            "rows": 5,
+            "sha256": "0e21d73d61f4bac13fe2e3d3cb2e99f29dafe7e764eca713dfb30a82f89f3392"
+        },
+        "loan_events": {
+            "rows": 24,
+            "sha256": "e005897ef46c45f01f0db05236aa9a1e1351ec781450e981dc29f5f676835e83"
+        },
+        "loan_handover_receipts": {
+            "rows": 6,
+            "sha256": "f488ee59cd7123f730447b2224ad5a812ad2bf524576dc9147d9bbd19857a711"
+        },
+        "loan_request_checklists": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "loan_request_reviews": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "loan_reservation_checklists": {
+            "rows": 5,
+            "sha256": "291e79f479f2cf41ec6ec1edccf79df67154cbf774eb02938d1867d45cd7fdfc"
+        },
+        "loan_reservation_corrections": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "loan_reservation_status_histories": {
+            "rows": 26,
+            "sha256": "88f5ce91a9db05755f4233bdf1a9f6e1301f9af2c61d3e79a20a17127a40cad6"
+        },
+        "loan_settings": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "migrations": {
+            "rows": 69,
+            "sha256": "30d75acc49366af38c22113cd66815bfe23da178fb126ebb67048c7ea9248ec8"
+        },
+        "model_has_permissions": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "model_has_roles": {
+            "rows": 24,
+            "sha256": "51b06a8806de03f1ddbec16ad08d6efe2e2d8b4985f695ebfd88df6c5714d7d1"
+        },
+        "notifications": {
+            "rows": 49,
+            "sha256": "ec81680dc0a81400950a01981aadb2c28ff613a810f44b79a1651599ef55f1a7"
+        },
+        "operational_overrides": {
+            "rows": 9,
+            "sha256": "77029287097c6dc212b239002107743ef7858cc18f537e8d6c3e83cb75163ebc"
+        },
+        "password_reset_tokens": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "permissions": {
+            "rows": 20,
+            "sha256": "ffcc4e5b8c8268bb130cab64adb2364301a5d05f6f30fc349082af45d85f3ce4"
+        },
+        "pinned_menus": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "push_subscriptions": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "role_has_permissions": {
+            "rows": 51,
+            "sha256": "f216467ffa652748274f8b397ee008d8784b6e9b4501252405405980e57d98c5"
+        },
+        "roles": {
+            "rows": 3,
+            "sha256": "a5740260b22009daff3f0c184ca5661a12180be06ff45b7db88006708eaf06bf"
+        },
+        "sessions": {
+            "rows": 58,
+            "sha256": "1d628f872f0626b6cf344bc0bfa77e3c0494a12a946d8f3a89ee8becd0100557"
+        },
+        "ticket_asset_links": {
+            "rows": 4,
+            "sha256": "185583edb7d5cebc8a55bedde15977ef00502376a84f924538d6554d05168daf"
+        },
+        "ticket_attachments": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "ticket_categories": {
+            "rows": 12,
+            "sha256": "ee0d936430bfe8cee2fa1c9594831e29aea92f3deac595db789454368446c627"
+        },
+        "ticket_comments": {
+            "rows": 6,
+            "sha256": "c6c86168954f797058115d533916eecb188a9c2d927396ef118693aaa4d2de8e"
+        },
+        "ticket_events": {
+            "rows": 68,
+            "sha256": "be62367f1779a1d9523a455066605a4f4d8e9ccfbfcbde2d2502d6f29a5fb078"
+        },
+        "ticket_maintenance_cases": {
+            "rows": 20,
+            "sha256": "1b7982296e107f387a7c2934a9da4ebbeba413cc8441b07fd6d4f54eb567748a"
+        },
+        "ticket_team_members": {
+            "rows": 2,
+            "sha256": "80c251577707642f6b97e3dd51360e3ac99da7a29a21c1c81f067443992751ca"
+        },
+        "tickets": {
+            "rows": 20,
+            "sha256": "b6bdaa539b1d9086385152a1a1418f4f1bb9393d5cc424be50a39b294b59b743"
+        },
+        "users": {
+            "rows": 38,
+            "sha256": "cd82ea9ac66a2a995c566086f69943f18dca237a62608ae47880ea547f115eca"
+        },
+        "vehicle_assignment_histories": {
+            "rows": 1,
+            "sha256": "c7a66217f7301edcad74c056cb908e25ad06dca9d3bf528372d99364ccb332d8"
+        },
+        "vehicle_assistants": {
+            "rows": 1,
+            "sha256": "0488165b16b2a3569f0e1f59fdde0fd09255e51a667c3e84dac63a2e172a7b0f"
+        },
+        "work_order_approvals": {
+            "rows": 80,
+            "sha256": "ddd9b45b68765c08f165dd9defc79fc92f912948e9a44e832d8c38a340a3497f"
+        },
+        "work_order_assignments": {
+            "rows": 23,
+            "sha256": "a36db688dc3d02e5073c3abb34d00ad2eff6cf9ed415111176ba819ef161c891"
+        },
+        "work_order_estimates": {
+            "rows": 2,
+            "sha256": "932a8c8ee23878f5ca99a6c14565887ea9492ce6168b7ec54e41ec2226bf642c"
+        },
+        "work_order_job_titles": {
+            "rows": 13,
+            "sha256": "db5962503d819b0ecfe14783e40b4aa8762575c2710eb19f7affe290554d66bc"
+        },
+        "work_order_revisions": {
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "work_order_workflows": {
+            "rows": 2,
+            "sha256": "30b8ef5a5a0c1ee90b75d90a34461102543e088f8f5abe559a027c495e8648c0"
+        }
+    },
+    "database_restored_exactly": true,
+    "foreign_key_orphans": 0,
+    "foreign_keys_checked": 139,
+    "private_files": {
+        ".gitignore": true,
+        "uat-recovery/private-sentinel.txt": true
+    },
+    "private_restore_exact": true
+}

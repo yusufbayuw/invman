@@ -1,0 +1,13 @@
+{
+  "folder": "ci-uat13",
+  "status": "success",
+  "sourceSha": "4345107993ad1dd83d678789ae34ab6546fa8f1b",
+  "baselineSha": "e7b8b9ac3508ab67570c8c75bf9f2c86db844676",
+  "runUrl": "https://github.com/yusufbayuw/invman/actions/runs/41792438401",
+  "qualityGuardUrl": "https://github.com/yusufbayuw/invman/actions/runs/41792438399",
+  "qualityGuardStatus": "success",
+  "qualityGuardNumber": 182,
+  "artifactId": 13304408864,
+  "artifactUrl": "https://github.com/yusufbayuw/invman/actions/runs/41792438401/artifacts/13304408864",
+  "completedAt": "2026-11-04T07:44:30Z"
+}

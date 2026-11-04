@@ -1,0 +1,354 @@
+{
+  "scope": "normal real-browser login and two-party loan lifecycle; synthetic data only",
+  "results": [
+    {
+      "id": "LOAN-item-APPROVE",
+      "description": "Manager approves item reservation",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Find borrower row",
+        "Approve using manager account",
+        "Assign crew for vehicle"
+      ],
+      "expected": "Approved reservation and handover action available",
+      "status": "PASS",
+      "evidence": [
+        "item-approve-before.png",
+        "item-approve-after.png"
+      ],
+      "actual": {
+        "actor": "admin",
+        "borrower": "sarpras.sd",
+        "crewAssigned": false
+      }
+    },
+    {
+      "id": "LOAN-item-HANDOVER",
+      "description": "Manager records initial condition for item",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Open handover page",
+        "Inspect assigned assets",
+        "Record initial condition"
+      ],
+      "expected": "Await borrower confirmation, no final checkout yet",
+      "status": "PASS",
+      "evidence": [
+        "item-handover-before.png",
+        "item-handover-after.png"
+      ],
+      "actual": "Initial inspection recorded by manager; pending borrower"
+    },
+    {
+      "id": "QR-item-AUTH",
+      "description": "QR requires normal authentication",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Open signed QR URL in new unauthenticated context"
+      ],
+      "expected": "Redirect to login with no automatic state transition",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Unauthenticated QR visit required login; token not logged"
+    },
+    {
+      "id": "LOAN-item-BORROWER-ACCEPT",
+      "description": "Borrower confirms receipt of item",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Open own reservation",
+        "Confirm receipt in modal"
+      ],
+      "expected": "Two-party checkout completed",
+      "status": "PASS",
+      "evidence": [
+        "item-borrower-accepted.png"
+      ],
+      "actual": "Borrower accepted; confirmation cannot be repeated through UI"
+    },
+    {
+      "id": "LOAN-item-RETURN-REQUEST",
+      "description": "Borrower requests return of item",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Inspect returned condition",
+        "Mark one item damaged for item loan",
+        "Submit return"
+      ],
+      "expected": "Await independent manager confirmation",
+      "status": "PASS",
+      "evidence": [
+        "item-return-before.png",
+        "item-return-pending.png"
+      ],
+      "actual": {
+        "awaitsSecondParty": true,
+        "damagedInstance": true
+      }
+    },
+    {
+      "id": "LOAN-item-RETURN-CONFIRM",
+      "description": "Manager confirms returned item",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Inspect return",
+        "Confirm as second party",
+        "Refresh and verify replay action absent"
+      ],
+      "expected": "Return completes exactly once; damaged stock remains unavailable",
+      "status": "PASS",
+      "evidence": [
+        "item-return-completed.png"
+      ],
+      "actual": {
+        "completed": true,
+        "pdfStatus": 200,
+        "pdfBytes": 882199
+      }
+    },
+    {
+      "id": "LOAN-room-CREATE",
+      "description": "Request room through normal form",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Choose asset",
+        "Enter purpose",
+        "Submit"
+      ],
+      "expected": "Submitted reservation saved",
+      "status": "PASS",
+      "evidence": [
+        "room-request-before.png",
+        "room-request-after.png"
+      ],
+      "actual": "Normal submitted request"
+    },
+    {
+      "id": "LOAN-room-APPROVE",
+      "description": "Manager approves room reservation",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Find borrower row",
+        "Approve using manager account",
+        "Assign crew for vehicle"
+      ],
+      "expected": "Approved reservation and handover action available",
+      "status": "PASS",
+      "evidence": [
+        "room-approve-before.png",
+        "room-approve-after.png"
+      ],
+      "actual": {
+        "actor": "admin",
+        "borrower": "sarpras.sd",
+        "crewAssigned": false
+      }
+    },
+    {
+      "id": "LOAN-room-HANDOVER",
+      "description": "Manager records initial condition for room",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Open handover page",
+        "Inspect assigned assets",
+        "Record initial condition"
+      ],
+      "expected": "Await borrower confirmation, no final checkout yet",
+      "status": "PASS",
+      "evidence": [
+        "room-handover-before.png",
+        "room-handover-after.png"
+      ],
+      "actual": "Initial inspection recorded by manager; pending borrower"
+    },
+    {
+      "id": "QR-room-AUTH",
+      "description": "QR requires normal authentication",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Open signed QR URL in new unauthenticated context"
+      ],
+      "expected": "Redirect to login with no automatic state transition",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Unauthenticated QR visit required login; token not logged"
+    },
+    {
+      "id": "LOAN-room-BORROWER-ACCEPT",
+      "description": "Borrower confirms receipt of room",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Open own reservation",
+        "Confirm receipt in modal"
+      ],
+      "expected": "Two-party checkout completed",
+      "status": "PASS",
+      "evidence": [
+        "room-borrower-accepted.png"
+      ],
+      "actual": "Borrower accepted; confirmation cannot be repeated through UI"
+    },
+    {
+      "id": "LOAN-room-RETURN-REQUEST",
+      "description": "Borrower requests return of room",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Inspect returned condition",
+        "Mark one item damaged for item loan",
+        "Submit return"
+      ],
+      "expected": "Await independent manager confirmation",
+      "status": "PASS",
+      "evidence": [
+        "room-return-before.png",
+        "room-return-pending.png"
+      ],
+      "actual": {
+        "awaitsSecondParty": true,
+        "damagedInstance": false
+      }
+    },
+    {
+      "id": "LOAN-room-RETURN-CONFIRM",
+      "description": "Manager confirms returned room",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Inspect return",
+        "Confirm as second party",
+        "Refresh and verify replay action absent"
+      ],
+      "expected": "Return completes exactly once; damaged stock remains unavailable",
+      "status": "PASS",
+      "evidence": [
+        "room-return-completed.png"
+      ],
+      "actual": {
+        "completed": true,
+        "pdfStatus": 200,
+        "pdfBytes": 881648
+      }
+    },
+    {
+      "id": "LOAN-vehicle-CREATE",
+      "description": "Request vehicle through normal form",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Choose asset",
+        "Enter purpose",
+        "Submit"
+      ],
+      "expected": "Submitted reservation saved",
+      "status": "PASS",
+      "evidence": [
+        "vehicle-request-before.png",
+        "vehicle-request-after.png"
+      ],
+      "actual": "Normal submitted request"
+    },
+    {
+      "id": "LOAN-vehicle-APPROVE",
+      "description": "Manager approves vehicle reservation",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Find borrower row",
+        "Approve using manager account",
+        "Assign crew for vehicle"
+      ],
+      "expected": "Approved reservation and handover action available",
+      "status": "PASS",
+      "evidence": [
+        "vehicle-approve-before.png",
+        "vehicle-approve-after.png"
+      ],
+      "actual": {
+        "actor": "admin",
+        "borrower": "sarpras.sd",
+        "crewAssigned": true
+      }
+    },
+    {
+      "id": "LOAN-vehicle-HANDOVER",
+      "description": "Manager records initial condition for vehicle",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Open handover page",
+        "Inspect assigned assets",
+        "Record initial condition"
+      ],
+      "expected": "Await borrower confirmation, no final checkout yet",
+      "status": "PASS",
+      "evidence": [
+        "vehicle-handover-before.png",
+        "vehicle-handover-after.png"
+      ],
+      "actual": "Initial inspection recorded by manager; pending borrower"
+    },
+    {
+      "id": "QR-vehicle-AUTH",
+      "description": "QR requires normal authentication",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Open signed QR URL in new unauthenticated context"
+      ],
+      "expected": "Redirect to login with no automatic state transition",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Unauthenticated QR visit required login; token not logged"
+    },
+    {
+      "id": "LOAN-vehicle-BORROWER-ACCEPT",
+      "description": "Borrower confirms receipt of vehicle",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Open own reservation",
+        "Confirm receipt in modal"
+      ],
+      "expected": "Two-party checkout completed",
+      "status": "PASS",
+      "evidence": [
+        "vehicle-borrower-accepted.png"
+      ],
+      "actual": "Borrower accepted; confirmation cannot be repeated through UI"
+    },
+    {
+      "id": "LOAN-vehicle-RETURN-REQUEST",
+      "description": "Borrower requests return of vehicle",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Inspect returned condition",
+        "Mark one item damaged for item loan",
+        "Submit return"
+      ],
+      "expected": "Await independent manager confirmation",
+      "status": "PASS",
+      "evidence": [
+        "vehicle-return-before.png",
+        "vehicle-return-pending.png"
+      ],
+      "actual": {
+        "awaitsSecondParty": true,
+        "damagedInstance": false
+      }
+    },
+    {
+      "id": "LOAN-vehicle-RETURN-CONFIRM",
+      "description": "Manager confirms returned vehicle",
+      "preconditions": "Synthetic isolated QA, borrower Sarpras SD, manager Administrator, separately authenticated browser contexts",
+      "steps": [
+        "Inspect return",
+        "Confirm as second party",
+        "Refresh and verify replay action absent"
+      ],
+      "expected": "Return completes exactly once; damaged stock remains unavailable",
+      "status": "PASS",
+      "evidence": [
+        "vehicle-return-completed.png"
+      ],
+      "actual": {
+        "completed": true,
+        "pdfStatus": 200,
+        "pdfBytes": 881560
+      }
+    }
+  ]
+}

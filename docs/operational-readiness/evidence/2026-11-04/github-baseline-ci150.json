@@ -1,0 +1,262 @@
+{
+  "baseline": "81a966641888af4937da9cd1c02d4565a3f2b0cd",
+  "verifiedAt": "2026-11-04T02:35:46.132Z",
+  "run": 150,
+  "url": "https://github.com/yusufbayuw/invman/actions/runs/41758114999",
+  "jobs": [
+    {
+      "id": 126338954424,
+      "name": "mysql-regression",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Initialize containers",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run shivammathur/setup-php@v2",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run composer install --no-interaction --prefer-dist --no-progress",
+          "conclusion": "success"
+        },
+        {
+          "name": "Generate isolated APP_KEY",
+          "conclusion": "success"
+        },
+        {
+          "name": "Validate full MySQL schema",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Full regression and concurrency on MySQL",
+          "conclusion": "success"
+        },
+        {
+          "name": "Permit read-only lock-wait observation in isolated CI",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify authority revocation ordering with real MySQL workers",
+          "conclusion": "success"
+        },
+        {
+          "name": "Controlled cross-unit and booking contention regression",
+          "conclusion": "success"
+        },
+        {
+          "name": "Create disposable upgrade database",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upgrade synthetic legacy schema and seed twice",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Stop containers",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ],
+      "excerpts": [
+        "2026-11-04T02:03:35.8285365Z \u001b[36;1mphp tests/Support/work-order-concurrency.php\u001b[0m",
+        "2026-11-04T02:04:30.1233875Z   Tests:    279 passed (2204 assertions)",
+        "2026-11-04T02:04:30.1234143Z   Duration: 54.01s",
+        "2026-11-04T02:04:37.6196839Z         \"pass\": true,",
+        "2026-11-04T02:04:37.6197245Z             \"rejected\"",
+        "2026-11-04T02:04:37.6197940Z         \"pass\": true,",
+        "2026-11-04T02:04:37.6198509Z             \"rejected\"",
+        "2026-11-04T02:04:37.6199382Z         \"pass\": true,",
+        "2026-11-04T02:04:37.6199851Z             \"rejected\"",
+        "2026-11-04T02:04:37.8130866Z ##[group]Run php tests/Support/Readiness/authority-concurrency.php",
+        "2026-11-04T02:04:37.8131350Z \u001b[36;1mphp tests/Support/Readiness/authority-concurrency.php\u001b[0m",
+        "2026-11-04T02:04:46.2664963Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2667937Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2684698Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2687328Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2690019Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2692178Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2694709Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2697300Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2699924Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2702014Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2704658Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2706909Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2708896Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2711103Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2712881Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2714475Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2717115Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2719551Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2721512Z             \"pass\": true,",
+        "2026-11-04T02:04:46.2723698Z     \"pass\": true",
+        "2026-11-04T02:04:47.0026527Z     \"stock\": 1,",
+        "2026-11-04T02:04:47.0026941Z     \"pass\": true",
+        "2026-11-04T02:04:47.9736844Z     \"pass\": true,",
+        "2026-11-04T02:04:57.4540018Z         \"workers\": 1,",
+        "2026-11-04T02:04:57.4541986Z             \"p95\": 24.448,",
+        "2026-11-04T02:04:57.4542183Z             \"max\": 28.399",
+        "2026-11-04T02:04:57.4542917Z             \"max\": 13",
+        "2026-11-04T02:04:57.4558733Z         \"workers\": 8,",
+        "2026-11-04T02:04:57.4560720Z             \"p95\": 82.4,",
+        "2026-11-04T02:04:57.4560914Z             \"max\": 96.945",
+        "2026-11-04T02:04:57.4561690Z             \"max\": 13",
+        "2026-11-04T02:04:57.4641087Z         \"workers\": 8,",
+        "2026-11-04T02:04:57.4643269Z             \"p95\": 79.83,",
+        "2026-11-04T02:04:57.4643479Z             \"max\": 108.763",
+        "2026-11-04T02:04:57.4644246Z             \"max\": 15",
+        "2026-11-04T02:04:57.4697842Z         \"workers\": 8,",
+        "2026-11-04T02:04:57.4700157Z             \"p95\": 25.758,",
+        "2026-11-04T02:04:57.4700361Z             \"max\": 27.04",
+        "2026-11-04T02:04:57.4701111Z             \"max\": 6",
+        "2026-11-04T02:04:57.4712824Z         \"workers\": 6,",
+        "2026-11-04T02:04:57.4714418Z             \"p95\": 156.549,",
+        "2026-11-04T02:04:57.4714554Z             \"max\": 179.721",
+        "2026-11-04T02:04:57.4715049Z             \"max\": 71",
+        "2026-11-04T02:04:57.4727927Z         \"workers\": 4,",
+        "2026-11-04T02:04:57.4729197Z             \"p95\": 62.034,",
+        "2026-11-04T02:04:57.4729329Z             \"max\": 64.427",
+        "2026-11-04T02:04:57.4729823Z             \"max\": 41",
+        "2026-11-04T02:04:57.4735863Z         \"stock_not_overcommitted\": true",
+        "2026-11-04T02:04:57.9486906Z     \"pass\": true",
+        "2026-11-04T02:04:59.2818997Z         \"workers\": 4,",
+        "2026-11-04T02:04:59.2820992Z             \"p95\": 81.617,",
+        "2026-11-04T02:04:59.2821189Z             \"max\": 83.754",
+        "2026-11-04T02:04:59.2821917Z             \"max\": 58",
+        "2026-11-04T02:04:59.2846343Z         \"workers\": 4,",
+        "2026-11-04T02:04:59.2848479Z             \"p95\": 63.637,",
+        "2026-11-04T02:04:59.2848680Z             \"max\": 69.985",
+        "2026-11-04T02:04:59.2849446Z             \"max\": 28",
+        "2026-11-04T02:04:59.2858504Z             \"pass\": true",
+        "2026-11-04T02:04:59.2860636Z             \"pass\": true",
+        "2026-11-04T02:04:59.2862440Z             \"pass\": true",
+        "2026-11-04T02:04:59.2864386Z             \"pass\": true",
+        "2026-11-04T02:04:59.2864891Z     \"stock\": {",
+        "2026-11-04T02:04:59.2866237Z     \"pass\": true"
+      ]
+    },
+    {
+      "id": 126338954654,
+      "name": "php-tests",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Setup PHP",
+          "conclusion": "success"
+        },
+        {
+          "name": "Validate dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Audit production PHP dependencies (required)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Generate CI-only encryption key",
+          "conclusion": "success"
+        },
+        {
+          "name": "Audit safe production configuration",
+          "conclusion": "success"
+        },
+        {
+          "name": "Lint application and test PHP",
+          "conclusion": "success"
+        },
+        {
+          "name": "Setup Node.js",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install frontend dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify patched PostCSS selector parser",
+          "conclusion": "success"
+        },
+        {
+          "name": "Audit production Node dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Audit build-time npm dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Highlight vulnerable build tooling",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Build Vite assets",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run Laravel tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Setup Node.js",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ],
+      "excerpts": [
+        "2026-11-04T02:04:11.9236147Z   Tests:    1 skipped, 278 passed (2196 assertions)",
+        "2026-11-04T02:04:11.9236540Z   Duration: 43.15s"
+      ]
+    }
+  ]
+}
