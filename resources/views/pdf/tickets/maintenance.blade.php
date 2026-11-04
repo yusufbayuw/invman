@@ -158,7 +158,7 @@ Total estimasi: Rp {{ number_format((int) $estimate->amount, 0, ',', '.') }}</p>
 <td>{{ $overrideLabels[$override->action] ?? $override->action }}<br><small>{{ $override->from_status ?? '-' }} → {{ $override->to_status ?? '-' }}</small></td>
 <td>{{ $override->actor?->name ?? '-' }}@if($override->details['self_approval'] ?? false)<br><b>Persetujuan diri sendiri (override)</b>@endif</td>
 <td>{{ $override->subject?->name ?? 'Kewenangan tahap' }}</td>
-<td class="long">{{ \Carbon\Carbon::parse($override->created_at)->format('d/m/Y H:i') }}<br>{{ $override->reason }}</td>
+<td class="long">{{ $override->created_at?->format('d/m/Y H:i') }}<br><small>{{ $override->details['recorded_timezone'] ?? 'Zona waktu historis tidak terekam' }}</small><br>{{ $override->reason }}</td>
 </tr>
 @endforeach
 </tbody>

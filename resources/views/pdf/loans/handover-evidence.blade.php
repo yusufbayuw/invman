@@ -23,7 +23,7 @@
         .block.long { page-break-inside: auto; }
         table { border-collapse: collapse; width: 100%; }
         .facts th { width: 29%; text-align: left; vertical-align: top; font-weight: normal; color: #5b687b; padding: 1.25mm 2mm 1.25mm 0; }
-        .facts td { vertical-align: top; padding: 1.25mm 0; font-weight: 600; overflow-wrap: break-word; }
+        .facts td { vertical-align: top; padding: 1.25mm 0; font-weight: bold; overflow-wrap: break-word; }
         .half { width: 49%; vertical-align: top; }
         .line { border-top: 1px solid #dce4ee; margin: 3mm 0; }
         .panel { border: 1px solid #dce4ee; padding: 3.5mm; margin: 2mm 0; }
@@ -201,7 +201,7 @@
             @foreach($overrides as $entry)
                 <tr><td>{{ $entry->actor?->name ?? 'Akun tidak lagi tersedia' }}</td>
                     <td>{{ $entry->subject?->name ?? '-' }}</td>
-                    <td>{{ $entry->action }}<div class="small muted">{{ $entry->created_at?->format('d/m/Y H:i') }} ({{ config('app.timezone', 'UTC') }})</div></td>
+                    <td>{{ $entry->action }}<div class="small muted">{{ $entry->created_at?->format('d/m/Y H:i') }} ({{ $entry->details['recorded_timezone'] ?? 'zona waktu historis tidak terekam' }})</div></td>
                     <td>{{ $entry->reason }}</td></tr>
             @endforeach
             </tbody>
