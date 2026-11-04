@@ -76,7 +76,7 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             $titles = [];
             foreach ([
                 'Kepala Sarpras', 'Staf Fasilitas', 'Supervisor Fasilitas',
-                'Manager Fasilitas', 'Teknisi', 'Pengelola IT', 'Pengelola Perpustakaan',
+                'Manager Fasilitas', 'Teknisi', 'Pengemudi', 'Pengelola IT', 'Pengelola Perpustakaan',
             ] as $title) {
                 $record = WorkOrderJobTitle::query()->firstOrCreate(
                     ['name' => self::PREFIX.' '.$title],
@@ -116,6 +116,8 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             $this->assignment($staff, $titles['Staf Fasilitas'], null, null, $supervisor);
             $this->assignment($supervisor, $titles['Supervisor Fasilitas'], null, null, $manager);
             $this->assignment($manager, $titles['Manager Fasilitas']);
+            // Job assignment grants panel eligibility without the global facility role.
+            $this->assignment($driverUser, $titles['Pengemudi']);
             // Technicians report to staff in both the Work Order hierarchy and the field team.
             $this->assignment($technician, $titles['Teknisi'], null, null, $staff);
             $this->teamMember($staff, 'lead', $groups['fasilitas']);
