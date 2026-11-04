@@ -57,7 +57,7 @@
     <div class="status {{ $hasException ? 'danger' : (! $complete ? 'warning' : '') }}">
         @if($hasException)
             <strong>PENYERAHAN KHUSUS / PENGECUALIAN TERCATAT</strong>
-            <p>Konfirmasi penerimaan peminjam tidak lengkap. Alasan pengecualian tercantum di bagian bukti penyerahan.</p>
+            <p>Terdapat pengecualian konfirmasi pada penyerahan atau pengembalian. Lihat alasan dan aktor dalam bukti serta audit di bawah.</p>
         @elseif(!$complete)
             <strong>DOKUMEN BELUM LENGKAP</strong>
             <p>Setidaknya satu tahap penyerahan/pengembalian belum memiliki konfirmasi lengkap. Jangan dianggap bukti serah-terima selesai.</p>
@@ -151,6 +151,9 @@
                     <tr><th>Penyelesaian</th><td>{{ $returnEvidence['completedAt']?->format('d/m/Y H:i') ?? 'Belum selesai' }}</td></tr>
                     <tr><th>Catatan</th><td>{{ $returnEvidence['notes'] ?: '-' }}</td></tr>
                 </table>
+                @if($returnEvidence['fallbackReason'])
+                    <p class="alert"><strong>Alasan pengecualian pengembalian:</strong> {{ $returnEvidence['fallbackReason'] }}</p>
+                @endif
                 @if($returnEvidence['proofImage'])
                     <div class="evidence"><p class="small">Foto bukti pengembalian</p><img class="photo" src="{{ $returnEvidence['proofImage'] }}" alt="Bukti pengembalian"></div>
                 @elseif($returnEvidence['hasProof'])
@@ -186,5 +189,21 @@
         <div class="line"></div>
         <p class="small muted">Bukti ini dihasilkan otomatis dari pencatatan InvMan saat diunduh. Nama dan waktu adalah catatan konfirmasi akun pada aplikasi, <strong>bukan tanda tangan elektronik tersertifikasi</strong>. Dokumen dapat berubah apabila histori transaksinya diperbarui secara sah. Periksa nomor reservasi dan bukti asli di aplikasi untuk validasi.</p>
     </section>
+    @if($overrides->isNotEmpty())
+    <section class="block long">
+        <h2>Audit Pengecualian</h2>
+        <table class="data">
+            <thead><tr><th>Aktor sebenarnya</th><th>Pihak yang diwakili</th><th>Tindakan / waktu</th><th>Alasan</th></tr></thead>
+            <tbody>
+            @foreach($overrides as $entry)
+                <tr><td>{{ $entry->actor?->name ?? 'Akun tidak lagi tersedia' }}</td>
+                    <td>{{ $entry->subject?->name ?? '-' }}</td>
+                    <td>{{ $entry->action }}<div class="small muted">{{ $entry->created_at?->format('d/m/Y H:i') }} ({{ config('app.timezone', 'UTC') }})</div></td>
+                    <td>{{ $entry->reason }}</td></tr>
+            @endforeach
+            </tbody>
+        </table>
+    </section>
+    @endif
 </body>
 </html>
