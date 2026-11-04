@@ -75,6 +75,12 @@ class InvManFullDemoSeederTest extends TestCase
         $this->seed(InvManFullDemoSeeder::class);
 
         $this->assertSame(10, User::query()->where('username', 'like', 'invman.demo.%')->count());
+        $this->assertSame(1, WorkOrderWorkflow::query()->where('status', 'published')->count());
+        $this->assertSame(2, Ticket::query()->where('source_key', 'like', 'invman:full-demo:%')->count());
+        foreach (Ticket::query()->where('source_key', 'like', 'invman:full-demo:%')->get() as $ticket) {
+            $this->assertSame(4, $ticket->workOrderApprovals()->count());
+        }
+
         $this->assertSame(1, User::role(config('role.sarpras'))->count());
         $this->assertSame(1, User::role(config('role.fasilitas'))->count());
         $this->assertSame(1, User::role(config('role.admin'))->count());
