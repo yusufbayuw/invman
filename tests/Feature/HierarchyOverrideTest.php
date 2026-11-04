@@ -162,6 +162,35 @@ class HierarchyOverrideTest extends TestCase
         ]);
     }
 
+    public function test_facility_can_report_ticket_for_named_sarpras_without_forged_actor(): void
+    {
+        $d = $this->context();
+        $this->actingAs($d['facility']);
+        $category = TicketCategory::query()->where('slug', 'maintenance_electrical')->firstOrFail();
+        $ticket = app(TicketService::class)->openOnBehalf($d['facility'], $d['reporter'], [
+            'ticket_category_id' => $category->id,
+            'title' => 'Listrik tidak stabil',
+            'description' => 'Listrik ruangan padam saat kegiatan dan perlu pemeriksaan.',
+            'location' => 'Gedung D',
+        ], 'Sarpras sedang tidak dapat mengakses sistem.');
+
+        $this->assertSame($d['reporter']->id, $ticket->reporter_id);
+        $this->assertSame($d['unit']->id, $ticket->g001_m001_unit_id);
+        $this->assertDatabaseHas('operational_overrides', [
+            'entity_type' => 'ticket', 'entity_id' => $ticket->id,
+            'action' => 'open_on_behalf', 'actor_id' => $d['facility']->id,
+            'subject_user_id' => $d['reporter']->id,
+        ]);
+
+        $this->actingAs($d['outsider']);
+        $this->expectException(ValidationException::class);
+        app(TicketService::class)->openOnBehalf($d['outsider'], $d['reporter'], [
+            'ticket_category_id' => $category->id,
+            'description' => 'Akun lain tidak berwenang membuat laporan pada unit ini.',
+            'location' => 'Gedung E',
+        ], 'Mencoba lapor lintas unit tanpa izin.');
+    }
+
     public function test_facility_can_create_and_submit_loan_as_named_sarpras_without_account_impersonation(): void
     {
         $d = $this->context();
