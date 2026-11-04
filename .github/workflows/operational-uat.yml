@@ -29,7 +29,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: mbstring,pdo_mysql,pdo_sqlite,sqlite3,sodium,gd,zip,intl,fileinfo,bcmath
           coverage: none
           tools: composer:v2
@@ -77,6 +77,11 @@ jobs:
         env:
           UAT_BROWSER_CHANNEL: chromium
         run: node tests/Support/OperationalUat/browser-work-order-retest.cjs
+      - name: Hierarchical recovery audit and responsive ticket actions
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-hierarchy.cjs
       - name: Workflow publication and versioned cost approval in browser
         if: always()
         env:

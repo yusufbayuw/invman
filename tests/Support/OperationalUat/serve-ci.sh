@@ -4,11 +4,11 @@ qa_root="$GITHUB_WORKSPACE/output/operational-uat-runtime"
 qa_app="$qa_root/app"
 qa_user="$(id -un)"
 qa_group="$(id -gn)"
-if ! command -v nginx >/dev/null || [ ! -x /usr/sbin/php-fpm8.3 ]; then
+if ! command -v nginx >/dev/null || [ ! -x /usr/sbin/php-fpm8.4 ]; then
   sudo apt-get update -qq
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nginx php8.3-fpm 2>&1 | tee "$qa_root/server-packages.log"
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nginx php8.4-fpm 2>&1 | tee "$qa_root/server-packages.log"
 fi
-fpm_binary=/usr/sbin/php-fpm8.3
+fpm_binary=/usr/sbin/php-fpm8.4
 "$fpm_binary" -v
 nginx -v
 cat > "$qa_root/fpm.conf" <<EOF
@@ -16,16 +16,21 @@ cat > "$qa_root/fpm.conf" <<EOF
 pid = $qa_root/fpm.pid
 error_log = $qa_root/fpm-error.log
 daemonize = no
+log_level = notice
+process_control_timeout = 10s
 [qa]
 user = $qa_user
 group = $qa_group
-listen = 127.0.0.1:19083
+listen = $qa_root/fpm.sock
+listen.owner = $qa_user
+listen.group = $qa_group
+listen.mode = 0660
 pm = dynamic
 pm.max_children = 8
 pm.start_servers = 2
 pm.min_spare_servers = 2
 pm.max_spare_servers = 4
-pm.max_requests = 500
+pm.max_requests = 0
 catch_workers_output = yes
 clear_env = yes
 security.limit_extensions = .php
@@ -54,7 +59,7 @@ http {
     location = /index.php {
       include /etc/nginx/fastcgi_params;
       fastcgi_param SCRIPT_FILENAME \$document_root/index.php;
-      fastcgi_pass 127.0.0.1:19083;
+      fastcgi_pass unix:$qa_root/fpm.sock;
       fastcgi_read_timeout 120s;
     }
     location ~ \\.php$ { return 404; }
