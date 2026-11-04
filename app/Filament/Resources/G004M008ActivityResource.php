@@ -212,6 +212,19 @@ class G004M008ActivityResource extends Resource
                     ->columns(3)
                     ->visible(fn (G004M008Activity $record): bool => static::canViewFullActivity($record)
                         && filled($record->return_checklist)),
+                \Filament\Infolists\Components\Section::make('Audit Input / Override Hierarki')
+                    ->schema([
+                        \Filament\Infolists\Components\RepeatableEntry::make('operationalOverrides')
+                            ->hiddenLabel()->schema([
+                                \Filament\Infolists\Components\TextEntry::make('action')->label('Tindakan'),
+                                \Filament\Infolists\Components\TextEntry::make('actor.name')->label('Dilakukan oleh'),
+                                \Filament\Infolists\Components\TextEntry::make('subject.name')->label('Mewakili')->placeholder('-'),
+                                \Filament\Infolists\Components\TextEntry::make('reason')->label('Alasan')->columnSpanFull(),
+                                \Filament\Infolists\Components\TextEntry::make('created_at')->label('Waktu')->dateTime('d M Y H:i'),
+                            ])->columns(3),
+                    ])->collapsed()
+                    ->visible(fn (G004M008Activity $record): bool => (auth()->user()?->isFacility() ?? false)
+                        && $record->operationalOverrides()->exists()),
                 \Filament\Infolists\Components\Section::make('Ulasan Pemohon')
                     ->schema([
                         \Filament\Infolists\Components\TextEntry::make('review.rating')

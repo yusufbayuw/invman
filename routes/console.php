@@ -161,3 +161,68 @@ Artisan::command('invman:security-audit', function (\App\Services\ProductionSecu
 
     return Command::FAILURE;
 })->purpose('Check production security configuration without exposing secrets');
+
+
+// Deliberately NOT scheduled or called from DatabaseSeeder: demo fixtures require a human.
+Artisan::command('invman:seed-full-demo {--include-privileged : Create global admin/facility demo accounts}', function () {
+    if (! $this->input->isInteractive()) {
+        $this->error('Seeder demo memerlukan terminal interaktif agar sandi tidak bocor.');
+        return Command::FAILURE;
+    }
+
+    $production = app()->environment('production') || config('app.env') === 'production';
+    $privileged = (bool) $this->option('include-privileged');
+    $this->warn('Menambahkan data [DEMO-INVMAN]. Tidak ada fasilitas hapus otomatis.');
+    $this->warn('Pengajuan yang dibuat hanya draf; tiket demo tetap terlihat pada panel.');
+    if ($production) {
+        $this->error('DATABASE PRODUCTION: lakukan backup terlebih dahulu.');
+        if (! $this->confirm('Backup database/storage sudah diverifikasi?', false)
+            || $this->ask('Ketik TAMBAH-DATA-DEMO-KE-PRODUCTION') !== 'TAMBAH-DATA-DEMO-KE-PRODUCTION') {
+            $this->error('Dibatalkan: database tidak berubah.');
+            return Command::FAILURE;
+        }
+    }
+    if ($privileged && $this->ask('Akun admin/fasilitas demo memiliki AKSES GLOBAL. Ketik AKSES-GLOBAL-DEMO') !== 'AKSES-GLOBAL-DEMO') {
+        $this->error('Dibatalkan: akun berhak global tidak dibuat.');
+        return Command::FAILURE;
+    }
+
+    $password = $this->secret('Sandi kuat untuk akun demo baru (minimal 16 karakter, campuran huruf/angka/simbol)');
+    $confirmation = $this->secret('Konfirmasi sandi');
+    if (! is_string($password) || $password !== $confirmation) {
+        $this->error('Konfirmasi sandi tidak cocok.');
+        return Command::FAILURE;
+    }
+
+    try {
+        \Illuminate\Support\Facades\Validator::make(['password' => $password], [
+            'password' => ['required', 'string',
+                \Illuminate\Validation\Rules\Password::min(16)->mixedCase()->numbers()->symbols()],
+        ])->validate();
+    } catch (\Illuminate\Validation\ValidationException $exception) {
+        $this->error('Sandi minimal 16 karakter, huruf besar/kecil, angka, dan simbol.');
+        return Command::FAILURE;
+    }
+
+    $previousPassword = config('security.seed_demo_password');
+    $previousAuthorization = config('security.full_demo_command_authorized');
+    $previousPrivileged = config('security.full_demo_create_privileged');
+    try {
+        // Runtime-only switches; never persisted to .env or cached configuration.
+        config()->set('security.seed_demo_password', $password);
+        config()->set('security.full_demo_command_authorized', true);
+        config()->set('security.full_demo_create_privileged', $privileged);
+        return $this->call('db:seed', [
+            '--class' => \Database\Seeders\InvManFullDemoSeeder::class,
+            '--force' => true,
+        ]);
+    } catch (\Throwable $exception) {
+        $this->error('Seeder gagal: '.$exception->getMessage());
+        return Command::FAILURE;
+    } finally {
+        config()->set('security.seed_demo_password', $previousPassword);
+        config()->set('security.full_demo_command_authorized', $previousAuthorization);
+        config()->set('security.full_demo_create_privileged', $previousPrivileged);
+        unset($password, $confirmation);
+    }
+})->purpose('Create guarded, isolated demo fixtures in development or production');

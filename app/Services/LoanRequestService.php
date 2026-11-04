@@ -31,6 +31,57 @@ class LoanRequestService
         private readonly ItemReservationAllocationService $itemAllocations,
     ) {}
 
+    /**
+     * Facility/supervisor may file in their OWN login while the unit employee stays
+     * the responsible borrower. Never overwrite employee identity with the actor.
+     */
+    public function saveDraftOnBehalf(
+        User $actor, User $borrower, array $data, string $reason,
+        ?G004M008Activity $draft = null, bool $validateAvailability = false,
+    ): G004M008Activity {
+        $audit = app(HierarchyOverrideService::class);
+        $reason = $audit->validateReason($reason);
+        if (! $borrower->isSarpras() || ! $borrower->g001_m001_unit_id
+            || ($draft && ($draft->user_id !== $borrower->id
+                || $draft->g001_m001_unit_id !== $borrower->g001_m001_unit_id))) {
+            throw ValidationException::withMessages([
+                'borrower' => 'Pilih Sarpras aktif pada unit yang benar; draf tidak boleh dialihkan ke akun lain.',
+            ]);
+        }
+        return DB::transaction(function () use ($audit, $actor, $borrower, $data, $reason, $draft, $validateAvailability): G004M008Activity {
+            $audit->authorize($actor, $borrower, $borrower->g001_m001_unit_id);
+            $record = $this->saveDraft($borrower, $data, $draft, $validateAvailability);
+            $audit->record($actor, $borrower, 'loan', $record->id, 'save_draft_on_behalf',
+                $reason, $draft ? 'draft' : null, 'draft', ['unit_id' => $borrower->g001_m001_unit_id]);
+            return $record;
+        }, 3);
+    }
+
+    public function submitDraftOnBehalf(User $actor, User $borrower, G004M008Activity $draft, string $reason): G004M008Activity
+    {
+        $audit = app(HierarchyOverrideService::class);
+        $reason = $audit->validateReason($reason);
+        return DB::transaction(function () use ($audit, $actor, $borrower, $draft, $reason): G004M008Activity {
+            $locked = G004M008Activity::query()->lockForUpdate()->findOrFail($draft->id);
+            if ($locked->user_id !== $borrower->id || $locked->g001_m001_unit_id !== $borrower->g001_m001_unit_id) {
+                throw ValidationException::withMessages(['borrower' => 'Pemilik draf berbeda dari Sarpras yang dipilih.']);
+            }
+            $audit->authorize($actor, $borrower, $locked->g001_m001_unit_id);
+            $result = $this->submitDraft($borrower, $locked);
+            $audit->record($actor, $borrower, 'loan', $locked->id, 'submit_on_behalf',
+                $reason, 'draft', 'submitted', ['unit_id' => $locked->g001_m001_unit_id]);
+            return $result;
+        }, 3);
+    }
+
+    public function submitOnBehalf(User $actor, User $borrower, array $data, string $reason): G004M008Activity
+    {
+        return DB::transaction(function () use ($actor, $borrower, $data, $reason): G004M008Activity {
+            $draft = $this->saveDraftOnBehalf($actor, $borrower, $data, $reason, validateAvailability: true);
+            return $this->submitDraftOnBehalf($actor, $borrower, $draft, $reason);
+        }, 3);
+    }
+
     public function submit(User $user, array $data): G004M008Activity
     {
         $draft = $this->saveDraft($user, $data, validateAvailability: true);
@@ -358,6 +409,48 @@ class LoanRequestService
         }, 3);
 
         $this->notifications->returnConfirmationRequired($activity, forBorrower: false);
+    }
+
+    /**
+     * Audited single-actor return completion. An empty borrower confirmation must
+     * STAY empty: override is not impersonation. Existing physical checklist and
+     * allocation/safety validation still run through processReservation().
+     */
+    public function confirmReturnOverride(
+        string $type, string $reservationId, User $actor, string $reason,
+    ): void {
+        $audit = app(HierarchyOverrideService::class);
+        $reason = $audit->validateReason($reason);
+        $modelClass = $this->reservationModelClass($type);
+        DB::transaction(function () use ($audit, $modelClass, $reservationId, $type, $actor, $reason): void {
+            $record = $modelClass::query()->with(['activity', 'returnReceipt'])
+                ->lockForUpdate()->findOrFail($reservationId);
+            $receipt = $record->returnReceipt;
+            if ($record->status !== ReservationStatus::ReturnRequested->value || ! $receipt
+                || ! $record->returnChecklists()->exists()) {
+                throw ValidationException::withMessages([
+                    'receipt' => 'Override pengembalian memerlukan pengajuan kembali, berita acara, dan checklist kondisi fisik.',
+                ]);
+            }
+            $borrower = User::query()->find($record->activity?->user_id);
+            $audit->authorize($actor, $borrower, $record->activity?->g001_m001_unit_id);
+            if (! $actor->managesReservation($record)) {
+                throw ValidationException::withMessages([
+                    'receipt' => 'Pengguna harus memiliki kewenangan pengelolaan reservasi untuk override pengembalian.',
+                ]);
+            }
+            $receipt->forceFill([
+                'manager_confirmed_by' => $receipt->manager_confirmed_by ?: $actor->id,
+                'manager_confirmed_at' => $receipt->manager_confirmed_at ?: now(),
+                'fallback_reason' => $reason,
+                'completed_at' => now(),
+            ])->save();
+            $this->processReservation($type, $record->id, ReservationStatus::Returned);
+            $audit->record($actor, $borrower, 'loan', $record->activity->id, 'return_receipt_override',
+                $reason, 'return_requested', 'returned',
+                ['reservation_type' => $type, 'reservation_id' => $record->id,
+                    'borrower_confirmed' => (bool) $receipt->borrower_confirmed_at]);
+        }, 3);
     }
 
     public function confirmReturn(string $type, string $reservationId): void
@@ -945,7 +1038,8 @@ class LoanRequestService
         }
 
         $receipt = $reservation->returnReceipt;
-        if (! $receipt?->borrower_confirmed_at || ! $receipt?->manager_confirmed_at || ! $receipt?->completed_at) {
+        if (! $receipt?->manager_confirmed_at || ! $receipt?->completed_at
+            || (! $receipt->borrower_confirmed_at && blank($receipt->fallback_reason))) {
             throw ValidationException::withMessages([
                 'receipt' => 'Serah-terima wajib dikonfirmasi oleh peminjam dan pengelola.',
             ]);

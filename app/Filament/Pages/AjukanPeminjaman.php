@@ -7,6 +7,7 @@ use App\Models\G002M007Item;
 use App\Models\G003M006Room;
 use App\Models\G004M008Activity;
 use App\Models\G008M017Vehicle;
+use App\Models\User;
 use App\Services\LoanAvailabilityService;
 use App\Services\LoanEventService;
 use App\Services\LoanRequestService;
@@ -64,6 +65,7 @@ class AjukanPeminjaman extends Page implements HasForms
 
             $this->form->fill([
                 'loan_event_id' => $draft->loan_event_id,
+                'on_behalf_of' => $draft->user_id,
                 'name' => $draft->name,
                 'description' => $draft->description,
                 'notes' => $draft->notes,
@@ -92,7 +94,7 @@ class AjukanPeminjaman extends Page implements HasForms
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->check() && auth()->user()->isSarpras();
+        return auth()->check() && (auth()->user()->isSarpras() || auth()->user()->isFacility());
     }
 
     public function refreshAvailability(): void
@@ -105,29 +107,51 @@ class AjukanPeminjaman extends Page implements HasForms
         return $form
             ->schema([
                 Section::make('Pemohon')
-                    ->description('Identitas diambil otomatis dari akun yang sedang digunakan.')
+                    ->description('Setiap pegawai login dengan akunnya sendiri. Fasilitas dapat mengajukan atas nama Sarpras dengan audit.')
                     ->schema([
-                        Placeholder::make('requester')
-                            ->label('Diajukan oleh')
-                            ->content(auth()->user()?->name ?? '-'),
-                        Placeholder::make('unit')
-                            ->label('Unit pemohon')
-                            ->content(auth()->user()?->unit?->name ?? 'Unit belum diatur'),
-                    ])
-                    ->columns(2),
+                        Select::make('on_behalf_of')
+                            ->label('Sarpras / pegawai yang diwakili')
+                            ->getSearchResultsUsing(fn (string $search): array => User::query()
+                                ->role(config('role.sarpras'))
+                                ->where('is_enabled', true)->whereNotNull('g001_m001_unit_id')
+                                ->where(fn ($q) => $q->where('name', 'like', '%'.$search.'%')
+                                    ->orWhere('username', 'like', '%'.$search.'%'))
+                                ->with('unit')->orderBy('name')->limit(50)->get()
+                                ->mapWithKeys(fn (User $user): array => [
+                                    $user->id => $user->name.' · '.($user->unit?->name ?? '-'),
+                                ])->all())
+                            ->getOptionLabelUsing(function ($value): ?string {
+                                $user = User::query()->role(config('role.sarpras'))
+                                    ->where('is_enabled', true)->with('unit')->find($value);
+                                return $user ? $user->name.' · '.($user->unit?->name ?? '-') : null;
+                            })
+                            ->searchable()->required()->live()
+                            ->visible(fn (): bool => auth()->user()?->isFacility() ?? false)
+                            ->afterStateUpdated(fn ($state, Set $set) => $set('loan_event_id', null))
+                            ->helperText('Nama pemohon tetap pegawai yang dipilih; akun Anda dicatat sebagai penginput.'),
+                        Placeholder::make('requester')->label('Pemohon')
+                            ->content(fn (Get $get): string => $this->requesterUser($get('on_behalf_of'))?->name ?? '-'),
+                        Placeholder::make('unit')->label('Unit pemohon')
+                            ->content(fn (Get $get): string => $this->requesterUser($get('on_behalf_of'))?->unit?->name ?? 'Unit belum diatur'),
+                        Textarea::make('override_reason')->label('Alasan input oleh Fasilitas')
+                            ->required()->minLength(10)->maxLength(2000)
+                            ->visible(fn (): bool => auth()->user()?->isFacility() ?? false),
+                    ])->columns(2),
 
                 Section::make('Keperluan dan Jadwal')
                     ->schema([
                         Select::make('loan_event_id')
                             ->label('Gunakan kegiatan master (opsional)')
-                            ->options(fn (): array => app(LoanEventService::class)->options(auth()->user()))
+                            ->options(fn (Get $get): array => app(LoanEventService::class)->options(
+                                $this->requesterUser($get('on_behalf_of')) ?? auth()->user()))
                             ->searchable()
                             ->preload()
                             ->live()
                             ->helperText('Kosongkan untuk membuat kegiatan master baru otomatis. Pilihan tidak tergantung status pengajuan sebelumnya.')
                             ->afterStateUpdated(function ($state, Set $set): void {
                                 if ($state) {
-                                    $event = app(LoanEventService::class)->resolve(auth()->user(), $state);
+                                    $event = app(LoanEventService::class)->resolve(
+                                        $this->requesterUser($this->data['on_behalf_of'] ?? null) ?? auth()->user(), $state);
                                     $set('name', $event->name);
                                     $set('description', $event->description ?: $event->name);
                                 }
@@ -364,18 +388,24 @@ class AjukanPeminjaman extends Page implements HasForms
 
     public function submit(): void
     {
+        $data = $this->form->getState();
         $draft = $this->currentDraft();
-        $activity = $draft
-            ? app(LoanRequestService::class)->submitDraft(
-                auth()->user(),
-                app(LoanRequestService::class)->saveDraft(
-                    auth()->user(),
-                    $this->form->getState(),
-                    $draft,
-                    validateAvailability: true,
-                ),
-            )
-            : app(LoanRequestService::class)->submit(auth()->user(), $this->form->getState());
+        $actor = auth()->user();
+        $service = app(LoanRequestService::class);
+
+        if ($actor->isFacility()) {
+            $borrower = $this->requiredBorrower($data['on_behalf_of'] ?? null);
+            $reason = (string) ($data['override_reason'] ?? '');
+            $activity = $draft
+                ? $service->submitDraftOnBehalf($actor, $borrower,
+                    $service->saveDraftOnBehalf($actor, $borrower, $data, $reason, $draft, true),
+                    $reason)
+                : $service->submitOnBehalf($actor, $borrower, $data, $reason);
+        } else {
+            $activity = $draft
+                ? $service->submitDraft($actor, $service->saveDraft($actor, $data, $draft, true))
+                : $service->submit($actor, $data);
+        }
 
         Notification::make()
             ->title('Pengajuan berhasil dikirim')
@@ -390,7 +420,13 @@ class AjukanPeminjaman extends Page implements HasForms
 
     public function saveDraft(): void
     {
-        $activity = app(LoanRequestService::class)->saveDraft(auth()->user(), $this->form->getState(), $this->currentDraft());
+        $actor = auth()->user();
+        $data = $this->form->getState();
+        $activity = $actor->isFacility()
+            ? app(LoanRequestService::class)->saveDraftOnBehalf(
+                $actor, $this->requiredBorrower($data['on_behalf_of'] ?? null), $data,
+                (string) ($data['override_reason'] ?? ''), $this->currentDraft())
+            : app(LoanRequestService::class)->saveDraft($actor, $data, $this->currentDraft());
 
         Notification::make()
             ->title('Draf disimpan')
@@ -399,6 +435,21 @@ class AjukanPeminjaman extends Page implements HasForms
             ->send();
 
         $this->redirect(static::getUrl(['record' => $activity->id]));
+    }
+
+    private function requesterUser(mixed $selected = null): ?User
+    {
+        if (! auth()->user()?->isFacility()) {
+            return auth()->user();
+        }
+        return filled($selected) ? User::query()->find((int) $selected) : null;
+    }
+
+    private function requiredBorrower(mixed $selected): User
+    {
+        return User::query()->role(config('role.sarpras'))
+            ->where('is_enabled', true)->whereNotNull('g001_m001_unit_id')
+            ->findOrFail((int) $selected);
     }
 
     private function currentDraft(): ?G004M008Activity
