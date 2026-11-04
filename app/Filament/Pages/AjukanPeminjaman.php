@@ -111,12 +111,20 @@ class AjukanPeminjaman extends Page implements HasForms
                     ->schema([
                         Select::make('on_behalf_of')
                             ->label('Sarpras / pegawai yang diwakili')
-                            ->options(fn (): array => User::query()->role(config('role.sarpras'))
+                            ->getSearchResultsUsing(fn (string $search): array => User::query()
+                                ->role(config('role.sarpras'))
                                 ->where('is_enabled', true)->whereNotNull('g001_m001_unit_id')
-                                ->with('unit')->orderBy('name')->limit(150)->get()
+                                ->where(fn ($q) => $q->where('name', 'like', '%'.$search.'%')
+                                    ->orWhere('username', 'like', '%'.$search.'%'))
+                                ->with('unit')->orderBy('name')->limit(50)->get()
                                 ->mapWithKeys(fn (User $user): array => [
                                     $user->id => $user->name.' · '.($user->unit?->name ?? '-'),
                                 ])->all())
+                            ->getOptionLabelUsing(function ($value): ?string {
+                                $user = User::query()->role(config('role.sarpras'))
+                                    ->where('is_enabled', true)->with('unit')->find($value);
+                                return $user ? $user->name.' · '.($user->unit?->name ?? '-') : null;
+                            })
                             ->searchable()->required()->live()
                             ->visible(fn (): bool => auth()->user()?->isFacility() ?? false)
                             ->afterStateUpdated(fn ($state, Set $set) => $set('loan_event_id', null))
