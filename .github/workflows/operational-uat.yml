@@ -1,0 +1,70 @@
+name: InvMan Operational UAT
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/Support/OperationalUat/**'
+      - '.github/workflows/operational-uat.yml'
+      - 'app/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  operational-uat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: invman_uat_20261104
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s --health-timeout=5s --health-retries=8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring,pdo_mysql,pdo_sqlite,sqlite3,sodium,gd,zip,intl,fileinfo,bcmath
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci && npm run build
+      - name: Create disposable application
+        run: |
+          mkdir -p output/operational-uat-runtime/app docs/operational-readiness/evidence/2026-11-04
+          git archive HEAD | tar -x -C output/operational-uat-runtime/app
+          ln -s "$GITHUB_WORKSPACE/vendor" output/operational-uat-runtime/app/vendor
+          cp -r public/build output/operational-uat-runtime/app/public/build
+          php tests/Support/OperationalUat/prepare.php
+          php tests/Support/OperationalUat/use-mysql.php
+          php output/operational-uat-runtime/app/artisan migrate --force --no-interaction
+          php output/operational-uat-runtime/app/artisan db:seed --force --no-interaction
+          php tests/Support/OperationalUat/fixtures.php
+      - name: Install browser runtime
+        run: |
+          npm install --prefix output/operational-uat-runtime/browser --no-package-lock --no-audit --no-fund playwright
+          output/operational-uat-runtime/browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Start isolated HTTP application
+        run: |
+          cd output/operational-uat-runtime/app
+          php artisan serve --host=127.0.0.1 --port=8876 > ../http.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8876/up && break; sleep 1; done
+      - name: Real browser UAT
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-smoke.cjs
+      - name: Preserve sanitized evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: operational-uat-${{ github.sha }}
+          path: docs/operational-readiness/evidence/2026-11-04
+          retention-days: 30
