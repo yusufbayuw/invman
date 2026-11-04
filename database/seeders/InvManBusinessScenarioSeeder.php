@@ -15,13 +15,11 @@ use App\Models\G008M018Driver;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
-use App\Models\VehicleAssistant;
 use App\Services\LoanRequestService;
 use App\Services\TicketMaintenanceService;
 use App\Services\TicketService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 
 /**
@@ -57,18 +55,11 @@ class InvManBusinessScenarioSeeder extends Seeder
         $technician = $this->demoUser('teknisi');
         $itManager = $this->demoUser('it');
         $libraryManager = $this->demoUser('perpus');
-        $driverUser = $this->driverUser();
-        $driver = G008M018Driver::query()->firstOrCreate(
-            ['user_id' => $driverUser->id],
-            ['sim_number' => 'DEMO-ORG-SIM-A-001', 'sim_type' => 'A'],
-        );
+        $driverUser = $this->demoUser('driver');
+        $driver = G008M018Driver::query()->where('user_id', $driverUser->id)->firstOrFail();
         if ($driver->sim_number !== 'DEMO-ORG-SIM-A-001') {
             throw new RuntimeException('Data SIM akun driver telah berubah; tidak ditimpa seeder.');
         }
-        $assistant = VehicleAssistant::query()->firstOrCreate(
-            ['name' => self::PREFIX.' Kenek Bus'],
-            ['is_active' => true, 'notes' => 'Khusus skenario kendaraan demo'],
-        );
 
         $data = [];
         foreach (self::UNITS as $slug => $label) {
@@ -198,24 +189,6 @@ class InvManBusinessScenarioSeeder extends Seeder
             throw new RuntimeException("Akun {$username} belum tersedia sebagai pengguna demo aktif.");
         }
         return $user;
-    }
-
-    private function driverUser(): User
-    {
-        $existing = User::query()->where('username', 'driver')->first();
-        if ($existing) {
-            if ($existing->email !== 'driver@invman.invalid'
-                || $existing->name !== self::PREFIX.' Pengemudi'
-                || ! $existing->is_enabled) {
-                throw new RuntimeException('Username driver telah digunakan akun lain; seeder tidak menimpanya.');
-            }
-            return $existing;
-        }
-        return User::query()->create([
-            'username' => 'driver', 'name' => self::PREFIX.' Pengemudi',
-            'email' => 'driver@invman.invalid', 'email_verified_at' => now(),
-            'is_enabled' => true, 'password' => Hash::make('password'),
-        ]);
     }
 
     private function item(string $slug, string $suffix): G002M007Item
