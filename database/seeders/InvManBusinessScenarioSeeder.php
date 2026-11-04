@@ -174,7 +174,7 @@ class InvManBusinessScenarioSeeder extends Seeder
         $this->scenarioTicket('sd-cancelled', $data['sd']['borrower'], $category,
             'Laporan duplikat mengenai lampu lorong', null, 'cancelled', $manager, $technician);
         $this->scenarioTicket('sma-resolved', $data['sma']['borrower'], $category,
-            'Perbaikan lampu pintu aula menunggu verifikasi', null, 'resolved', $manager, $technician);
+            'Perbaikan lampu pintu aula menunggu verifikasi', $data['sma']['archive'], 'resolved', $manager, $technician);
 
         $this->command?->info('Skenario tambahan dibuat: driver, 5 kendaraan, 10 ruangan, 10 draf ruang/kendaraan, 6 pengajuan dengan status beragam, 7 tiket Work Order.');
         $this->command?->warn('Tidak membuat checkout/return palsu. Serah-terima dua pihak dan pengembalian harus diuji melalui service/fitur yang sesungguhnya.');
