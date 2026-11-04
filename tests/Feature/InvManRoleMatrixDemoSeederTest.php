@@ -73,6 +73,9 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
         $driverUser = User::query()->where('username', 'driver')->firstOrFail();
         $this->assertSame('A', G008M018Driver::query()->where('user_id', $driverUser->id)->firstOrFail()->sim_type);
         $this->assertFalse($driverUser->isFacility());
+        $this->assertFalse($driverUser->isSarpras());
+        $this->assertSame('[DEMO-ORG] Pengemudi',
+            WorkOrderAssignment::query()->where('user_id', $driverUser->id)->firstOrFail()->jobTitle->name);
         $technician = User::query()->where('username', 'teknisi')->firstOrFail();
         $staff = User::query()->where('username', 'staf.fas')->firstOrFail();
         $this->assertFalse($technician->isFacility());
