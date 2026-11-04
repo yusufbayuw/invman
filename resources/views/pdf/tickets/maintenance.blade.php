@@ -17,11 +17,19 @@ th { background: #eef2f8; }
 .key { width: 150px; color: #475467; }
 .long { white-space: pre-wrap; word-wrap: break-word; }
 .page-break { page-break-before: always; }
+.receipt-summary { page-break-inside: avoid; }
+.audit-row { page-break-inside: avoid; }
 .note { border: 1px solid #b7bdc9; padding: 8px; margin-top: 12px; font-size: 8px; }
 .status { text-align:center; font-weight:bold; font-size:10px; padding:7px; border:1px solid #adb8c9; }
 </style>
 </head>
 <body>
+@php
+    $hierarchyAudit = $ticket->operationalOverrides;
+    $acceptOverride = $hierarchyAudit->where("action", "accept_task")->last();
+    $finishOverride = $hierarchyAudit->where("action", "finish_work")->last();
+    $overrideLabels = ['open_on_behalf' => 'Pelaporan atas nama pegawai', 'work_order_decision' => 'Keputusan persetujuan', 'work_order_estimate' => 'Pencatatan estimasi', 'approve_assign' => 'Penugasan petugas', 'accept_task' => 'Penerimaan tugas', 'finish_work' => 'Pencatatan hasil', 'verify_work' => 'Verifikasi hasil', 'close_work' => 'Pengesahan akhir'];
+@endphp
 <h1>FORMULIR PERMINTAAN PERAWATAN / PERBAIKAN</h1>
 <div class="subtitle">
     Dokumen: {{ $ticket->number }} · Dicetak {{ now()->format('d/m/Y H:i') }}<br>
@@ -54,11 +62,16 @@ th { background: #eef2f8; }
 </table>
 <h2>III. VALIDASI & PERSETUJUAN</h2>
 <table class="bordered">
-<tr><th>Diajukan oleh</th><th>Disetujui oleh</th><th>Diterima teknisi</th></tr>
+<tr><th>Diajukan oleh</th><th>Disetujui oleh</th><th>Penerimaan tugas</th></tr>
 <tr>
 <td>{{ $ticket->reporter?->name ?? '-' }}<br><small>{{ $ticket->created_at?->format('d/m/Y H:i') ?? '-' }}</small></td>
 <td>{{ $ticket->maintenance->approver?->name ?? 'Belum' }}<br><small>{{ $ticket->maintenance->approved_at?->format('d/m/Y H:i') ?? '-' }}</small></td>
-<td>{{ $ticket->maintenance->technician?->name ?? 'Belum' }}<br><small>{{ $ticket->maintenance->accepted_at?->format('d/m/Y H:i') ?? '-' }}</small></td>
+<td>Petugas ditugaskan: {{ $ticket->assignee?->name ?? 'Belum' }}
+@if($ticket->maintenance->accepted_at)
+<br>Penerimaan dicatat oleh: <strong>{{ $acceptOverride?->actor?->name ?? $ticket->maintenance->technician?->name ?? '-' }}</strong>
+@if($acceptOverride)<small>(override)</small>@endif
+@endif
+<br><small>{{ $ticket->maintenance->accepted_at?->format('d/m/Y H:i') ?? '-' }}</small></td>
 </tr>
 </table>
 <p><b>Catatan persetujuan:</b> {{ $ticket->maintenance->approval_notes ?? '-' }}</p>
@@ -94,12 +107,15 @@ Total estimasi: Rp {{ number_format((int) $estimate->amount, 0, ',', '.') }}</p>
 </table>
 @endforeach
 <table>
-<tr><td class="key">Nama teknisi</td><td>{{ $ticket->maintenance->technician?->name ?? '-' }}</td></tr>
+<tr><td class="key">Teknisi penanggung jawab</td><td>{{ $ticket->assignee?->name ?? '-' }}</td></tr>
 <tr><td class="key">Tanggal mulai</td><td>{{ $ticket->maintenance->accepted_at?->format('d/m/Y H:i') ?? '-' }}</td></tr>
 <tr><td class="key">Tanggal selesai</td><td>{{ $ticket->maintenance->work_finished_at?->format('d/m/Y H:i') ?? '-' }}</td></tr>
 <tr><td class="key">Analisis masalah</td><td class="long">{{ $ticket->maintenance->diagnosis ?? 'Belum diisi' }}</td></tr>
 <tr><td class="key">Tindakan perbaikan</td><td class="long">{{ $ticket->maintenance->repair_actions ?? 'Belum diisi' }}</td></tr>
 </table>
+@if($ticket->maintenance->work_finished_at)
+<p>Hasil dicatat oleh: <strong>{{ $finishOverride?->actor?->name ?? $ticket->maintenance->technician?->name ?? '-' }}</strong>@if($finishOverride) <small>(override atas nama petugas)</small>@endif</p>
+@endif
 <p><b>Material / Sparepart:</b></p>
 <table class="bordered">
 <tr><th>Nama material</th><th>Qty</th><th>Satuan</th></tr>
@@ -118,17 +134,36 @@ Total estimasi: Rp {{ number_format((int) $estimate->amount, 0, ',', '.') }}</p>
 @endswitch
 </p>
 
+<div class="receipt-summary">
 <h2>V. SERAH TERIMA & PENYELESAIAN</h2>
 <table class="bordered">
-<tr><th>Teknisi yang mengerjakan</th><th>Pelapor (verifikasi)</th><th>Manajer (mengetahui)</th></tr>
+<tr><th>Teknisi penanggung jawab</th><th>Pelapor (verifikasi)</th><th>Manajer (mengetahui)</th></tr>
 <tr>
-<td>{{ $ticket->maintenance->technician?->name ?? '-' }}<br><small>{{ $ticket->maintenance->work_finished_at?->format('d/m/Y H:i') ?? '-' }}</small></td>
+<td>{{ $ticket->assignee?->name ?? '-' }}<br><small>{{ $ticket->maintenance->work_finished_at?->format('d/m/Y H:i') ?? '-' }}</small></td>
 <td>{{ $ticket->maintenance->verifier?->name ?? 'Belum diverifikasi' }}<br><small>{{ $ticket->maintenance->verified_at?->format('d/m/Y H:i') ?? '-' }}</small></td>
 <td>{{ $ticket->maintenance->finalApprover?->name ?? 'Belum disahkan' }}<br><small>{{ $ticket->maintenance->final_approved_at?->format('d/m/Y H:i') ?? '-' }}</small></td>
 </tr>
 </table>
 <p><b>Kondisi kelayakan:</b> {{ $ticket->maintenance->asset_released_at ? 'Dinyatakan layak pakai setelah pemeriksaan' : 'Belum dinyatakan layak pakai / penahanan aset tetap berlaku' }}</p>
 <p><b>Catatan pengesahan:</b> {{ $ticket->maintenance->closure_notes ?? '-' }}</p>
+</div>
+@if($hierarchyAudit->isNotEmpty())
+<h2>VI. AUDIT PENGECUALIAN HIERARKI</h2>
+<p>Identitas petugas dan pelapor asli dipertahankan. Tindakan berikut dicatat oleh akun pelaku yang benar-benar login. Waktu audit ditampilkan sesuai rekaman tersimpan; zona waktu audit lama tidak tercatat.</p>
+<table class="bordered">
+<thead><tr><th>Tindakan</th><th>Pelaku login</th><th>Pegawai diwakili</th><th>Waktu tersimpan / alasan</th></tr></thead>
+<tbody>
+@foreach($hierarchyAudit as $override)
+<tr class="audit-row">
+<td>{{ $overrideLabels[$override->action] ?? $override->action }}<br><small>{{ $override->from_status ?? '-' }} → {{ $override->to_status ?? '-' }}</small></td>
+<td>{{ $override->actor?->name ?? '-' }}@if($override->details['self_approval'] ?? false)<br><b>Persetujuan diri sendiri (override)</b>@endif</td>
+<td>{{ $override->subject?->name ?? 'Kewenangan tahap' }}</td>
+<td class="long">{{ \Carbon\Carbon::parse($override->created_at)->format('d/m/Y H:i') }}<br>{{ $override->reason }}</td>
+</tr>
+@endforeach
+</tbody>
+</table>
+@endif
 <div class="note">
     Ini adalah catatan persetujuan elektronik internal berdasarkan identitas login dan waktu server,
     bukan tanda tangan digital tersertifikasi. Kolom yang belum diproses tidak direkayasa menjadi persetujuan.

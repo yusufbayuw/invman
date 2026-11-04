@@ -60,6 +60,28 @@ class HierarchyOverrideTest extends TestCase
             'management', 'room', 'ticket');
     }
 
+    public function test_maintenance_pdf_distinguishes_assigned_technician_from_actual_override_recorder(): void
+    {
+        $d = $this->context();
+        $this->actingAs($d['facility']);
+        $service = app(TicketMaintenanceService::class);
+        $service->approve($d['ticket'], $d['facility'], $d['technician']->id);
+        $service->accept($d['ticket'], $d['facility'], 'Teknisi bertugas di lokasi lain.');
+        $service->finish($d['ticket'], $d['facility'], 'Diagnosis tercatat oleh atasan.',
+            'Hasil lapangan dimasukkan oleh atasan.', [], 'complete', 'Teknisi belum dapat mengisi laporan.');
+        $ticket = $d['ticket']->fresh();
+        $html = view('pdf.tickets.maintenance', compact('ticket'))->render();
+        $this->assertStringContainsString('Penerimaan dicatat oleh: <strong>'.e($d['facility']->name).'</strong>', $html);
+        $this->assertStringContainsString('Hasil dicatat oleh: <strong>'.e($d['facility']->name).'</strong>', $html);
+        $this->assertStringContainsString('<td class="key">Teknisi penanggung jawab</td><td>'.e($d['technician']->name).'</td>', $html);
+        $this->assertStringContainsString('AUDIT PENGECUALIAN HIERARKI', $html);
+        $this->assertStringContainsString('Teknisi bertugas di lokasi lain.', $html);
+        $this->assertStringContainsString('Teknisi belum dapat mengisi laporan.', $html);
+        $this->assertStringContainsString(e($d['technician']->name), $html);
+        $this->assertSame($d['technician']->id, $ticket->assigned_to);
+        $this->assertSame(2, $ticket->operationalOverrides()->count());
+    }
+
     public function test_facility_can_complete_technician_and_reporter_work_with_real_actor_audit(): void
     {
         $d = $this->context();
