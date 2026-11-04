@@ -16,6 +16,7 @@ use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
 use App\Services\LoanRequestService;
+use App\Services\LoanCheckoutService;
 use App\Services\TicketMaintenanceService;
 use App\Services\TicketService;
 use Illuminate\Database\Seeder;
@@ -151,6 +152,26 @@ class InvManBusinessScenarioSeeder extends Seeder
             [['type' => 'vehicle', 'vehicle_id' => $data['sd']['vehicle']->id]], 55);
         $this->decide($vehicleActivity, 'vehicle', $manager, ReservationStatus::Approved);
 
+        // Real two-party checkout and return; never directly force status values.
+        $checkedOut = $this->scenarioLoan($data['tk']['borrower'], 'TK Ruangan Sedang Dipakai',
+            [['type' => 'room', 'room_id' => $data['tk']['hall']->id]], 60);
+        $this->checkoutRoom($checkedOut, $manager, $data['tk']['borrower']);
+
+        $returnPending = $this->scenarioLoan($data['smp']['borrower'], 'SMP Menunggu Konfirmasi Kembali',
+            [['type' => 'room', 'room_id' => $data['smp']['hall']->id]], 61);
+        $this->checkoutRoom($returnPending, $manager, $data['smp']['borrower']);
+        $this->requestRoomReturn($returnPending, $data['smp']['borrower']);
+
+        $returned = $this->scenarioLoan($data['sma']['borrower'], 'SMA Ruangan Sudah Dikembalikan',
+            [['type' => 'room', 'room_id' => $data['sma']['hall']->id]], 62);
+        $this->checkoutRoom($returned, $manager, $data['sma']['borrower']);
+        $this->requestRoomReturn($returned, $data['sma']['borrower']);
+        $returnReservation = $returned->room_reservation()->firstOrFail()->fresh();
+        if ($returnReservation->status === ReservationStatus::ReturnRequested->value) {
+            $this->asActor($manager, fn () => app(LoanRequestService::class)
+                ->confirmReturn('room', $returnReservation->id));
+        }
+
         $category = TicketCategory::query()->firstOrCreate(
             ['slug' => 'invman-organization-demo'],
             ['name' => self::PREFIX.' Laporan Fasilitas', 'is_active' => true, 'reporting_enabled' => true],
@@ -176,8 +197,8 @@ class InvManBusinessScenarioSeeder extends Seeder
         $this->scenarioTicket('sma-resolved', $data['sma']['borrower'], $category,
             'Perbaikan lampu pintu aula menunggu verifikasi', $data['sma']['archive'], 'resolved', $manager, $technician);
 
-        $this->command?->info('Skenario tambahan dibuat: driver, 5 kendaraan, 10 ruangan, 10 draf ruang/kendaraan, 6 pengajuan dengan status beragam, 7 tiket Work Order.');
-        $this->command?->warn('Tidak membuat checkout/return palsu. Serah-terima dua pihak dan pengembalian harus diuji melalui service/fitur yang sesungguhnya.');
+        $this->command?->info('Skenario tambahan: 5 kendaraan, 10 ruangan, 10 draf, 9 pengajuan termasuk serah-terima dan pengembalian dua pihak, 7 tiket Work Order.');
+        $this->command?->warn('Seluruh transaksi dan notifikasi mengikuti service existing. Jalankan hanya pada database uji terisolasi.');
     }
 
     private function demoUser(string $username): User
@@ -259,6 +280,38 @@ class InvManBusinessScenarioSeeder extends Seeder
         }
         $this->asActor($custodian, fn () => app(LoanRequestService::class)
             ->processReservation($type, $reservation->id, $status, $reason));
+    }
+
+    private function checkoutRoom(G004M008Activity $activity, User $manager, User $borrower): void
+    {
+        $reservation = $activity->room_reservation()->firstOrFail();
+        if ($reservation->status === ReservationStatus::Submitted->value) {
+            $this->asActor($manager, fn () => app(LoanRequestService::class)
+                ->processReservation('room', $reservation->id, ReservationStatus::Approved));
+            $reservation->refresh();
+        }
+        if ($reservation->status !== ReservationStatus::Approved->value) {
+            return; // Existing transaction is never reset or replayed.
+        }
+        $this->asActor($manager, fn () => app(LoanCheckoutService::class)
+            ->begin('room', $reservation->id, [
+                'is_ok' => true,
+                'notes' => 'Pemeriksaan awal aula simulasi dalam kondisi baik.',
+            ]));
+        $this->asActor($borrower, fn () => app(LoanCheckoutService::class)
+            ->confirm('room', $reservation->id));
+    }
+
+    private function requestRoomReturn(G004M008Activity $activity, User $borrower): void
+    {
+        $reservation = $activity->room_reservation()->firstOrFail();
+        if ($reservation->status !== ReservationStatus::CheckedOut->value) {
+            return;
+        }
+        $this->asActor($borrower, fn () => app(LoanRequestService::class)
+            ->requestReservationReturn('room', $reservation->id, [
+                'is_ok' => true, 'notes' => 'Kunci dan aula sudah diperiksa saat pengembalian.',
+            ]));
     }
 
     private function scenarioTicket(
