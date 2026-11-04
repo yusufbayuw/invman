@@ -7,6 +7,7 @@ use App\Models\G002M002ItemType;
 use App\Models\G002M003ItemManagement;
 use App\Models\G002M007Item;
 use App\Models\G004M008Activity;
+use App\Models\G008M018Driver;
 use App\Models\TicketTeamMember;
 use App\Models\User;
 use App\Models\WorkOrderAssignment;
@@ -95,6 +96,14 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             $technician = $this->account('teknisi', 'Teknisi Fasilitas', null);
             $itManager = $this->account('it', 'Pengelola Barang IT', null);
             $libraryManager = $this->account('perpus', 'Pengelola Barang Perpustakaan', null);
+            $driverUser = $this->account('driver', 'Pengemudi', null);
+            $driver = G008M018Driver::query()->firstOrCreate(
+                ['user_id' => $driverUser->id],
+                ['sim_number' => 'DEMO-ORG-SIM-A-001', 'sim_type' => 'A'],
+            );
+            if ($driver->sim_number !== 'DEMO-ORG-SIM-A-001') {
+                throw new RuntimeException('SIM pengemudi demo sudah diubah; tidak ditimpa.');
+            }
 
             // Do not silently restore memberships intentionally removed by an admin.
             if ($itManager->wasRecentlyCreated) {
@@ -133,7 +142,7 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             }
         }, 3);
 
-        $this->command?->info('Demo organisasi dibuat: 5 unit, 11 akun sederhana, 3 pengelola aset, 15 barang, 5 draf peminjaman, 5 workflow DRAFT.');
+        $this->command?->info('Demo organisasi dibuat: 5 unit, 12 akun sederhana (termasuk driver), 3 pengelola aset, 15 barang, 5 draf peminjaman, 5 workflow DRAFT.');
         $this->command?->warn('Password demo adalah password untuk seluruh akun. Jangan jalankan di server publik. Role fasilitas bersifat GLOBAL.');
     }
 
