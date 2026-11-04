@@ -133,6 +133,7 @@ class OutboundHandoverV2Test extends TestCase
             $this->assertNull($reservation->fresh()->outboundReceipt);
         }
 
+        $service->begin('room', $reservation->id, ['is_ok' => true]);
         $service->fallback('room', $reservation->id, [
             'reason' => 'Peminjam berhalangan hadir secara fisik; penerimaan disaksikan staf.',
         ]);
@@ -146,6 +147,41 @@ class OutboundHandoverV2Test extends TestCase
 
         $this->actingAs($borrower);
         $this->assertFalse((bool) $service->canConfirm($reservation->fresh()));
+    }
+
+    public function test_fallback_without_physical_inspection_leaves_no_receipt_or_state_change(): void
+    {
+        [$manager, , , $reservation] = $this->room();
+        $this->actingAs($manager);
+        try {
+            app(LoanCheckoutService::class)->fallback('room', $reservation->id, [
+                'reason' => 'Peminjam tidak dapat melakukan konfirmasi.',
+            ]);
+            $this->fail('Uninspected checkout was accepted.');
+        } catch (ValidationException) {
+            $this->assertSame(ReservationStatus::Approved->value, $reservation->fresh()->status);
+            $this->assertNull($reservation->fresh()->outboundReceipt);
+            $this->assertDatabaseCount('loan_checkout_checklists', 0);
+            $this->assertDatabaseCount('operational_overrides', 0);
+        }
+    }
+
+    public function test_fallback_preserves_inspector_and_audits_actual_exception_actor(): void
+    {
+        [$manager, $borrower, , $reservation] = $this->room();
+        $other = User::factory()->create();
+        $reservation->room->item_management->users()->attach($other);
+        $this->actingAs($manager);
+        $service = app(LoanCheckoutService::class);
+        $receipt = $service->begin('room', $reservation->id, ['is_ok' => true]);
+        $this->actingAs($other);
+        $service->fallback('room', $reservation->id, ['reason' => 'Peminjam berhalangan mengonfirmasi langsung.']);
+        $this->assertSame($manager->id, $receipt->fresh()->manager_confirmed_by);
+        $this->assertNull($receipt->fresh()->borrower_confirmed_by);
+        $this->assertDatabaseHas('operational_overrides', [
+            'action' => 'checkout_confirmation_exception', 'actor_id' => $other->id,
+            'subject_user_id' => $borrower->id,
+        ]);
     }
 
     public function test_initial_item_conditions_are_bound_to_exact_allocated_instances(): void
@@ -254,6 +290,7 @@ class OutboundHandoverV2Test extends TestCase
             $this->assertNull($reservation->fresh()->outboundReceipt);
         }
 
+        app(LoanCheckoutService::class)->begin('room', $reservation->id, ['is_ok' => true]);
         app(LoanCheckoutService::class)->fallback('room', $reservation->id, [
             'reason' => 'Peminjam tidak dapat memindai QR; berita acara fisik disimpan.',
         ]);

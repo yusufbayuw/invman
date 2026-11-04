@@ -81,19 +81,8 @@ class G002M007ItemObserver
      */
     public function updated(G002M007Item $g002M007Item): void
     {
-        // when item's code or name is updated, update all related item instances with number addition
-        // check isDirty to avoid unnecessary updates
-        if ($g002M007Item->isDirty(['code', 'name'])) {
-            $itemInstances = G002M015ItemInstance::where('g002_m007_item_id', $g002M007Item->id)
-                ->orderBy('id')
-                ->get();
-            foreach ($itemInstances as $index => $instance) {
-                $instance->updateQuietly([
-                    'name' => $g002M007Item->name.' '.($index + 1),
-                    'code' => $g002M007Item->code.'-'.($index + 1),
-                ]);
-            }
-        }
+        // Physical instance identities and printed QR labels are independent
+        // of later master edits. Never rewrite issued instance codes/names.
     }
 
     /**

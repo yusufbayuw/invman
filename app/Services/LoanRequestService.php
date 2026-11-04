@@ -836,7 +836,7 @@ class LoanRequestService
     public function correctReservationStatus(string $type, string $reservationId, string $targetStatus, string $reason): void
     {
         $user = auth()->user();
-        if (! $user?->isAdmin()) {
+        if (! $user?->is_enabled || ! $user->isAdmin()) {
             throw ValidationException::withMessages(['status' => 'Hanya admin yang dapat membuat koreksi administratif.']);
         }
 
@@ -848,6 +848,20 @@ class LoanRequestService
         DB::transaction(function () use ($modelClass, $reason, $reservationId, $targetStatus, $type, $user): void {
             $reservation = $modelClass::query()->with('activity')->lockForUpdate()->findOrFail($reservationId);
             $from = $reservation->status;
+
+            // Completed or physically documented returns need a new compensating
+            // custody cycle. Reusing their receipt/checklists would overwrite evidence
+            // and can seize instances already issued on a subsequent loan.
+            if ($from === ReservationStatus::Returned->value
+                || $reservation->returnReceipt()->exists()
+                || $reservation->returnChecklists()->exists()) {
+                throw ValidationException::withMessages([
+                    'status' => 'Pengembalian dengan bukti fisik tidak dapat dibuka kembali. Buat pengajuan baru; bukti lama tetap tersimpan.',
+                ]);
+            }
+            if (mb_strlen(trim($reason)) < 10 || mb_strlen(trim($reason)) > 2000) {
+                throw ValidationException::withMessages(['reason' => 'Alasan koreksi wajib 10–2000 karakter.']);
+            }
 
             if (! in_array($from, [ReservationStatus::ReturnRequested->value, ReservationStatus::Returned->value], true)) {
                 throw ValidationException::withMessages(['status' => 'Hanya proses pengembalian yang dapat dibuka kembali.']);
@@ -874,10 +888,11 @@ class LoanRequestService
 
             if ($reservation instanceof G005M009ItemReservation) {
                 $instanceIds = $reservation->item_reservation_detail()->pluck('g002_m015_item_instance_id');
-                G002M015ItemInstance::query()->whereKey($instanceIds)->update([
-                    'status' => ReservationStatus::CheckedOut->value,
-                    'is_available' => false,
-                ]);
+                G002M015ItemInstance::query()->whereKey($instanceIds)->orderBy('id')->lockForUpdate()->get()
+                    ->each(fn (G002M015ItemInstance $instance) => $instance->update([
+                        'status' => ReservationStatus::CheckedOut->value,
+                        'is_available' => false,
+                    ]));
             }
 
             $this->syncStatus($reservation->activity->fresh(), notify: false);
