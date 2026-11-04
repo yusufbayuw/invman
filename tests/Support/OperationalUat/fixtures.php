@@ -21,7 +21,8 @@ foreach([['QA Stock 10',10],['QA Stock 5',5],['QA Stock 1',1],['QA Damaged',1],[
 }
 $driver=G008M018Driver::firstOrCreate(['user_id'=>User::where('username','qa.driver')->value('id')],['sim_number'=>'SYNTHETIC-ONLY','sim_type'=>'A']);
 VehicleAssistant::firstOrCreate(['name'=>'QA Assistant'],['is_active'=>true,'notes'=>'Synthetic']);
-G008M017Vehicle::firstOrCreate(['name'=>'QA Vehicle'],['license_plate'=>'QA 0001 TEST','g001_m001_unit_id'=>$unit->id,'g002_m003_item_management_id'=>$group->id,'is_borrowable'=>true]);
+$vehicle=G008M017Vehicle::firstOrCreate(['name'=>'QA Vehicle'],['license_plate'=>'QA 0001 TEST','g001_m001_unit_id'=>$unit->id,'g002_m003_item_management_id'=>$group->id,'is_borrowable'=>true]);
+$vehicle->update(['requires_assistant'=>true,'default_driver_id'=>$driver->id]);
 $admin=User::where('username','admin')->firstOrFail();
 $w=WorkOrderWorkflow::whereNull('g001_m001_unit_id')->firstOrFail();
 if($w->status==='draft') app(WorkOrderWorkflowService::class)->publish($w,$admin);
@@ -38,4 +39,5 @@ foreach(['IT','Perpustakaan'] as $groupName){
 $manifest=['database_driver'=>DB::getDriverName(),'database_is_isolated'=>true,'units'=>G001M001Unit::pluck('name'),'users'=>User::get()->map(fn($u)=>['id'=>$u->id,'username'=>$u->username,'enabled'=>$u->is_enabled,'roles'=>$u->roles->pluck('name'),'titles'=>$u->workOrderAssignments()->with('jobTitle')->get()->pluck('jobTitle.name')]),'items'=>G002M007Item::where('name','like','QA %')->get(['id','name','quantity','available_quantity']),'tickets'=>App\Models\Ticket::where('title','like','QA Operational %')->get(['id','number','title','status']),'workflow_published'=>true];
 file_put_contents($root.'/docs/operational-readiness/evidence/2026-11-04/fixtures.json',json_encode($manifest,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
 echo 'Synthetic organization prepared: '.User::count().' users, '.G001M001Unit::count()." units.\n";
+
 
