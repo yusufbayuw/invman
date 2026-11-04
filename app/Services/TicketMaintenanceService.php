@@ -376,7 +376,7 @@ class TicketMaintenanceService
             if ($overrideReason !== null) {
                 app(HierarchyOverrideService::class)->record($manager, null, 'ticket', $locked->id,
                     'close_work', $overrideReason, 'resolved', 'closed',
-                    ['asset_released' => $safe, 'self_approval' => $locked->reporter_id === $manager->id]);
+                    ['asset_released' => $safe, 'self_approval' => $locked->reporter_id === $manager->id || $locked->assigned_to === $manager->id]);
             }
             if ($safe) {
                 $this->restorePreviouslyDamagedAssets($locked);
