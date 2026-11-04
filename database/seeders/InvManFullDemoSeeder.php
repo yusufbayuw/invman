@@ -96,21 +96,20 @@ class InvManFullDemoSeeder extends Seeder
                     'is_borrowable' => true, 'capacity' => 25, 'status' => 'tersedia'],
             );
 
-            $borrowerA = $this->demoUser('sarpras.sd', 'Sarpras SD Demo', $unitA, $password, config('role.sarpras'));
-            $borrowerB = $this->demoUser('sarpras.sma', 'Sarpras SMA Demo', $unitB, $password, config('role.sarpras'));
-            $head = $this->demoUser('atasan.sd', 'Atasan SD Demo', $unitA, $password);
-            $staff = $this->demoUser('staf.fasilitas', 'Staf Fasilitas Demo', $unitA, $password,
+            // Each demo identity represents ONE employee. Only ONE account holds each
+            // global role; job titles are separate, scoped assignments, not extra roles.
+            $borrowerA = $this->demoUser('sarpras.sd', 'Dewi - Sarpras SD', $unitA, $password, config('role.sarpras'));
+            $head = $this->demoUser('atasan.sd', 'Rizal - Atasan SD', $unitA, $password);
+            $staff = $this->demoUser('staf.fasilitas', 'Nina - Staf Fasilitas', $unitA, $password);
+            $supervisor = $this->demoUser('spv.fasilitas', 'Lukman - Supervisor Fasilitas', $unitA, $password);
+            $manager = $this->demoUser('manager.fasilitas', 'Rani - Manajer Fasilitas', $unitA, $password,
                 $privileged ? config('role.fasilitas') : null);
-            $supervisor = $this->demoUser('spv.fasilitas', 'Supervisor Fasilitas Demo', $unitA, $password,
-                $privileged ? config('role.fasilitas') : null);
-            $manager = $this->demoUser('manager.fasilitas', 'Manager Fasilitas Demo', $unitA, $password,
-                $privileged ? config('role.fasilitas') : null);
-            $assetManager = $this->demoUser('pengelola.aset', 'Pengelola Aset Demo', $unitA, $password);
-            $lead = $this->demoUser('koordinator', 'Koordinator Teknisi Demo', $unitA, $password);
-            $technician = $this->demoUser('teknisi', 'Teknisi Lapangan Demo', $unitA, $password);
-            $driverUser = $this->demoUser('pengemudi', 'Pengemudi Demo', $unitA, $password);
+            $assetManager = $this->demoUser('pengelola.aset', 'Fajar - Pengelola Aset', $unitA, $password);
+            $lead = $this->demoUser('koordinator', 'Bayu - Koordinator Teknisi', $unitA, $password);
+            $technician = $this->demoUser('teknisi', 'Arif - Teknisi Lapangan', $unitA, $password);
+            $driverUser = $this->demoUser('pengemudi', 'Dedi - Pengemudi', $unitA, $password);
             if ($privileged) {
-                $this->demoUser('admin', 'Administrator Demo (akses global)', $unitA, $password, config('role.admin'));
+                $this->demoUser('admin', 'Ayu - Administrator', $unitA, $password, config('role.admin'));
             }
 
             $assetManager->itemManagements()->syncWithoutDetaching([$management->id]);
@@ -153,8 +152,7 @@ class InvManFullDemoSeeder extends Seeder
             }
             $this->assignment($head, $titles['Atasan Unit'], $unitA);
             $this->assignment($borrowerA, $titles['Kepala Sarpras'], $unitA, $head);
-            $this->assignment($borrowerB, $titles['Kepala Sarpras'], $unitB);
-            $this->assignment($staff, $titles['Staf Fasilitas'], $unitA);
+            $this->assignment($staff, $titles['Staf Fasilitas'], $unitA, $supervisor);
             $this->assignment($supervisor, $titles['Supervisor Fasilitas'], $unitA, $manager);
             $this->assignment($manager, $titles['Manager Fasilitas'], $unitA);
             $this->assignment($lead, $titles['Koordinator Teknisi'], $unitA);
@@ -216,7 +214,7 @@ class InvManFullDemoSeeder extends Seeder
                 'AC latihan berbunyi keras dan tidak dapat digunakan; cek safety hold pada aset demo.', $damaged);
         }, 3);
 
-        $this->command?->info('Fixture [DEMO-INVMAN] tersedia: 2 unit, akun per peran, aset, 3 draf pinjaman, 2 tiket dan workflow DRAFT.');
+        $this->command?->info('Fixture [DEMO-INVMAN] tersedia: 2 unit, satu akun per jabatan/peran (9 + opsional Admin), aset, 3 draf pinjaman, 2 tiket dan workflow DRAFT.');
         $this->command?->warn('Tidak ada peminjaman yang otomatis diajukan/disetujui, dan workflow tidak dipublikasikan.');
     }
 
