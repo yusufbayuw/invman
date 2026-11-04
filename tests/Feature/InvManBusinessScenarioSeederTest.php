@@ -37,7 +37,7 @@ class InvManBusinessScenarioSeederTest extends TestCase
         $this->assertSame(5, G008M017Vehicle::query()->where('name', 'like', '[DEMO-ORG]%')->count());
         $this->assertSame(10, G003M006Room::query()->where('name', 'like', '[DEMO-ORG]%')->count());
         $this->assertSame(5, G001M001Unit::query()->where('name', 'like', '[DEMO-ORG]%')->count());
-        $this->assertSame(21, G004M008Activity::query()->where('name', 'like', '[DEMO-ORG]%')->count());
+        $this->assertSame(24, G004M008Activity::query()->where('name', 'like', '[DEMO-ORG]%')->count());
 
         $expected = [
             'SD Menunggu Persetujuan IT' => 'submitted',
@@ -46,6 +46,9 @@ class InvManBusinessScenarioSeederTest extends TestCase
             'Universitas Persetujuan Sebagian' => 'partially_approved',
             'TK Pengajuan Ruangan Dibatalkan' => 'cancelled',
             'SD Kendaraan Driver Ditugaskan' => 'approved',
+            'TK Ruangan Sedang Dipakai' => 'checked_out',
+            'SMP Menunggu Konfirmasi Kembali' => 'return_requested',
+            'SMA Ruangan Sudah Dikembalikan' => 'returned',
         ];
         foreach ($expected as $name => $status) {
             $this->assertSame($status,
@@ -59,6 +62,14 @@ class InvManBusinessScenarioSeederTest extends TestCase
             G008M018Driver::query()->where('user_id', $driver->id)->firstOrFail()->id,
             $vehicleBooking->g008_m018_driver_id,
         );
+
+        $returnedReservation = G004M008Activity::query()
+            ->where('name', '[DEMO-ORG] SMA Ruangan Sudah Dikembalikan')->firstOrFail()
+            ->room_reservation()->firstOrFail();
+        $this->assertNotNull($returnedReservation->outboundReceipt?->completed_at);
+        $this->assertNotNull($returnedReservation->returnReceipt?->completed_at);
+        $this->assertNotSame($returnedReservation->returnReceipt->manager_confirmed_by,
+            $returnedReservation->returnReceipt->borrower_confirmed_by);
 
         $expectedTickets = [
             'tk-open' => 'open',
