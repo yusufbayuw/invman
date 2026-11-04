@@ -67,6 +67,32 @@ class InvManFullDemoSeederTest extends TestCase
         $this->assertEquals(0, User::query()->where('username', 'invman.demo.admin')->count());
     }
 
+    public function test_demo_has_one_named_employee_per_role_including_optional_global_roles(): void
+    {
+        $this->seed(RoleSeeder::class);
+        config()->set('security.seed_demo_password', 'DemoSecure!2026#Password');
+        config()->set('security.full_demo_create_privileged', true);
+        $this->seed(InvManFullDemoSeeder::class);
+
+        $this->assertSame(10, User::query()->where('username', 'like', 'invman.demo.%')->count());
+        $this->assertSame(1, WorkOrderWorkflow::query()->where('status', 'published')->count());
+        $this->assertSame(2, Ticket::query()->where('source_key', 'like', 'invman:full-demo:%')->count());
+        foreach (Ticket::query()->where('source_key', 'like', 'invman:full-demo:%')->get() as $ticket) {
+            $this->assertSame(4, $ticket->workOrderApprovals()->count());
+        }
+
+        $this->assertSame(1, User::role(config('role.sarpras'))->count());
+        $this->assertSame(1, User::role(config('role.fasilitas'))->count());
+        $this->assertSame(1, User::role(config('role.admin'))->count());
+        $this->assertDatabaseMissing('users', ['username' => 'invman.demo.sarpras.sma']);
+        $this->assertSame(0, User::query()->where('username', 'invman.demo.staf.fasilitas')
+            ->firstOrFail()->roles()->count());
+        $this->assertNotSame(
+            User::query()->where('username', 'invman.demo.manager.fasilitas')->value('id'),
+            User::query()->where('username', 'invman.demo.admin')->value('id'),
+        );
+    }
+
     public function test_production_direct_database_seeding_is_rejected(): void
     {
         config()->set('app.env', 'production');

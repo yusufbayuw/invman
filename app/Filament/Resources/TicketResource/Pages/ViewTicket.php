@@ -7,6 +7,7 @@ use App\Filament\Support\TicketWorkForms;
 use App\Models\TicketTeamMember;
 use App\Models\User;
 use App\Models\WorkOrderApproval;
+use App\Services\HierarchyOverrideService;
 use App\Services\TicketMaintenanceService;
 use App\Services\TicketService;
 use App\Services\TicketVisibility;
@@ -98,6 +99,45 @@ class ViewTicket extends ViewRecord
                     $this->getRecord()->refresh();
                     Notification::make()->title('Tinjauan dan estimasi tercatat')->success()->send();
                 }),
+            Actions\Action::make('overrideWorkOrderEstimate')
+                ->label('Override Input Estimasi')->icon('heroicon-o-calculator')->color('warning')
+                ->visible(fn (): bool => app(WorkOrderEstimateService::class)
+                    ->canRecordOverride($this->getRecord(), auth()->user()))
+                ->modalDescription('Tinjauan dan estimasi dicatat atas tanggung jawab Anda, termasuk jika Anda pelapor. Semua tindakan ditandai sebagai override.')
+                ->fillForm(fn (): array => [
+                    'expected_version' => (int) $this->getRecord()->workOrderEstimates()->max('version'),
+                    'materials' => [], 'execution_mode' => 'internal',
+                ])
+                ->form([
+                    Forms\Components\Hidden::make('expected_version')->required(),
+                    Forms\Components\Select::make('execution_mode')->label('Pelaksana')->required()->live()
+                        ->options(['internal' => 'Tim internal', 'external' => 'Vendor eksternal']),
+                    Forms\Components\TextInput::make('vendor_name')->label('Nama vendor')->maxLength(200)
+                        ->required(fn (Forms\Get $get): bool => $get('execution_mode') === 'external')
+                        ->visible(fn (Forms\Get $get): bool => $get('execution_mode') === 'external'),
+                    Forms\Components\Textarea::make('diagnosis')->label('Diagnosis / tinjauan awal')
+                        ->required()->minLength(5)->maxLength(10000),
+                    Forms\Components\Repeater::make('materials')->label('Rencana material')->schema([
+                        Forms\Components\TextInput::make('name')->label('Material')->required()->maxLength(200),
+                        Forms\Components\TextInput::make('quantity')->label('Jumlah')->numeric()
+                            ->gt(0)->maxValue(100000)->required(),
+                        Forms\Components\TextInput::make('unit')->label('Satuan')->required()->maxLength(25)->default('pcs'),
+                    ])->columns(3)->default([])->maxItems(30),
+                    Forms\Components\TextInput::make('amount')->label('Total estimasi (Rp)')->required()
+                        ->regex('/^(0|[1-9][0-9]{0,11})$/D'),
+                    Forms\Components\Textarea::make('override_reason')->label('Alasan override')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(function (array $data): void {
+                    $version = (int) $data['expected_version'];
+                    $reason = $data['override_reason'];
+                    unset($data['expected_version'], $data['override_reason']);
+                    app(WorkOrderEstimateService::class)->record(
+                        $this->getRecord(), auth()->user(), $data, $version, $reason,
+                    );
+                    $this->getRecord()->refresh();
+                    Notification::make()->title('Estimasi override tercatat')->success()->send();
+                }),
             Actions\Action::make('workOrderApproval')
                 ->label('Persetujuan Work Order')->icon('heroicon-o-document-check')->color('warning')
                 ->visible(fn (): bool => ($step = $this->nextWorkOrderApproval()) !== null
@@ -132,6 +172,38 @@ class ViewTicket extends ViewRecord
                         $this->redirect(TicketResource::getUrl('index'));
                         $action->halt();
                     }
+                }),
+            Actions\Action::make('overrideWorkOrderApproval')
+                ->label('Override Persetujuan')->icon('heroicon-o-shield-exclamation')->color('warning')
+                ->visible(fn (): bool => ($step = $this->nextWorkOrderApproval()) !== null
+                    && app(WorkOrderWorkflowService::class)->canOverrideDecide($step, auth()->user()))
+                ->modalHeading('Keputusan hierarki menggantikan approver')
+                ->modalDescription('Keputusan ini berlaku, termasuk bila penginput dan penyetuju sama. Pelaku asli dan target dicatat permanen.')
+                ->fillForm(function (): array {
+                    $estimate = app(WorkOrderEstimateService::class)->current($this->getRecord());
+                    return ['approval_id' => $this->nextWorkOrderApproval()?->id,
+                        'estimate_id' => $estimate?->id,
+                        'estimate_summary' => $estimate ? 'Estimasi #'.$estimate->id.' · Rp '.$estimate->amount : 'Belum ada estimasi'];
+                })
+                ->form([
+                    Forms\Components\Hidden::make('approval_id')->required(),
+                    Forms\Components\Hidden::make('estimate_id'),
+                    Forms\Components\Textarea::make('estimate_summary')->label('Estimasi')->disabled()->dehydrated(false),
+                    Forms\Components\Select::make('decision')->label('Keputusan')
+                        ->options(['approve' => 'Setujui', 'reject' => 'Tolak'])->required(),
+                    Forms\Components\Textarea::make('notes')->label('Catatan keputusan')->maxLength(2000),
+                    Forms\Components\Textarea::make('override_reason')->label('Alasan override hierarki')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(function (array $data): void {
+                    $step = $this->getRecord()->workOrderApprovals()->findOrFail($data['approval_id']);
+                    app(WorkOrderWorkflowService::class)->decide(
+                        $step, auth()->user(), $data['decision'] === 'approve', $data['notes'] ?? null,
+                        filled($data['estimate_id'] ?? null) ? (int) $data['estimate_id'] : null,
+                        $data['override_reason'],
+                    );
+                    $this->getRecord()->refresh();
+                    Notification::make()->title('Override persetujuan tercatat')->success()->send();
                 }),
             Actions\Action::make('reviseWorkOrder')
                 ->label('Revisi & Kirim Ulang')->icon('heroicon-o-arrow-path')->color('warning')
@@ -313,6 +385,88 @@ class ViewTicket extends ViewRecord
                 ])
                 ->action(fn (array $data) => app(TicketMaintenanceService::class)
                     ->close($this->getRecord(), auth()->user(), (bool) $data['safe'], $data['notes'] ?? null)),
+            Actions\Action::make('overrideApproveMaintenance')
+                ->label('Override Penugasan')->icon('heroicon-o-shield-check')->color('warning')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && $this->getRecord()->status === 'open'
+                    && $this->canOverrideSuperior())
+                ->form([
+                    Forms\Components\Select::make('technician')->label('Petugas yang ditugaskan')
+                        ->options(fn (): array => $this->maintenanceTechnicians())->searchable()->required(),
+                    Forms\Components\Select::make('priority')->label('Prioritas')
+                        ->options(['low' => 'Rendah', 'normal' => 'Normal', 'high' => 'Tinggi', 'critical' => 'Kritis'])
+                        ->default(fn (): string => $this->getRecord()->priority)->required(),
+                    Forms\Components\Textarea::make('notes')->label('Instruksi penugasan')->maxLength(2000),
+                    Forms\Components\Textarea::make('override_reason')->label('Alasan override')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(function (array $data): void {
+                    app(TicketMaintenanceService::class)->approve($this->getRecord(), auth()->user(),
+                        (int) $data['technician'], $data['priority'], $data['notes'] ?? null, $data['override_reason']);
+                    Notification::make()->title('Penugasan override tercatat')->success()->send();
+                }),
+            Actions\Action::make('overrideAcceptMaintenance')
+                ->label('Terima Tugas atas Nama Petugas')->icon('heroicon-o-user-plus')->color('warning')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && $this->getRecord()->status === 'triaged'
+                    && $this->canOverrideAssigned())
+                ->form([
+                    Forms\Components\Textarea::make('override_reason')->label('Alasan menerima tugas mewakili petugas')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(fn (array $data) => app(TicketMaintenanceService::class)
+                    ->accept($this->getRecord(), auth()->user(), $data['override_reason'])),
+            Actions\Action::make('overrideFinishMaintenance')
+                ->label('Input Hasil atas Nama Petugas')->icon('heroicon-o-clipboard-document-list')->color('warning')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && $this->getRecord()->status === 'in_progress'
+                    && $this->canOverrideAssigned())
+                ->form([
+                    ...TicketWorkForms::finish(),
+                    Forms\Components\Textarea::make('override_reason')->label('Alasan pengisian oleh atasan')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(function (array $data): void {
+                    app(TicketMaintenanceService::class)->finish($this->getRecord(), auth()->user(),
+                        $data['diagnosis'], $data['actions'], $data['materials'] ?? [], $data['outcome'],
+                        $data['override_reason']);
+                    Notification::make()->title('Hasil atas nama petugas tercatat')->success()->send();
+                }),
+            Actions\Action::make('overrideVerifyMaintenance')
+                ->label('Override Verifikasi Pelapor')->icon('heroicon-o-check-badge')->color('warning')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && $this->getRecord()->status === 'resolved'
+                    && ! $this->getRecord()->maintenance->verified_at
+                    && $this->canOverrideReporter())
+                ->modalDescription('Verifikasi ini dilakukan oleh akun Anda, bukan oleh pelapor asli.')
+                ->form([
+                    Forms\Components\Select::make('accepted')->label('Hasil')->required()
+                        ->options(['yes' => 'Terima', 'no' => 'Kembalikan ke teknisi']),
+                    Forms\Components\Textarea::make('notes')->label('Catatan verifikasi')->maxLength(2000),
+                    Forms\Components\Textarea::make('override_reason')->label('Alasan override')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(fn (array $data) => app(TicketMaintenanceService::class)
+                    ->verify($this->getRecord(), auth()->user(), $data['accepted'] === 'yes',
+                        $data['notes'] ?? null, $data['override_reason'])),
+            Actions\Action::make('overrideCloseMaintenance')
+                ->label('Override Pengesahan Akhir')->icon('heroicon-o-lock-closed')->color('warning')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && $this->getRecord()->status === 'resolved'
+                    && $this->getRecord()->maintenance->verified_at !== null
+                    && $this->canOverrideSuperior())
+                ->form([
+                    Forms\Components\Toggle::make('safe')->label('Aset terverifikasi fisik aman digunakan')
+                        ->helperText('Jangan aktifkan tanpa pemeriksaan fisik. Default tidak melepas blokir aset.')
+                        ->default(false),
+                    Forms\Components\Textarea::make('notes')->label('Catatan pengesahan')->maxLength(2000),
+                    Forms\Components\Textarea::make('override_reason')->label('Alasan override')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(fn (array $data) => app(TicketMaintenanceService::class)->close(
+                    $this->getRecord(), auth()->user(), (bool) ($data['safe'] ?? false),
+                    $data['notes'] ?? null, $data['override_reason'],
+                )),
             Actions\Action::make('cancelMaintenance')
                 ->label('Batalkan Pengajuan')->icon('heroicon-o-x-circle')->color('danger')
                 ->visible(fn (): bool => $this->getRecord()->maintenance !== null
@@ -356,6 +510,35 @@ class ViewTicket extends ViewRecord
                     Notification::make()->title('Status diperbarui')->success()->send();
                 }),
         ];
+    }
+
+    private function canOverrideSuperior(): bool
+    {
+        $ticket = $this->getRecord();
+        return auth()->user() !== null && app(HierarchyOverrideService::class)->can(
+            auth()->user(), null, $ticket->g001_m001_unit_id, $ticket->g002_m003_item_management_id,
+        );
+    }
+
+    private function canOverrideAssigned(): bool
+    {
+        $ticket = $this->getRecord();
+        $actor = auth()->user();
+        $subject = User::query()->find($ticket->assigned_to);
+        return $actor !== null && $subject !== null
+            && app(HierarchyOverrideService::class)->can(
+                $actor, $subject, $ticket->g001_m001_unit_id, $ticket->g002_m003_item_management_id,
+            );
+    }
+
+    private function canOverrideReporter(): bool
+    {
+        $ticket = $this->getRecord();
+        $actor = auth()->user();
+        $subject = User::query()->find($ticket->reporter_id);
+        return $actor !== null && app(HierarchyOverrideService::class)->can(
+            $actor, $subject, $ticket->g001_m001_unit_id, $ticket->g002_m003_item_management_id,
+        );
     }
 
     private function nextWorkOrderApproval(): ?WorkOrderApproval

@@ -77,6 +77,12 @@ class G004M008Activity extends Model
         });
     }
 
+    public function operationalOverrides(): HasMany
+    {
+        return $this->hasMany(OperationalOverride::class, 'entity_id', 'id')
+            ->where('entity_type', 'loan')->orderBy('id');
+    }
+
     /** Independent master event, shared by any number of loan requests. */
     public function loanEvent(): BelongsTo
     {

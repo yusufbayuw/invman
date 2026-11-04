@@ -41,7 +41,21 @@ final class WorkOrderEstimateService
             && ($actor->isFacility() || app(WorkOrderWorkflowService::class)->canPerform($ticket, $actor, 'assign', $authority));
     }
 
-    public function record(Ticket $ticket, User $actor, array $data, int $expectedVersion): void
+    public function canRecordOverride(Ticket $ticket, User $actor): bool
+    {
+        $steps = $ticket->workOrderApprovals()->get();
+        return $actor->is_enabled && $ticket->status === 'open'
+            && $ticket->maintenance && ! $ticket->maintenance->approved_at
+            && $steps->where('checkpoint', 'start')->isNotEmpty()
+            && $steps->where('checkpoint', 'start')->where('status', 'rejected')->isEmpty()
+            && $steps->whereNotNull('estimate_id')->where('status', 'approved')->isEmpty()
+            && app(HierarchyOverrideService::class)->can(
+                $actor, null, $ticket->g001_m001_unit_id, $ticket->g002_m003_item_management_id);
+    }
+
+    public function record(
+        Ticket $ticket, User $actor, array $data, int $expectedVersion, ?string $overrideReason = null,
+    ): void
     {
         $data = Validator::make($data, [
             'execution_mode' => 'required|in:internal,external',
@@ -53,13 +67,19 @@ final class WorkOrderEstimateService
             'materials.*.quantity' => 'required|numeric|gt:0|max:100000',
             'materials.*.unit' => 'required|string|max:25',
         ])->validate();
-        DB::transaction(function () use ($ticket, $actor, $data, $expectedVersion): void {
+        if ($overrideReason !== null) {
+            $overrideReason = app(HierarchyOverrideService::class)->validateReason($overrideReason);
+        }
+        DB::transaction(function () use ($ticket, $actor, $data, $expectedVersion, $overrideReason): void {
             $locked = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
             $steps = $locked->workOrderApprovals()->lockForUpdate()->get();
             $authority = WorkOrderAuthoritySnapshot::lock([$actor->id, $locked->reporter_id]);
             $actor = $authority->user($actor->id);
             $version = (int) $locked->workOrderEstimates()->orderByDesc('version')->lockForUpdate()->value('version');
-            if (! $this->canRecord($locked, $actor, $steps, $authority) || $version !== $expectedVersion) {
+            $allowed = $overrideReason !== null
+                ? $this->canRecordOverride($locked, $actor)
+                : $this->canRecord($locked, $actor, $steps, $authority);
+            if (! $allowed || $version !== $expectedVersion) {
                 throw ValidationException::withMessages(['estimate' => 'Tidak berwenang, estimasi sudah disetujui, atau data telah berubah.']);
             }
             $estimate = $locked->workOrderEstimates()->create([
@@ -69,7 +89,15 @@ final class WorkOrderEstimateService
                 'vendor_name' => $data['execution_mode'] === 'external' ? trim($data['vendor_name']) : null,
                 'diagnosis' => trim($data['diagnosis']), 'materials' => $data['materials'], 'amount' => $data['amount'],
             ]);
-            $locked->events()->create(['actor_id' => $actor->id, 'action' => 'work_order_estimate_recorded',
+            if ($overrideReason !== null) {
+                app(HierarchyOverrideService::class)->record(
+                    $actor, null, 'ticket', $locked->id, 'work_order_estimate',
+                    $overrideReason, (string) $version, (string) $estimate->version,
+                    ['amount' => $estimate->amount, 'self_approval' => $actor->id === $locked->reporter_id],
+                );
+            }
+            $locked->events()->create(['actor_id' => $actor->id,
+                'action' => $overrideReason !== null ? 'work_order_estimate_overridden' : 'work_order_estimate_recorded',
                 'from_value' => (string) $version, 'to_value' => (string) $estimate->version,
                 'notes' => 'Estimasi Rp '.$estimate->amount.'; '.$estimate->execution_mode]);
         }, 3);

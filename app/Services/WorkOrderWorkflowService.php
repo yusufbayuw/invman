@@ -211,18 +211,65 @@ final class WorkOrderWorkflowService
             && $this->currentlyEligible($approval, $user, $authority);
     }
 
-    public function decide(WorkOrderApproval $approval, User $user, bool $approved, ?string $notes, ?int $expectedEstimateId = null): void
+    public function canOverrideDecide(WorkOrderApproval $approval, User $user): bool
+    {
+        if (! $this->hasPendingDecision($approval)) {
+            return false;
+        }
+        $subjectId = $approval->target_user_id ?: ($approval->candidate_user_ids[0] ?? null);
+        $subject = $subjectId ? User::query()->find($subjectId) : null;
+        return app(HierarchyOverrideService::class)->can(
+            $user, $subject, $approval->ticket->g001_m001_unit_id,
+            $approval->ticket->g002_m003_item_management_id,
+        );
+    }
+
+    private function hasPendingDecision(WorkOrderApproval $approval): bool
+    {
+        if ($approval->status !== 'pending' || $approval->superseded_at) {
+            return false;
+        }
+        $ticket = $approval->ticket;
+        if (($approval->checkpoint === 'start' && $ticket->status !== 'open')
+            || ($approval->checkpoint === 'final'
+                && ($ticket->status !== 'resolved' || ! $ticket->maintenance?->verified_at))) {
+            return false;
+        }
+        if ($ticket->workOrderApprovals()->where('checkpoint', $approval->checkpoint)->where('status', 'rejected')->exists()) {
+            return false;
+        }
+        return $this->next($ticket, $approval->checkpoint)?->id === $approval->id;
+    }
+
+    public function decide(
+        WorkOrderApproval $approval, User $user, bool $approved, ?string $notes,
+        ?int $expectedEstimateId = null, ?string $overrideReason = null,
+    ): void
     {
         if (mb_strlen((string) $notes) > 2000) {
             throw ValidationException::withMessages(['notes' => 'Catatan maksimal 2.000 karakter.']);
         }
-        DB::transaction(function () use ($approval, $user, $approved, $notes, $expectedEstimateId): void {
+        if ($overrideReason !== null) {
+            $overrideReason = app(HierarchyOverrideService::class)->validateReason($overrideReason);
+        }
+        DB::transaction(function () use ($approval, $user, $approved, $notes, $expectedEstimateId, $overrideReason): void {
             $ticket = Ticket::query()->lockForUpdate()->findOrFail($approval->ticket_id);
             $locked = WorkOrderApproval::query()->lockForUpdate()->findOrFail($approval->id);
             $locked->setRelation('ticket', $ticket);
-            $authority = WorkOrderAuthoritySnapshot::lock([$user->id, $ticket->reporter_id], [$locked->job_title_id]);
+            $subjectId = $locked->target_user_id ?: ($locked->candidate_user_ids[0] ?? null);
+            $authority = WorkOrderAuthoritySnapshot::lock(
+                [$user->id, $ticket->reporter_id, $subjectId], [$locked->job_title_id],
+            );
             $user = $authority->user($user->id);
-            if (! $this->canDecide($locked, $user, $authority)) {
+            $subject = $subjectId ? $authority->user((int) $subjectId) : null;
+            if ($overrideReason !== null) {
+                if (! $this->hasPendingDecision($locked)) {
+                    throw ValidationException::withMessages(['approval' => 'Tahap approval sudah berubah atau tidak aktif.']);
+                }
+                app(HierarchyOverrideService::class)->authorize(
+                    $user, $subject, $ticket->g001_m001_unit_id, $ticket->g002_m003_item_management_id,
+                );
+            } elseif (! $this->canDecide($locked, $user, $authority)) {
                 throw ValidationException::withMessages(['approval' => 'Tidak berwenang atau bukan tahap persetujuan yang aktif.']);
             }
             if (! $approved && mb_strlen(trim((string) $notes)) < 5) {
@@ -232,7 +279,7 @@ final class WorkOrderWorkflowService
             $estimates = app(WorkOrderEstimateService::class);
             if ($approved && $estimates->requiresEstimate($locked)) {
                 $estimate = $estimates->current($ticket, true, $locked->revision);
-                if (! $estimate || $estimate->recorded_by === $user->id || $estimate->id !== $expectedEstimateId) {
+                if (! $estimate || ($overrideReason === null && $estimate->recorded_by === $user->id) || $estimate->id !== $expectedEstimateId) {
                     throw ValidationException::withMessages(['estimate' => 'Periksa versi estimasi terbaru; pencatat dan penyetuju harus berbeda.']);
                 }
                 $estimateId = $estimate->id;
@@ -244,12 +291,21 @@ final class WorkOrderWorkflowService
                 'notes' => $notes,
                 'estimate_id' => $estimateId,
             ])->save();
+            if ($overrideReason !== null) {
+                app(HierarchyOverrideService::class)->record(
+                    $user, $subject, 'ticket', $ticket->id, 'work_order_decision',
+                    $overrideReason, 'pending', $approved ? 'approved' : 'rejected',
+                    ['step_key' => $locked->step_key, 'checkpoint' => $locked->checkpoint,
+                        'estimate_id' => $estimateId, 'self_approval' => $ticket->reporter_id === $user->id],
+                );
+            }
             $ticket->events()->create([
                 'actor_id' => $user->id,
-                'action' => $approved ? 'work_order_approval_granted' : 'work_order_approval_rejected',
+                'action' => $overrideReason !== null ? 'work_order_approval_overridden'
+                    : ($approved ? 'work_order_approval_granted' : 'work_order_approval_rejected'),
                 'from_value' => $locked->step_key,
                 'to_value' => $locked->status,
-                'notes' => $notes,
+                'notes' => $overrideReason !== null ? 'OVERRIDE: '.$overrideReason.'; '.(string) $notes : $notes,
             ]);
         }, 3);
     }

@@ -104,6 +104,31 @@ class TicketResource extends Resource
             Forms\Components\Section::make('Lapor Kerusakan')
                 ->description('Nama, unit, tanggal dan nomor tiket terisi otomatis. Tidak perlu mengetahui kode inventaris.')
                 ->schema([
+                    Forms\Components\Select::make('on_behalf_of')
+                        ->label('Laporkan atas nama pegawai Sarpras')
+                        ->getSearchResultsUsing(fn (string $search): array => User::query()
+                                ->role(config('role.sarpras'))
+                                ->where('is_enabled', true)->whereNotNull('g001_m001_unit_id')
+                                ->where(fn ($q) => $q->where('name', 'like', '%'.$search.'%')
+                                    ->orWhere('username', 'like', '%'.$search.'%'))
+                                ->with('unit')->orderBy('name')->limit(50)->get()
+                                ->mapWithKeys(fn (User $user): array => [
+                                    $user->id => $user->name.' · '.($user->unit?->name ?? '-'),
+                                ])->all())
+                            ->getOptionLabelUsing(function ($value): ?string {
+                                $user = User::query()->role(config('role.sarpras'))
+                                    ->where('is_enabled', true)->with('unit')->find($value);
+                                return $user ? $user->name.' · '.($user->unit?->name ?? '-') : null;
+                            })
+                        ->searchable()->live()->nullable()
+                        ->visible(fn (): bool => auth()->user()?->isFacility() ?? false)
+                        ->helperText('Opsional: jika dipilih, nama pelapor tetap pegawai tersebut dan Anda tercatat sebagai penginput.'),
+                    Forms\Components\Textarea::make('override_reason')
+                        ->label('Alasan input atas nama pegawai')
+                        ->required(fn (Forms\Get $get): bool => filled($get('on_behalf_of')))
+                        ->visible(fn (Forms\Get $get): bool => (auth()->user()?->isFacility() ?? false)
+                            && filled($get('on_behalf_of')))
+                        ->minLength(10)->maxLength(2000),
                     Forms\Components\Select::make('ticket_category_id')->label('Apa yang rusak?')
                         ->options(fn (): array => static::reportingCategoryOptions())
                         ->default(fn () => request()->query('asset_type') === 'room'
@@ -309,6 +334,18 @@ class TicketResource extends Resource
                         Infolists\Components\TextEntry::make('created_at')->dateTime('d M Y H:i')->label('Diunggah'),
                     ])->columns(3),
                 ])->collapsed(),
+            Infolists\Components\Section::make('Audit Override Hierarki')->schema([
+                Infolists\Components\RepeatableEntry::make('operationalOverrides')->hiddenLabel()->schema([
+                    Infolists\Components\TextEntry::make('action')->label('Tindakan'),
+                    Infolists\Components\TextEntry::make('actor.name')->label('Dilakukan oleh'),
+                    Infolists\Components\TextEntry::make('subject.name')->label('Mewakili')->placeholder('-'),
+                    Infolists\Components\TextEntry::make('reason')->label('Alasan')->columnSpanFull(),
+                    Infolists\Components\TextEntry::make('from_status')->label('Dari')->placeholder('-'),
+                    Infolists\Components\TextEntry::make('to_status')->label('Ke')->placeholder('-'),
+                    Infolists\Components\TextEntry::make('created_at')->label('Waktu')->dateTime('d M Y H:i'),
+                ])->columns(3),
+            ])->visible(fn ($record): bool => auth()->user()?->isFacility() ?? false)
+                ->collapsed(),
             Infolists\Components\Section::make('Audit perubahan')->schema([
                 Infolists\Components\RepeatableEntry::make('events')->hiddenLabel()->schema([
                     Infolists\Components\TextEntry::make('action')->label('Aksi'),

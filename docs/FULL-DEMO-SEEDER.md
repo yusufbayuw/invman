@@ -34,20 +34,20 @@ Semua data contoh memakai identitas `[DEMO-INVMAN]` atau `invman.demo.*`. Seeder
 - Tiga master barang: empat proyektor, tiga laptop, satu AC, beserta delapan barang satuan.
 - Dua kendaraan dengan data pengemudi dan kenek bus contoh.
 - Akun Sarpras per unit, atasan, staf/SPV/manager fasilitas, pengelola aset, koordinator teknisi, teknisi dan pengemudi.
-- Jabatan dinamis dan assignment, tim koordinator/teknisi, dan workflow unit demo dalam status **DRAFT**.
+- Jabatan dinamis dan assignment, tim koordinator/teknisi, dan workflow unit demo dalam status **DRAFT**, atau **PUBLISHED** jika sejak awal operator memilih `--include-privileged`. Publikasi terbatas pada unit demo dan dilakukan sebelum tiket contoh dibuat.
 - Tiga pengajuan sebagai **DRAF**: proyektor, aula, minibus; **tidak otomatis dikirim, tidak memesan stok dan tidak tampil sebagai pinjaman disetujui**.
 - Dua tiket perawatan status awal `open`; satu tanpa aset, satu tertaut ke AC contoh sehingga dapat mengilustrasikan safety hold.
 
 Tiket demo yang belum disetujui dibuat dengan tenggat SLA kosong agar tidak langsung dieskalasi ke pengguna produksi. Saat operator mulai menangani tiket, service aplikasi menetapkan SLA normal kembali.
 
-Data dibuat melalui model dan service existing; tidak melalui bypass authorization. Seeder membuat data secara idempotent, sehingga pemanggilan ulang tidak menambah salinan. Seeder **tidak mereset password, role, nama, unit, atau konfigurasi akun existing** dan tidak otomatis melakukan publish workflow.
+Data dibuat melalui model dan service existing; tidak melalui bypass authorization. Seeder membuat data secara idempotent, sehingga pemanggilan ulang tidak menambah salinan. Seeder **tidak mereset password, role, nama, unit, atau konfigurasi akun existing** dan hanya menerbitkan workflow unit demo (bukan workflow nyata) saat `--include-privileged` disetujui.
 
 ## Demo operasional
 
 1. Login `invman.demo.sarpras.sd` untuk menguji pembuatan/pengajuan peminjaman pada aset demo. Tanggal draf dapat disesuaikan jika sudah berlalu.
 2. Akses akun Fasilitas operasional untuk menyetujui peminjaman; cek stok/jadwal. Pengajuan yang dikirim mulai mengikuti hold dan notifikasi normal.
 3. Lakukan serah-terima QR dengan dua akun berbeda. Konfirmasi pengembalian juga memerlukan kedua pihak.
-4. Periksa dua laporan kerusakan demo. Untuk alur persetujuan dinamis, administrator harus meninjau assignment lalu menerbitkan workflow demo dengan sengaja (bukan otomatis).
+4. Periksa dua laporan kerusakan demo. Dengan `--include-privileged`, workflow unit demo sudah terpublikasi sehingga tiket mempunyai approval snapshot; tanpa opsi ini workflow tetap draft dan tiket tidak memiliki approval baru hingga dibuat ulang setelah publikasi.
 5. Setelah selesai, nonaktifkan akun demo dan jangan gunakan data contoh sebagai transaksi operasional resmi.
 
 ## Peringatan produksi

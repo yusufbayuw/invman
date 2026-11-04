@@ -212,6 +212,18 @@ class TicketService
         return $this->createTicket($actor, $data, false);
     }
 
+    public function openOnBehalf(User $actor, User $reporter, array $data, string $reason): Ticket
+    {
+        $audit = app(HierarchyOverrideService::class);
+        $reason = $audit->validateReason($reason);
+        if (! $reporter->is_enabled || ! $reporter->isSarpras() || ! $reporter->g001_m001_unit_id) {
+            throw ValidationException::withMessages(['reporter' => 'Pilih Sarpras aktif dengan unit yang benar.']);
+        }
+        $audit->authorize($actor, $reporter, $reporter->g001_m001_unit_id);
+
+        return $this->createTicket($actor, $data, false, $reporter, $reason);
+    }
+
     /**
      * Explicit compatibility entry point for historical V1 integrations only.
      * New interactive reporting must use open(), which enforces V3 categories.
@@ -221,9 +233,12 @@ class TicketService
         return $this->createTicket($actor, $data, true);
     }
 
-    private function createTicket(User $actor, array $data, bool $allowLegacy): Ticket
+    private function createTicket(
+        User $actor, array $data, bool $allowLegacy,
+        ?User $reporter = null, ?string $overrideReason = null,
+    ): Ticket
     {
-        if (! $this->canCreate($actor)) {
+        if ($overrideReason === null && ! $this->canCreate($actor)) {
             throw ValidationException::withMessages(['ticket' => 'Akun tidak berwenang membuat tiket.']);
         }
         $category = TicketCategory::query()->where('is_active', true)->find($data['ticket_category_id'] ?? null);
@@ -253,7 +268,12 @@ class TicketService
         }
 
         $asset = $this->resolveAsset($data['asset_type'] ?? null, $data['asset_id'] ?? null, $actor);
-        $unitId = $actor->g001_m001_unit_id ?: ($asset['unit'] ?? null);
+        $unitId = $reporter?->g001_m001_unit_id ?: ($actor->g001_m001_unit_id ?: ($asset['unit'] ?? null));
+        if ($reporter && $asset && $asset['unit'] && (int) $asset['unit'] !== (int) $unitId) {
+            throw ValidationException::withMessages([
+                'asset_id' => 'Inventaris berbeda unit dengan Sarpras yang diwakili.',
+            ]);
+        }
         if (! $unitId && $actor->isFacility()) {
             $unitId = $data['g001_m001_unit_id'] ?? null;
         }
@@ -268,14 +288,18 @@ class TicketService
             }
         }
 
+        if ($reporter && $activity && (int) $activity->g001_m001_unit_id !== (int) $unitId) {
+            throw ValidationException::withMessages(['g004_m008_activity_id' => 'Kegiatan berbeda unit dengan pemohon.']);
+        }
+
         $priority = $actor->isFacility() && in_array(($data['priority'] ?? ''), ['low','normal','high','critical'], true)
             ? $data['priority'] : 'normal';
 
-        $ticket = DB::transaction(function () use ($actor, $category, $asset, $activity, $title, $description, $priority, $unitId, $location, $urgency): Ticket {
+        $ticket = DB::transaction(function () use ($actor, $category, $asset, $activity, $title, $description, $priority, $unitId, $location, $urgency, $reporter, $overrideReason): Ticket {
             $ticket = Ticket::query()->create([
                 'number' => 'TKT-'.now()->format('Y').'-'.Str::upper(Str::random(12)),
                 'ticket_category_id' => $category->id,
-                'reporter_id' => $actor->id,
+                'reporter_id' => $reporter?->id ?? $actor->id,
                 'g001_m001_unit_id' => $unitId,
                 'g002_m003_item_management_id' => $asset['management'] ?? null,
                 'g004_m008_activity_id' => $activity?->id,
@@ -289,7 +313,15 @@ class TicketService
             if ($asset) {
                 $ticket->assets()->create(['asset_type' => $asset['type'], 'asset_id' => $asset['id']]);
             }
-            $this->event($ticket, $actor->id, 'created', null, 'open');
+            $this->event($ticket, $actor->id, $overrideReason !== null
+                ? 'created_on_behalf' : 'created', null, 'open', $overrideReason);
+            if ($overrideReason !== null) {
+                app(HierarchyOverrideService::class)->record(
+                    $actor, $reporter, 'ticket', $ticket->id,
+                    'open_on_behalf', $overrideReason, null, 'open',
+                    ['unit_id' => $unitId],
+                );
+            }
             if ($category->reporting_enabled) {
                 app(TicketMaintenanceService::class)->initialize($ticket);
                 app(WorkOrderWorkflowService::class)->snapshot($ticket);
