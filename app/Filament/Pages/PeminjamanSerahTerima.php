@@ -282,6 +282,34 @@ class PeminjamanSerahTerima extends Page implements HasForms
                     app(LoanCheckoutService::class)->fallback($this->type, $this->reservationId, $data);
                     Notification::make()->title('Penyerahan khusus dicatat dengan alasan')->warning()->send();
                 }),
+            Actions\Action::make('overrideReturn')
+                ->label('Override Konfirmasi Pengembalian')
+                ->icon('heroicon-o-shield-exclamation')
+                ->color('warning')
+                ->visible(function (): bool {
+                    $reservation = $this->reservation();
+                    $actor = auth()->user();
+                    return $actor !== null
+                        && $reservation->status === ReservationStatus::ReturnRequested->value
+                        && $reservation->returnReceipt !== null
+                        && $reservation->returnChecklists()->exists()
+                        && $actor->managesReservation($reservation)
+                        && app(\App\Services\HierarchyOverrideService::class)->can(
+                            $actor, $reservation->activity?->user,
+                            $reservation->activity?->g001_m001_unit_id,
+                        );
+                })
+                ->modalDescription('Tindakan ini menuntaskan administrasi pengembalian tanpa memalsukan konfirmasi peminjam. Checklist fisik dan alasan wajib tersedia.')
+                ->form([
+                    Forms\Components\Textarea::make('reason')->label('Alasan override dan hasil pemeriksaan fisik')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(function (array $data): void {
+                    app(LoanRequestService::class)->confirmReturnOverride(
+                        $this->type, $this->reservationId, auth()->user(), $data['reason'],
+                    );
+                    Notification::make()->title('Pengembalian dengan override tercatat')->warning()->send();
+                }),
             Actions\Action::make('confirmReturn')
                 ->label('Konfirmasi Pengembalian')
                 ->icon('heroicon-o-check-badge')
