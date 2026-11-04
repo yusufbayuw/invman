@@ -55,16 +55,23 @@ class TicketMaintenanceService
     }
 
     /** Manager approves and assigns. No technician may self-approve. */
-    public function approve(Ticket $ticket, User $manager, int $technicianId, string $priority = 'normal', ?string $notes = null): void
+    public function approve(Ticket $ticket, User $manager, int $technicianId, string $priority = 'normal', ?string $notes = null, ?string $overrideReason = null): void
     {
         if (! in_array($priority, ['low', 'normal', 'high', 'critical'], true)) {
             $this->reject('Prioritas tidak valid.');
         }
-        DB::transaction(function () use ($ticket, $manager, $technicianId, $priority, $notes): void {
+        if ($overrideReason !== null) {
+            $overrideReason = app(HierarchyOverrideService::class)->validateReason($overrideReason);
+        }
+        DB::transaction(function () use ($ticket, $manager, $technicianId, $priority, $notes, $overrideReason): void {
             $locked = $this->locked($ticket);
             $authority = WorkOrderAuthoritySnapshot::lock([$manager->id, $locked->reporter_id, $technicianId]);
             $manager = $authority->user($manager->id);
-            if (! app(WorkOrderWorkflowService::class)->canPerform($locked, $manager, 'assign', $authority)) {
+            if ($overrideReason !== null) {
+                app(HierarchyOverrideService::class)->authorize(
+                    $manager, null, $locked->g001_m001_unit_id, $locked->g002_m003_item_management_id,
+                );
+            } elseif (! app(WorkOrderWorkflowService::class)->canPerform($locked, $manager, 'assign', $authority)) {
                 $this->reject('Tidak berwenang menyetujui atau menugaskan perbaikan ini.');
             }
             app(WorkOrderWorkflowService::class)->assertReady($locked, 'start');
@@ -85,7 +92,13 @@ class TicketMaintenanceService
                 'approval_notes' => $notes, 'responded_at' => now(),
                 ...$this->sla->deadlines($locked, $priority),
             ])->save();
-            $this->record($locked, $manager, 'maintenance_approved', $old, $priority, $notes);
+            $this->record($locked, $manager, $overrideReason !== null
+                ? 'maintenance_approval_overridden' : 'maintenance_approved', $old, $priority, $notes);
+            if ($overrideReason !== null) {
+                app(HierarchyOverrideService::class)->record($manager, null, 'ticket', $locked->id,
+                    'approve_assign', $overrideReason, 'open', 'triaged',
+                    ['technician_id' => $technicianId, 'self_approval' => $manager->id === $locked->reporter_id]);
+            }
             DB::afterCommit(function () use ($technician, $locked): void {
                 Notification::make()->title('Tugas perbaikan: '.$locked->number)
                     ->body('Silakan terima dan kerjakan tiket.')->info()->sendToDatabase($technician);
@@ -163,19 +176,36 @@ class TicketMaintenanceService
         }, 3);
     }
 
-    public function accept(Ticket $ticket, User $technician): void
+    public function accept(Ticket $ticket, User $technician, ?string $overrideReason = null): void
     {
-        DB::transaction(function () use ($ticket, $technician): void {
+        if ($overrideReason !== null) {
+            $overrideReason = app(HierarchyOverrideService::class)->validateReason($overrideReason);
+        }
+        DB::transaction(function () use ($ticket, $technician, $overrideReason): void {
             $locked = $this->locked($ticket);
             $case = $this->case($locked);
-            if ($locked->assigned_to !== $technician->id
-                || ! TicketTeamMember::qualifiesFor($locked, $technician)
+            $assignee = User::query()->find($locked->assigned_to);
+            if ($overrideReason !== null) {
+                if (! $assignee) {
+                    $this->reject('Petugas yang ditugaskan tidak ditemukan.');
+                }
+                app(HierarchyOverrideService::class)->authorize(
+                    $technician, $assignee, $locked->g001_m001_unit_id, $locked->g002_m003_item_management_id,
+                );
+            }
+            if (($overrideReason === null && $locked->assigned_to !== $technician->id)
+                || ! $assignee || ! TicketTeamMember::qualifiesFor($locked, $assignee)
                 || $locked->status !== 'triaged' || ! $case->approved_at) {
                 $this->reject('Hanya teknisi yang ditugaskan dapat menerima pekerjaan yang disetujui.');
             }
             $locked->forceFill(['status' => 'in_progress'])->save();
             $case->forceFill(['accepted_by' => $technician->id, 'accepted_at' => now()])->save();
-            $this->record($locked, $technician, 'maintenance_accepted', 'triaged', 'in_progress');
+            $this->record($locked, $technician, $overrideReason !== null
+                ? 'maintenance_accept_overridden' : 'maintenance_accepted', 'triaged', 'in_progress');
+            if ($overrideReason !== null) {
+                app(HierarchyOverrideService::class)->record($technician, $assignee, 'ticket', $locked->id,
+                    'accept_task', $overrideReason, 'triaged', 'in_progress');
+            }
         }, 3);
     }
 
@@ -201,7 +231,7 @@ class TicketMaintenanceService
     }
 
     /** @param list<array{name:string,quantity:numeric-string|int|float,unit?:string}> $materials */
-    public function finish(Ticket $ticket, User $technician, string $diagnosis, string $actions, array $materials, string $outcome): void
+    public function finish(Ticket $ticket, User $technician, string $diagnosis, string $actions, array $materials, string $outcome, ?string $overrideReason = null): void
     {
         if (mb_strlen(trim($diagnosis)) < 5 || mb_strlen(trim($actions)) < 5
             || mb_strlen($diagnosis) > 10000 || mb_strlen($actions) > 10000
@@ -221,13 +251,24 @@ class TicketMaintenanceService
             $clean[] = ['name' => $name, 'quantity' => (float) $qty, 'unit' => $unit];
         }
 
-        DB::transaction(function () use ($ticket, $technician, $diagnosis, $actions, $clean, $outcome): void {
+        if ($overrideReason !== null) {
+            $overrideReason = app(HierarchyOverrideService::class)->validateReason($overrideReason);
+        }
+        DB::transaction(function () use ($ticket, $technician, $diagnosis, $actions, $clean, $outcome, $overrideReason): void {
             $locked = $this->locked($ticket);
             $case = $this->case($locked);
-            if ($locked->assigned_to !== $technician->id
-                || ! TicketTeamMember::qualifiesFor($locked, $technician)
-                || $locked->status !== 'in_progress'
-                || ! $case->accepted_at) {
+            $assignee = User::query()->find($locked->assigned_to);
+            if ($overrideReason !== null) {
+                if (! $assignee) {
+                    $this->reject('Petugas yang ditugaskan tidak ditemukan.');
+                }
+                app(HierarchyOverrideService::class)->authorize(
+                    $technician, $assignee, $locked->g001_m001_unit_id, $locked->g002_m003_item_management_id,
+                );
+            }
+            if (($overrideReason === null && $locked->assigned_to !== $technician->id)
+                || ! $assignee || ! TicketTeamMember::qualifiesFor($locked, $assignee)
+                || $locked->status !== 'in_progress' || ! $case->accepted_at) {
                 $this->reject('Hanya teknisi yang menerima tugas dapat mengirim hasil pekerjaan.');
             }
             $case->forceFill([
@@ -237,7 +278,12 @@ class TicketMaintenanceService
                 'verified_at' => null, 'final_approved_by' => null, 'final_approved_at' => null,
             ])->save();
             $locked->forceFill(['status' => 'resolved', 'resolved_at' => now()])->save();
-            $this->record($locked, $technician, 'maintenance_work_finished', 'in_progress', $outcome);
+            $this->record($locked, $technician, $overrideReason !== null
+                ? 'maintenance_finish_overridden' : 'maintenance_work_finished', 'in_progress', $outcome);
+            if ($overrideReason !== null) {
+                app(HierarchyOverrideService::class)->record($technician, $assignee, 'ticket', $locked->id,
+                    'finish_work', $overrideReason, 'in_progress', 'resolved', ['outcome' => $outcome]);
+            }
             DB::afterCommit(function () use ($locked): void {
                 if ($locked->reporter) {
                     Notification::make()->title('Verifikasi hasil perbaikan: '.$locked->number)
@@ -249,14 +295,23 @@ class TicketMaintenanceService
     }
 
     /** Reporter verifies the result; rejection sends the case back for correction. */
-    public function verify(Ticket $ticket, User $reporter, bool $accepted, ?string $notes = null): void
+    public function verify(Ticket $ticket, User $reporter, bool $accepted, ?string $notes = null, ?string $overrideReason = null): void
     {
-        DB::transaction(function () use ($ticket, $reporter, $accepted, $notes): void {
+        if ($overrideReason !== null) {
+            $overrideReason = app(HierarchyOverrideService::class)->validateReason($overrideReason);
+        }
+        DB::transaction(function () use ($ticket, $reporter, $accepted, $notes, $overrideReason): void {
             $locked = $this->locked($ticket);
             $case = $this->case($locked);
+            $originalReporter = User::query()->find($locked->reporter_id);
+            if ($overrideReason !== null) {
+                app(HierarchyOverrideService::class)->authorize(
+                    $reporter, $originalReporter, $locked->g001_m001_unit_id, $locked->g002_m003_item_management_id,
+                );
+            }
             if (! $reporter->is_enabled || $locked->status !== 'resolved' || ! $case->work_finished_at
-                || $case->verified_at || $locked->reporter_id !== $reporter->id
-                || $locked->assigned_to === $reporter->id) {
+                || $case->verified_at || ($overrideReason === null && ($locked->reporter_id !== $reporter->id
+                    || $locked->assigned_to === $reporter->id))) {
                 $this->reject('Hanya pelapor asli dapat memverifikasi pekerjaan yang telah diselesaikan.');
             }
             if (! $accepted && mb_strlen(trim((string) $notes)) < 5) {
@@ -264,23 +319,38 @@ class TicketMaintenanceService
             }
             if ($accepted) {
                 $case->forceFill(['verified_by' => $reporter->id, 'verified_at' => now()])->save();
-                $this->record($locked, $reporter, 'maintenance_verified', null, 'accepted', $notes);
+                $this->record($locked, $reporter, $overrideReason !== null
+                    ? 'maintenance_verification_overridden' : 'maintenance_verified', null, 'accepted', $notes);
             } else {
                 $case->forceFill(['work_finished_at' => null, 'verified_by' => null, 'verified_at' => null])->save();
                 $locked->forceFill(['status' => 'in_progress', 'resolved_at' => null])->save();
-                $this->record($locked, $reporter, 'maintenance_verification_rejected', 'resolved', 'in_progress', $notes);
+                $this->record($locked, $reporter, $overrideReason !== null
+                    ? 'maintenance_verification_rejected_override' : 'maintenance_verification_rejected',
+                    'resolved', 'in_progress', $notes);
+            }
+            if ($overrideReason !== null) {
+                app(HierarchyOverrideService::class)->record($reporter, $originalReporter, 'ticket', $locked->id,
+                    'verify_work', $overrideReason, 'resolved', $accepted ? 'resolved' : 'in_progress',
+                    ['accepted' => $accepted, 'self_approval' => $locked->assigned_to === $reporter->id]);
             }
         }, 3);
     }
 
     /** Final administrative sign-off is distinct from a physical readiness declaration. */
-    public function close(Ticket $ticket, User $manager, bool $safe, ?string $notes = null): void
+    public function close(Ticket $ticket, User $manager, bool $safe, ?string $notes = null, ?string $overrideReason = null): void
     {
-        DB::transaction(function () use ($ticket, $manager, $safe, $notes): void {
+        if ($overrideReason !== null) {
+            $overrideReason = app(HierarchyOverrideService::class)->validateReason($overrideReason);
+        }
+        DB::transaction(function () use ($ticket, $manager, $safe, $notes, $overrideReason): void {
             $locked = $this->locked($ticket);
             $authority = WorkOrderAuthoritySnapshot::lock([$manager->id, $locked->reporter_id]);
             $manager = $authority->user($manager->id);
-            if (! app(WorkOrderWorkflowService::class)->canPerform($locked, $manager, 'close', $authority)) {
+            if ($overrideReason !== null) {
+                app(HierarchyOverrideService::class)->authorize(
+                    $manager, null, $locked->g001_m001_unit_id, $locked->g002_m003_item_management_id,
+                );
+            } elseif (! app(WorkOrderWorkflowService::class)->canPerform($locked, $manager, 'close', $authority)) {
                 $this->reject('Tidak berwenang mengesahkan perbaikan ini.');
             }
             app(WorkOrderWorkflowService::class)->assertReady($locked, 'final');
@@ -300,8 +370,14 @@ class TicketMaintenanceService
                 'asset_released_by' => $safe ? $manager->id : $case->asset_released_by,
             ])->save();
             $locked->forceFill(['status' => 'closed', 'closed_at' => now()])->save();
-            $this->record($locked, $manager, 'maintenance_closed', 'resolved',
+            $this->record($locked, $manager, $overrideReason !== null
+                ? 'maintenance_close_overridden' : 'maintenance_closed', 'resolved',
                 $safe ? 'safe' : 'remain_unavailable', $notes);
+            if ($overrideReason !== null) {
+                app(HierarchyOverrideService::class)->record($manager, null, 'ticket', $locked->id,
+                    'close_work', $overrideReason, 'resolved', 'closed',
+                    ['asset_released' => $safe, 'self_approval' => $locked->reporter_id === $manager->id]);
+            }
             if ($safe) {
                 $this->restorePreviouslyDamagedAssets($locked);
             }
