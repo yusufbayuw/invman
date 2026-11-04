@@ -6,6 +6,7 @@ use App\Models\G001M001Unit;
 use App\Models\G002M007Item;
 use App\Models\G002M015ItemInstance;
 use App\Models\G004M008Activity;
+use App\Models\TicketTeamMember;
 use App\Models\User;
 use App\Models\WorkOrderAssignment;
 use App\Models\WorkOrderWorkflow;
@@ -43,13 +44,13 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
         $this->seed(InvManRoleMatrixDemoSeeder::class);
     }
 
-    public function test_it_creates_five_units_ten_users_and_scoped_inventory_without_submissions(): void
+    public function test_it_creates_five_units_eleven_users_and_scoped_inventory_without_submissions(): void
     {
         $this->enableDemo();
         $this->seed(InvManRoleMatrixDemoSeeder::class);
 
         $this->assertSame(5, G001M001Unit::query()->where('name', 'like', '[DEMO-ORG]%')->count());
-        $this->assertSame(10, User::query()->where('username', 'like', 'invman.orgdemo.%')->count());
+        $this->assertSame(11, User::query()->where('username', 'like', 'invman.orgdemo.%')->count());
         $this->assertSame(5, User::query()->where('username', 'like', 'invman.orgdemo.sarpras.%')->count());
         $this->assertSame(15, G002M007Item::query()->where('code', 'like', 'INVMAN-ORG-%')->count());
         $this->assertSame(45, G002M015ItemInstance::query()->whereHas('item',
@@ -68,6 +69,23 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
         foreach (['staf', 'supervisor', 'manager'] as $suffix) {
             $facility = User::query()->where('username', 'invman.orgdemo.fasilitas.'.$suffix)->firstOrFail();
             $this->assertTrue($facility->isFacility());
+        }
+
+        $technician = User::query()->where('username', 'invman.orgdemo.fasilitas.teknisi')->firstOrFail();
+        $staff = User::query()->where('username', 'invman.orgdemo.fasilitas.staf')->firstOrFail();
+        $this->assertFalse($technician->isFacility());
+        $this->assertFalse($technician->isSarpras());
+        $assignment = WorkOrderAssignment::query()->where('user_id', $technician->id)->firstOrFail();
+        $this->assertSame($staff->id, $assignment->supervisor_user_id);
+        $this->assertSame('[DEMO-ORG] Teknisi', $assignment->jobTitle->name);
+        $teamLead = TicketTeamMember::query()->where('user_id', $staff->id)->firstOrFail();
+        $teamTechnician = TicketTeamMember::query()->where('user_id', $technician->id)->firstOrFail();
+        $this->assertSame('lead', $teamLead->position);
+        $this->assertSame('technician', $teamTechnician->position);
+        $this->assertSame($staff->id, $teamTechnician->supervisor_user_id);
+        $this->assertSame([$technician->id], TicketTeamMember::descendantsOf($staff));
+        foreach (WorkOrderWorkflow::query()->get() as $workflow) {
+            $this->assertNotNull($workflow->dispatch_job_title_id);
         }
 
         $it = User::query()->where('username', 'invman.orgdemo.pengelola.it')->firstOrFail();
@@ -99,6 +117,7 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
             G002M015ItemInstance::query()->count(),
             G004M008Activity::query()->count(),
             WorkOrderAssignment::query()->count(),
+            TicketTeamMember::query()->count(),
             WorkOrderWorkflow::query()->count(),
         ];
         config()->set('security.seed_demo_password', 'AnotherValid!Demo2026#Password');
@@ -110,6 +129,7 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
             G002M015ItemInstance::query()->count(),
             G004M008Activity::query()->count(),
             WorkOrderAssignment::query()->count(),
+            TicketTeamMember::query()->count(),
             WorkOrderWorkflow::query()->count(),
         ]);
         $this->assertSame($hash, $user->fresh()->password);
