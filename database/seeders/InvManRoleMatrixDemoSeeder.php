@@ -17,8 +17,6 @@ use App\Services\WorkOrderWorkflowService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
 use RuntimeException;
 use Spatie\Permission\Models\Role;
 
@@ -34,6 +32,9 @@ class InvManRoleMatrixDemoSeeder extends Seeder
 {
     private const PREFIX = '[DEMO-ORG]';
 
+    /** Fixed credentials ONLY for isolated local/testing fixtures. Never usable in staging/production. */
+    private const DEMO_PASSWORD = 'password';
+
     private const UNITS = [
         'tk' => 'TK',
         'sd' => 'SD',
@@ -44,17 +45,15 @@ class InvManRoleMatrixDemoSeeder extends Seeder
 
     public function run(): void
     {
-        if (app()->environment('production') || config('app.env') === 'production') {
-            throw new RuntimeException('Seeder matriks peran dilarang dijalankan pada production.');
+        // Weak known credentials must NEVER be provisioned on shared/Internet-accessible environments.
+        // Check both runtime and configured environment to resist config/runtime mismatches.
+        if (! in_array(app()->environment(), ['local', 'testing'], true)
+            || ! in_array((string) config('app.env'), ['local', 'testing'], true)) {
+            throw new RuntimeException('Seeder dengan password demo hanya boleh dijalankan di local/testing, bukan staging/production.');
         }
         if (config('security.seed_demo_users') !== true) {
             throw new RuntimeException('Aktifkan SEED_DEMO_USERS=true secara eksplisit untuk seeder matriks peran.');
         }
-
-        $password = config('security.seed_demo_password');
-        Validator::make(['password' => $password], [
-            'password' => ['required', 'string', Password::min(16)->mixedCase()->numbers()->symbols()],
-        ])->validate();
 
         foreach ([config('role.sarpras'), config('role.fasilitas')] as $role) {
             if (! Role::query()->where('name', $role)->where('guard_name', 'web')->exists()) {
@@ -62,7 +61,7 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             }
         }
 
-        DB::transaction(function () use ($password): void {
+        DB::transaction(function (): void {
             $groups = [
                 'fasilitas' => $this->management('Fasilitas'),
                 'it' => $this->management('IT'),
@@ -90,12 +89,12 @@ class InvManRoleMatrixDemoSeeder extends Seeder
 
             // These are three DIFFERENT people with one existing global role.
             // Work Order assignments, not role names, differentiate their jobs.
-            $staff = $this->account('fasilitas.staf', 'Staf Fasilitas', null, $password, config('role.fasilitas'));
-            $supervisor = $this->account('fasilitas.supervisor', 'Supervisor Fasilitas', null, $password, config('role.fasilitas'));
-            $manager = $this->account('fasilitas.manager', 'Manager Fasilitas', null, $password, config('role.fasilitas'));
-            $technician = $this->account('fasilitas.teknisi', 'Teknisi Fasilitas', null, $password);
-            $itManager = $this->account('pengelola.it', 'Pengelola Barang IT', null, $password);
-            $libraryManager = $this->account('pengelola.perpustakaan', 'Pengelola Barang Perpustakaan', null, $password);
+            $staff = $this->account('staf.fas', 'Staf Fasilitas', null, config('role.fasilitas'));
+            $supervisor = $this->account('spv.fas', 'Supervisor Fasilitas', null, config('role.fasilitas'));
+            $manager = $this->account('man.fas', 'Manager Fasilitas', null, config('role.fasilitas'));
+            $technician = $this->account('teknisi', 'Teknisi Fasilitas', null);
+            $itManager = $this->account('it', 'Pengelola Barang IT', null);
+            $libraryManager = $this->account('perpus', 'Pengelola Barang Perpustakaan', null);
 
             // Do not silently restore memberships intentionally removed by an admin.
             if ($itManager->wasRecentlyCreated) {
@@ -118,7 +117,7 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             foreach (self::UNITS as $slug => $label) {
                 // Always create NEW demo units; never attach test actors to real units.
                 $unit = G001M001Unit::query()->firstOrCreate(['name' => self::PREFIX.' '.$label]);
-                $sarpras = $this->account('sarpras.'.$slug, 'Sarpras '.$label, $unit, $password, config('role.sarpras'));
+                $sarpras = $this->account('sarpras.'.($slug === 'universitas' ? 'univ' : $slug), 'Sarpras '.$label, $unit, config('role.sarpras'));
                 $this->assignment($sarpras, $titles['Kepala Sarpras'], $unit);
 
                 $items = [
@@ -134,8 +133,8 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             }
         }, 3);
 
-        $this->command?->info('Demo organisasi dibuat: 5 unit, 11 akun, 3 pengelola aset, 15 barang, 5 draf peminjaman, 5 workflow DRAFT.');
-        $this->command?->warn('Akun Staf/Supervisor/Manager memiliki role fasilitas GLOBAL. Gunakan hanya di database uji terisolasi.');
+        $this->command?->info('Demo organisasi dibuat: 5 unit, 11 akun sederhana, 3 pengelola aset, 15 barang, 5 draf peminjaman, 5 workflow DRAFT.');
+        $this->command?->warn('Password demo adalah password untuk seluruh akun. Jangan jalankan di server publik. Role fasilitas bersifat GLOBAL.');
     }
 
     private function management(string $label): G002M003ItemManagement
@@ -154,9 +153,8 @@ class InvManRoleMatrixDemoSeeder extends Seeder
         );
     }
 
-    private function account(string $suffix, string $label, ?G001M001Unit $unit, string $password, ?string $role = null): User
+    private function account(string $username, string $label, ?G001M001Unit $unit, ?string $role = null): User
     {
-        $username = 'invman.orgdemo.'.$suffix;
         $email = $username.'@invman.invalid';
         $existing = User::query()->where('username', $username)->first();
 
@@ -180,7 +178,7 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             'email' => $email,
             'name' => self::PREFIX.' '.$label,
             'g001_m001_unit_id' => $unit?->id,
-            'password' => Hash::make($password),
+            'password' => Hash::make(self::DEMO_PASSWORD),
             'email_verified_at' => now(),
             'is_enabled' => true,
         ]);
