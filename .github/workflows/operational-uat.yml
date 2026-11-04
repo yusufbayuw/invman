@@ -70,11 +70,21 @@ jobs:
         env:
           UAT_BROWSER_CHANNEL: chromium
         run: node tests/Support/OperationalUat/browser-operational.cjs
+      - name: Work Order browser fix retest across unit SMP
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-work-order-retest.cjs
       - name: Two-party item room and vehicle browser lifecycle
         if: always()
         env:
           UAT_BROWSER_CHANNEL: chromium
         run: node tests/Support/OperationalUat/browser-loans.cjs
+      - name: Browser session revocation and Livewire polling
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-security.cjs
       - name: Controlled authenticated read load
         if: always()
         env:
@@ -99,6 +109,7 @@ jobs:
           name: operational-uat-${{ github.sha }}
           path: docs/operational-readiness/evidence/2026-11-04
           retention-days: 30
+
 
 
 

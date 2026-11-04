@@ -8,8 +8,9 @@ $app=require $qa.'/bootstrap/app.php'; $app->make(Illuminate\Contracts\Console\K
 if(!str_contains(DB::getDatabaseName(),'operational-uat-runtime') && DB::getDatabaseName()!=='invman_uat_20261104') throw new RuntimeException('QA database required');
 $password=config('security.seed_demo_password');
 $unit=G001M001Unit::where('name','SD')->firstOrFail();
-foreach(['qa.employee','qa.disabled','qa.multi','qa.driver'] as $username) {
+foreach(['qa.employee','qa.disabled','qa.multi','qa.driver','qa.security'] as $username) {
  $u=User::firstOrCreate(['username'=>$username],['name'=>'Synthetic '.$username,'email'=>$username.'@invman.local','password'=>Hash::make($password),'g001_m001_unit_id'=>$unit->id,'email_verified_at'=>now()]);
+ if($username==='qa.security') $u->assignRole(config('role.sarpras'));
  if($username==='qa.disabled') $u->update(['is_enabled'=>false]);
  if($username==='qa.multi') $u->assignRole([config('role.sarpras'),config('role.fasilitas')]);
 }
@@ -39,5 +40,6 @@ foreach(['IT','Perpustakaan'] as $groupName){
 $manifest=['database_driver'=>DB::getDriverName(),'database_is_isolated'=>true,'units'=>G001M001Unit::pluck('name'),'users'=>User::get()->map(fn($u)=>['id'=>$u->id,'username'=>$u->username,'enabled'=>$u->is_enabled,'roles'=>$u->roles->pluck('name'),'titles'=>$u->workOrderAssignments()->with('jobTitle')->get()->pluck('jobTitle.name')]),'items'=>G002M007Item::where('name','like','QA %')->get(['id','name','quantity','available_quantity']),'tickets'=>App\Models\Ticket::where('title','like','QA Operational %')->get(['id','number','title','status']),'workflow_published'=>true];
 file_put_contents($root.'/docs/operational-readiness/evidence/2026-11-04/fixtures.json',json_encode($manifest,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
 echo 'Synthetic organization prepared: '.User::count().' users, '.G001M001Unit::count()." units.\n";
+
 
 
