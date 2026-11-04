@@ -193,9 +193,9 @@ class TicketMaintenanceService
                     $technician, $assignee, $locked->g001_m001_unit_id, $locked->g002_m003_item_management_id,
                 );
             }
-            if (($overrideReason === null && $locked->assigned_to !== $technician->id)
-                || ! $assignee || ! TicketTeamMember::qualifiesFor($locked, $assignee)
-                || $locked->status !== 'triaged' || ! $case->approved_at) {
+            if (($overrideReason === null && ($locked->assigned_to !== $technician->id
+                    || ! TicketTeamMember::qualifiesFor($locked, $technician)))
+                || ! $assignee || $locked->status !== 'triaged' || ! $case->approved_at) {
                 $this->reject('Hanya teknisi yang ditugaskan dapat menerima pekerjaan yang disetujui.');
             }
             $locked->forceFill(['status' => 'in_progress'])->save();
@@ -266,9 +266,9 @@ class TicketMaintenanceService
                     $technician, $assignee, $locked->g001_m001_unit_id, $locked->g002_m003_item_management_id,
                 );
             }
-            if (($overrideReason === null && $locked->assigned_to !== $technician->id)
-                || ! $assignee || ! TicketTeamMember::qualifiesFor($locked, $assignee)
-                || $locked->status !== 'in_progress' || ! $case->accepted_at) {
+            if (($overrideReason === null && ($locked->assigned_to !== $technician->id
+                    || ! TicketTeamMember::qualifiesFor($locked, $technician)))
+                || ! $assignee || $locked->status !== 'in_progress' || ! $case->accepted_at) {
                 $this->reject('Hanya teknisi yang menerima tugas dapat mengirim hasil pekerjaan.');
             }
             $case->forceFill([
