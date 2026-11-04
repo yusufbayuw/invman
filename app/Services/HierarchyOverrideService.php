@@ -41,9 +41,15 @@ class HierarchyOverrideService
         if ($unitId && $actor->g001_m001_unit_id && (int) $actor->g001_m001_unit_id !== $unitId) {
             return false;
         }
+        if ($unitId && $subject->g001_m001_unit_id && (int) $subject->g001_m001_unit_id !== $unitId) {
+            return false;
+        }
 
-        // A subordinate's team leader can act within a defined team hierarchy.
-        if (in_array($subject->id, TicketTeamMember::descendantsOf($actor), true)) {
+        // A subordinate's team leader can act only within that team's asset management scope.
+        if (in_array($subject->id, TicketTeamMember::descendantsOf($actor), true)
+            && (! $managementId || TicketTeamMember::query()
+                ->where('user_id', $subject->id)
+                ->where('g002_m003_item_management_id', $managementId)->exists())) {
             return true;
         }
 
