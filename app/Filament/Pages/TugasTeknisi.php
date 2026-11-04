@@ -25,8 +25,8 @@ class TugasTeknisi extends Page implements HasTable
     use InteractsWithTable;
 
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
-    protected static ?string $navigationGroup = 'Layanan & Ticketing';
-    protected static ?string $navigationLabel = 'Tugas Lapangan';
+    protected static ?string $navigationGroup = 'Laporan & Perbaikan';
+    protected static ?string $navigationLabel = 'Tugas Saya';
     protected static ?string $title = 'Tugas Teknisi Lapangan';
     protected static ?int $navigationSort = 0;
     protected static string $view = 'filament.pages.tugas-teknisi';
@@ -38,6 +38,24 @@ class TugasTeknisi extends Page implements HasTable
         return (bool) ($user?->is_enabled
             && ($user->isFacility() || $user->isAssetManager()
                 || $user->ticketTeamMember()->where('is_active', true)->exists()));
+    }
+
+    /** Navigation relevance only; access and transaction eligibility stay unchanged. */
+    public static function hasActiveTasks(): bool
+    {
+        return static::canAccess() && TicketResource::getEloquentQuery()
+            ->where('assigned_to', auth()->id())
+            ->whereHas('maintenance')
+            ->whereIn('status', ['triaged', 'in_progress', 'waiting_parts', 'waiting_requester', 'reopened'])
+            ->exists();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = auth()->user();
+
+        return static::canAccess() && ((! $user->isFacility() && ! $user->isAssetManager())
+            || static::hasActiveTasks());
     }
 
     public function getSubheading(): ?string

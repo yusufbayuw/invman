@@ -1,0 +1,74 @@
+{
+  "configuration": "APP_DEBUG=false on both trees",
+  "main_routes": 181,
+  "integration_routes": 192,
+  "removed_or_changed_existing": [],
+  "added": [
+    [
+      "GET|HEAD",
+      "admin/ringkasan-peminjaman",
+      "filament.admin.pages.ringkasan-peminjaman",
+      "App\\Filament\\Pages\\RingkasanPeminjaman"
+    ],
+    [
+      "GET|HEAD",
+      "admin/semua-menu",
+      "filament.admin.pages.semua-menu",
+      "App\\Filament\\Pages\\SemuaMenu"
+    ],
+    [
+      "GET|HEAD",
+      "admin/work-order-assignments",
+      "filament.admin.resources.work-order-assignments.index",
+      "App\\Filament\\Resources\\WorkOrderAssignmentResource\\Pages\\ListAssignments"
+    ],
+    [
+      "GET|HEAD",
+      "admin/work-order-assignments/create",
+      "filament.admin.resources.work-order-assignments.create",
+      "App\\Filament\\Resources\\WorkOrderAssignmentResource\\Pages\\CreateAssignment"
+    ],
+    [
+      "GET|HEAD",
+      "admin/work-order-assignments/{record}/edit",
+      "filament.admin.resources.work-order-assignments.edit",
+      "App\\Filament\\Resources\\WorkOrderAssignmentResource\\Pages\\EditAssignment"
+    ],
+    [
+      "GET|HEAD",
+      "admin/work-order-job-titles",
+      "filament.admin.resources.work-order-job-titles.index",
+      "App\\Filament\\Resources\\WorkOrderJobTitleResource\\Pages\\ListJobTitles"
+    ],
+    [
+      "GET|HEAD",
+      "admin/work-order-job-titles/create",
+      "filament.admin.resources.work-order-job-titles.create",
+      "App\\Filament\\Resources\\WorkOrderJobTitleResource\\Pages\\CreateJobTitle"
+    ],
+    [
+      "GET|HEAD",
+      "admin/work-order-job-titles/{record}/edit",
+      "filament.admin.resources.work-order-job-titles.edit",
+      "App\\Filament\\Resources\\WorkOrderJobTitleResource\\Pages\\EditJobTitle"
+    ],
+    [
+      "GET|HEAD",
+      "admin/work-order-workflows",
+      "filament.admin.resources.work-order-workflows.index",
+      "App\\Filament\\Resources\\WorkOrderWorkflowResource\\Pages\\ListWorkflows"
+    ],
+    [
+      "GET|HEAD",
+      "admin/work-order-workflows/create",
+      "filament.admin.resources.work-order-workflows.create",
+      "App\\Filament\\Resources\\WorkOrderWorkflowResource\\Pages\\CreateWorkflow"
+    ],
+    [
+      "GET|HEAD",
+      "admin/work-order-workflows/{record}/edit",
+      "filament.admin.resources.work-order-workflows.edit",
+      "App\\Filament\\Resources\\WorkOrderWorkflowResource\\Pages\\EditWorkflow"
+    ]
+  ]
+}

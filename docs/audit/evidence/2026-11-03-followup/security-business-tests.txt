@@ -1,0 +1,56 @@
+
+   PASS  Tests\Feature\DatabaseSeederTest
+  ✓ database seeder creates reference data and is idempotent             1.24s  
+
+   PASS  Tests\Feature\MassAssignmentHardeningTest
+  ✓ every persisted application model has an explicit attribute allowli… 0.05s  
+  ✓ untrusted assignment cannot forge reservation approval audit         0.03s  
+  ✓ untrusted payload cannot override workflow owner unit or status      0.09s  
+  ✓ audit status history cannot be edited or deleted                     0.03s  
+  ✓ master record identifier is not fillable                             0.03s  
+
+   PASS  Tests\Feature\ProductionReadinessSecurityTest
+  ✓ revoked candidate loses ticket and private pdf access                0.14s  
+  ✓ inactive job title revokes candidate visibility                      0.13s  
+  ✓ title candidate visibility preserves legacy ticket with null report… 0.13s  
+  ✓ disabled facility cannot assign legacy maintenance via service       0.09s  
+  ✓ disabled facility cannot cancel legacy maintenance via service       0.09s  
+  ✓ disabled reporter cannot verify completed work via service           0.13s  
+  ✓ assignment authority is checked inside ticket transaction            0.15s  
+  ✓ reporter with facility role cannot approve own legacy report         0.11s  
+  ✓ approval only user sees pending ticket on dashboard                  0.26s  
+  ✓ multi position hierarchy cannot hide a cycle on second assignment    0.09s  
+  ✓ default active assignment cannot reference disabled user             0.07s  
+  ✓ reporter holding required title and multiple roles cannot decide ow… 0.11s  
+  ✓ disabled approver cannot decide pending dynamic step                 0.09s  
+  ✓ all start steps must precede any final step                          0.05s  
+
+   PASS  Tests\Feature\WorkOrderEstimateTest
+  ✓ budget approval binds exact immutable vendor quote before assignmen… 0.15s  
+  ✓ estimate cannot self approve and reject resubmit does not reuse pri… 0.11s  
+  ✓ estimate validates amount vendor scope and fresh actor               0.09s  
+  ✓ changed quote requires explicit new version and cannot be approved…  0.11s  
+  ✓ native filament estimate action records the explicit amount          3.53s  
+
+   PASS  Tests\Feature\WorkOrderReadinessTest
+  ✓ configured ytb backend sequence completes for all six units with ma… 7.53s  
+  ✓ explicit dispatch title enables assetless central work without faci… 0.50s  
+  ✓ dispatch title scope revocation and inactive team remain fail close… 0.49s  
+  ✓ assetless report does not grant central technician cross unit autho… 0.50s  
+  ✓ rejection is fail closed and duplicate decision is not replayed      0.54s  
+  ✓ administrator can manage titles assignments and publish using filam… 1.41s  
+  ✓ job title named administrator does not grant system administration   0.45s  
+  ✓ new published workflow does not rewrite existing ticket snapshot     0.54s  
+  ✓ missing supervisor is blocked until active assignment and audited r… 0.51s  
+  ✓ unit transfer revokes snapshot candidate and multi role cannot skip… 0.52s  
+
+   PASS  Tests\Feature\WorkOrderRevisionTest
+  ✓ rejected report resubmits on same ticket and preserves decisions an… 0.12s  
+  ✓ revision rejects foreign actor disabled stale identity and protecte… 0.10s  
+  ✓ superseded pending id and revoked candidates cannot decide or reass… 0.08s  
+  ✓ final rejection requires rework new reporter verification and fresh… 0.11s  
+  ✓ native filament revision action revalidates and submits corrected r… 9.44s  
+
+  Tests:    40 passed (662 assertions)
+  Duration: 30.07s
+

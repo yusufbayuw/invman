@@ -1,0 +1,49 @@
+  Tests:    269 passed (2124 assertions)
+  Duration: 65.65s
+
+{
+  "mysql": "8.0.46",
+  "approval_race": {
+    "pass": true,
+    "outcomes": [
+      "committed",
+      "rejected"
+    ],
+    "committed_events": 1
+  },
+  "revision_race": {
+    "pass": true,
+    "outcomes": [
+      "committed",
+      "rejected"
+    ],
+    "revisions": 1
+  },
+  "global_draft_race": {
+    "pass": true,
+    "outcomes": [
+      "committed",
+      "rejected"
+    ],
+    "drafts": 1
+  }
+}
+
+{
+  "mysql": "8.0.46",
+  "legacy_migrations": 64,
+  "upgrade": "PASS",
+  "existing_rows_password_roles_history": "unchanged",
+  "legacy_approval_rows": 0,
+  "existing_rejected_approval_preserved_as_revision_one": true,
+  "seed_twice": {
+    "users": 24,
+    "work_order_job_titles": 12,
+    "work_order_assignments": 23,
+    "work_order_workflows": 2,
+    "ticket_team_members": 2
+  },
+  "automatic_publish": false,
+  "production_demo_guard": "PASS"
+}
+

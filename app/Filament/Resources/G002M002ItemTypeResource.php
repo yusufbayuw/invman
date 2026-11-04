@@ -18,7 +18,7 @@ class G002M002ItemTypeResource extends Resource
 {
     protected static ?string $model = G002M002ItemType::class;
 
-    protected static ?string $navigationGroup = 'Barang';
+    protected static ?string $navigationGroup = 'Data Aset';
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
     protected static ?string $slug = 'item-type';
     protected static ?string $modelLabel = 'Jenis Barang';

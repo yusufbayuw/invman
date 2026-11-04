@@ -1,0 +1,1 @@
+Isolated QA HTTP login: HTTP 500. Backend log: cURL error 6: Could not resolve host: challenges.cloudflare.com for https://challenges.cloudflare.com/turnstile/v0/siteverify. Frontend official Turnstile test widget rendered Success. Positive provider-backed HTTP authentication is BLOCKED, not PASS. No browser session imported; no auth/CSRF middleware disabled.

@@ -13,7 +13,7 @@ class TicketVisibility
     {
         $query = Ticket::query();
 
-        if (! $user) {
+        if (! $user || ! $user->is_enabled) {
             return $query->whereRaw('1=0');
         }
         if ($user->isFacility()) {
@@ -31,6 +31,9 @@ class TicketVisibility
                 $visible->orWhereIn('assigned_to', $descendantIds);
             }
 
+            $visible->orWhereHas('workOrderApprovals', fn (Builder $approvals) => $approvals
+                ->tap(fn (Builder $query) => app(WorkOrderWorkflowService::class)->scopeEligibleCandidates($query, $user)));
+
             if ($managementIds->isNotEmpty()) {
                 $visible->orWhereIn('g002_m003_item_management_id', $managementIds);
             }
@@ -44,7 +47,7 @@ class TicketVisibility
 
     public function canManage(?User $user, Ticket $ticket): bool
     {
-        if (! $user) {
+        if (! $user || ! $user->is_enabled) {
             return false;
         }
         return $user->isFacility()

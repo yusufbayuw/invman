@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ReservationStatus;
+use App\Filament\Pages\PeminjamanSerahTerima;
 use App\Filament\Widgets\QuickActionsWidget;
 use App\Models\G001M001Unit;
 use App\Models\G002M003ItemManagement;
@@ -100,7 +101,7 @@ class QuickActionsWidgetTest extends TestCase
 
         Livewire::actingAs($manager)
             ->test(QuickActionsWidget::class)
-            ->assertSee('Tindakan Cepat')
+            ->assertSee('Perlu Tindakan Anda')
             ->assertSee('Proyektor')
             ->assertDontSee('Kamera')
             ->assertDontSee('@js(', escape: false)
@@ -150,7 +151,7 @@ class QuickActionsWidgetTest extends TestCase
         $this->actingAs($facility)
             ->get('/admin?filters[start_date]=1990-01-01&filters[end_date]=1990-01-02&filters[status]=returned')
             ->assertOk()
-            ->assertSee('Tindakan Cepat')
+            ->assertSee('Perlu Tindakan Anda')
             ->assertSee('Tidak ada tindakan yang menunggu');
     }
 
@@ -175,7 +176,7 @@ class QuickActionsWidgetTest extends TestCase
         Livewire::actingAs($manager)
             ->test(QuickActionsWidget::class)
             ->callAction('checkout', arguments: $arguments)
-            ->assertRedirect(\App\Filament\Pages\PeminjamanSerahTerima::getUrl([
+            ->assertRedirect(PeminjamanSerahTerima::getUrl([
                 'type' => 'room', 'reservation' => $reservation->id,
             ]));
 
@@ -183,12 +184,12 @@ class QuickActionsWidgetTest extends TestCase
 
         $scan = ['type' => 'room', 'reservation' => $reservation->id];
         Livewire::withQueryParams($scan)->actingAs($manager)
-            ->test(\App\Filament\Pages\PeminjamanSerahTerima::class)
+            ->test(PeminjamanSerahTerima::class)
             ->fillForm(['is_ok' => true])
             ->call('submitCheckout')
             ->assertHasNoFormErrors();
         Livewire::withQueryParams($scan)->actingAs($sarpras)
-            ->test(\App\Filament\Pages\PeminjamanSerahTerima::class)
+            ->test(PeminjamanSerahTerima::class)
             ->callAction('confirmCheckout')
             ->assertHasNoActionErrors();
 

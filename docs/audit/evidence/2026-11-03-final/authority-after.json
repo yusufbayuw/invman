@@ -1,0 +1,306 @@
+{
+    "baseline": "d35b49e",
+    "mysql": "8.0.46-0ubuntu0.24.04.3",
+    "ordering": "Revocation effective at COMMIT. Current authority rows remain locked until approval commits; approval-first must block revoker, revocation-first must make approval wait and then deny.",
+    "barriers": "Explicit signals and performance_schema.data_lock_waits; no delay-based success criteria.",
+    "cases": [
+        {
+            "case": "title_revoke",
+            "order": "approval_first",
+            "pass": true,
+            "approval_events": 1,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "title_revoke",
+            "order": "revocation_first",
+            "pass": true,
+            "approval_events": 0,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "conflict",
+                "fields": [
+                    "approval"
+                ],
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "assignment_move",
+            "order": "approval_first",
+            "pass": true,
+            "approval_events": 1,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "assignment_move",
+            "order": "revocation_first",
+            "pass": true,
+            "approval_events": 0,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "conflict",
+                "fields": [
+                    "approval"
+                ],
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "supervisor_change",
+            "order": "approval_first",
+            "pass": true,
+            "approval_events": 1,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "supervisor_change",
+            "order": "revocation_first",
+            "pass": true,
+            "approval_events": 0,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "conflict",
+                "fields": [
+                    "approval"
+                ],
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "disable",
+            "order": "approval_first",
+            "pass": true,
+            "approval_events": 1,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "disable",
+            "order": "revocation_first",
+            "pass": true,
+            "approval_events": 0,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "conflict",
+                "fields": [
+                    "approval"
+                ],
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "assignment_revoke",
+            "order": "approval_first",
+            "pass": true,
+            "approval_events": 1,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "assignment_revoke",
+            "order": "revocation_first",
+            "pass": true,
+            "approval_events": 0,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "conflict",
+                "fields": [
+                    "approval"
+                ],
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "admin_role_revocation",
+            "order": "reassignment_first",
+            "pass": true,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "admin_role_revocation",
+            "order": "role_revocation_first",
+            "pass": true,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "denied",
+                "status": 403,
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "two_approvers",
+            "pass": true,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "conflict",
+                "fields": [
+                    "approval"
+                ],
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "reject_resubmit",
+            "pass": true,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "resubmit_before_rejection",
+            "pass": true,
+            "worker": {
+                "outcome": "conflict",
+                "fields": [
+                    "revision"
+                ],
+                "exit_code": 0
+            }
+        },
+        {
+            "case": "estimate_approval",
+            "order": "estimate_first",
+            "pass": true,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "conflict",
+                "fields": [
+                    "estimate"
+                ],
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "estimate_approval",
+            "order": "approval_first",
+            "pass": true,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "conflict",
+                "fields": [
+                    "estimate"
+                ],
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        },
+        {
+            "case": "publish_does_not_rewrite_old_ticket",
+            "pass": true,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "contender_state": "completed_before_release"
+        },
+        {
+            "case": "double_reassign",
+            "pass": true,
+            "first": {
+                "outcome": "committed",
+                "exit_code": 0
+            },
+            "second": {
+                "outcome": "conflict",
+                "fields": [
+                    "approval"
+                ],
+                "exit_code": 0
+            },
+            "contender_state": "mysql_lock_wait"
+        }
+    ],
+    "pass": true
+}

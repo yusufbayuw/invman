@@ -21,12 +21,6 @@ class LoanAvailabilityService
         }
 
         [$start, $end] = $period;
-        $reserved = G005M009ItemReservation::query()
-            ->selectRaw('g002_m007_item_id, COALESCE(SUM(quantity), 0) as reserved_quantity')
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
-            ->groupBy('g002_m007_item_id')
-            ->pluck('reserved_quantity', 'g002_m007_item_id');
-
         $options = [];
         $safety = app(TicketAssetSafetyService::class);
 
@@ -40,8 +34,9 @@ class LoanAvailabilityService
                 'item_instance as borrowable_instance_count' => fn (Builder $query) => $query->where('is_borrowable', true),
             ])
             ->orderBy('name')->orderBy('id')
-            ->chunk(200, function ($items) use (&$options, $reserved, $safety): void {
+            ->chunk(200, function ($items) use (&$options, $start, $end, $safety): void {
                 $ids = $items->modelKeys();
+                $reserved = $this->peakReservedItemQuantities($ids, $start, $end);
                 $blocked = array_fill_keys($safety->blockedAssetIds('item', $ids), true);
                 $blockedQuantities = $safety->blockedBorrowableItemQuantities($ids);
 
@@ -137,15 +132,103 @@ class LoanAvailabilityService
 
     public function reservedItemQuantity(int $itemId, Carbon $start, Carbon $end, bool $locking = false): int
     {
-        $query = G005M009ItemReservation::query()
-            ->where('g002_m007_item_id', $itemId)
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
+        return (int) ($this->peakReservedItemQuantities([$itemId], $start, $end, $locking)[$itemId] ?? 0);
+    }
 
-        // Only transactional acceptance needs locking reads. UI queries retain
-        // the original database-side SUM for constant-memory reporting.
-        return $locking
-            ? (int) $query->lockForUpdate()->get(['quantity'])->sum('quantity')
-            : (int) $query->sum('quantity');
+    /**
+     * Peak simultaneous quantity in the requested half-open interval [start, end).
+     *
+     * Adding every reservation that touches a long interval is too restrictive:
+     * three projectors at 09-10 and three at 11-12 only need three units, not six.
+     * Every matching row is inspected in one batch; exits at the same timestamp
+     * cancel starts, so adjacent bookings never count as overlapping.
+     *
+     * Unreturned, overdue checkouts occupy stock for every future interval.
+     * An on-time checkout occupies it until its scheduled return, enabling
+     * a *future reservation* afterwards; physical checkout still requires
+     * actually available item instances at handover.
+     *
+     * Locking reads are mandatory for submitDraft() inside the transaction.
+     * They preserve current-read semantics of the parent activity subquery
+     * under MySQL REPEATABLE READ, preventing oversubscription.
+     *
+     * @param list<int> $itemIds
+     * @return array<int, int>
+     */
+    private function peakReservedItemQuantities(array $itemIds, Carbon $start, Carbon $end, bool $locking = false): array
+    {
+        if ($itemIds === [] || ! $end->greaterThan($start)) {
+            return [];
+        }
+
+        $query = G005M009ItemReservation::query()
+            ->whereIn('g002_m007_item_id', $itemIds)
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end, $locking));
+
+        if ($locking) {
+            $query->lockForUpdate();
+        }
+
+        $now = now();
+        $permanent = [];
+        $events = [];
+        foreach ($query->get(['g002_m007_item_id', 'quantity', 'status', 'start_time', 'end_time']) as $reservation) {
+            $itemId = (int) $reservation->g002_m007_item_id;
+            $quantity = max(0, (int) $reservation->quantity);
+            if ($quantity === 0) {
+                continue;
+            }
+
+            $outstanding = in_array($reservation->status, [
+                ReservationStatus::CheckedOut->value,
+                ReservationStatus::ReturnRequested->value,
+            ], true);
+
+            // A late physical return cannot be promised for any future booking.
+            if ($outstanding && (! $reservation->end_time || $reservation->end_time->lessThanOrEqualTo($now))) {
+                $permanent[$itemId] = ($permanent[$itemId] ?? 0) + $quantity;
+
+                continue;
+            }
+
+            $windowStart = $reservation->start_time;
+            $windowEnd = $reservation->end_time;
+            if (! $windowStart || ! $windowEnd) {
+                continue;
+            }
+
+            // Early handover means the equipment is physically out already.
+            if ($outstanding && $windowStart->greaterThan($now)) {
+                $windowStart = $now;
+            }
+
+            $left = $windowStart->greaterThan($start) ? $windowStart : $start;
+            $right = $windowEnd->lessThan($end) ? $windowEnd : $end;
+            if (! $right->greaterThan($left)) {
+                continue;
+            }
+
+            $starts = $left->getTimestamp();
+            $ends = $right->getTimestamp();
+            $events[$itemId][$starts] = ($events[$itemId][$starts] ?? 0) + $quantity;
+            $events[$itemId][$ends] = ($events[$itemId][$ends] ?? 0) - $quantity;
+        }
+
+        $peaks = [];
+        foreach ($itemIds as $id) {
+            $timeline = $events[$id] ?? [];
+            ksort($timeline, SORT_NUMERIC);
+            $running = 0;
+            $peak = 0;
+            foreach ($timeline as $change) {
+                $running += $change;
+                $peak = max($peak, $running);
+            }
+
+            $peaks[$id] = ($permanent[$id] ?? 0) + $peak;
+        }
+
+        return $peaks;
     }
 
     public function availableItemQuantity(int|string|null $itemId, Carbon|string|null $startTime, Carbon|string|null $endTime, bool $locking = false): int
@@ -186,7 +269,7 @@ class LoanAvailabilityService
         }
         $query = G005M010RoomReservation::query()
             ->where('g003_m006_room_id', $roomId)
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end, $locking));
 
         return $locking ? $query->lockForUpdate()->first(['id']) === null : ! $query->exists();
     }
@@ -198,7 +281,7 @@ class LoanAvailabilityService
         }
         $query = G005M019VehicleReservation::query()
             ->where('g008_m017_vehicle_id', $vehicleId)
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end, $locking));
 
         return $locking ? $query->lockForUpdate()->first(['id']) === null : ! $query->exists();
     }
@@ -208,7 +291,7 @@ class LoanAvailabilityService
         return G005M019VehicleReservation::query()
             ->where('g008_m018_driver_id', $driverId)
             ->when($exceptReservationId, fn (Builder $query) => $query->whereKeyNot($exceptReservationId))
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end, true))
             ->lockForUpdate()->first(['id']) === null;
     }
 
@@ -217,7 +300,7 @@ class LoanAvailabilityService
         return G005M019VehicleReservation::query()
             ->where('vehicle_assistant_id', $assistantId)
             ->when($exceptReservationId, fn (Builder $query) => $query->whereKeyNot($exceptReservationId))
-            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end))
+            ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end, true))
             ->lockForUpdate()->first(['id']) === null;
     }
 
@@ -227,12 +310,12 @@ class LoanAvailabilityService
             ->where(fn (Builder $query) => $this->applyReservationWindow($query, $start, $end));
     }
 
-    private function applyReservationWindow(Builder $query, Carbon $start, Carbon $end): void
+    private function applyReservationWindow(Builder $query, Carbon $start, Carbon $end, bool $locking = false): void
     {
         $query
-            ->where(function (Builder $query) use ($end, $start): void {
+            ->where(function (Builder $query) use ($end, $start, $locking): void {
                 $query
-                    ->where(fn (Builder $query) => $this->applyBlockingScope($query))
+                    ->where(fn (Builder $query) => $this->applyBlockingScope($query, $locking))
                     ->where('start_time', '<', $end)
                     ->where('end_time', '>', $start);
             })
@@ -242,21 +325,24 @@ class LoanAvailabilityService
             ]);
     }
 
-    public function applyBlockingScope(Builder $query): void
+    public function applyBlockingScope(Builder $query, bool $locking = false): void
     {
         $query
             ->whereIn('status', ReservationStatus::confirmedBlockingValues())
-            ->orWhere(function (Builder $query): void {
+            ->orWhere(function (Builder $query) use ($locking): void {
                 $query
                     ->where('status', ReservationStatus::Submitted->value)
-                    ->whereHas('activity', function (Builder $query): void {
+                    ->whereHas('activity', function (Builder $query) use ($locking): void {
                         $query
                             ->where('status', ReservationStatus::Submitted->value)
                             ->where(function (Builder $query): void {
                                 $query
                                     ->whereNull('hold_expires_at')
                                     ->orWhere('hold_expires_at', '>', now());
-                            });
+                            })
+                            // FOR UPDATE on the outer query does not make an
+                            // EXISTS subquery a current read in MySQL.
+                            ->when($locking, fn (Builder $query) => $query->lockForUpdate());
                     });
             });
     }

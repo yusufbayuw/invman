@@ -18,7 +18,7 @@ class G003M004BuildingResource extends Resource
 {
     protected static ?string $model = G003M004Building::class;
 
-    protected static ?string $navigationGroup = 'Ruangan';
+    protected static ?string $navigationGroup = 'Data Aset';
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
     protected static ?string $slug = 'building';
     protected static ?string $modelLabel = 'Bangunan';

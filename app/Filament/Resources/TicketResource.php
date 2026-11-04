@@ -22,8 +22,8 @@ use Illuminate\Database\Eloquent\Model;
 class TicketResource extends Resource
 {
     protected static ?string $model = Ticket::class;
-    protected static ?string $navigationGroup = 'Layanan & Ticketing';
-    protected static ?string $navigationLabel = 'Tiket Layanan';
+    protected static ?string $navigationGroup = 'Laporan & Perbaikan';
+    protected static ?string $navigationLabel = 'Laporan Kerusakan';
     protected static ?string $modelLabel = 'Tiket';
     protected static ?string $navigationIcon = 'heroicon-o-ticket';
     protected static ?string $slug = 'tiket';
@@ -33,7 +33,9 @@ class TicketResource extends Resource
     public static function canViewAny(): bool
     {
         return app(TicketService::class)->canCreate(auth()->user())
-            || (auth()->user()?->ticketTeamMember()->where('is_active', true)->exists() ?? false);
+            || (auth()->user()?->ticketTeamMember()->where('is_active', true)->exists() ?? false)
+            || (auth()->user()?->workOrderAssignments()->where('is_active', true)->whereHas('jobTitle', fn ($query) => $query->where('is_active', true))->exists() ?? false)
+            || (auth()->check() && app(\App\Services\WorkOrderWorkflowService::class)->scopeEligibleCandidates(\App\Models\WorkOrderApproval::query(), auth()->user())->exists());
     }
 
     public static function canCreate(): bool { return app(TicketService::class)->canCreate(auth()->user()); }
@@ -224,6 +226,40 @@ class TicketResource extends Resource
                     Infolists\Components\TextEntry::make('maintenance.final_approved_at')->label('Pengesahan akhir')->dateTime()->placeholder('-'),
                     Infolists\Components\TextEntry::make('maintenance.asset_released_at')->label('Dinyatakan layak pakai')->dateTime()->placeholder('Belum'),
                 ])->columns(2)->collapsible(),
+            Infolists\Components\Section::make('Tinjauan & Estimasi Biaya')
+                ->visible(fn ($record): bool => $record->workOrderEstimates()->exists())
+                ->schema([
+                    Infolists\Components\RepeatableEntry::make('workOrderEstimates')->hiddenLabel()->schema([
+                        Infolists\Components\TextEntry::make('version')->label('Versi estimasi'),
+                        Infolists\Components\TextEntry::make('revision')->label('Revisi laporan'),
+                        Infolists\Components\TextEntry::make('execution_mode')->label('Pelaksana')
+                            ->formatStateUsing(fn (string $state): string => $state === 'external' ? 'Vendor eksternal' : 'Tim internal'),
+                        Infolists\Components\TextEntry::make('vendor_name')->label('Vendor')->placeholder('-'),
+                        Infolists\Components\TextEntry::make('amount')->label('Estimasi (Rp)'),
+                        Infolists\Components\TextEntry::make('diagnosis')->label('Tinjauan awal')->columnSpanFull(),
+                    ])->columns(3),
+                ])->collapsible(),
+            Infolists\Components\Section::make('Persetujuan & Riwayat Revisi')
+                ->visible(fn ($record): bool => $record->workOrderApprovalHistory()->exists())
+                ->schema([
+                    Infolists\Components\RepeatableEntry::make('workOrderApprovalHistory')->label('Seluruh keputusan')->schema([
+                        Infolists\Components\TextEntry::make('revision')->label('Revisi'),
+                        Infolists\Components\TextEntry::make('estimate_id')->label('ID estimasi disetujui')->placeholder('-'),
+                        Infolists\Components\TextEntry::make('label')->label('Tahap'),
+                        Infolists\Components\TextEntry::make('status')->label('Keputusan')->badge()
+                            ->formatStateUsing(fn (string $state): string => ['pending'=>'Menunggu', 'approved'=>'Disetujui', 'rejected'=>'Ditolak'][$state] ?? $state),
+                        Infolists\Components\TextEntry::make('decisionMaker.name')->label('Oleh')->placeholder('-'),
+                        Infolists\Components\TextEntry::make('decided_at')->label('Waktu')->dateTime()->placeholder('-'),
+                        Infolists\Components\TextEntry::make('superseded_at')->label('Digantikan revisi')->dateTime()->placeholder('Aktif'),
+                        Infolists\Components\TextEntry::make('notes')->label('Catatan / alasan')->columnSpanFull(),
+                    ])->columns(3),
+                    Infolists\Components\RepeatableEntry::make('workOrderRevisions')->label('Pengiriman ulang')->schema([
+                        Infolists\Components\TextEntry::make('revision')->label('Revisi'),
+                        Infolists\Components\TextEntry::make('actor.name')->label('Dikirim oleh'),
+                        Infolists\Components\TextEntry::make('created_at')->label('Waktu')->dateTime(),
+                        Infolists\Components\TextEntry::make('reason')->label('Penjelasan perbaikan')->columnSpanFull(),
+                    ])->columns(3),
+                ])->collapsible(),
             Infolists\Components\Section::make('Aset terkait')->schema([
                 Infolists\Components\RepeatableEntry::make('assets')->hiddenLabel()->schema([
                     Infolists\Components\TextEntry::make('asset_type')->label('Jenis'),

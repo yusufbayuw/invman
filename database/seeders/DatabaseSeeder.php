@@ -29,6 +29,8 @@ class DatabaseSeeder extends Seeder
             RoomSeeder::class,
             UserSeeder::class,
             VehicleSeeder::class,
+            WorkOrderJobTitleSeeder::class,
+            WorkOrderDemoSeeder::class,
         ]);
     }
 }

@@ -1,0 +1,25 @@
+No syntax errors detected in app/Models/WorkOrderEstimate.php
+No syntax errors detected in app/Models/WorkOrderRevision.php
+No syntax errors detected in app/Services/WorkOrderEstimateService.php
+No syntax errors detected in app/Services/WorkOrderRevisionService.php
+No syntax errors detected in database/migrations/2026_11_03_120000_add_work_order_revision_history.php
+No syntax errors detected in database/migrations/2026_11_03_121000_add_explicit_work_order_dispatch_title.php
+No syntax errors detected in database/migrations/2026_11_03_122000_create_work_order_estimates.php
+No syntax errors detected in tests/Feature/WorkOrderEstimateTest.php
+No syntax errors detected in tests/Feature/WorkOrderRevisionTest.php
+No syntax errors detected in app/Filament/Resources/TicketResource.php
+No syntax errors detected in app/Filament/Resources/TicketResource/Pages/ViewTicket.php
+No syntax errors detected in app/Filament/Resources/WorkOrderWorkflowResource.php
+No syntax errors detected in app/Http/Controllers/TicketMaintenancePdfController.php
+No syntax errors detected in app/Models/Ticket.php
+No syntax errors detected in app/Models/TicketTeamMember.php
+No syntax errors detected in app/Models/WorkOrderApproval.php
+No syntax errors detected in app/Models/WorkOrderWorkflow.php
+No syntax errors detected in app/Services/WorkOrderWorkflowService.php
+No syntax errors detected in database/seeders/WorkOrderDemoSeeder.php
+No syntax errors detected in resources/views/pdf/tickets/maintenance.blade.php
+No syntax errors detected in tests/Feature/DatabaseSeederTest.php
+No syntax errors detected in tests/Feature/WorkOrderReadinessTest.php
+No syntax errors detected in tests/Support/work-order-concurrency.php
+No syntax errors detected in tests/Support/work-order-upgrade.php
+PASS: 24 changed/new PHP files; git diff --check clean.

@@ -47,7 +47,7 @@ class TicketService
 
     public function canCreate(?User $user): bool
     {
-        return (bool) ($user && ($user->isSarpras() || $user->isFacility() || $user->isAssetManager()));
+        return (bool) ($user && $user->is_enabled && ($user->isSarpras() || $user->isFacility() || $user->isAssetManager()));
     }
 
     /**
@@ -292,6 +292,7 @@ class TicketService
             $this->event($ticket, $actor->id, 'created', null, 'open');
             if ($category->reporting_enabled) {
                 app(TicketMaintenanceService::class)->initialize($ticket);
+                app(WorkOrderWorkflowService::class)->snapshot($ticket);
             }
             return $ticket;
         }, 3);
@@ -532,6 +533,7 @@ class TicketService
             $ticket->assets()->create(['asset_type' => $assetType, 'asset_id' => $assetId]);
             $this->event($ticket, auth()->id(), 'created_from_return', null, 'open', $sourceKey);
             app(TicketMaintenanceService::class)->initialize($ticket);
+            app(WorkOrderWorkflowService::class)->snapshot($ticket);
             DB::afterCommit(fn () => $this->notifyTeam($ticket));
         }
     }

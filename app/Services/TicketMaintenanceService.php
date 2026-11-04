@@ -24,6 +24,7 @@ class TicketMaintenanceService
     public function initialize(Ticket $ticket): TicketMaintenanceCase
     {
         $deadlines = $this->sla->deadlines($ticket);
+
         return TicketMaintenanceCase::query()->firstOrCreate(['ticket_id' => $ticket->id], [
             ...$deadlines,
             'asset_hold_at' => $ticket->assets()->exists() ? now() : null,
@@ -56,14 +57,17 @@ class TicketMaintenanceService
     /** Manager approves and assigns. No technician may self-approve. */
     public function approve(Ticket $ticket, User $manager, int $technicianId, string $priority = 'normal', ?string $notes = null): void
     {
-        if (! $manager->isFacility()) {
-            $this->reject('Hanya fasilitas/admin dapat menyetujui perbaikan.');
-        }
         if (! in_array($priority, ['low', 'normal', 'high', 'critical'], true)) {
             $this->reject('Prioritas tidak valid.');
         }
         DB::transaction(function () use ($ticket, $manager, $technicianId, $priority, $notes): void {
             $locked = $this->locked($ticket);
+            $authority = WorkOrderAuthoritySnapshot::lock([$manager->id, $locked->reporter_id, $technicianId]);
+            $manager = $authority->user($manager->id);
+            if (! app(WorkOrderWorkflowService::class)->canPerform($locked, $manager, 'assign', $authority)) {
+                $this->reject('Tidak berwenang menyetujui atau menugaskan perbaikan ini.');
+            }
+            app(WorkOrderWorkflowService::class)->assertReady($locked, 'start');
             $case = $this->case($locked);
             if ($locked->status !== 'open' || $case->approved_at) {
                 $this->reject('Tiket bukan pengajuan baru.');
@@ -103,6 +107,7 @@ class TicketMaintenanceService
             return true;
         }
         $descendants = TicketTeamMember::descendantsOf($actor);
+
         return $descendants !== [] && (
             (int) $ticket->assigned_to === (int) $actor->id
             || in_array((int) $ticket->assigned_to, $descendants, true)
@@ -119,10 +124,12 @@ class TicketMaintenanceService
             ? TicketTeamMember::query()->where('is_active', true)->pluck('user_id')->all()
             : TicketTeamMember::descendantsOf($actor);
         $ids = array_values(array_diff(array_map('intval', $ids), [(int) $ticket->reporter_id]));
+
         return User::query()->whereKey($ids)->where('is_enabled', true)->orderBy('name')
             ->get()->filter(fn (User $user): bool => TicketTeamMember::qualifiesFor($ticket, $user))
             ->mapWithKeys(function (User $user): array {
                 $member = $user->ticketTeamMember;
+
                 return [$user->id => $user->name.' · '.($member?->team_type === 'field' ? 'Lapangan' : 'Pendukung')
                     .' / '.($member?->position === 'lead' ? 'Koordinator' : 'Teknisi')];
             })->all();
@@ -247,7 +254,7 @@ class TicketMaintenanceService
         DB::transaction(function () use ($ticket, $reporter, $accepted, $notes): void {
             $locked = $this->locked($ticket);
             $case = $this->case($locked);
-            if ($locked->status !== 'resolved' || ! $case->work_finished_at
+            if (! $reporter->is_enabled || $locked->status !== 'resolved' || ! $case->work_finished_at
                 || $case->verified_at || $locked->reporter_id !== $reporter->id
                 || $locked->assigned_to === $reporter->id) {
                 $this->reject('Hanya pelapor asli dapat memverifikasi pekerjaan yang telah diselesaikan.');
@@ -269,11 +276,14 @@ class TicketMaintenanceService
     /** Final administrative sign-off is distinct from a physical readiness declaration. */
     public function close(Ticket $ticket, User $manager, bool $safe, ?string $notes = null): void
     {
-        if (! $manager->isFacility()) {
-            $this->reject('Pengesahan akhir hanya untuk manajer fasilitas/admin.');
-        }
         DB::transaction(function () use ($ticket, $manager, $safe, $notes): void {
             $locked = $this->locked($ticket);
+            $authority = WorkOrderAuthoritySnapshot::lock([$manager->id, $locked->reporter_id]);
+            $manager = $authority->user($manager->id);
+            if (! app(WorkOrderWorkflowService::class)->canPerform($locked, $manager, 'close', $authority)) {
+                $this->reject('Tidak berwenang mengesahkan perbaikan ini.');
+            }
+            app(WorkOrderWorkflowService::class)->assertReady($locked, 'final');
             $case = $this->case($locked);
             if ($locked->status !== 'resolved' || ! $case->verified_at
                 || ! $case->approved_at || ! $case->work_finished_at
@@ -333,7 +343,7 @@ class TicketMaintenanceService
 
     public function cancel(Ticket $ticket, User $manager, string $notes): void
     {
-        if (! $manager->isFacility() || mb_strlen(trim($notes)) < 5) {
+        if (! $manager->is_enabled || ! $manager->isFacility() || mb_strlen(trim($notes)) < 5) {
             $this->reject('Pembatalan memerlukan fasilitas/admin dan alasan.');
         }
         DB::transaction(function () use ($ticket, $manager, $notes): void {

@@ -16,7 +16,7 @@ class G006M020VehicleReviewResource extends Resource
 {
     protected static ?string $model = G006M020VehicleReview::class;
 
-    protected static ?string $navigationGroup = 'Ulasan';
+    protected static ?string $navigationGroup = 'Pemeriksaan & Riwayat';
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 

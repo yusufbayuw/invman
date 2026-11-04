@@ -24,12 +24,12 @@ class LoanOperationsStats extends BaseWidget
 
     protected function getHeading(): ?string
     {
-        return 'Ringkasan Operasional';
+        return 'Ringkasan Pengajuan';
     }
 
     protected function getDescription(): ?string
     {
-        return 'Kondisi terkini pengajuan dan pemakaian aset sesuai filter dasbor.';
+        return 'Menghitung pengajuan kegiatan, bukan reservasi aset. Satu pengajuan dapat memuat beberapa reservasi.';
     }
 
     protected function getStats(): array
@@ -81,7 +81,7 @@ class LoanOperationsStats extends BaseWidget
             ->color('primary'),
 
         Stat::make('Kedaluwarsa', number_format($expired))
-            ->description('Reservasi telah kedaluwarsa')
+            ->description('Pengajuan telah kedaluwarsa')
             ->descriptionIcon('heroicon-m-clock')
             ->color('gray'),
     ];

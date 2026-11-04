@@ -16,7 +16,7 @@ class G007M021VehicleHistoryResource extends Resource
 {
     protected static ?string $model = G007M021VehicleHistory::class;
 
-    protected static ?string $navigationGroup = 'Riwayat';
+    protected static ?string $navigationGroup = 'Pemeriksaan & Riwayat';
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 

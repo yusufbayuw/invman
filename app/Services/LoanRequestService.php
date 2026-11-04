@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\ReservationStatus;
 use App\Models\G002M007Item;
+use App\Models\G002M015ItemInstance;
 use App\Models\G003M006Room;
 use App\Models\G004M008Activity;
 use App\Models\G005M009ItemReservation;
@@ -150,12 +151,30 @@ class LoanRequestService
                 throw ValidationException::withMessages(['status' => 'Hanya draf milik unit Anda yang dapat diajukan.']);
             }
 
+            // A draft may sit in the browser/database past its intended start.
+            // Validate against the clock again under the activity lock, not
+            // only when the draft was originally created.
+            if (! $locked->start_time || $locked->start_time->lessThanOrEqualTo(now())) {
+                throw ValidationException::withMessages([
+                    'data.start_time' => 'Waktu mulai sudah lewat. Perbarui jadwal draf sebelum mengajukan.',
+                ]);
+            }
+
+            if (! $locked->end_time || ! $locked->end_time->greaterThan($locked->start_time)) {
+                throw ValidationException::withMessages([
+                    'data.end_time' => 'Waktu selesai harus setelah waktu mulai.',
+                ]);
+            }
+
             // Lock asset rows in a stable order across concurrent submissions.
             // Concurrent requests for any of the same assets now serialize.
+            // Read child IDs without locking first: locking a draft reservation
+            // before its asset reverses saveDraft/availability lock order. The
+            // activity lock above prevents edits while this set is acquired.
             foreach ([
-                [G002M007Item::class, $locked->item_reservation()->lockForUpdate()->pluck('g002_m007_item_id')],
-                [G003M006Room::class, $locked->room_reservation()->lockForUpdate()->pluck('g003_m006_room_id')],
-                [G008M017Vehicle::class, $locked->vehicle_reservation()->lockForUpdate()->pluck('g008_m017_vehicle_id')],
+                [G002M007Item::class, $locked->item_reservation()->pluck('g002_m007_item_id')],
+                [G003M006Room::class, $locked->room_reservation()->pluck('g003_m006_room_id')],
+                [G008M017Vehicle::class, $locked->vehicle_reservation()->pluck('g008_m017_vehicle_id')],
             ] as [$modelClass, $ids]) {
                 $ids = $ids->filter()->unique()->sort()->values()->all();
                 if ($ids !== []) {
@@ -520,12 +539,9 @@ class LoanRequestService
             if (in_array($status, [ReservationStatus::Approved, ReservationStatus::CheckedOut], true)) {
                 $safety = app(TicketAssetSafetyService::class);
                 $blocked = match (true) {
-                    $reservation instanceof G005M009ItemReservation =>
-                        $safety->isBlocked('item', (int) $reservation->g002_m007_item_id),
-                    $reservation instanceof G005M010RoomReservation =>
-                        $safety->isBlocked('room', (int) $reservation->g003_m006_room_id),
-                    $reservation instanceof G005M019VehicleReservation =>
-                        $safety->isBlocked('vehicle', (int) $reservation->g008_m017_vehicle_id),
+                    $reservation instanceof G005M009ItemReservation => $safety->isBlocked('item', (int) $reservation->g002_m007_item_id),
+                    $reservation instanceof G005M010RoomReservation => $safety->isBlocked('room', (int) $reservation->g003_m006_room_id),
+                    $reservation instanceof G005M019VehicleReservation => $safety->isBlocked('vehicle', (int) $reservation->g008_m017_vehicle_id),
                     default => false,
                 };
                 if ($blocked) {
@@ -765,7 +781,7 @@ class LoanRequestService
 
             if ($reservation instanceof G005M009ItemReservation) {
                 $instanceIds = $reservation->item_reservation_detail()->pluck('g002_m015_item_instance_id');
-                \App\Models\G002M015ItemInstance::query()->whereKey($instanceIds)->update([
+                G002M015ItemInstance::query()->whereKey($instanceIds)->update([
                     'status' => ReservationStatus::CheckedOut->value,
                     'is_available' => false,
                 ]);

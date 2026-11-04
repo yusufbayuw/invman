@@ -1,0 +1,7 @@
+Command: find app database tests -type f -name "*.php" -print0 | xargs -0 -n1 php -l
+Exit: 0
+PHP files linted: 487
+Syntax errors: 0
+No syntax errors detected in tests/Unit/ExampleTest.php
+No syntax errors detected in tests/Unit/LicenseVerificationTest.php
+No syntax errors detected in tests/Unit/LicenseAllowlistTest.php

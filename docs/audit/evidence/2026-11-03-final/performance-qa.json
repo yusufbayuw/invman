@@ -1,0 +1,804 @@
+{
+    "scope": "controlled QA; not production capacity certification",
+    "thresholds": "Zero unexpected errors, no duplicate decision/event, no draft duplication or stock overcommit. Latency is descriptive; production latency/SLA and hardware targets were not supplied.",
+    "environment": {
+        "php": "8.3.6",
+        "mysql": "8.0.46-0ubuntu0.24.04.3",
+        "parallel_php_workers": 8,
+        "shared_host": true,
+        "proc_metrics_available": true
+    },
+    "sequential_open": {
+        "workers": 1,
+        "requests": 8,
+        "outcomes": {
+            "committed": 8
+        },
+        "wall_seconds": 7.475,
+        "process_throughput_per_second": 1.07,
+        "service_latency_ms": {
+            "p50": 99.544,
+            "p95": 147.145,
+            "max": 207.307
+        },
+        "queries": {
+            "min": 13,
+            "max": 13
+        },
+        "peak_worker_php_bytes": 50855936,
+        "results": [
+            {
+                "outcome": "committed",
+                "id": "01a1a176-f199-7183-a923-321df1f26c14",
+                "service_ms": 138.114,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a176-f457-70cd-9212-f00bffb6a6ae",
+                "service_ms": 99.544,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a176-f7e3-7198-97d4-21e6b0cece95",
+                "service_ms": 120.66,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a176-fb38-73b0-94a1-cdc4c47808dd",
+                "service_ms": 82.002,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a176-fead-7295-b887-817a290ed018",
+                "service_ms": 59.13,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-065f-736b-9b19-51b248ee4282",
+                "service_ms": 207.307,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-0992-720d-b913-3ec627b8b133",
+                "service_ms": 59.47,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-0cbc-73f5-856f-33089c2cc213",
+                "service_ms": 147.145,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            }
+        ]
+    },
+    "parallel_open": {
+        "workers": 8,
+        "requests": 32,
+        "outcomes": {
+            "committed": 32
+        },
+        "wall_seconds": 11.849,
+        "process_throughput_per_second": 2.701,
+        "service_latency_ms": {
+            "p50": 300.172,
+            "p95": 843.189,
+            "max": 1761.511
+        },
+        "queries": {
+            "min": 13,
+            "max": 13
+        },
+        "peak_worker_php_bytes": 50855936,
+        "results": [
+            {
+                "outcome": "committed",
+                "id": "01a1a177-1082-726a-875c-d4e1691b2384",
+                "service_ms": 175.182,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-1130-707f-9e1d-398e183ae1b8",
+                "service_ms": 300.172,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-114e-7263-a98c-f15da5c12825",
+                "service_ms": 347.267,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-11f0-72a9-9c5b-f3910bf86f0f",
+                "service_ms": 843.189,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-1ad9-731d-ae07-2f9df926b415",
+                "service_ms": 288.796,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-1ace-734b-8fce-e57f0d0e712e",
+                "service_ms": 1050.76,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-1ce7-73e9-a635-da7c49517bff",
+                "service_ms": 274.358,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-1dc7-73fb-a5f0-0974dbfd7576",
+                "service_ms": 480.774,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-1b51-715f-acac-c7181804eba2",
+                "service_ms": 1761.511,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-2026-7006-90b4-60ade3ed68a5",
+                "service_ms": 305.087,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-1ff9-70c5-a52f-f4fae78540f8",
+                "service_ms": 273.765,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-22d2-704d-bc7a-b6eb4ee3a7f7",
+                "service_ms": 144.228,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-2372-704d-bea6-c7d86a7e4f95",
+                "service_ms": 133.66,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-242f-70cf-8a92-9b37da0e65c3",
+                "service_ms": 101.545,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-2516-7328-931a-1efa904a88eb",
+                "service_ms": 224.09,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-25b8-7093-8174-705516d1ce6e",
+                "service_ms": 231.838,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-265b-726a-8ac1-373fd1decb1d",
+                "service_ms": 99.886,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-27bf-7071-a4e5-4febfaf79d04",
+                "service_ms": 244.395,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-28cc-7065-bd65-c17155f0e7b3",
+                "service_ms": 417.355,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-29da-7298-9776-47ea14cdec5b",
+                "service_ms": 124.647,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-2b07-7187-bcb0-157533ba60fc",
+                "service_ms": 345.556,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-2d43-7115-b554-81469327d6eb",
+                "service_ms": 159.018,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-2db1-72fc-9769-a7828625f46f",
+                "service_ms": 531.009,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-2e2c-71f5-b036-049d53643c0b",
+                "service_ms": 561.32,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-3130-738f-990a-b706e97fe516",
+                "service_ms": 132.148,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-3115-71a4-b4d4-97ce347864e4",
+                "service_ms": 510.28,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-323b-701b-b0e0-6db4d167dc88",
+                "service_ms": 462.447,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-327f-7319-bae0-73ff4a7e9b69",
+                "service_ms": 192.083,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-32fc-73d2-9dd3-5d9df50f6c14",
+                "service_ms": 360.09,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-3700-73d3-ba9f-ee215c94fa60",
+                "service_ms": 692.081,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-3881-7271-b0eb-02bc705a9369",
+                "service_ms": 526.806,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-3af3-70be-8175-92f4860393d8",
+                "service_ms": 345.119,
+                "queries": 13,
+                "peak_php_bytes": 50855936
+            }
+        ]
+    },
+    "parallel_approvals": {
+        "workers": 8,
+        "requests": 32,
+        "outcomes": {
+            "committed": 32
+        },
+        "wall_seconds": 10.241,
+        "process_throughput_per_second": 3.125,
+        "service_latency_ms": {
+            "p50": 234.753,
+            "p95": 900.803,
+            "max": 1015.869
+        },
+        "queries": {
+            "min": 15,
+            "max": 15
+        },
+        "peak_worker_php_bytes": 50855936,
+        "results": [
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 192.749,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 133.847,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 96.986,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 106.3,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 147.58,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 182.117,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 359.988,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 156.948,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 136.859,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 231.463,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 727.529,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 419.871,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 319.091,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 559.274,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 194.701,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 173.611,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 218.138,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 283.637,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 191.854,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 209.538,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 1015.869,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 513.917,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 614.364,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 730.156,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 715.33,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 945.371,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 874.236,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 900.803,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 853.557,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 578.704,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 234.753,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 99.238,
+                "queries": 15,
+                "peak_php_bytes": 50855936
+            }
+        ]
+    },
+    "parallel_drafts": {
+        "workers": 8,
+        "requests": 8,
+        "outcomes": {
+            "committed": 1,
+            "validation_conflict": 7
+        },
+        "wall_seconds": 1.749,
+        "process_throughput_per_second": 4.574,
+        "service_latency_ms": {
+            "p50": 35.077,
+            "p95": 84.275,
+            "max": 95.416
+        },
+        "queries": {
+            "min": 3,
+            "max": 6
+        },
+        "peak_worker_php_bytes": 50855936,
+        "results": [
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 28.953,
+                "queries": 6,
+                "peak_php_bytes": 48758784
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 35.077,
+                "queries": 3,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 84.275,
+                "queries": 3,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 46.327,
+                "queries": 3,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 61.442,
+                "queries": 3,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 32.867,
+                "queries": 3,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 26.945,
+                "queries": 3,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 95.416,
+                "queries": 3,
+                "peak_php_bytes": 50855936
+            }
+        ]
+    },
+    "parallel_bookings": {
+        "workers": 6,
+        "requests": 12,
+        "outcomes": {
+            "committed": 4,
+            "validation_conflict": 8
+        },
+        "wall_seconds": 3.397,
+        "process_throughput_per_second": 3.532,
+        "service_latency_ms": {
+            "p50": 96.962,
+            "p95": 334.634,
+            "max": 351.043
+        },
+        "queries": {
+            "min": 9,
+            "max": 110
+        },
+        "peak_worker_php_bytes": 52953088,
+        "results": [
+            {
+                "outcome": "committed",
+                "id": "01a1a177-6e8e-70b1-9555-e2837ef5b761",
+                "service_ms": 287.219,
+                "queries": 110,
+                "peak_php_bytes": 52953088
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-6e9f-70a1-a9f7-db7429a474b2",
+                "service_ms": 319.526,
+                "queries": 110,
+                "peak_php_bytes": 52953088
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-6f32-737f-80ac-45971dd861b1",
+                "service_ms": 254.399,
+                "queries": 110,
+                "peak_php_bytes": 52953088
+            },
+            {
+                "outcome": "committed",
+                "id": "01a1a177-6f4d-7242-b5f7-c01bfc72cb42",
+                "service_ms": 334.634,
+                "queries": 110,
+                "peak_php_bytes": 52953088
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 86.008,
+                "queries": 9,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 64.628,
+                "queries": 9,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 89.726,
+                "queries": 9,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 87.669,
+                "queries": 9,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 351.043,
+                "queries": 9,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 313.444,
+                "queries": 9,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 95.29,
+                "queries": 9,
+                "peak_php_bytes": 50855936
+            },
+            {
+                "outcome": "validation_conflict",
+                "service_ms": 96.962,
+                "queries": 9,
+                "peak_php_bytes": 50855936
+            }
+        ]
+    },
+    "parallel_cancellations": {
+        "workers": 4,
+        "requests": 4,
+        "outcomes": {
+            "committed": 4
+        },
+        "wall_seconds": 1.904,
+        "process_throughput_per_second": 2.101,
+        "service_latency_ms": {
+            "p50": 107.217,
+            "p95": 132.888,
+            "max": 391.086
+        },
+        "queries": {
+            "min": 80,
+            "max": 80
+        },
+        "peak_worker_php_bytes": 52953088,
+        "results": [
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 107.217,
+                "queries": 80,
+                "peak_php_bytes": 52953088
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 132.888,
+                "queries": 80,
+                "peak_php_bytes": 52953088
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 105.984,
+                "queries": 80,
+                "peak_php_bytes": 52953088
+            },
+            {
+                "outcome": "committed",
+                "id": null,
+                "service_ms": 391.086,
+                "queries": 80,
+                "peak_php_bytes": 52953088
+            }
+        ]
+    },
+    "invariants": {
+        "unexpected_errors": 0,
+        "parallel_tickets_committed": true,
+        "one_approval_event_per_ticket": true,
+        "one_draft_per_scope": true,
+        "stock_not_overcommitted": true
+    },
+    "production_load_verdict": "BLOCKED: no agreed production workload/SLA or matching infrastructure"
+}

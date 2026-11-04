@@ -57,4 +57,8 @@ class Ticket extends Model
         return $query;
     }
     public function events(): HasMany { return $this->hasMany(TicketEvent::class); }
+    public function workOrderApprovals(): HasMany { return $this->hasMany(WorkOrderApproval::class, 'ticket_id')->whereNull('superseded_at'); }
+    public function workOrderApprovalHistory(): HasMany { return $this->hasMany(WorkOrderApproval::class, 'ticket_id'); }
+    public function workOrderRevisions(): HasMany { return $this->hasMany(WorkOrderRevision::class, 'ticket_id'); }
+    public function workOrderEstimates(): HasMany { return $this->hasMany(WorkOrderEstimate::class, 'ticket_id'); }
 }

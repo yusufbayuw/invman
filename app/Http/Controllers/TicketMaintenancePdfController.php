@@ -14,7 +14,8 @@ class TicketMaintenancePdfController extends Controller
     {
         abort_unless($access->canView($request->user(), $ticket) && $ticket->maintenance()->exists(), 404);
         $ticket->load(['maintenance.approver', 'maintenance.technician', 'maintenance.verifier',
-            'maintenance.finalApprover', 'reporter', 'unit', 'category', 'assets', 'assignee']);
+            'maintenance.finalApprover', 'workOrderApprovals.decisionMaker', 'workOrderApprovals.workflow',
+            'workOrderApprovalHistory.decisionMaker', 'workOrderRevisions.actor', 'reporter', 'unit', 'category', 'assets', 'assignee']);
 
         return Pdf::loadView('pdf.tickets.maintenance', ['ticket' => $ticket])
             ->setPaper('a4', 'portrait')

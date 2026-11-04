@@ -1,0 +1,19 @@
+{
+    "qa_only": true,
+    "provider": "Cloudflare official test keys; live server-side siteverify, no Http fake",
+    "frontend_token": "Official dummy test token supplied to normal Livewire login; not a browser\/widget UAT",
+    "login_get": 200,
+    "livewire_login": 200,
+    "redirect_present": true,
+    "dashboard": 200,
+    "session_cookies_changed": true,
+    "authenticated": true,
+    "authenticated_livewire_refresh": [
+        200,
+        200,
+        200
+    ],
+    "missing_csrf": 419,
+    "wrong_csrf": 419,
+    "forged_snapshot": 419
+}

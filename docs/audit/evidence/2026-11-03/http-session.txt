@@ -1,0 +1,28 @@
+{"login_get_status":200,"bytes":51707}
+[
+    {
+        "test": "csrf_missing",
+        "actual": 419,
+        "expected": 419
+    },
+    {
+        "test": "csrf_invalid",
+        "actual": 419,
+        "expected": 419
+    },
+    {
+        "test": "valid_session_livewire_refresh",
+        "actual": 200,
+        "expected": 200
+    },
+    {
+        "test": "tampered_livewire_snapshot_rejected",
+        "actual": 419,
+        "expected": "4xx/5xx rejection, no authentication"
+    },
+    {
+        "test": "unauthenticated_workflow_redirect",
+        "actual": 302,
+        "location": "http://127.0.0.1:4173/admin/login"
+    }
+]

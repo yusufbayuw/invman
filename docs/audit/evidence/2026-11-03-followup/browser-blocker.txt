@@ -1,0 +1,8 @@
+Authenticated browser UAT remains BLOCKED.
+Local runtime has Playwright JavaScript but no installed Chromium executable.
+Attempt: official Playwright CLI install chromium (v1234, Chrome for Testing 151.0.7922.34).
+Download from https://cdn.playwright.dev/builds/cft/151.0.7922.34/linux64/chrome-linux64.zip failed with:
+Error: End of central directory record signature not found. Either not a zip file, or file is truncated.
+Final: Failed to install browsers; Download failure, code=1.
+No screenshots or browser success results are claimed.
+Normal authenticated HTTP login is tested separately in provider-login.json; it is not browser UAT.

@@ -9,7 +9,6 @@ use App\Models\G001M001Unit;
 use App\Models\G002M007Item;
 use App\Models\G003M006Room;
 use App\Models\G004M008Activity;
-use App\Models\G005M009ItemReservation;
 use App\Models\G005M019VehicleReservation;
 use App\Models\G008M017Vehicle;
 use App\Models\User;
@@ -39,15 +38,15 @@ class QuickLoanRequestTest extends TestCase
         $this->actingAs($user)
             ->get('/admin')
             ->assertOk()
-            ->assertSee('Pinjam Barang')
-            ->assertSee('Pinjam Kendaraan')
-            ->assertSee('Pengajuan Lengkap');
+            ->assertSee('Ajukan Peminjaman')
+            ->assertSee('Peminjaman Saya')
+            ->assertSee('Lihat Jadwal');
 
         $this->actingAs($user)
             ->get(PeminjamanCepat::getUrl(['type' => 'vehicle']))
             ->assertOk()
             ->assertSee('Peminjaman Cepat')
-            ->assertSee('Pengajuan lengkap');
+            ->assertSee('Opsi lanjutan: multi-aset');
 
         $this->actingAs($user)
             ->get(AjukanPeminjaman::getUrl())

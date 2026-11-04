@@ -18,7 +18,7 @@ class G002M015ItemInstanceResource extends Resource
 {
     protected static ?string $model = G002M015ItemInstance::class;
 
-    protected static ?string $navigationGroup = 'Barang';
+    protected static ?string $navigationGroup = 'Data Aset';
 
     protected static ?string $navigationIcon = 'heroicon-o-check-circle';
 

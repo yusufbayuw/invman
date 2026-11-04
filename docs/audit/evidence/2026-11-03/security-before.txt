@@ -1,0 +1,73 @@
+
+  ⨯⨯⨯⨯⨯⨯⨯
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ProductionReadinessSecurityTest > revoked candidate…   
+  Failed asserting that true is false.
+
+  at tests/Feature/ProductionReadinessSecurityTest.php:57
+     53▕         $d = $this->flow();
+     54▕         $access = app(TicketVisibility::class);
+     55▕         $this->assertTrue($access->canView($d['approver'], $d['ticket']));
+     56▕         $d['assignment']->update(['is_active' => false]);
+  ➜  57▕         $this->assertFalse($access->canView($d['approver'], $d['ticket']));
+     58▕         $this->actingAs($d['approver'])->get(route('tickets.maintenance.pdf', $d['ticket']))->assertNotFound();
+     59▕         $this->assertFalse($d['approver']->canAccessPanel(Filament::getPanel('admin')));
+     60▕     }
+     61▕
+
+  1   tests/Feature/ProductionReadinessSecurityTest.php:57
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ProductionReadinessSecurityTest > inactive job titl…   
+  Failed asserting that true is false.
+
+  at tests/Feature/ProductionReadinessSecurityTest.php:66
+     62▕     public function test_inactive_job_title_revokes_candidate_visibility(): void
+     63▕     {
+     64▕         $d = $this->flow();
+     65▕         $d['title']->update(['is_active' => false]);
+  ➜  66▕         $this->assertFalse(app(TicketVisibility::class)->canView($d['approver'], $d['ticket']));
+     67▕         $this->assertFalse($d['approver']->canAccessPanel(Filament::getPanel('admin')));
+     68▕     }
+     69▕ 
+     70▕     public function test_disabled_facility_cannot_assign_legacy_maintenance_via_service(): void
+
+  1   tests/Feature/ProductionReadinessSecurityTest.php:66
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ProductionReadinessSecurityTest > disabled facility…   
+  Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ProductionReadinessSecurityTest > disabled facility…   
+  Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ProductionReadinessSecurityTest > disabled reporter…   
+  Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ProductionReadinessSecurityTe…  AssertionFailedError   
+  Revoked assignment bypassed the transaction boundary.
+
+  at tests/Feature/ProductionReadinessSecurityTest.php:113
+    109▕             }
+    110▕         });
+    111▕         try {
+    112▕             app(TicketMaintenanceService::class)->approve($d['ticket'], $d['approver'], $d['technician']->id);
+  ➜ 113▕             $this->fail('Revoked assignment bypassed the transaction boundary.');
+    114▕         } catch (ValidationException $exception) {
+    115▕             $this->assertTrue($injected);
+    116▕             $this->assertSame('open', $d['ticket']->fresh()->status);
+    117▕         }
+
+  1   tests/Feature/ProductionReadinessSecurityTest.php:113
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ProductionReadinessSecurityTest > all start steps m…   
+  Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+
+  Tests:    7 failed (8 assertions)
+  Duration: 0.74s
+

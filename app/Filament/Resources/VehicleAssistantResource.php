@@ -13,7 +13,7 @@ use Filament\Tables\Table;
 class VehicleAssistantResource extends Resource
 {
     protected static ?string $model = VehicleAssistant::class;
-    protected static ?string $navigationGroup = 'Kendaraan';
+    protected static ?string $navigationGroup = 'Data Aset';
     protected static ?string $navigationLabel = 'Kenek Bus';
     protected static ?string $modelLabel = 'Kenek Bus';
     protected static ?string $navigationIcon = 'heroicon-o-users';

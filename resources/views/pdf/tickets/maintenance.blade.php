@@ -65,7 +65,34 @@ th { background: #eef2f8; }
 <p><b>Deadline respons:</b> {{ $ticket->maintenance->response_due_at?->format('d/m/Y H:i') ?? '-' }} &nbsp;
 <b>Deadline penyelesaian:</b> {{ $ticket->maintenance->resolution_due_at?->format('d/m/Y H:i') ?? '-' }}</p>
 
+@if($ticket->workOrderApprovals->isNotEmpty())
+<p><b>Jejak persetujuan Work Order</b> · Konfigurasi versi {{ $ticket->workOrderApprovals->first()->workflow?->version ?? '-' }}</p>
+<table class="bordered">
+<tr><th>Tahap</th><th>Status</th><th>Keputusan oleh / waktu</th><th>Catatan</th></tr>
+@foreach($ticket->workOrderApprovalHistory->sortBy([['revision', 'asc'], ['sequence', 'asc']]) as $approval)
+<tr>
+<td>{{ $approval->label }}<br><small>Revisi {{ $approval->revision }} · {{ $approval->superseded_at ? 'Arsip' : 'Aktif' }} · {{ $approval->checkpoint === 'final' ? 'Pengesahan akhir' : 'Sebelum penugasan' }}</small></td>
+<td>{{ ['approved' => 'Disetujui', 'rejected' => 'Ditolak', 'pending' => 'Menunggu', 'blocked' => 'Belum ada pejabat'] [$approval->status] ?? $approval->status }}</td>
+<td>{{ $approval->decisionMaker?->name ?? 'Belum diputuskan' }}<br><small>{{ $approval->decided_at?->format('d/m/Y H:i') ?? '-' }}</small></td>
+<td class="long">{{ $approval->notes ?? '-' }}@if($approval->estimate_id)<br>Estimasi #{{ $approval->estimate_id }}@endif</td>
+</tr>
+@endforeach
+</table>
+@foreach($ticket->workOrderRevisions as $revision)
+<p><b>Pengiriman ulang revisi {{ $revision->revision }}</b> · {{ $revision->actor?->name ?? '-' }} · {{ $revision->created_at?->format('d/m/Y H:i') }}<br>{{ $revision->reason }}</p>
+@endforeach
+@endif
+
 <h2>IV. TINDAKAN PERBAIKAN (DIISI OLEH TEKNISI / MAINTENANCE)</h2>
+@foreach($ticket->workOrderEstimates as $estimate)
+<p><b>Tinjauan / estimasi #{{ $estimate->id }}</b> · Versi {{ $estimate->version }} · Revisi laporan {{ $estimate->revision }}<br>
+Pelaksana: {{ $estimate->execution_mode === 'external' ? 'Vendor eksternal' : 'Tim internal' }} · {{ $estimate->vendor_name ?? '-' }}<br>
+Diagnosis awal: {{ $estimate->diagnosis }}<br>
+Total estimasi: Rp {{ number_format((int) $estimate->amount, 0, ',', '.') }}</p>
+<table class="bordered"><tr><th>Rencana material</th><th>Jumlah</th><th>Satuan</th></tr>
+@foreach($estimate->materials as $part)<tr><td>{{ $part['name'] }}</td><td>{{ $part['quantity'] }}</td><td>{{ $part['unit'] }}</td></tr>@endforeach
+</table>
+@endforeach
 <table>
 <tr><td class="key">Nama teknisi</td><td>{{ $ticket->maintenance->technician?->name ?? '-' }}</td></tr>
 <tr><td class="key">Tanggal mulai</td><td>{{ $ticket->maintenance->accepted_at?->format('d/m/Y H:i') ?? '-' }}</td></tr>

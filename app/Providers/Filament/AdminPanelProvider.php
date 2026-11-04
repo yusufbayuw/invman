@@ -9,10 +9,10 @@ use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\RekapanPenggunaan;
 use App\Filament\Widgets\CalendarWidget;
 use App\Filament\Widgets\LoanOperationsStats;
-use App\Filament\Widgets\OperationalPriorityWidget;
 use App\Filament\Widgets\LoanStatusChart;
 use App\Filament\Widgets\LoanUsageTrendChart;
 use App\Filament\Widgets\MenuGridWidget;
+use App\Filament\Widgets\OperationalPriorityWidget;
 use App\Filament\Widgets\QuickActionsWidget;
 use App\Filament\Widgets\RecentLoanRequests;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
@@ -21,6 +21,7 @@ use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\MenuItem;
+use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -64,6 +65,17 @@ class AdminPanelProvider extends PanelProvider
             ->globalSearchFieldKeyBindingSuffix()
             ->globalSearchDebounce('400ms')
             ->sidebarCollapsibleOnDesktop()
+            ->navigationGroups([
+                NavigationGroup::make()->label('Peminjaman'),
+                NavigationGroup::make()->label('Laporan & Perbaikan'),
+                NavigationGroup::make()->label('Koordinasi'),
+                NavigationGroup::make()->label('Laporan'),
+                NavigationGroup::make()->label('Kelola Peminjaman')->collapsed(),
+                NavigationGroup::make()->label('Opsi Peminjaman')->collapsed(),
+                NavigationGroup::make()->label('Data Aset')->collapsed(),
+                NavigationGroup::make()->label('Pemeriksaan & Riwayat')->collapsed(),
+                NavigationGroup::make()->label('Pengaturan')->collapsed(),
+            ])
             ->unsavedChangesAlerts()
             ->maxContentWidth(MaxWidth::Full)
             ->userMenuItems([

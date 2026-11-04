@@ -19,7 +19,7 @@ class G003M006RoomResource extends Resource
 {
     protected static ?string $model = G003M006Room::class;
 
-    protected static ?string $navigationGroup = 'Ruangan';
+    protected static ?string $navigationGroup = 'Data Aset';
 
     protected static ?string $navigationIcon = 'heroicon-o-map-pin';
 

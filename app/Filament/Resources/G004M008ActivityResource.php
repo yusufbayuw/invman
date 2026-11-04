@@ -28,7 +28,7 @@ class G004M008ActivityResource extends Resource
 {
     protected static ?string $model = G004M008Activity::class;
 
-    protected static ?string $navigationGroup = 'Kegiatan';
+    protected static ?string $navigationGroup = 'Peminjaman';
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 
@@ -36,7 +36,7 @@ class G004M008ActivityResource extends Resource
 
     protected static ?string $modelLabel = 'Kegiatan';
 
-    protected static ?string $navigationLabel = 'Kegiatan';
+    protected static ?string $navigationLabel = 'Daftar Pengajuan';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -83,12 +83,12 @@ class G004M008ActivityResource extends Resource
 
     public static function getNavigationLabel(): string
     {
-        return 'Kegiatan';
+        return 'Daftar Pengajuan';
     }
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Kegiatan';
+        return 'Peminjaman';
     }
 
     public static function getModelLabel(): string

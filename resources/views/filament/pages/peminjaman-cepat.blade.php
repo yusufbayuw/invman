@@ -12,7 +12,7 @@
                 outlined
                 icon="heroicon-o-rectangle-stack"
             >
-                Pengajuan lengkap
+                Opsi lanjutan: multi-aset
             </x-filament::button>
         </div>
 

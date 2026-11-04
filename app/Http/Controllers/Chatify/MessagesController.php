@@ -31,7 +31,7 @@ class MessagesController extends BaseMessagesController
                 $query->where('ch_messages.from_id', $authId)
                     ->orWhere('ch_messages.to_id', $authId);
             })
-            ->groupByRaw($contactIdExpression, [$authId]);
+            ->groupBy('contact_id');
 
         $users = User::query()
             ->joinSub($latestConversations, 'latest_conversations', function ($join): void {

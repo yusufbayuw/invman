@@ -1,0 +1,377 @@
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true
+
+   PASS  Tests\Unit\LicenseAllowlistTest
+  ✓ allowlists are canonical sets                                        0.01s  
+  ✓ wildcard matches subdomains but not apex or unrelated suffixes
+  ✓ unsafe domain patterns are rejected with data set "loose wildcard"
+  ✓ unsafe domain patterns are rejected with data set "scheme"
+  ✓ unsafe domain patterns are rejected with data set "port"
+  ✓ unsafe domain patterns are rejected with data set "path"
+  ✓ unsafe domain patterns are rejected with data set "embedded wildcard"
+  ✓ ipv4 and ipv6 cidr boundaries are enforced
+  ✓ bracketed ipv6 request host with port is normalized
+
+   PASS  Tests\Unit\LicenseVerificationTest
+  ✓ reordering case whitespace and duplicates do not invalidate license  0.39s  
+  ✓ a semantic allowlist change invalidates the existing token           0.05s  
+  ✓ corrupted signature is rejected                                      0.04s  
+  ✓ malformed token and wrong product are distinguished                  0.05s  
+  ✓ noncanonical signed payload is rejected                              0.05s  
+  ✓ wrong signed payload version is rejected                             0.04s  
+
+   PASS  Tests\Feature\AuditP1HardeningTest
+  ✓ default seeder is read only in production                            0.46s  
+  ✓ enabled account is separate from chat presence and revocation kicks… 0.08s  
+  ✓ strong password policy matches provisioning and profile              0.04s  
+  ✓ new ticket reports require maintenance category but explicit legacy… 0.06s  
+
+   PASS  Tests\Feature\AuthCaptchaParityTest
+  ✓ login uses the custom filament auth page                             0.04s  
+  ✓ local captcha matches spmb readable defaults                         0.03s  
+  ✓ local captcha provides light and dark images and rejects invalid co… 0.04s  
+
+   PASS  Tests\Feature\AuthSessionReadinessTest
+  ✓ normal filament login regenerates session for enabled user           0.41s  
+  ✓ disabled user cannot authenticate even with valid password and loca… 0.52s  
+
+   PASS  Tests\Feature\BootstrapTrustedProxiesTest
+  ✓ http kernel resolves before config repository is loaded              0.14s  
+  ✓ trusted proxy is read from laravel config when request arrives       0.04s  
+  ✓ untrusted proxy and wildcard configuration are fail closed           0.05s  
+  ✓ cidr config and invalid proxy ranges                                 0.04s  
+
+   PASS  Tests\Feature\BrandingAndAvatarTest
+  ✓ login logo is centered                                               0.13s  
+  ✓ chatify uses application name and logo                               0.16s  
+  ✓ default avatar uses fav image                                        0.06s  
+  ✓ uploaded avatar uses chatify public storage url                      0.05s  
+  ✓ filament does not prefix an avatar url formatted by chatify          0.04s  
+  ✓ chatify formatted default avatar still uses fav image                0.05s  
+  ✓ chatify uses application logo for default avatar                     0.04s  
+  ✓ chatify does not duplicate the avatar folder                         0.04s  
+
+   PASS  Tests\Feature\ChatPushNotificationTest
+  ✓ new chat message queues a sanitized push for the recipient only      0.06s  
+  ✓ attachment only message uses a generic preview                       0.07s  
+
+   PASS  Tests\Feature\ChatifyContactsTest
+  ✓ contacts route uses the mysql compatible controller                  0.04s  
+  ✓ contacts are returned in latest conversation order                   0.06s  
+
+   PASS  Tests\Feature\DatabaseSeederTest
+  ✓ database seeder creates reference data and is idempotent             0.53s  
+
+   PASS  Tests\Feature\DynamicWorkOrderApprovalFlowTest
+  ✓ dynamic work order runs full approval and maintenance sequence       0.12s  
+  ✓ revoked title cannot approve and admin reassigns with audit          0.09s  
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ the application returns a successful response                        0.16s  
+
+   PASS  Tests\Feature\FilamentExperienceTest
+  ✓ dashboard renders native operational widgets                         0.31s  
+  ✓ recent requests widget respects sarpras unit scope                   0.15s  
+  ✓ global search finds core inventory and activity records              0.11s  
+
+   PASS  Tests\Feature\GroupedLoanActivityTest
+  ✓ two quick requests share one canonical activity but have independen… 1.68s  
+  ✓ root picker only contains eligible unit activities not child or dra… 0.06s  
+  ✓ service rejects forged other unit and nested group references        0.06s  
+  ✓ quick request cannot link to another unit even when id is forged     0.50s  
+
+   PASS  Tests\Feature\Laravel12CompatibilityTest
+  ✓ framework and filament plugins remain compatible                     0.04s  
+
+   PASS  Tests\Feature\LicenseEnforcementTest
+  ✓ exact domain wildcard and ip hosts are allowed                       0.36s  
+  ✓ missing token returns generic locked html without leaking configura… 0.05s  
+  ✓ json and major route groups are locked before application logic      0.05s  
+  ✓ health check remains available when license is invalid               0.05s  
+  ✓ forwarded host cannot spoof an unlicensed host                       0.05s  
+  ✓ license commands work while locked and business command stops        0.05s  
+  ✓ scheduler filter rejects business schedule when license is invalid   0.04s  
+  ✓ valid license allows business command and schedule                   0.04s  
+  ✓ status uses app url host for console validation                      0.04s  
+
+   WARN  Tests\Feature\LoanAccessAndHistoryTest
+  ✓ sarpras and manager visibility is consistent across resources dashb… 0.14s  
+  - database rejects deleting actors units or assets that have loan his… 0.04s  
+
+   PASS  Tests\Feature\LoanBookingLifecycleTest
+  ✓ active submitted hold blocks items rooms and vehicles                0.15s  
+  ✓ draft and elapsed submitted holds do not block availability          0.16s  
+  ✓ unavailable assets can remain in a draft but cannot be submitted     0.15s  
+  ✓ expiry releases all pending needs and marks the activity expired     0.17s  
+  ✓ expiry keeps approved needs and only releases pending needs          0.19s  
+  ✓ decision is rejected after the hold deadline                         0.16s  
+  ✓ expiry command processes elapsed holds                               0.20s  
+  ✓ item availability follows the complete status matrix                 0.21s  
+  ✓ open overdue usage blocks future item room and vehicle availability  0.18s  
+
+   PASS  Tests\Feature\LoanEventMasterTest
+  ✓ every request gets a master event and it outlives cancelled request… 1.40s  
+  ✓ full request can reference existing event and mixed assets keep sep… 0.88s  
+  ✓ cross unit master id is rejected even by direct service call         0.10s  
+  ✓ quick picker hides foreign events even if they are submitted or can… 3.44s  
+  ✓ master resource is scoped and existing requests still get master li… 1.81s  
+
+   PASS  Tests\Feature\LoanHandoverPdfTest
+  ✓ pdf download requires auth and specific reservation ownership        2.33s  
+  ✓ complete evidence displays real roles times condition and notes      0.39s  
+  ✓ incomplete and exception do not forge borrower confirmation          0.35s  
+  ✓ item instance and vehicle specific details are in document           0.09s  
+  ✓ only local safe images are inlined and notes are escaped             0.17s  
+  ✓ visible unit can find pdf action in familiar loan pages              0.35s  
+
+   PASS  Tests\Feature\LoanNotificationTest
+  ✓ submission creates actionable database notifications for requester…  0.09s  
+  ✓ requester is notified when aggregate loan status changes             0.09s  
+  ✓ cancellation notifies requester and clears the reviewers pending co… 0.08s  
+  ✓ submission queues device push for subscribed requester and reviewer  0.09s  
+
+   PASS  Tests\Feature\LoanRequestServiceTest
+  ✓ it creates one activity with multiple types of needs                 0.31s  
+  ✓ return request requires a checklist                                  0.15s  
+  ✓ failed item allocation rolls back the checkout                       0.16s  
+  ✓ bad return keeps allocated item instances out of service             0.33s  
+  ✓ a stale second decision cannot overwrite the first decision          0.12s  
+  ✓ it rejects an item quantity that is not available for an overlappin… 0.18s  
+  ✓ it rejects the same item twice in one request                        0.09s  
+
+   PASS  Tests\Feature\LoanReturnControlsTest
+  ✓ overdue reminder is sent to borrower and manager at most once per d… 0.12s  
+  ✓ item return records each instance and requires two party confirmati… 0.11s  
+  ✓ admin correction reopens return without deleting original history    0.09s  
+
+   PASS  Tests\Feature\LoanReviewServiceTest
+  ✓ it saves overall and returned asset reviews atomically               0.12s  
+  ✓ empty values remove only integrated reviews and leave checklist unt… 0.12s  
+  ✓ it updates existing reviews without creating duplicates              0.12s  
+  ✓ borrower can submit the integrated filament action                   1.09s  
+  ✓ review is available for mixed terminal statuses but not blocking st… 0.10s  
+  ✓ it rejects expired unauthorized invalid and tampered submissions     0.14s  
+
+   PASS  Tests\Feature\MassAssignmentHardeningTest
+  ✓ every persisted application model has an explicit attribute allowli… 0.05s  
+  ✓ untrusted assignment cannot forge reservation approval audit         0.03s  
+  ✓ untrusted payload cannot override workflow owner unit or status      0.07s  
+  ✓ audit status history cannot be edited or deleted                     0.03s  
+  ✓ master record identifier is not fillable                             0.03s  
+
+   PASS  Tests\Feature\ObserverBusinessFlowTest
+  ✓ item instance is the source of truth for stock totals                0.06s  
+  ✓ master quantity cannot be changed directly after creation            0.04s  
+  ✓ reservation created under a draft does not hold inventory            0.04s  
+  ✓ monthly generation does not mark a placeholder as inspected          0.04s  
+  ✓ first inspection is stamped once for both good and bad results       0.03s  
+  ✓ monthly checklist is unique per item instance                        0.04s  
+  ✓ assets with checklist history cannot be deleted                      0.03s  
+  ✓ submitted requests and reservations cannot be deleted                0.07s  
+
+   PASS  Tests\Feature\OperationalPriorityDashboardTest
+  ✓ unit sees all six real time operational states and overdue not hidd… 0.67s  
+  ✓ facility can filter unit but nonfacility cannot widen scope          0.51s  
+  ✓ missing second party checkout is visible even when approval is not   0.42s  
+  ✓ dashboard keeps actions and moves complete monitoring to summary     0.40s  
+  ✓ one submission with two assets is counted once in summary and twice… 0.21s  
+
+   PASS  Tests\Feature\OutboundHandoverV2Test
+  ✓ manager initial checklist does not checkout until different borrowe… 0.10s  
+  ✓ checkout confirmation is scoped and concurrent resubmission is reje… 0.12s  
+  ✓ fallback requires reason and records single party exception          0.11s  
+  ✓ initial item conditions are bound to exact allocated instances       0.08s  
+  ✓ outbound vehicle optional odometer and no status change until confi… 0.04s  
+  ✓ legacy direct checkout is annotated as unverified without forged bo… 0.09s  
+  ✓ production style guard blocks direct checkout but allows audited fa… 0.11s  
+  ✓ qr screen shows initial condition form and borrower acceptance       1.31s  
+
+   PASS  Tests\Feature\ProductionHardeningTest
+  ✓ demo accounts are opt in and production always disables them         0.14s  
+  ✓ reseeding never resets existing password role or identity            0.18s  
+  ✓ weak demo password is rejected                                       0.12s  
+  ✓ admin provisioning requires strong credentials and never resets exi… 0.12s  
+  ✓ unguarded models are disabled and record identifiers cannot be mass… 0.05s  
+  ✓ admin panel requires operational role or managed assets              0.18s  
+  ✓ production audit rejects debug http insecure cookies and open proxi… 0.17s  
+
+   PASS  Tests\Feature\ProductionReadinessSecurityTest
+  ✓ revoked candidate loses ticket and private pdf access                0.14s  
+  ✓ inactive job title revokes candidate visibility                      0.14s  
+  ✓ title candidate visibility preserves legacy ticket with null report… 0.12s  
+  ✓ disabled facility cannot assign legacy maintenance via service       0.12s  
+  ✓ disabled facility cannot cancel legacy maintenance via service       0.09s  
+  ✓ disabled reporter cannot verify completed work via service           0.13s  
+  ✓ assignment authority is checked inside ticket transaction            0.09s  
+  ✓ reporter with facility role cannot approve own legacy report         0.13s  
+  ✓ approval only user sees pending ticket on dashboard                  0.20s  
+  ✓ multi position hierarchy cannot hide a cycle on second assignment    0.14s  
+  ✓ default active assignment cannot reference disabled user             0.05s  
+  ✓ reporter holding required title and multiple roles cannot decide ow… 0.13s  
+  ✓ disabled approver cannot decide pending dynamic step                 0.13s  
+  ✓ all start steps must precede any final step                          0.05s  
+
+   PASS  Tests\Feature\PublicLoanScheduleTest
+  ✓ public page only shows approved or checked out current and upcoming… 0.65s  
+
+   PASS  Tests\Feature\PublicRoomScheduleTest
+  ✓ room qr code is generated automatically with a public schedule url   0.21s  
+  ✓ public room page shows current status and only confirmed current or… 0.18s  
+  ✓ room qr code can be downloaded as an a4 pdf                          0.49s  
+
+   PASS  Tests\Feature\PushSubscriptionTest
+  ✓ subscription endpoints require authentication                        0.09s  
+  ✓ user can register multiple devices and update an existing endpoint   0.10s  
+  ✓ endpoint moves to the current user and unsubscribe only removes own… 0.08s  
+  ✓ subscription payload is validated                                    0.06s  
+
+   PASS  Tests\Feature\PwaAssetsTest
+  ✓ manifest defines installable application scope and icons             0.07s  
+  ✓ service worker handles push without caching pages                    0.06s  
+
+   PASS  Tests\Feature\QrHandoverFlowTest
+  ✓ signed qr opens exact reservation for authorized manager and borrow… 0.23s  
+  ✓ tampered or expired qr is rejected                                   0.19s  
+  ✓ qr checkout then borrower return then manager confirmation           2.87s  
+  ✓ manager records physical return and borrower confirms from qr        1.46s  
+  ✓ unrelated user cannot mutate checkout or return by changing query    0.37s  
+  ✓ unit list exposes qr action for authorized reservations              0.29s  
+
+   PASS  Tests\Feature\QuickActionsWidgetTest
+  ✓ manager queue only contains actionable assets from assigned managem… 0.23s  
+  ✓ sarpras queue is scoped to own unit and counterparty confirmation    0.28s  
+  ✓ widget actions validate and transition reservations                  0.99s  
+  ✓ dashboard renders empty queue for operational role regardless of fi… 0.37s  
+  ✓ widget completes checkout and two party return flow                  2.52s  
+  ✓ widget prefills item instances and supports manager initiated retur… 1.09s  
+
+   PASS  Tests\Feature\QuickLoanRequestTest
+  ✓ borrower sees quick request as primary dashboard action and full fo… 0.75s  
+  ✓ one item can be requested with only one purpose and asset selection  0.47s  
+  ✓ vehicle request uses same workflow without driver or assistant inpu… 0.51s  
+  ✓ room request is available without compromising single need flow      0.51s  
+  ✓ unavailable asset cannot be reserved twice                           2.50s  
+  ✓ untrusted form state cannot assign a different user unit or status   0.69s  
+  ✓ quick request blocks unauthorized accounts and invalid time          0.58s  
+
+   PASS  Tests\Feature\ReservationFilterTabsTest
+  ✓ all reservation lists have the same status filter tabs               0.06s  
+
+   PASS  Tests\Feature\RoleAndUnitAccessTest
+  ✓ seeders create expected units roles and accounts                     0.15s  
+  ✓ sarpras policy is scoped to unit and locks approved activity         0.07s  
+  ✓ facility can access and manage all reservation types                 0.12s  
+  ✓ facility can decide reservation without asset manager assignment     0.09s  
+  ✓ facility approval action advances the reservation                    0.37s  
+  ✓ assigned manager can record a direct return from activity relation…  1.06s  
+  ✓ manager status changes record actor and full history                 0.09s  
+
+   PASS  Tests\Feature\RoleDashboardTest
+  ✓ sarpras dashboard starts with daily actions and has no technical or… 0.72s  
+  ✓ facility and administrator keep operational access and secondary to… 1.59s  
+  ✓ technician dashboard contains only own work and cannot open loan to… 0.58s  
+  ✓ asset manager keeps managed work without gaining loan creation       0.79s  
+  ✓ combined sarpras and technician keeps both workflows                 0.45s  
+  ✓ ticket widget preserves reporter visibility and never leaks other r… 0.33s  
+  ✓ technician work queue is assigned to self even for a team lead       0.19s  
+  ✓ navigation groups are native collapsible and all old urls are regis… 0.43s  
+  ✓ technician links open the exact ticket and preserve existing work g… 3.93s  
+  ✓ administrative access alone does not offer technician work           3.48s  
+  ✓ completed or foreign work does not make technician shortcut relevan… 1.04s  
+  ✓ ticket unit filter is local and cannot expand nonfacility scope      1.63s  
+  ✓ work action is hidden after assignment or qualification changes      1.47s  
+
+   PASS  Tests\Feature\TicketMaintenanceV3Test
+  ✓ full maintenance signoffs and safety release                         0.20s  
+  ✓ temporary repair cannot release asset and role boundaries apply      0.17s  
+  ✓ protected pdf marks incomplete and does not leak to other users      1.04s  
+  ✓ sla business calendar and escalations are idempotent                 0.16s  
+  ✓ single item safety hold reduces available stock without disabling o… 0.16s  
+  ✓ batched picker limits safety queries and preserves option order      0.14s  
+  ✓ safety batch preserves room and instance blocking                    0.16s  
+  ✓ legacy ticket can continue v1 flow without v3 signoffs               0.12s  
+
+   PASS  Tests\Feature\TicketReportingUxTest
+  ✓ short report without inventory uses auto title and preserves report… 0.44s  
+  ✓ search is server side scoped and finds assets after old 250 limit    0.11s  
+  ✓ room lookup searches only existing name column and preserves unit s… 0.21s  
+  ✓ code and license plate search still work for supported asset types   0.10s  
+  ✓ manager can link unidentified asset with audit and access guards     0.11s  
+  ✓ existing room qr offers scoped reporting entry                       0.13s  
+  ✓ item qr scans open prefilled report only for authorized users        0.17s  
+
+   PASS  Tests\Feature\TicketTeamHierarchyTest
+  ✓ field hierarchy delegates to descendants without granting approval…  0.91s  
+  ✓ cycles foreign supervisors and unassigned technicians are rejected   0.33s  
+  ✓ disabling field member removes delegation but does not change old t… 0.13s  
+  ✓ field workspace is scoped to the assignee and can start task withou… 0.77s  
+  ✓ disabled technician cannot accept or continue existing task          0.14s  
+  ✓ team hierarchy cannot orphan active subordinates                     0.10s  
+  ✓ general field teams cannot cross unit scope when tickets have no as… 0.10s  
+
+   PASS  Tests\Feature\TicketingCoreTest
+  ✓ ticket created with asset assignment scope and immutable audit       0.22s  
+  ✓ no cross unit asset forgery or non activated category                0.19s  
+  ✓ ticket workflow assignment and internal notes are guarded            0.31s  
+  ✓ private attachments require ticket permissions                       0.28s  
+  ✓ damaged room return opens one ticket without modifying loan status   0.28s  
+  ✓ filament ticket resource is visible to authorized user and scopes t… 1.89s  
+  ✓ comment images render through authorized native filament entries     1.38s  
+  ✓ attachment validation rejects spoofed content and unsafe file paths  0.21s  
+  ✓ private pdf can preview inline but internal comments remain hidden   1.29s  
+
+   PASS  Tests\Feature\UnitLoanPageTest
+  ✓ sarpras can open the unified request page and only see its unit loa… 1.09s  
+  ✓ unit user can submit the unified form                                1.17s  
+  ✓ request page rejects an end time before the start time               0.74s  
+  ✓ draft owner can reopen complete form and see stale asset availabili… 0.64s  
+  ✓ unified loan page shows return actions for the correct role          1.92s  
+
+   PASS  Tests\Feature\UsageReportPageTest
+  ✓ facility can view and filter the usage report                        1.37s  
+  ✓ sarpras report is scoped to its own unit                             0.32s  
+  ✓ user without an authorized role cannot open the report               0.07s  
+
+   PASS  Tests\Feature\VehicleCrewWorkflowTest
+  ✓ bus can be requested without staff but needs driver and assistant t… 0.13s  
+  ✓ overlapping vehicles cannot assign same driver                       0.13s  
+  ✓ mid trip reassignment keeps history and master default               0.15s  
+  ✓ draft rechecks vehicle availability before creating its hold         0.09s  
+
+   PASS  Tests\Feature\WorkOrderConfigurationTest
+  ✓ published configuration is immutable and requires admin              0.11s  
+  ✓ supervisor cannot be own supervisor                                  0.06s  
+  ✓ publishing requires an active approver assignment                    0.10s  
+  ✓ indirect supervisor cycle is rejected                                0.06s  
+  ✓ invalid or duplicate workflow steps are rejected                     0.06s  
+
+   PASS  Tests\Feature\WorkOrderEstimateTest
+  ✓ budget approval binds exact immutable vendor quote before assignmen… 0.16s  
+  ✓ estimate cannot self approve and reject resubmit does not reuse pri… 0.14s  
+  ✓ estimate validates amount vendor scope and fresh actor               0.15s  
+  ✓ changed quote requires explicit new version and cannot be approved…  0.18s  
+  ✓ native filament estimate action records the explicit amount          4.88s  
+
+   PASS  Tests\Feature\WorkOrderReadinessTest
+  ✓ configured ytb backend sequence completes for all six units with m… 10.35s  
+  ✓ explicit dispatch title enables assetless central work without faci… 0.78s  
+  ✓ dispatch title scope revocation and inactive team remain fail close… 0.75s  
+  ✓ assetless report does not grant central technician cross unit autho… 0.68s  
+  ✓ rejection is fail closed and duplicate decision is not replayed      0.53s  
+  ✓ administrator can manage titles assignments and publish using filam… 2.03s  
+  ✓ job title named administrator does not grant system administration   0.70s  
+  ✓ new published workflow does not rewrite existing ticket snapshot     0.73s  
+  ✓ missing supervisor is blocked until active assignment and audited r… 0.80s  
+  ✓ unit transfer revokes snapshot candidate and multi role cannot skip… 0.74s  
+
+   PASS  Tests\Feature\WorkOrderRevisionTest
+  ✓ rejected report resubmits on same ticket and preserves decisions an… 0.22s  
+  ✓ revision rejects foreign actor disabled stale identity and protecte… 0.15s  
+  ✓ superseded pending id and revoked candidates cannot decide or reass… 0.13s  
+  ✓ final rejection requires rework new reporter verification and fresh… 0.19s  
+  ✓ native filament revision action revalidates and submits corrected r… 5.66s  
+
+  Tests:    1 skipped, 268 passed (2116 assertions)
+  Duration: 120.06s
+

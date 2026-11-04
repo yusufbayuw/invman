@@ -14,7 +14,7 @@ class G009M024VehicleChecklistResource extends Resource
 {
     protected static ?string $model = G009M024VehicleChecklist::class;
 
-    protected static ?string $navigationGroup = 'Monitoring';
+    protected static ?string $navigationGroup = 'Pemeriksaan & Riwayat';
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 

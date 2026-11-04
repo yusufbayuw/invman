@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
 class TicketCategoryResource extends Resource
 {
     protected static ?string $model = TicketCategory::class;
-    protected static ?string $navigationGroup = 'Layanan & Ticketing';
+    protected static ?string $navigationGroup = 'Pengaturan';
     protected static ?string $navigationLabel = 'Kategori Laporan';
     protected static ?string $modelLabel = 'Kategori Laporan';
     protected static ?string $navigationIcon = 'heroicon-o-tag';

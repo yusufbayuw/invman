@@ -1,16 +1,16 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <x-slot name="heading">
-            Prioritas Operasional V2
+            Prioritas Reservasi Aset
         </x-slot>
 
         <x-slot name="description">
-            Status reservasi saat ini sesuai kewenangan Anda. Filter unit berlaku untuk pengelola fasilitas; filter periode dan status historis tidak menyembunyikan pinjaman terlambat.
+            Satu pengajuan dapat berisi beberapa reservasi aset. Angka berikut menghitung reservasi, bukan jumlah pengajuan atau jumlah barang fisik. Hanya filter unit yang berlaku di sini; tanggal dan status ringkasan tidak memengaruhi daftar ini.
         </x-slot>
 
         <div wire:poll.30s wire:loading.class.delay="opacity-60" class="space-y-6 transition-opacity">
             {{-- The category cards are filters, not independent navigation links. --}}
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
                 @foreach ($categories as $key => $meta)
                     <button
                         type="button"
@@ -68,8 +68,8 @@
             @else
                 <div class="space-y-3">
                     {{-- Full-width table on desktop; stacked cards avoid horizontal scrolling on phones. --}}
-                    <div class="hidden overflow-x-auto rounded-xl border border-gray-200 md:block dark:border-white/10">
-                        <table class="w-full min-w-[740px] divide-y divide-gray-200 text-start dark:divide-white/10">
+                    <div class="hidden overflow-x-auto rounded-xl border border-gray-200 xl:block dark:border-white/10">
+                        <table class="w-full table-fixed divide-y divide-gray-200 text-start dark:divide-white/10">
                             <thead class="bg-gray-50 dark:bg-white/5">
                                 <tr>
                                     <th scope="col" class="px-4 py-3 text-start text-xs font-semibold text-gray-700 dark:text-gray-200">Aset / kegiatan</th>
@@ -83,18 +83,18 @@
                                 @foreach ($snapshot['rows'] as $row)
                                     <tr wire:key="operation-desktop-{{ $row['key'] }}" class="transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
                                         <td class="px-4 py-3 align-middle">
-                                            <p class="max-w-xs truncate text-sm font-semibold text-gray-950 dark:text-white" title="{{ $row['asset'] }}">{{ $row['asset'] }}</p>
-                                            <p class="max-w-xs truncate text-xs text-gray-500 dark:text-gray-400" title="{{ $row['type_label'] }} · {{ $row['activity'] }}">{{ $row['type_label'] }} · {{ $row['activity'] }}</p>
+                                            <p class="break-words text-sm font-semibold text-gray-950 dark:text-white" title="{{ $row['asset'] }}">{{ $row['asset'] }}</p>
+                                            <p class="break-words text-xs text-gray-500 dark:text-gray-400" title="{{ $row['type_label'] }} · {{ $row['activity'] }}">{{ $row['type_label'] }} · {{ $row['activity'] }}</p>
                                         </td>
                                         <td class="px-4 py-3 align-middle text-sm text-gray-700 dark:text-gray-200">{{ $row['unit'] }}</td>
                                         <td class="px-4 py-3 align-middle">
-                                            <x-filament::badge :color="$row['color']">{{ $row['category_label'] }}</x-filament::badge>
+                                            <x-filament::badge :color="$row['color']" class="invman-action-status max-w-full">{{ $row['category_label'] }}</x-filament::badge>
                                         </td>
-                                        <td class="whitespace-nowrap px-4 py-3 align-middle text-xs text-gray-700 dark:text-gray-200">{{ $row['due'] }}</td>
+                                        <td class="px-4 py-3 align-middle text-xs text-gray-700 dark:text-gray-200">{{ $row['due'] }}</td>
                                         <td class="px-4 py-3 text-end align-middle">
                                             <a
                                                 href="{{ $row['url'] }}"
-                                                class="inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-700 transition-colors hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-300 dark:hover:bg-primary-500/20"
+                                                class="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 whitespace-normal rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-700 transition-colors hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-300 dark:hover:bg-primary-500/20"
                                             >
                                                 {{ $row['action'] }} <span aria-hidden="true">→</span>
                                             </a>
@@ -105,7 +105,7 @@
                         </table>
                     </div>
 
-                    <div class="grid gap-3 md:hidden">
+                    <div class="grid gap-3 md:grid-cols-2 xl:hidden">
                         @foreach ($snapshot['rows'] as $row)
                             <article wire:key="operation-mobile-{{ $row['key'] }}" class="space-y-3 rounded-xl border border-gray-200 p-4 dark:border-white/10">
                                 <div class="flex flex-wrap items-start justify-between gap-2">
@@ -113,7 +113,7 @@
                                         <p class="break-words text-sm font-semibold text-gray-950 dark:text-white">{{ $row['asset'] }}</p>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">{{ $row['type_label'] }} · {{ $row['activity'] }}</p>
                                     </div>
-                                    <x-filament::badge :color="$row['color']">{{ $row['category_label'] }}</x-filament::badge>
+                                    <x-filament::badge :color="$row['color']" class="invman-action-status max-w-full">{{ $row['category_label'] }}</x-filament::badge>
                                 </div>
                                 <dl class="grid grid-cols-2 gap-3 text-xs">
                                     <div>

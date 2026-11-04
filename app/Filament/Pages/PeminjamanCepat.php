@@ -30,7 +30,7 @@ class PeminjamanCepat extends Page implements HasForms
 
     protected static ?string $navigationGroup = 'Peminjaman';
 
-    protected static ?string $navigationLabel = 'Peminjaman Cepat';
+    protected static ?string $navigationLabel = 'Ajukan Peminjaman';
 
     protected static ?string $title = 'Peminjaman Cepat';
 

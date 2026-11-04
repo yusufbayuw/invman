@@ -1,0 +1,29 @@
+{
+  "capture_date": "2026-11-03",
+  "method": "real public Laravel pages in same-origin CSS-width iframes; no fixture login",
+  "authenticated_browser_uat": "BLOCKED",
+  "viewports": [
+    {
+      "iframe_width": 360,
+      "clientWidth": 345,
+      "scrollWidth": 345
+    },
+    {
+      "iframe_width": 390,
+      "clientWidth": 375,
+      "scrollWidth": 375
+    },
+    {
+      "iframe_width": 430,
+      "clientWidth": 415,
+      "scrollWidth": 415
+    },
+    {
+      "iframe_width": 1366,
+      "clientWidth": 1351,
+      "scrollWidth": 1351,
+      "screenshot_display_scale": 0.95
+    }
+  ],
+  "note": "15 px native vertical scrollbar. These measurements do not cover authenticated dashboards. Mobile iframe height 820; desktop 900. Native browser screenshot 1365x936."
+}
