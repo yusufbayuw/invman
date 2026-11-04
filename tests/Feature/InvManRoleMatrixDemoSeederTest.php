@@ -6,6 +6,7 @@ use App\Models\G001M001Unit;
 use App\Models\G002M007Item;
 use App\Models\G002M015ItemInstance;
 use App\Models\G004M008Activity;
+use App\Models\G008M018Driver;
 use App\Models\TicketTeamMember;
 use App\Models\User;
 use App\Models\WorkOrderAssignment;
@@ -42,13 +43,13 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
         $this->seed(InvManRoleMatrixDemoSeeder::class);
     }
 
-    public function test_it_creates_five_units_eleven_users_and_scoped_inventory_without_submissions(): void
+    public function test_it_creates_five_units_twelve_users_and_scoped_inventory_without_submissions(): void
     {
         $this->enableDemo();
         $this->seed(InvManRoleMatrixDemoSeeder::class);
 
         $this->assertSame(5, G001M001Unit::query()->where('name', 'like', '[DEMO-ORG]%')->count());
-        $this->assertSame(11, User::query()->whereIn('username', ['sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ', 'staf.fas', 'spv.fas', 'man.fas', 'teknisi', 'it', 'perpus'])->count());
+        $this->assertSame(12, User::query()->whereIn('username', ['sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ', 'staf.fas', 'spv.fas', 'man.fas', 'teknisi', 'it', 'perpus', 'driver'])->count());
         $this->assertSame(5, User::query()->whereIn('username', ['sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ'])->count());
         $this->assertSame(15, G002M007Item::query()->where('code', 'like', 'INVMAN-ORG-%')->count());
         $this->assertSame(45, G002M015ItemInstance::query()->whereHas('item',
@@ -69,6 +70,9 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
             $this->assertTrue($facility->isFacility());
         }
 
+        $driverUser = User::query()->where('username', 'driver')->firstOrFail();
+        $this->assertSame('A', G008M018Driver::query()->where('user_id', $driverUser->id)->firstOrFail()->sim_type);
+        $this->assertFalse($driverUser->isFacility());
         $technician = User::query()->where('username', 'teknisi')->firstOrFail();
         $staff = User::query()->where('username', 'staf.fas')->firstOrFail();
         $this->assertFalse($technician->isFacility());
@@ -115,6 +119,7 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
             G002M015ItemInstance::query()->count(),
             G004M008Activity::query()->count(),
             WorkOrderAssignment::query()->count(),
+            G008M018Driver::query()->count(),
             TicketTeamMember::query()->count(),
             WorkOrderWorkflow::query()->count(),
         ];
@@ -126,12 +131,13 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
             G002M015ItemInstance::query()->count(),
             G004M008Activity::query()->count(),
             WorkOrderAssignment::query()->count(),
+            G008M018Driver::query()->count(),
             TicketTeamMember::query()->count(),
             WorkOrderWorkflow::query()->count(),
         ]);
         $this->assertSame($hash, $user->fresh()->password);
         $this->assertTrue(Hash::check('password', $user->password));
-        foreach (['sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ', 'staf.fas', 'spv.fas', 'man.fas', 'teknisi', 'it', 'perpus'] as $username) {
+        foreach (['sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ', 'staf.fas', 'spv.fas', 'man.fas', 'teknisi', 'it', 'perpus', 'driver'] as $username) {
             $this->assertTrue(Hash::check('password', User::query()->where('username', $username)->firstOrFail()->password));
         }
         $this->assertNotNull($real->fresh());
