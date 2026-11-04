@@ -184,6 +184,34 @@ class OutboundHandoverV2Test extends TestCase
         ]);
     }
 
+    public function test_fallback_rolls_back_if_physical_allocation_changes_after_inspection(): void
+    {
+        [$manager, , , $management, $activity] = $this->actors();
+        $item = G002M007Item::create(['name' => 'Three physical laptops',
+            'g002_m003_item_management_id' => $management->id, 'quantity' => 3, 'is_borrowable' => true]);
+        $reservation = G005M009ItemReservation::create([
+            'g004_m008_activity_id' => $activity->id, 'g002_m007_item_id' => $item->id,
+            'quantity' => 2, 'status' => ReservationStatus::Approved->value,
+            'start_time' => $activity->start_time, 'end_time' => $activity->end_time,
+        ]);
+        $this->actingAs($manager);
+        $service = app(LoanCheckoutService::class);
+        $options = $service->instanceOptions($reservation);
+        $receipt = $service->begin('item', $reservation->id, ['instances' => $options]);
+        G002M015ItemInstance::findOrFail($options[0]['item_instance_id'])->update(['is_available' => false]);
+        try {
+            $service->fallback('item', $reservation->id, ['reason' => 'Peminjam berhalangan mengonfirmasi langsung.']);
+            $this->fail('Uninspected substitute asset must not be handed over.');
+        } catch (ValidationException) {
+            $this->assertSame(ReservationStatus::Approved->value, $reservation->fresh()->status);
+            $this->assertNull($receipt->fresh()->completed_at);
+            $this->assertNull($receipt->fresh()->fallback_reason);
+            $this->assertSame(0, $reservation->item_reservation_detail()->count());
+            $this->assertDatabaseCount('operational_overrides', 0);
+            $this->assertSame(2, (int) $item->fresh()->available_quantity);
+        }
+    }
+
     public function test_initial_item_conditions_are_bound_to_exact_allocated_instances(): void
     {
         [$manager, $borrower, , $management, $activity] = $this->actors();
