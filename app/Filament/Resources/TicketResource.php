@@ -104,6 +104,23 @@ class TicketResource extends Resource
             Forms\Components\Section::make('Lapor Kerusakan')
                 ->description('Nama, unit, tanggal dan nomor tiket terisi otomatis. Tidak perlu mengetahui kode inventaris.')
                 ->schema([
+                    Forms\Components\Select::make('on_behalf_of')
+                        ->label('Laporkan atas nama pegawai Sarpras')
+                        ->options(fn (): array => User::query()->role(config('role.sarpras'))
+                            ->where('is_enabled', true)->whereNotNull('g001_m001_unit_id')
+                            ->with('unit')->orderBy('name')->limit(150)->get()
+                            ->mapWithKeys(fn (User $user): array => [
+                                $user->id => $user->name.' · '.($user->unit?->name ?? '-'),
+                            ])->all())
+                        ->searchable()->live()->nullable()
+                        ->visible(fn (): bool => auth()->user()?->isFacility() ?? false)
+                        ->helperText('Opsional: jika dipilih, nama pelapor tetap pegawai tersebut dan Anda tercatat sebagai penginput.'),
+                    Forms\Components\Textarea::make('override_reason')
+                        ->label('Alasan input atas nama pegawai')
+                        ->required(fn (Forms\Get $get): bool => filled($get('on_behalf_of')))
+                        ->visible(fn (Forms\Get $get): bool => (auth()->user()?->isFacility() ?? false)
+                            && filled($get('on_behalf_of')))
+                        ->minLength(10)->maxLength(2000),
                     Forms\Components\Select::make('ticket_category_id')->label('Apa yang rusak?')
                         ->options(fn (): array => static::reportingCategoryOptions())
                         ->default(fn () => request()->query('asset_type') === 'room'
