@@ -4,9 +4,13 @@ qa_root="$GITHUB_WORKSPACE/output/operational-uat-runtime"
 qa_app="$qa_root/app"
 qa_user="$(id -un)"
 qa_group="$(id -gn)"
-sudo apt-get update -qq
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nginx php8.3-fpm > "$qa_root/server-packages.log" 2>&1
-fpm_binary="$(command -v php-fpm8.3)"
+if ! command -v nginx >/dev/null || [ ! -x /usr/sbin/php-fpm8.3 ]; then
+  sudo apt-get update -qq
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nginx php8.3-fpm 2>&1 | tee "$qa_root/server-packages.log"
+fi
+fpm_binary=/usr/sbin/php-fpm8.3
+"$fpm_binary" -v
+nginx -v
 cat > "$qa_root/fpm.conf" <<EOF
 [global]
 pid = $qa_root/fpm.pid
