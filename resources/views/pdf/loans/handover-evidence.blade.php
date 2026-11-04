@@ -149,6 +149,9 @@
                     <tr><th>Peminjam</th><td>{{ $returnEvidence['borrower'] }} &mdash; {{ $returnEvidence['borrowerAt']?->format('d/m/Y H:i') ?? 'Belum konfirmasi' }}</td></tr>
                     <tr><th>Pengelola</th><td>{{ $returnEvidence['manager'] }} &mdash; {{ $returnEvidence['managerAt']?->format('d/m/Y H:i') ?? 'Belum konfirmasi' }}</td></tr>
                     <tr><th>Penyelesaian</th><td>{{ $returnEvidence['completedAt']?->format('d/m/Y H:i') ?? 'Belum selesai' }}</td></tr>
+                    @if($returnEvidence['returnOdometer'] !== null)
+                        <tr><th>KM akhir kendaraan</th><td>{{ number_format($returnEvidence['returnOdometer'], 0, ',', '.') }} km</td></tr>
+                    @endif
                     <tr><th>Catatan</th><td>{{ $returnEvidence['notes'] ?: '-' }}</td></tr>
                 </table>
                 @if($returnEvidence['fallbackReason'])

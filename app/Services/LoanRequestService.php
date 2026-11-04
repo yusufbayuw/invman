@@ -358,6 +358,7 @@ class LoanRequestService
                 'initiated_by' => auth()->id(),
                 'manager_confirmed_by' => auth()->id(),
                 'manager_confirmed_at' => now(),
+                'return_odometer' => $this->validatedReturnOdometer($type, $reservation, $checklistData),
                 'proof_path' => $checklistData['proof_path'] ?? $checklistData['photo'] ?? null,
                 'notes' => $checklistData['receipt_notes'] ?? $checklistData['notes'] ?? null,
             ])->save();
@@ -398,6 +399,7 @@ class LoanRequestService
                 'initiated_by' => $user->id,
                 'borrower_confirmed_by' => $user->id,
                 'borrower_confirmed_at' => now(),
+                'return_odometer' => $this->validatedReturnOdometer($type, $reservation, $checklistData),
                 'proof_path' => $checklistData['proof_path'] ?? $checklistData['photo'] ?? null,
                 'notes' => $checklistData['receipt_notes'] ?? $checklistData['notes'] ?? null,
             ])->save();
@@ -1311,6 +1313,22 @@ class LoanRequestService
             'vehicle' => G005M019VehicleReservation::class,
             default => throw ValidationException::withMessages(['status' => 'Jenis kebutuhan tidak valid.']),
         };
+    }
+
+    private function validatedReturnOdometer(string $type, Model $reservation, array $data): ?int
+    {
+        $value = $data['return_odometer'] ?? null;
+        if ($type !== 'vehicle' || blank($value)) {
+            return null;
+        }
+        $initial = $reservation->outboundReceipt?->checkout_odometer;
+        if (! ctype_digit((string) $value) || strlen((string) $value) > 12
+            || ($initial !== null && (int) $value < (int) $initial)) {
+            throw ValidationException::withMessages([
+                'data.return_odometer' => 'Kilometer akhir harus bilangan bulat tidak negatif dan tidak lebih kecil dari kilometer awal.',
+            ]);
+        }
+        return (int) $value;
     }
 
     private function pendingReturnReceipt(string $type, Model $reservation): LoanHandoverReceipt

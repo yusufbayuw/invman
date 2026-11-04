@@ -124,6 +124,7 @@ class LoanHandoverDocumentService
             'notes' => $receipt->notes,
             'fallbackReason' => $receipt->fallback_reason,
             'odometer' => $receipt->checkout_odometer,
+            'returnOdometer' => $receipt->return_odometer,
             'proofImage' => $this->safeImage($receipt->proof_path, $folder),
             'hasProof' => filled($receipt->proof_path),
         ];

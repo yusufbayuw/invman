@@ -128,6 +128,10 @@ class PeminjamanSerahTerima extends Page implements HasForms
             Forms\Components\FileUpload::make('photo')
                 ->label('Foto kondisi')->image()
                 ->directory('loan-return-checklists')->maxSize(5120),
+            ...($this->type === 'vehicle' ? [
+                Forms\Components\TextInput::make('return_odometer')
+                    ->label('Kilometer akhir (opsional)')->integer()->minValue(0),
+            ] : []),
             ...$common,
         ];
     }
