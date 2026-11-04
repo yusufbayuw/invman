@@ -106,12 +106,20 @@ class TicketResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('on_behalf_of')
                         ->label('Laporkan atas nama pegawai Sarpras')
-                        ->options(fn (): array => User::query()->role(config('role.sarpras'))
-                            ->where('is_enabled', true)->whereNotNull('g001_m001_unit_id')
-                            ->with('unit')->orderBy('name')->limit(150)->get()
-                            ->mapWithKeys(fn (User $user): array => [
-                                $user->id => $user->name.' · '.($user->unit?->name ?? '-'),
-                            ])->all())
+                        ->getSearchResultsUsing(fn (string $search): array => User::query()
+                                ->role(config('role.sarpras'))
+                                ->where('is_enabled', true)->whereNotNull('g001_m001_unit_id')
+                                ->where(fn ($q) => $q->where('name', 'like', '%'.$search.'%')
+                                    ->orWhere('username', 'like', '%'.$search.'%'))
+                                ->with('unit')->orderBy('name')->limit(50)->get()
+                                ->mapWithKeys(fn (User $user): array => [
+                                    $user->id => $user->name.' · '.($user->unit?->name ?? '-'),
+                                ])->all())
+                            ->getOptionLabelUsing(function ($value): ?string {
+                                $user = User::query()->role(config('role.sarpras'))
+                                    ->where('is_enabled', true)->with('unit')->find($value);
+                                return $user ? $user->name.' · '.($user->unit?->name ?? '-') : null;
+                            })
                         ->searchable()->live()->nullable()
                         ->visible(fn (): bool => auth()->user()?->isFacility() ?? false)
                         ->helperText('Opsional: jika dipilih, nama pelapor tetap pegawai tersebut dan Anda tercatat sebagai penginput.'),
