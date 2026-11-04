@@ -309,6 +309,18 @@ class TicketResource extends Resource
                         Infolists\Components\TextEntry::make('created_at')->dateTime('d M Y H:i')->label('Diunggah'),
                     ])->columns(3),
                 ])->collapsed(),
+            Infolists\Components\Section::make('Audit Override Hierarki')->schema([
+                Infolists\Components\RepeatableEntry::make('operationalOverrides')->hiddenLabel()->schema([
+                    Infolists\Components\TextEntry::make('action')->label('Tindakan'),
+                    Infolists\Components\TextEntry::make('actor.name')->label('Dilakukan oleh'),
+                    Infolists\Components\TextEntry::make('subject.name')->label('Mewakili')->placeholder('-'),
+                    Infolists\Components\TextEntry::make('reason')->label('Alasan')->columnSpanFull(),
+                    Infolists\Components\TextEntry::make('from_status')->label('Dari')->placeholder('-'),
+                    Infolists\Components\TextEntry::make('to_status')->label('Ke')->placeholder('-'),
+                    Infolists\Components\TextEntry::make('created_at')->label('Waktu')->dateTime('d M Y H:i'),
+                ])->columns(3),
+            ])->visible(fn ($record): bool => auth()->user()?->isFacility() ?? false)
+                ->collapsed(),
             Infolists\Components\Section::make('Audit perubahan')->schema([
                 Infolists\Components\RepeatableEntry::make('events')->hiddenLabel()->schema([
                     Infolists\Components\TextEntry::make('action')->label('Aksi'),
