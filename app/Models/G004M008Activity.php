@@ -24,6 +24,7 @@ class G004M008Activity extends Model
         'attachment',
         'status',
         'hold_expires_at',
+        'hold_strategy',
         'expired_at',
         'cancelled_at',
     ];
@@ -61,10 +62,9 @@ class G004M008Activity extends Model
             $status = $activity->status ?: \App\Enums\ReservationStatus::Submitted->value;
 
             if ($status === \App\Enums\ReservationStatus::Submitted->value && ! $activity->hold_expires_at) {
-                $deadline = now()->addHours(app(\App\Services\LoanSettings::class)->holdHours());
-                $activity->hold_expires_at = $activity->start_time && $activity->start_time->lessThan($deadline)
-                    ? $activity->start_time
-                    : $deadline;
+                $settings = app(\App\Services\LoanSettings::class);
+                $activity->hold_strategy ??= $settings->holdStrategy();
+                $activity->hold_expires_at = $settings->expiresAt($activity->start_time);
             }
         });
 
