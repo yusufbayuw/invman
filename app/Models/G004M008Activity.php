@@ -63,7 +63,11 @@ class G004M008Activity extends Model
 
             if ($status === \App\Enums\ReservationStatus::Submitted->value && ! $activity->hold_expires_at) {
                 $settings = app(\App\Services\LoanSettings::class);
-                $activity->hold_strategy ??= $settings->holdStrategy();
+                // A legacy database may still be running its pre-upgrade migration probe.
+                // Do not write a new column before the migration has added it.
+                if (\Illuminate\Support\Facades\Schema::hasColumn($activity->getTable(), 'hold_strategy')) {
+                    $activity->hold_strategy ??= $settings->holdStrategy();
+                }
                 $activity->hold_expires_at = $settings->expiresAt($activity->start_time);
             }
         });
