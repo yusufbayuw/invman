@@ -481,6 +481,9 @@ class PeminjamanSaya extends Page implements HasTable
         }
 
         $reservation = G005M009ItemReservation::query()->find($record->reservation_id);
+        if ($reservation?->item?->isBulk()) {
+            return ['is_ok' => true];
+        }
 
         return [
             'instances' => $reservation?->item_reservation_detail()
@@ -506,7 +509,8 @@ class PeminjamanSaya extends Page implements HasTable
                 ->columnSpanFull(),
         ];
 
-        if ($record->type !== 'item') {
+        if ($record->type !== 'item'
+            || G005M009ItemReservation::query()->find($record->reservation_id)?->item?->isBulk()) {
             return [
                 Forms\Components\Toggle::make('is_ok')->label('Aset dalam kondisi baik')->default(true),
                 Forms\Components\Textarea::make('notes')
