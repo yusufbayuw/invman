@@ -22,6 +22,7 @@ class G001M001UnitResource extends Resource
     protected static ?string $model = G001M001Unit::class;
 
     protected static ?string $navigationGroup = 'Pengaturan';
+    protected static ?int $navigationSort = 1;
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
     protected static ?string $slug = 'unit';
     protected static ?string $modelLabel = 'Unit';
@@ -54,7 +55,12 @@ class G001M001UnitResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name'),
+                Forms\Components\TextInput::make('name')
+                    ->label('Nama unit')
+                    ->helperText('Nama resmi unit, misalnya SD, SMP, SMA, atau Universitas. Gunakan satu nama konsisten agar tidak membuat unit ganda.'),
+                Forms\Components\Placeholder::make('unit_name_impact')
+                    ->label('Dampak perubahan')
+                    ->content('Nama unit digunakan sebagai label pada akun pegawai, aset, ruangan, kegiatan, dan laporan. Mengganti nama tidak memindahkan data ke unit lain; untuk perpindahan, ubah relasi unit pada data terkait.'),
             ]);
     }
 

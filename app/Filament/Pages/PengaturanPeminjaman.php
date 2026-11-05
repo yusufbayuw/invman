@@ -22,6 +22,8 @@ class PengaturanPeminjaman extends Page implements HasForms
 
     protected static ?string $navigationGroup = 'Pengaturan';
 
+    protected static ?int $navigationSort = 9;
+
     protected static ?string $navigationLabel = 'Pengaturan Peminjaman';
 
     protected static ?string $title = 'Pengaturan Peminjaman';
@@ -55,7 +57,8 @@ class PengaturanPeminjaman extends Page implements HasForms
                         ])
                         ->required()
                         ->live()
-                        ->native(false),
+                        ->native(false)
+                        ->helperText('Mode A langsung mencadangkan aset saat pengajuan. Mode B baru mencadangkan saat disetujui dan selalu memeriksa ketersediaan ulang.'),
                     Placeholder::make('strategy_consequences')
                         ->label('Konsekuensi pilihan')
                         ->content(fn (Get $get): string => $get('hold_strategy') === LoanSettings::HOLD_ON_APPROVAL
@@ -70,7 +73,9 @@ class PengaturanPeminjaman extends Page implements HasForms
                         ->numeric()
                         ->minValue(1)
                         ->maxValue(720)
-                        ->required(),
+                        ->required()
+                        ->live(onBlur: true)
+                        ->helperText('Lama menunggu keputusan, BUKAN lama meminjam aset. Batas maksimum 720 jam; tenggat dapat berakhir lebih awal saat jadwal peminjaman mulai.'),
                     Select::make('hold_clock')
                         ->label('Cara menghitung durasi')
                         ->options([
@@ -79,7 +84,8 @@ class PengaturanPeminjaman extends Page implements HasForms
                         ])
                         ->required()
                         ->native(false)
-                        ->live(),
+                        ->live()
+                        ->helperText('Jam kalender menghitung malam dan akhir pekan. Jam kerja hanya menghitung jam pada hari dan rentang waktu yang dipilih.'),
                     Select::make('work_days')
                         ->label('Hari kerja')
                         ->multiple()
@@ -88,19 +94,53 @@ class PengaturanPeminjaman extends Page implements HasForms
                             '4' => 'Kamis', '5' => 'Jumat', '6' => 'Sabtu', '7' => 'Minggu',
                         ])
                         ->required()
+                        ->live()
                         ->visible(fn (Get $get): bool => $get('hold_clock') === LoanSettings::CLOCK_WORKING)
-                        ->helperText('Belum memperhitungkan kalender libur nasional atau tanggal merah.'),
+                        ->helperText('Hanya hari terpilih yang dihitung. Sabtu/Minggu dapat dipilih jika operasional berjalan. Belum menghitung tanggal merah/libur nasional.'),
                     TextInput::make('work_start')
                         ->label('Mulai jam kerja (HH:MM)')
                         ->required()
+                        ->live(onBlur: true)
+                        ->helperText('Awal jam yang ikut dihitung. Contoh 07:00; waktu sebelum jam ini tidak mengurangi kuota hold.')
                         ->visible(fn (Get $get): bool => $get('hold_clock') === LoanSettings::CLOCK_WORKING),
                     TextInput::make('work_end')
                         ->label('Selesai jam kerja (HH:MM)')
                         ->required()
+                        ->live(onBlur: true)
+                        ->helperText('Akhir jam yang ikut dihitung. Contoh 15:00; waktu setelah jam ini dilanjutkan pada hari kerja berikutnya.')
                         ->visible(fn (Get $get): bool => $get('hold_clock') === LoanSettings::CLOCK_WORKING),
                     Placeholder::make('deadline_information')
                         ->label('Ketentuan penting')
                         ->content('Batas keputusan selalu dipotong pada waktu mulai peminjaman jika jatuh lebih awal. Penyimpanan pengaturan tidak mengubah tenggat pengajuan lama. Scheduler loans:expire-holds harus aktif.'),
+                    Placeholder::make('hold_policy_impact')
+                        ->label('Dampak konfigurasi saat ini')
+                        ->content(function (Get $get): string {
+                            $hours = (int) ($get('hold_hours') ?: 24);
+                            $clock = $get('hold_clock');
+
+                            if ($clock === LoanSettings::CLOCK_WORKING) {
+                                $weekdays = [
+                                    '1' => 'Senin', '2' => 'Selasa', '3' => 'Rabu',
+                                    '4' => 'Kamis', '5' => 'Jumat', '6' => 'Sabtu', '7' => 'Minggu',
+                                ];
+                                $selectedDays = array_values(array_filter(array_map(
+                                    fn ($day): ?string => $weekdays[(string) $day] ?? null,
+                                    (array) $get('work_days'),
+                                )));
+                                $schedule = implode(', ', $selectedDays) ?: 'belum dipilih';
+
+                                return "{$hours} jam KERJA: hanya {$schedule} pukul "
+                                    .($get('work_start') ?: '--:--').'–'.($get('work_end') ?: '--:--')
+                                    .' yang dihitung; malam/akhir pekan di luar pilihan tidak dihitung. '
+                                    .($hours === 24 ? 'Contoh 24 jam dengan Senin–Jumat 07:00–15:00 berarti 3 hari kerja. ' : 'Durasi akan dijumlahkan melintasi beberapa hari kerja bila melebihi jam operasional harian. ')
+                                    .'Jika peminjaman dimulai lebih awal, tenggat dipotong. Perubahan hanya untuk pengajuan baru.';
+                            }
+
+                            return "{$hours} jam KALENDER: waktu malam, Sabtu, Minggu, dan hari libur tetap dihitung. "
+                                .($hours === 24 ? 'Contoh pengajuan Senin 14:00 dengan 24 jam kalender berakhir Selasa 14:00, ' : 'Tenggat dihitung terus-menerus sejak pengajuan masuk, ')
+                                .'kecuali jadwal peminjaman mulai lebih awal. Perubahan hanya untuk pengajuan baru.';
+                        })
+                        ->columnSpanFull(),
                 ])->columns(2),
         ])->statePath('data');
     }

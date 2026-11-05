@@ -54,6 +54,10 @@ class AdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->favicon(asset(config('app.logo')))
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('pwa.meta'))
+            // Filament Shield owns the role form. Add guidance through a panel hook,
+            // without overriding the vendor resource or changing its permissions.
+            ->renderHook(PanelsRenderHook::CONTENT_START, fn () => request()->is('admin/shield/roles*')
+                ? view('filament.components.shield-role-guidance') : '')
             ->renderHook(PanelsRenderHook::BODY_END, fn () => view('pwa.client', [
                 'showBanner' => auth()->check(),
             ]))

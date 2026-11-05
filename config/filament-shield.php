@@ -4,7 +4,8 @@ return [
     'shield_resource' => [
         'should_register_navigation' => true,
         'slug' => 'shield/roles',
-        'navigation_sort' => -1,
+        // Setup order: Unit (1), Peran (2), Pengguna (3), etc.
+        'navigation_sort' => 2,
         'navigation_badge' => true,
         'navigation_group' => true,
         'is_globally_searchable' => false,
