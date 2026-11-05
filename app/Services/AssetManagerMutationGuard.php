@@ -16,7 +16,8 @@ final class AssetManagerMutationGuard
             return $data;
         }
 
-        $unitId = $data['g001_m001_unit_id'] ?? $existing?->g001_m001_unit_id;
+        $unitId = $data['g001_m001_unit_id'] ?? $existing?->g001_m001_unit_id
+            ?? ($user->isSarpras() ? $user->g001_m001_unit_id : null);
         if ($user->isSarpras()) {
             abort_unless($user->g001_m001_unit_id !== null
                 && ($existing === null || $user->belongsToUnit($existing->g001_m001_unit_id))
