@@ -82,6 +82,7 @@ class G002M007ItemResource extends Resource
                             ->label('Kode Barang')
                             ->badge()
                             ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('tracking_mode')->label('Metode Pencatatan')->badge(),
                         \Filament\Infolists\Components\TextEntry::make('quantity')
                             ->label('Jumlah Barang')
                             ->inlineLabel()
@@ -145,6 +146,13 @@ class G002M007ItemResource extends Resource
                     ->label('Nama Barang'),
                 Forms\Components\TextInput::make('code')
                     ->label('Kode Barang')->unique(ignoreRecord: true),
+                Forms\Components\Select::make('tracking_mode')
+                    ->label('Metode Pencatatan')
+                    ->options(['individual' => 'Individual (nomor inventaris per unit)', 'bulk' => 'Kuantitas / Bulk (tanpa unit satuan)'])
+                    ->default('individual')
+                    ->required()
+                    ->disabledOn('edit')
+                    ->helperText('Metode pencatatan tidak dapat diganti setelah aset dibuat.'),
                 Forms\Components\TextInput::make('quantity')
                     ->label('Jumlah Barang')
                     ->numeric()
@@ -165,6 +173,7 @@ class G002M007ItemResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Barang')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('tracking_mode')->label('Pencatatan')->badge(),
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Jumlah Barang')
                     ->numeric()
@@ -206,6 +215,18 @@ class G002M007ItemResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('adjustBulkStock')
+                    ->label('Koreksi Stok Bulk')
+                    ->icon('heroicon-o-calculator')
+                    ->visible(fn (G002M007Item $record): bool => $record->isBulk() && static::canEdit($record))
+                    ->form([
+                        Forms\Components\TextInput::make('delta')->label('Perubahan (+/-)')->integer()->required()->notIn([0]),
+                        Forms\Components\Textarea::make('reason')->label('Alasan koreksi stok')->required()->minLength(5),
+                    ])
+                    ->action(fn (G002M007Item $record, array $data) =>
+                        app(\App\Services\AssetBulkStockService::class)->adjust(
+                            $record, (int) $data['delta'], $data['reason'], auth()->user(),
+                        )),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
