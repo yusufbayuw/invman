@@ -122,17 +122,44 @@ class G002M015ItemInstanceResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Select::make('g002_m007_item_id')
-                    ->relationship('item', 'name', modifyQueryUsing: fn (\Illuminate\Database\Eloquent\Builder $query) => auth()->user()?->isFacility() ? $query : $query->whereIn('g002_m003_item_management_id', auth()->user()?->itemManagements()->pluck('g002_m003_item_management.id') ?? []))
+                    ->relationship('item', 'name', modifyQueryUsing: function (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder {
+                        $user = auth()->user();
+                        $query->where('tracking_mode', 'individual');
+                        if ($user?->isFacility()) {
+                            return $query;
+                        }
+                        if ($user?->isSarpras()) {
+                            return $query->where('g001_m001_unit_id', $user->g001_m001_unit_id);
+                        }
+                        return $query->whereIn('g002_m003_item_management_id',
+                            $user?->itemManagements()->pluck('g002_m003_item_management.id') ?? []);
+                    })
+                    ->label('Barang Induk')
                     ->searchable()
                     ->required(),
                 Forms\Components\Select::make('g001_m001_unit_id')
-                    ->relationship('unit', 'name')
-                    ->label('Unit')
+                    ->relationship('unit', 'name', modifyQueryUsing: fn (\Illuminate\Database\Eloquent\Builder $query) =>
+                        auth()->user()?->isSarpras() && ! auth()->user()?->isFacility()
+                            ? $query->whereKey(auth()->user()->g001_m001_unit_id)
+                            : $query)
+                    ->label('Unit Pemilik')
+                    ->default(fn () => auth()->user()?->isSarpras() && ! auth()->user()?->isFacility()
+                        ? auth()->user()->g001_m001_unit_id : null)
+                    ->helperText('Mengikuti unit Barang Induk; tidak mengubah kepemilikan.')
                     ->searchable()
                     ->preload(),
                 Forms\Components\Select::make('g003_m006_room_id')
-                    ->relationship('room', 'name')
-                    ->label('Ruangan')
+                    ->relationship('room', 'name', modifyQueryUsing: function (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder {
+                        $user = auth()->user();
+                        if ($user?->isSarpras() && ! $user->isFacility()) {
+                            $query->where(fn (\Illuminate\Database\Eloquent\Builder $rooms) =>
+                                $rooms->where('g001_m001_unit_id', $user->g001_m001_unit_id)
+                                    ->orWhereNull('g001_m001_unit_id'));
+                        }
+                        return $query;
+                    })
+                    ->label('Ruangan Penempatan')
+                    ->helperText('Ruangan Tanpa Unit dapat dipilih sebagai lokasi, bukan sebagai unit pemilik.')
                     ->searchable()
                     ->preload(),
                 Forms\Components\TextInput::make('name')->label('Nama Barang Satuan')->required(),
