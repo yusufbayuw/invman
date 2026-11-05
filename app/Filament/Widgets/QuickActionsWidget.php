@@ -213,6 +213,7 @@ class QuickActionsWidget extends Widget implements HasActions, HasForms
                 ? $this->itemReturnData($arguments)
                 : ['is_ok' => true])
             ->form(fn (array $arguments): array => ($arguments['type'] ?? null) === 'item'
+                && ! ($this->reservation($arguments)?->item?->isBulk())
                 ? $this->itemReturnForm()
                 : $this->assetReturnForm())
             ->action(function (array $arguments, array $data) use ($callback, $eligibility, $successBody, $successTitle): void {
@@ -231,6 +232,9 @@ class QuickActionsWidget extends Widget implements HasActions, HasForms
             return [];
         }
 
+        if ($record->item?->isBulk()) {
+            return ['is_ok' => true];
+        }
         return [
             'instances' => $record->item_reservation_detail()
                 ->with('item_instance')
