@@ -7,6 +7,7 @@ Seeder khusus: `InvManRoleMatrixDemoSeeder` (TIDAK dimasukkan ke `DatabaseSeeder
 Bertujuan mengeksplorasi alur lintas unit, jabatan dinamis Work Order, dan pengelola barang berbasis kelompok. **Bukan konfigurasi operasional final.**
 
 - Lima unit contoh terisolasi: `[DEMO-ORG] TK`, SD, SMP, SMA, Universitas.
+- **Akun `admin`** dengan password `password`, menggunakan **role existing `admin`** (super-admin Filament Shield) untuk mengakses seluruh menu dan kewenangan yang diizinkan sistem. Akun ini dibuat hanya untuk demo local/testing; tidak mengubah akun admin yang sudah ada.
 - Lima akun `sarpras.tk`, `sarpras.sd`, `sarpras.smp`, `sarpras.sma`, dan `sarpras.univ` dengan role existing `sarpras`, masing-masing tepat satu unit.
 - Tiga akun `staf.fas`, `spv.fas`, dan `man.fas` dengan role existing `fasilitas` dan penugasan jabatan global.
 - Satu akun `teknisi` **tanpa role fasilitas global**, dengan jabatan Teknisi. Atasan langsung adalah Staf Fasilitas; staf merupakan lead tim lapangan `[DEMO-ORG] Tim Teknis Fasilitas`. Hierarki: Manager → Supervisor → Staf → Teknisi.
@@ -36,7 +37,7 @@ php artisan test --filter=InvManRoleMatrixDemoSeederTest
 
 Username dibuat singkat agar mudah login untuk UAT lokal. Password `password` **hanya layak untuk database disposable yang tidak dapat diakses publik**. Akun yang sudah ada tidak di-reset. Identitas yang bertabrakan menyebabkan seeding ditolak. Pemanggilan ulang tidak menambah duplikasi. Seeder tidak mempublikasikan approval workflow, mengirim pinjaman, atau menjalankan transaksi riil. Karena PHP observer bisa membuat data turunan, gunakan hanya database disposable.
 
-**Perhatian:** semua pengguna dengan role existing `fasilitas` saat ini memiliki akses fasilitas global melalui `User::isFacility()`. Jabatan `Staf Fasilitas`, `Supervisor Fasilitas`, dan `Manager Fasilitas` membedakan Work Order, **bukan** memisahkan akses ke seluruh modul. Jika diperlukan hierarki RBAC ketat, lakukan redesign policy + test terpisah. Jangan menganggap role `fasilitas` saat ini least-privilege.
+**Perhatian:** akun `admin` menggunakan role super-admin yang memiliki kewenangan lintas modul; password `password` tidak boleh digunakan di production atau sistem yang dapat diakses publik. Bila username `admin` telah dimiliki akun asli, seeder berhenti dan tidak mengubah sandi/role akun tersebut. Semua pengguna dengan role existing `fasilitas` saat ini memiliki akses fasilitas global melalui `User::isFacility()`. Jabatan `Staf Fasilitas`, `Supervisor Fasilitas`, dan `Manager Fasilitas` membedakan Work Order, **bukan** memisahkan akses ke seluruh modul. Jika diperlukan hierarki RBAC ketat, lakukan redesign policy + test terpisah. Jangan menganggap role `fasilitas` saat ini least-privilege.
 
 ## Skenario operasional tambahan (opt-in)
 
@@ -67,7 +68,7 @@ Seeder pendamping hanya dapat dijalankan di local/testing terisolasi (`SEED_DEMO
 
 ## Kriteria pengujian
 
-`InvManRoleMatrixDemoSeederTest` dan `InvManBusinessScenarioSeederTest` memeriksa guard opt-in/production, jumlah 5 unit/12 pengguna/inventaris/draf, hubungan atasan langsung dan keanggotaan tim teknisi, scoped membership IT vs Perpustakaan, idempotensi, akun existing tidak diubah, serta penolakan collision. Ini belum menggantikan integrasi penuh CI MySQL dan browser UAT.
+`InvManRoleMatrixDemoSeederTest` dan `InvManBusinessScenarioSeederTest` memeriksa guard opt-in/production, jumlah 5 unit/13 pengguna/inventaris/draf, hubungan atasan langsung dan keanggotaan tim teknisi, scoped membership IT vs Perpustakaan, idempotensi, akun existing tidak diubah, serta penolakan collision. Ini belum menggantikan integrasi penuh CI MySQL dan browser UAT.
 
 **Status:** branch implementasi tersedia sebagai PR review; tidak langsung merge ke main dan belum dinyatakan siap produksi.
 

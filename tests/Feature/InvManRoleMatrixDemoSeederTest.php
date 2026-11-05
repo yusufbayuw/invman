@@ -43,13 +43,13 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
         $this->seed(InvManRoleMatrixDemoSeeder::class);
     }
 
-    public function test_it_creates_five_units_twelve_users_and_scoped_inventory_without_submissions(): void
+    public function test_it_creates_five_units_thirteen_users_and_scoped_inventory_without_submissions(): void
     {
         $this->enableDemo();
         $this->seed(InvManRoleMatrixDemoSeeder::class);
 
         $this->assertSame(5, G001M001Unit::query()->where('name', 'like', '[DEMO-ORG]%')->count());
-        $this->assertSame(12, User::query()->whereIn('username', ['sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ', 'staf.fas', 'spv.fas', 'man.fas', 'teknisi', 'it', 'perpus', 'driver'])->count());
+        $this->assertSame(13, User::query()->whereIn('username', ['admin', 'sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ', 'staf.fas', 'spv.fas', 'man.fas', 'teknisi', 'it', 'perpus', 'driver'])->count());
         $this->assertSame(5, User::query()->whereIn('username', ['sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ'])->count());
         $this->assertSame(15, G002M007Item::query()->where('code', 'like', 'INVMAN-ORG-%')->count());
         $this->assertSame(45, G002M015ItemInstance::query()->whereHas('item',
@@ -59,6 +59,17 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
             ->where('status', '!=', 'draft')->count());
         $this->assertSame(5, WorkOrderWorkflow::query()->where('status', 'draft')->count());
         $this->assertSame(0, WorkOrderWorkflow::query()->where('status', 'published')->count());
+
+        $admin = User::query()->where('username', 'admin')->firstOrFail();
+        $this->assertSame('admin@invman.invalid', $admin->email);
+        $this->assertTrue($admin->is_enabled);
+        $this->assertTrue($admin->hasRole(config('role.admin')));
+        $this->assertTrue($admin->isAdmin());
+        $this->assertTrue($admin->isFacility());
+        $this->assertTrue($admin->can('page_AjukanPeminjaman'));
+        $this->assertTrue($admin->canAccessPanel(\Filament\Facades\Filament::getPanel('admin')));
+        $this->assertNull($admin->g001_m001_unit_id);
+        $this->assertTrue(Hash::check('password', $admin->password));
 
         foreach (['tk', 'sd', 'smp', 'sma', 'univ'] as $slug) {
             $borrower = User::query()->where('username', 'sarpras.'.$slug)->firstOrFail();
@@ -140,10 +151,32 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
         ]);
         $this->assertSame($hash, $user->fresh()->password);
         $this->assertTrue(Hash::check('password', $user->password));
-        foreach (['sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ', 'staf.fas', 'spv.fas', 'man.fas', 'teknisi', 'it', 'perpus', 'driver'] as $username) {
+        foreach (['sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ', 'staf.fas', 'spv.fas', 'man.fas', 'teknisi', 'it', 'perpus', 'driver', 'admin'] as $username) {
             $this->assertTrue(Hash::check('password', User::query()->where('username', $username)->firstOrFail()->password));
         }
         $this->assertNotNull($real->fresh());
+    }
+
+    public function test_existing_non_demo_admin_is_not_hijacked_or_reset(): void
+    {
+        $this->enableDemo();
+        $real = User::factory()->create([
+            'username' => 'admin',
+            'email' => 'admin-institusi@example.org',
+        ]);
+        $originalHash = $real->password;
+        $originalRoles = $real->getRoleNames()->all();
+
+        try {
+            $this->seed(InvManRoleMatrixDemoSeeder::class);
+            $this->fail('Akun administrator yang sudah ada tidak boleh diambil alih.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('bertabrakan', $exception->getMessage());
+        }
+
+        $this->assertSame($originalHash, $real->fresh()->password);
+        $this->assertSame($originalRoles, $real->fresh()->getRoleNames()->all());
+        $this->assertSame(0, G001M001Unit::query()->where('name', 'like', '[DEMO-ORG]%')->count());
     }
 
     public function test_non_demo_username_collision_fails_without_mutation(): void

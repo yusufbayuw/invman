@@ -56,7 +56,7 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             throw new RuntimeException('Aktifkan SEED_DEMO_USERS=true secara eksplisit untuk seeder matriks peran.');
         }
 
-        foreach ([config('role.sarpras'), config('role.fasilitas')] as $role) {
+        foreach ([config('role.admin'), config('role.sarpras'), config('role.fasilitas')] as $role) {
             if (! Role::query()->where('name', $role)->where('guard_name', 'web')->exists()) {
                 throw new RuntimeException("Role {$role} belum tersedia. Jalankan RoleSeeder terlebih dahulu.");
             }
@@ -87,6 +87,10 @@ class InvManRoleMatrixDemoSeeder extends Seeder
                 }
                 $titles[$title] = $record;
             }
+
+            // The existing admin role is Filament Shield's super-admin role.
+            // Do not invent a new role or silently escalate a pre-existing account.
+            $admin = $this->account('admin', 'Administrator', null, config('role.admin'));
 
             // These are three DIFFERENT people with one existing global role.
             // Work Order assignments, not role names, differentiate their jobs.
@@ -144,7 +148,7 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             }
         }, 3);
 
-        $this->command?->info('Demo organisasi dibuat: 5 unit, 12 akun sederhana (termasuk driver), 3 pengelola aset, 15 barang, 5 draf peminjaman, 5 workflow DRAFT.');
+        $this->command?->info('Demo organisasi dibuat: 5 unit, 13 akun sederhana (termasuk admin dan driver), 3 pengelola aset, 15 barang, 5 draf peminjaman, 5 workflow DRAFT.');
         $this->command?->warn('Password demo adalah password untuk seluruh akun. Jangan jalankan di server publik. Role fasilitas bersifat GLOBAL.');
     }
 
