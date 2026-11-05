@@ -24,7 +24,7 @@ class SemuaMenu extends Page
 
     public function getSubheading(): ?string
     {
-        return 'Cari menu yang tersedia untuk Anda dan kelola menu favorit.';
+        return 'Cari menu yang dapat Anda akses dan simpan favorit. Favorit hanya pintasan, bukan tambahan hak akses.';
     }
 
     protected function getHeaderWidgets(): array
