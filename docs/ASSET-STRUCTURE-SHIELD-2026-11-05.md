@@ -29,6 +29,7 @@ A unit-owned item may be physically located in a room assigned to its own unit o
 - `admin`: super-admin existing Shield Gate.
 - `fasilitas`: Staff, Supervisor and Manager; master catalog/physical-unit and location/vehicle resources are available through Shield permissions; Work Order-specific titles/workflows remain separate.
 - `pengelola_barang`: only `Barang` and `Barang Satuan`; rows are restricted by `itemManagements` memberships, including list, search and guarded save.
+  - As of the asset-manager-role-sync update, this is a **technical Shield role that is auto-provisioned and revoked by group membership**; the User form intentionally exposes only admin/fasilitas/sarpras as manual roles. See `docs/ASSET-MANAGER-ROLE-SYNC.md`.
 - `sarpras`: may view/create/update **Barang** and **Barang Satuan** only when the catalog owner is their own non-null unit. List, global search, record policy and form writes are scoped to the authenticated unit; even a second `pengelola_barang` role does not expand Sarpras beyond this unit.
 
 The asset-manager role is provisioned on existing group users by role migration/RoleSeeder and when a group is managed through the Filament resource; API / direct pivot writes should also explicitly assign the role. Group membership is *never* a grant for unrelated master modules.
