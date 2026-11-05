@@ -409,7 +409,9 @@ class AjukanPeminjaman extends Page implements HasForms
 
         Notification::make()
             ->title('Pengajuan berhasil dikirim')
-            ->body('Aset ditahan sementara selama '.app(LoanSettings::class)->holdHours().' jam sambil menunggu keputusan pengelola aset.')
+            ->body($activity->hold_strategy === LoanSettings::HOLD_ON_APPROVAL
+                ? 'Pengajuan menunggu persetujuan. Aset akan dicadangkan setelah disetujui jika masih tersedia.'
+                : 'Aset ditahan sementara sampai '.($activity->hold_expires_at?->translatedFormat('d M Y H:i') ?? '-').'.')
             ->success()
             ->icon('heroicon-o-paper-airplane')
             ->seconds(8)
