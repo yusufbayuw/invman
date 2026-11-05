@@ -42,8 +42,12 @@ final class LoanVisibility
                     'room_reservation.room',
                     'vehicle_reservation.vehicle',
                 ] as $relation) {
-                    $visible->orWhereHas($relation, fn (Builder $asset) => $asset
-                        ->whereIn('g002_m003_item_management_id', $managementIds));
+                    $visible->orWhereHas($relation, function (Builder $asset) use ($managementIds, $relation): void {
+                        $asset->whereIn('g002_m003_item_management_id', $managementIds);
+                        if ($relation === 'room_reservation.room') {
+                            $asset->whereNotNull('g001_m001_unit_id');
+                        }
+                    });
                 }
             }
         });
@@ -74,8 +78,12 @@ final class LoanVisibility
             }
 
             if ($managementIds->isNotEmpty()) {
-                $visible->orWhereHas($relation, fn (Builder $asset) => $asset
-                    ->whereIn('g002_m003_item_management_id', $managementIds));
+                $visible->orWhereHas($relation, function (Builder $asset) use ($managementIds, $relation): void {
+                    $asset->whereIn('g002_m003_item_management_id', $managementIds);
+                    if ($relation === 'room') {
+                        $asset->whereNotNull('g001_m001_unit_id');
+                    }
+                });
             }
         });
     }
