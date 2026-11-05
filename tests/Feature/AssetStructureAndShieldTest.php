@@ -86,6 +86,7 @@ class AssetStructureAndShieldTest extends TestCase
         $a = $this->item($unit, $group, 'PC alpha')->item_instance()->firstOrFail();
         $b = $this->item($unit, $group, 'SSD beta')->item_instance()->firstOrFail();
         $c = $this->item($unit, $group, 'UPS gamma')->item_instance()->firstOrFail();
+        $b->update(['is_borrowable' => false]); // Installed components cannot be borrowed separately.
         $external = $this->item($unit, $otherGroup, 'Buku zeta')->item_instance()->firstOrFail();
         $links = app(AssetRelationService::class);
         $links->connect($a->id, $b->id, 'component', $manager);
