@@ -49,7 +49,36 @@ async function comment(p,id,username,r){await p.goto(base+'/admin/tiket/'+id);r.
   if(username==='wo.demo.fasilitas.manager'){
    await test(p,'WO-MANAGER-FINAL','Manager final approval',['Open verified SD ticket','Approve final checkpoint'],'Manager approval is recorded after reporter verification',async r=>{await approve(p,ticket('sd'));r.evidence.push(await shot(p,'manager-final-approved'));return'Final checkpoint approved';});
    await test(p,'WO-MANAGER-CLOSE','Manager closes the verified Work Order',['Open close modal','Confirm physical safety','Submit'],'Work Order closed with retained audit history',async r=>{await modal(p,'Sahkan Penyelesaian',async d=>{await d.locator('button[id$=".safe"]').click();await d.locator('textarea[id$=".notes"]').fill('Synthetic physical safety confirmation');});r.evidence.push(await shot(p,'manager-closed'));return(await p.locator('body').innerText()).slice(-2000);});
-   await test(p,'WO-PDF','Download authorized Work Order PDF',['Open PDF link with browser authenticated request'],'PDF200 and PDF signature',async r=>{const href=await p.getByRole('link',{name:'Form Perawatan PDF',exact:true}).getAttribute('href');const response=await ctx.request.get(href);assert.equal(response.status(),200);assert.match(response.headers()['content-type'],/application\/pdf/);const body=await response.body();assert.equal(body.subarray(0,4).toString(),'%PDF');await fs.writeFile(path.join(out,'work-order-browser-authorized.pdf'),body);r.evidence.push('work-order-browser-authorized.pdf');return{status:200,bytes:body.length};});
+   await test(p,'WO-PDF','Pratinjau dan unduh Form Perawatan',[
+    'Open modal viewer','Verify authorized inline PDF','Download PDF','Close modal',
+   ],'Viewer opens and both preview/download are valid PDF documents',async r=>{
+    await p.goto(base+'/admin/tiket/'+ticket('sd'));
+    await p.getByRole('button',{name:'Lihat Form Perawatan',exact:true}).click();
+    const dialog=p.locator('.fi-modal-window:visible').last();
+    await dialog.waitFor({state:'visible'});
+    const frame=dialog.locator('iframe').first();
+    const previewUrl=await frame.getAttribute('src');
+    const downloadUrl=await dialog.getByRole('link',{name:'Unduh PDF',exact:true}).getAttribute('href');
+    assert.ok(previewUrl?.includes('preview=1'),'Preview iframe is missing');
+    assert.ok(downloadUrl,'Download action is missing');
+    const preview=await ctx.request.get(new URL(previewUrl,base).toString());
+    const download=await ctx.request.get(new URL(downloadUrl,base).toString());
+    assert.equal(preview.status(),200);
+    assert.equal(download.status(),200);
+    assert.match(preview.headers()['content-type'],/application\/pdf/);
+    assert.match(preview.headers()['content-disposition'],/inline/i);
+    assert.match(download.headers()['content-disposition'],/attachment/i);
+    const previewBody=await preview.body();
+    const downloadBody=await download.body();
+    assert.equal(previewBody.subarray(0,4).toString(),'%PDF');
+    assert.equal(downloadBody.subarray(0,4).toString(),'%PDF');
+    r.evidence.push(await shot(p,'wo-pdf-modal'));
+    await fs.writeFile(path.join(out,'work-order-browser-authorized.pdf'),downloadBody);
+    r.evidence.push('work-order-browser-authorized.pdf');
+    await dialog.getByRole('button',{name:'Tutup',exact:true}).click();
+    await dialog.waitFor({state:'hidden'});
+    return{status:200,previewBytes:previewBody.length,downloadBytes:downloadBody.length};
+   });
   }
   if(u.roles.includes('sarpras')||username==='fasilitas')await test(p,'REPORT-'+safe(username),'Create operational damage report as '+username,['Open create form','Check required validation','Select category and describe defect','Submit'],'New ticket saved through browser form',r=>createTicket(p,username,r));
   if(['wo.demo.it.staff','wo.demo.it.spv','wo.demo.perpustakaan.staff','wo.demo.perpustakaan.spv','wo.demo.teknisi.koordinator','qa.multi'].includes(username))await test(p,'COLLAB-'+safe(username),'Authorized ticket collaboration as '+username,['Open visible ticket','Add operational comment','Read success notification'],'Comment saved within actual visibility scope',async r=>{await p.goto(base+'/admin/tiket');const link=p.locator('a[href*="/admin/tiket/"]:not([href$="/create"])').filter({hasNotText:'Baru'}).first();const href=await link.getAttribute('href');assert.ok(/\/[a-f0-9-]{20,}$/i.test(href),'No actionable ticket is visible for this persona');return comment(p,href.match(/\/([^/]+)$/)[1],username,r);});
