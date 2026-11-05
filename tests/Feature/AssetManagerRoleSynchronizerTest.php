@@ -157,4 +157,25 @@ class AssetManagerRoleSynchronizerTest extends TestCase
         $this->assertTrue($new->fresh()->hasRole(config('role.pengelola_barang')));
         $this->assertTrue($group->users()->whereKey($new->id)->exists());
     }
+    public function test_group_editor_can_remove_the_last_member_without_erasing_other_roles(): void
+    {
+        $this->prepareRoles();
+        $admin = User::factory()->create();
+        $admin->assignRole(config('role.admin'));
+        $group = $this->group('IT');
+        $staff = User::factory()->create();
+        $staff->assignRole(config('role.sarpras'));
+        $group->users()->attach($staff);
+
+        Livewire::actingAs($admin)
+            ->test(EditG002M003ItemManagement::class, ['record' => $group->getRouteKey()])
+            ->fillForm(['users' => []])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertFalse($staff->fresh()->hasRole(config('role.pengelola_barang')));
+        $this->assertTrue($staff->fresh()->hasRole(config('role.sarpras')));
+        $this->assertSame(0, $group->users()->count());
+    }
+
 }
