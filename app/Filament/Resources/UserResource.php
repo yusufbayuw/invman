@@ -43,7 +43,7 @@ class UserResource extends Resource
                             ->label('E-mail')
                             ->size('md'),
                         \Filament\Infolists\Components\TextEntry::make('itemManagements.name')
-                            ->label('Pengelolaan Barang')
+                            ->label('Kelompok Aset yang Dikelola')
                             ->badge()
                             ->placeholder('Tidak ada'),
                     ]),
@@ -127,24 +127,48 @@ class UserResource extends Resource
                     })
                     ->helperText('Wajib untuk akun Sarpras. Unit menentukan cakupan data dan operasi berbasis unit; kosong hanya untuk akun yang tidak memerlukannya.'),
                 Forms\Components\Select::make('roles')
+                    ->label('Peran Dasar (manual)')
                     ->relationship('roles', 'name', fn (Builder $query) => $query->whereIn('name', [
                         config('role.admin'),
                         config('role.fasilitas'),
                         config('role.sarpras'),
                     ]))
+                    // Auto-managed roles must never be exposed as editable choices,
+                    // dropped on hydration, or detached when manual roles change.
+                    ->loadStateFromRelationshipsUsing(function (Forms\Components\Select $component, ?User $record): void {
+                        $names = [config('role.admin'), config('role.fasilitas'), config('role.sarpras')];
+                        $component->state($record?->roles()->whereIn('name', $names)
+                            ->pluck('roles.id')->map(fn ($id): string => (string) $id)->all() ?? []);
+                    })
+                    ->saveRelationshipsUsing(function (User $record, ?array $state): void {
+                        $manualNames = [config('role.admin'), config('role.fasilitas'), config('role.sarpras')];
+                        $selected = Role::query()->where('guard_name', 'web')
+                            ->whereIn('name', $manualNames)
+                            ->whereIn('id', array_map('intval', (array) $state))
+                            ->pluck('name')->all();
+                        $protected = $record->roles()->whereNotIn('name', $manualNames)
+                            ->pluck('roles.name')->all();
+                        $record->syncRoles(array_values(array_unique(array_merge($protected, $selected))));
+                    })
                     ->multiple()
                     ->preload()
                     ->searchable()
                     ->live()
-                    ->helperText('Hak akses dasar. Role admin adalah super-admin; Sarpras membutuhkan unit. Role tidak otomatis membuat penugasan jabatan/tim.'),
+                    ->helperText('Pilih peran dasar saja. Role pengelola_barang otomatis mengikuti Kelompok Aset yang Dikelola, tidak perlu dipilih manual. Penugasan Jabatan Work Order tetap terpisah.'),
                 Forms\Components\Select::make('itemManagements')
-                    ->label('Pengelolaan Barang')
+                    ->label('Kelompok Aset yang Dikelola')
                     ->relationship('itemManagements', 'name')
                     ->multiple()
                     ->preload()
                     ->searchable()
                     ->live()
-                    ->helperText('Kelompok pengelola aset, misalnya IT/Perpustakaan. Menentukan batas kewenangan transaksi/aset milik kelompok tersebut.')
+                    ->helperText('Pilih IT, Perpustakaan, atau kelompok lain. Keanggotaan otomatis memberi/mencabut role pengelola_barang; hak melihat/mengubah Barang tetap mengikuti izin Shield dan kelompok yang dipilih. Tidak membuat jabatan atau kewenangan approval Work Order.')
+                    ->columnSpanFull(),
+                Forms\Components\Placeholder::make('automatic_asset_manager_role')
+                    ->label('Status role Pengelola Barang (otomatis)')
+                    ->content(fn (Get $get): string => count(array_filter((array) $get('itemManagements'))) > 0
+                        ? 'Aktif otomatis setelah disimpan karena pegawai mempunyai kelompok aset. Role ini mengatur izin fitur, bukan jabatan Work Order.'
+                        : 'Tidak aktif setelah disimpan jika tidak memiliki kelompok aset. Peran dasar lain tidak berubah.')
                     ->columnSpanFull(),
                 Forms\Components\Placeholder::make('user_access_impact')
                     ->label('Dampak konfigurasi pengguna')
@@ -168,8 +192,8 @@ class UserResource extends Resource
                             ? 'Akun terkait dengan satu unit.'
                             : 'Akun belum terkait unit; hanya sesuai untuk peran yang tidak mensyaratkan unit.';
                         $management = count(array_filter((array) $get('itemManagements')))
-                            ? ' Kelompok pengelola aset yang dipilih memberi cakupan operasional sesuai otorisasi yang berlaku.'
-                            : ' Belum ada kelompok pengelola aset yang ditugaskan.';
+                            ? ' Kelompok aset dipilih; role pengelola_barang otomatis aktif, dengan batas data sesuai keanggotaan dan permission Shield.'
+                            : ' Tidak ada kelompok aset; role pengelola_barang otomatis nonaktif.';
 
                         return $scope.$management.' Jabatan Work Order dan keanggotaan tim diatur terpisah.';
                     })
@@ -210,7 +234,7 @@ class UserResource extends Resource
                     ->label('Role')
                     ->badge(),
                 Tables\Columns\TextColumn::make('itemManagements.name')
-                    ->label('Pengelolaan Barang')
+                    ->label('Kelompok Aset yang Dikelola')
                     ->badge()
                     ->placeholder('Tidak ada'),
             ])
