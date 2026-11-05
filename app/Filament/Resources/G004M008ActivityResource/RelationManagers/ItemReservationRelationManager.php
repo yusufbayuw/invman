@@ -229,7 +229,7 @@ class ItemReservationRelationManager extends RelationManager
                     ->icon('heroicon-o-clipboard-document-check')
                     ->visible(fn ($record): bool => app(LoanRequestService::class)->canRecordManagedReturn($record))
                     ->fillForm(fn (G005M009ItemReservation $record): array => $this->returnChecklistData($record))
-                    ->form($this->returnChecklistForm())
+                    ->form(fn (G005M009ItemReservation $record): array => $this->returnChecklistForm($record))
                     ->action(fn ($record, array $data) => app(LoanRequestService::class)->completeManagedReturn(
                         'item', $record->getKey(), $data,
                     )),
@@ -239,7 +239,7 @@ class ItemReservationRelationManager extends RelationManager
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->visible(fn ($record): bool => app(LoanRequestService::class)->canRequestReservationReturn($record))
                     ->fillForm(fn (G005M009ItemReservation $record): array => $this->returnChecklistData($record))
-                    ->form($this->returnChecklistForm())
+                    ->form(fn (G005M009ItemReservation $record): array => $this->returnChecklistForm($record))
                     ->action(fn ($record, array $data) => app(LoanRequestService::class)->requestReservationReturn(
                         'item', $record->getKey(), $data,
                     )),
@@ -271,6 +271,9 @@ class ItemReservationRelationManager extends RelationManager
 
     private function returnChecklistData(G005M009ItemReservation $record): array
     {
+        if ($record->item?->isBulk()) {
+            return ['is_ok' => true];
+        }
         return [
             'instances' => $record->item_reservation_detail()
                 ->with('item_instance')
@@ -283,8 +286,18 @@ class ItemReservationRelationManager extends RelationManager
         ];
     }
 
-    private function returnChecklistForm(): array
+    private function returnChecklistForm(G005M009ItemReservation $record): array
     {
+        if ($record->item?->isBulk()) {
+            return [
+                Forms\Components\Toggle::make('is_ok')->label('Kondisi baik')->default(true)->live(),
+                Forms\Components\Textarea::make('notes')->label('Catatan kondisi')
+                    ->required(fn (Forms\Get $get): bool => ! $get('is_ok')),
+                Forms\Components\FileUpload::make('photo')->label('Foto kondisi')->image()->directory('loan-return-checklists'),
+                Forms\Components\FileUpload::make('proof_path')->label('Bukti serah-terima')->directory('loan-return-receipts'),
+                Forms\Components\Textarea::make('receipt_notes')->label('Catatan serah-terima'),
+            ];
+        }
         return [
             Forms\Components\Repeater::make('instances')
                 ->label('Kondisi setiap barang satuan')
