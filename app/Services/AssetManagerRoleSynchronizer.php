@@ -18,8 +18,14 @@ class AssetManagerRoleSynchronizer
             ->where('guard_name', 'web')
             ->first();
 
-        if (! $role || ! $user = User::query()->find($userId)) {
+        if (! $role) {
             // RoleSeeder may not have run yet in a fresh database.
+            return;
+        }
+
+        $user = User::query()->find($userId);
+
+        if (! $user) {
             return;
         }
 
