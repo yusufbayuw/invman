@@ -28,6 +28,9 @@ class G002M015ItemInstanceObserver
         if (! $item) {
             return;
         }
+        if ($item->isBulk()) {
+            throw ValidationException::withMessages(['g002_m007_item_id' => 'Barang bulk tidak boleh memiliki identitas Barang Satuan.']);
+        }
 
         [$sequence, $generatedCode] = app(\App\Services\InventoryIdentityService::class)->nextInstance($item);
 
@@ -53,6 +56,10 @@ class G002M015ItemInstanceObserver
      */
     public function updated(G002M015ItemInstance $instance): void
     {
+        // A package definition must never silently turn into a loanable unit.
+        if ($instance->is_borrowable && $instance->childRelations()->where('relation_type', 'bundle')->exists()) {
+            throw ValidationException::withMessages(['is_borrowable' => 'Paket belum mendukung alokasi multi-komponen otomatis.']);
+        }
         if (! $instance->wasChanged(['g002_m007_item_id', 'is_borrowable', 'is_available'])) {
             return;
         }
