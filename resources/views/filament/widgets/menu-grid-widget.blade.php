@@ -53,6 +53,10 @@
                     placeholder="Cari menu aplikasi..."
                     autocomplete="off"
                 />
+                <p class="text-xs text-gray-600 dark:text-gray-400">
+                    Hanya menu yang tersedia bagi akun Anda yang ditampilkan. Ketuk ikon bintang untuk menambah atau menghapus favorit;
+                    tindakan ini tidak mengubah peran maupun izin akses.
+                </p>
                 <div
                     x-data="{ startX: 0 }"
                     x-on:touchstart.passive="startX = $event.touches[0].clientX"
