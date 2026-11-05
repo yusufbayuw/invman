@@ -22,7 +22,6 @@ class TicketTeamMemberResource extends Resource
     protected static ?string $modelLabel = 'Anggota Tim';
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $slug = 'tim-teknis';
-    protected static ?int $navigationSort = 3;
 
     public static function canViewAny(): bool { return auth()->user()?->isFacility() ?? false; }
     public static function canCreate(): bool { return static::canViewAny(); }
