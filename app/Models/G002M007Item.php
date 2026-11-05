@@ -30,8 +30,19 @@ class G002M007Item extends Model
         'is_borrowable',
         'status',
         'quantity',
+        'tracking_mode',
         'available_quantity',
     ];
+
+    public function isBulk(): bool
+    {
+        return $this->tracking_mode === 'bulk';
+    }
+
+    public function bulkMovements(): HasMany
+    {
+        return $this->hasMany(AssetBulkMovement::class, 'item_id');
+    }
 
     public function item_reservation(): HasMany
     {
