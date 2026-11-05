@@ -17,7 +17,8 @@
         </div>
         <p class="mt-3 text-sm font-medium text-amber-700 dark:text-amber-300">
             Perhatian: peran admin adalah super-admin dan mempunyai kewenangan luas.
-            Menambah peran baru tidak otomatis menambahkan aturan bisnis atau kewenangan lintas unit.
+            Role pengelola_barang adalah izin teknis yang otomatis mengikuti keanggotaan Kelompok Aset yang Dikelola pada Pengguna; tidak perlu dipilih manual. Jabatan Work Order tidak berubah oleh role ini.<br>
+        Menambah peran baru tidak otomatis menambahkan aturan bisnis atau kewenangan lintas unit.
             Tinjau pengguna terdampak sebelum mengubah izin.
         </p>
     </x-filament::section>
