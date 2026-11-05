@@ -156,6 +156,13 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
             return true;
         }
 
+        // No-unit rooms have Facility as their responsible manager, regardless
+        // of an old optional item-management assignment on the room.
+        if ($reservation instanceof G005M010RoomReservation
+            && $reservation->room?->g001_m001_unit_id === null) {
+            return false;
+        }
+
         $managementId = match (true) {
             $reservation instanceof G005M009ItemReservation => $reservation->item?->g002_m003_item_management_id,
             $reservation instanceof G005M010RoomReservation => $reservation->room?->g002_m003_item_management_id,
@@ -177,7 +184,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
 
         return $managementIds->isNotEmpty() && (
             $activity->item_reservation()->whereHas('item', fn ($query) => $query->whereIn('g002_m003_item_management_id', $managementIds))->exists()
-            || $activity->room_reservation()->whereHas('room', fn ($query) => $query->whereIn('g002_m003_item_management_id', $managementIds))->exists()
+            || $activity->room_reservation()->whereHas('room', fn ($query) => $query
+                ->whereNotNull('g001_m001_unit_id')
+                ->whereIn('g002_m003_item_management_id', $managementIds))->exists()
             || $activity->vehicle_reservation()->whereHas('vehicle', fn ($query) => $query->whereIn('g002_m003_item_management_id', $managementIds))->exists()
         );
     }
