@@ -13,6 +13,9 @@ class ItemManagementMembership extends Pivot
 {
     protected $table = 'g002_m003_item_management_user';
 
+    /** Only the two relationship keys may be filled; IDs, timestamps and flags are protected. */
+    protected $fillable = ['user_id', 'g002_m003_item_management_id'];
+
     public $incrementing = true;
 
     public $timestamps = true;
