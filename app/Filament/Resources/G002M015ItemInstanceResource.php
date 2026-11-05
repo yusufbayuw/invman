@@ -92,7 +92,7 @@ class G002M015ItemInstanceResource extends Resource
         }
 
         $unitId = $user->isSarpras() ? $user->g001_m001_unit_id : null;
-        $managementIds = $user->hasRole(config('role.pengelola_barang'))
+        $managementIds = ! $user->isSarpras() && $user->hasRole(config('role.pengelola_barang'))
             ? $user->itemManagements()->pluck('g002_m003_item_management.id')
             : collect();
 
