@@ -21,7 +21,7 @@ class LoanCheckoutService
     /** @return array<int, array<string, mixed>> */
     public function instanceOptions(Model $reservation): array
     {
-        if (! $reservation instanceof G005M009ItemReservation) {
+        if (! $reservation instanceof G005M009ItemReservation || $reservation->item?->isBulk()) {
             return [];
         }
 
@@ -162,7 +162,7 @@ class LoanCheckoutService
             // The exception waives only the absent borrower's confirmation.
             // Physical inspection must already have been recorded by begin().
             $checks = $reservation->outboundChecklists()->get();
-            $expectedCount = $type === 'item' ? (int) $reservation->quantity : 1;
+            $expectedCount = $type === 'item' && ! $reservation->item?->isBulk() ? (int) $reservation->quantity : 1;
             if (! $receipt?->manager_confirmed_at || $expectedCount < 1
                 || $checks->count() !== $expectedCount
                 || $checks->contains(fn ($check) => ! $check->checked_at
@@ -196,6 +196,14 @@ class LoanCheckoutService
         if ($type !== 'item') {
             return;
         }
+        if ($reservation->item?->isBulk()) {
+            if ($reservation->item_reservation_detail()->exists()
+                || $reservation->outboundChecklists()->count() !== 1
+                || $reservation->outboundChecklists()->whereNotNull('g002_m015_item_instance_id')->exists()) {
+                throw ValidationException::withMessages(['status' => 'Bukti serah-terima bulk tidak valid.']);
+            }
+            return;
+        }
         $expected = $reservation->outboundChecklists()
             ->pluck('g002_m015_item_instance_id')->map(fn ($id): int => (int) $id)
             ->sort()->values()->all();
@@ -226,6 +234,12 @@ class LoanCheckoutService
     private function validatedChecklist(string $type, Model $reservation, array $data): array
     {
         if ($type !== 'item') {
+            $rows = [[
+                'is_ok' => (bool) ($data['is_ok'] ?? false),
+                'notes' => $data['notes'] ?? null,
+                'photo' => $data['photo'] ?? null,
+            ]];
+        } elseif ($reservation->item?->isBulk()) {
             $rows = [[
                 'is_ok' => (bool) ($data['is_ok'] ?? false),
                 'notes' => $data['notes'] ?? null,
