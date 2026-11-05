@@ -17,6 +17,7 @@ class TicketTeamMemberResource extends Resource
 {
     protected static ?string $model = TicketTeamMember::class;
     protected static ?string $navigationGroup = 'Pengaturan';
+    protected static ?int $navigationSort = 6;
     protected static ?string $navigationLabel = 'Tim & Hierarki Petugas';
     protected static ?string $modelLabel = 'Anggota Tim';
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
@@ -44,23 +45,27 @@ class TicketTeamMemberResource extends Resource
                                     ->orWhere('email', 'like', '%'.$search.'%');
                             })->limit(30)->pluck('name', 'id')->all())
                         ->getOptionLabelUsing(fn ($value): ?string => User::query()->find($value)?->name)
-                        ->unique(table: 'ticket_team_members', column: 'user_id', ignoreRecord: true),
+                        ->unique(table: 'ticket_team_members', column: 'user_id', ignoreRecord: true)
+                        ->helperText('Satu akun hanya boleh terdaftar sebagai satu anggota tim ticketing. Ini tidak mengubah role akun.'),
                     Forms\Components\TextInput::make('team_name')->label('Nama tim')
                         ->placeholder('Contoh: Teknisi Lapangan Kampus')
                         ->helperText('Anggota dan koordinator harus memakai nama tim yang sama.')
-                        ->required()->maxLength(100)->live(onBlur: true),
+                        ->required()->maxLength(100)->live(onBlur: true)
+                        ->helperText('Nama tim harus sama persis antara koordinator dan anggota; mengganti nama dapat memutus hubungan hierarki bila masih memiliki bawahan.'),
                     Forms\Components\Select::make('team_type')->label('Jenis tim')->required()
                         ->options(['field' => 'Tim Teknis Lapangan', 'support' => 'Tim Teknis Pendukung'])
-                        ->default('field')->native(false)->live(),
+                        ->default('field')->native(false)->live()
+                        ->helperText('Lapangan dan Pendukung adalah hierarki terpisah. Petugas hanya dapat memakai koordinator dari jenis tim yang sama.'),
                     Forms\Components\Select::make('g002_m003_item_management_id')->label('Pengelola aset')
-                        ->helperText('Opsional untuk tim fasilitas umum; isi agar penugasan dibatasi pada pengelola aset tersebut.')
+                        ->helperText('Kosong = tim fasilitas umum. Jika dipilih, tim dan atasannya dibatasi ke kelompok pengelola aset ini.')
                         ->options(fn (): array => G002M003ItemManagement::query()->orderBy('name')->pluck('name','id')->all())
                         ->searchable()->nullable()->live(),
                     Forms\Components\Select::make('position')->label('Jabatan')->required()
                         ->options(['lead' => 'Koordinator / Atasan', 'technician' => 'Petugas / Teknisi'])
-                        ->default('technician')->native(false)->live(),
+                        ->default('technician')->native(false)->live()
+                        ->helperText('Koordinator dapat mendelegasikan tiket yang telah disetujui. Teknisi wajib memiliki koordinator aktif pada tim yang sama.'),
                     Forms\Components\Select::make('supervisor_user_id')->label('Atasan langsung')
-                        ->helperText('Koordinator utama tidak memerlukan atasan. Teknisi wajib memilih atasan dalam tim yang sama.')
+                        ->helperText('Teknisi wajib memilih koordinator aktif di tim dan pengelola yang sama. Koordinator utama boleh tanpa atasan; hierarki melingkar ditolak.')
                         ->options(fn (Forms\Get $get): array => TicketTeamMember::query()
                             ->where('is_active', true)->where('position', 'lead')
                             ->where('team_name', $get('team_name'))
@@ -70,10 +75,20 @@ class TicketTeamMemberResource extends Resource
                             ->with('user')->get()
                             ->filter(fn ($member) => $member->user?->is_enabled)
                             ->mapWithKeys(fn ($member): array => [$member->user_id => $member->user->name])->all())
-                        ->searchable()->nullable(),
+                        ->searchable()->nullable()->live(),
                     Forms\Components\Toggle::make('is_active')->label('Aktif menerima tugas')
                         ->helperText('Nonaktifkan anggota tanpa menghapus riwayat tugas.')
-                        ->default(true),
+                        ->default(true)->live(),
+                    Forms\Components\Placeholder::make('team_member_impact')
+                        ->label('Dampak posisi dan keaktifan')
+                        ->content(fn (Forms\Get $get): string => ! $get('is_active')
+                            ? 'Petugas nonaktif tidak dapat menerima atau melanjutkan pekerjaan baru, tetapi histori tugas tetap ada. Pindahkan bawahan aktif sebelum menonaktifkan koordinator.'
+                            : ($get('position') === 'lead'
+                                ? 'Koordinator aktif dapat menerima delegasi/menugaskan bawahan yang sesuai. Jabatan koordinator tidak otomatis memberikan persetujuan akhir.'
+                                : 'Teknisi aktif hanya dapat ditugaskan pada tiket yang sesuai cakupan. Atasan koordinator aktif wajib dipilih.')
+                                .($get('g002_m003_item_management_id')
+                                    ? ' Tim dibatasi kelompok pengelola aset terpilih.'
+                                    : ' Tanpa pengelola aset, tim mengikuti batas unit dan kewenangan fasilitas umum.')),
                 ])->columns(2),
         ]);
     }
