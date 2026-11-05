@@ -58,7 +58,19 @@ $case = $ticket->maintenance()->make();
 $case->forceFill(['approval_notes' => 'Existing history'])->save();
 $ticket->events()->create(['actor_id' => $user->id, 'action' => 'opened', 'notes' => 'Legacy event']);
 $tables = ['users', 'model_has_roles', 'g004_m008_activities', 'g005_m009_item_reservations', 'tickets', 'ticket_events', 'ticket_maintenance_cases'];
-$fingerprint = fn () => array_map(fn ($table) => hash('sha256', json_encode(DB::table($table)->get()->all())), $tables);
+// Adding the hold policy column is an additive schema change. Compare all
+// pre-existing field values and history, not the new column absent at baseline.
+$fingerprint = fn () => array_map(function (string $table): string {
+    $rows = DB::table($table)->get()->map(function (object $record) use ($table): object {
+        if ($table === 'g004_m008_activities') {
+            unset($record->hold_strategy);
+        }
+
+        return $record;
+    })->all();
+
+    return hash('sha256', json_encode($rows));
+}, $tables);
 $before = $fingerprint();
 // Upgrade through the original #32 schema with a real rejected approval row.
 // The new revision migration must retain that decision, not only empty tables.
