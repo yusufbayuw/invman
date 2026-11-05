@@ -137,6 +137,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     public function itemManagements(): BelongsToMany
     {
         return $this->belongsToMany(G002M003ItemManagement::class, 'g002_m003_item_management_user')
+            ->using(ItemManagementMembership::class)
             ->withTimestamps();
     }
 
