@@ -70,7 +70,7 @@ class G002M003ItemManagementResource extends Resource
                     ->searchable()
                     ->preload()
                     ->required()
-                    ->helperText('Hanya user yang dipilih di sini yang dapat memproses flow aset kelompok ini.')
+                    ->helperText('Pegawai yang ditetapkan otomatis mendapat role teknis pengelola_barang; saat dicabut dari kelompok terakhir, role itu dilepas. Akses Barang tetap dibatasi izin Shield dan kelompok aset. Penugasan Jabatan Work Order tidak berubah.')
                     ->columnSpanFull(),
             ]);
     }
