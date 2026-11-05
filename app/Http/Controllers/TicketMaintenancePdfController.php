@@ -17,12 +17,17 @@ class TicketMaintenancePdfController extends Controller
             'maintenance.finalApprover', 'operationalOverrides.actor', 'operationalOverrides.subject', 'workOrderApprovals.decisionMaker', 'workOrderApprovals.workflow',
             'workOrderApprovalHistory.decisionMaker', 'workOrderRevisions.actor', 'reporter', 'unit', 'category', 'assets', 'assignee']);
 
-        return Pdf::loadView('pdf.tickets.maintenance', ['ticket' => $ticket])
+        $pdf = Pdf::loadView('pdf.tickets.maintenance', ['ticket' => $ticket])
             ->setPaper('a4', 'portrait')
-            ->setOption('isRemoteEnabled', false)
-            ->download('perawatan-'.$ticket->number.'.pdf')
+            ->setOption('isRemoteEnabled', false);
+
+        $filename = 'perawatan-'.$ticket->number.'.pdf';
+
+        // The same authorization applies to both in-page preview and download.
+        return ($request->boolean('preview') ? $pdf->stream($filename) : $pdf->download($filename))
             ->header('Cache-Control', 'private, no-store, max-age=0')
             ->header('Pragma', 'no-cache')
-            ->header('X-Content-Type-Options', 'nosniff');
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 }
