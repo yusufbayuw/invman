@@ -486,10 +486,19 @@ class ViewTicket extends ViewRecord
                 ->action(fn (array $data) => app(TicketMaintenanceService::class)
                     ->cancel($this->getRecord(), auth()->user(), $data['notes'])),
             Actions\Action::make('maintenancePdf')
-                ->label('Form Perawatan PDF')->icon('heroicon-o-document-arrow-down')
+                ->label('Lihat Form Perawatan')->icon('heroicon-o-eye')
                 ->visible(fn (): bool => $this->getRecord()->maintenance !== null)
-                ->url(fn (): string => route('tickets.maintenance.pdf', ['ticket' => $this->getRecord()->id]))
-                ->openUrlInNewTab(),
+                ->modalHeading('Pratinjau Form Perawatan')
+                ->modalWidth('7xl')
+                ->modalSubmitAction(false)
+                ->modalCancelActionLabel('Tutup')
+                ->modalContent(fn () => view('filament.components.pdf-preview-modal', [
+                    'title' => 'Form Perawatan '.$this->getRecord()->number,
+                    'previewUrl' => route('tickets.maintenance.pdf', [
+                        'ticket' => $this->getRecord()->id, 'preview' => 1,
+                    ]),
+                    'downloadUrl' => route('tickets.maintenance.pdf', ['ticket' => $this->getRecord()->id]),
+                ])),
             Actions\Action::make('assign')
                 ->label('Tugaskan')->icon('heroicon-o-user-plus')
                 ->visible(fn (): bool => $this->getRecord()->maintenance === null
