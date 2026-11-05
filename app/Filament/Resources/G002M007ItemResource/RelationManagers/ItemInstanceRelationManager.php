@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\G002M007ItemResource\RelationManagers;
 
+use App\Filament\Resources\G002M015ItemInstanceResource;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
@@ -78,11 +79,11 @@ class ItemInstanceRelationManager extends RelationManager
                 Tables\Actions\Action::make('view')
                     ->label('Lihat')
                     ->icon('heroicon-o-eye')
-                    ->url(fn ($record): string => ItemInstanceResource::getUrl('view', ['record' => $record])),
+                    ->url(fn ($record): string => G002M015ItemInstanceResource::getUrl('view', ['record' => $record])),
                 Tables\Actions\Action::make('edit')
                     ->label('Ubah')
                     ->icon('heroicon-o-pencil-square')
-                    ->url(fn ($record): string => ItemInstanceResource::getUrl('edit', ['record' => $record])),
+                    ->url(fn ($record): string => G002M015ItemInstanceResource::getUrl('edit', ['record' => $record])),
             ])
             ->bulkActions([
                 // Penghapusan dinonaktifkan untuk menjaga histori aset.
