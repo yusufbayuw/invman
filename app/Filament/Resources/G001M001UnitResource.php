@@ -57,8 +57,6 @@ class G001M001UnitResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->label('Nama unit')
-                    ->required()
-                    ->maxLength(255)
                     ->helperText('Nama resmi unit, misalnya SD, SMP, SMA, atau Universitas. Gunakan satu nama konsisten agar tidak membuat unit ganda.'),
                 Forms\Components\Placeholder::make('unit_name_impact')
                     ->label('Dampak perubahan')
