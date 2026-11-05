@@ -67,6 +67,13 @@ http {
   }
 }
 EOF
+# Root-owned service logs were unreadable by the unprivileged QA collector.
+# Create the files before service startup so evidence remains accessible.
+for qa_log in fpm-error.log nginx-error.log nginx-access.log; do
+  sudo touch "$qa_root/$qa_log"
+  sudo chown "$qa_user:$qa_group" "$qa_root/$qa_log"
+  sudo chmod 0600 "$qa_root/$qa_log"
+done
 sudo "$fpm_binary" -t -y "$qa_root/fpm.conf"
 sudo nginx -t -p "$qa_root/" -c "$qa_root/nginx.conf"
 sudo "$fpm_binary" -F -y "$qa_root/fpm.conf" > "$qa_root/fpm.out" 2>&1 &
