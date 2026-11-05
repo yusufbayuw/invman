@@ -61,8 +61,10 @@ class AssetManagerRoleSynchronizer
         $roleName = config('role.pengelola_barang');
 
         User::query()
-            ->whereHas('itemManagements')
-            ->orWhereHas('roles', fn ($query) => $query->where('name', $roleName))
+            ->where(function ($query) use ($roleName): void {
+                $query->whereHas('itemManagements')
+                    ->orWhereHas('roles', fn ($roles) => $roles->where('name', $roleName));
+            })
             ->chunkById(200, function ($users): void {
                 $this->syncUserIds($users->pluck('id'));
             });
