@@ -23,6 +23,7 @@ class UserResource extends Resource
     protected static ?string $model = User::class;
 
     protected static ?string $navigationGroup = 'Pengaturan';
+    protected static ?int $navigationSort = 3;
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $slug = 'users';
     protected static ?string $modelLabel = 'Pengguna';
@@ -84,40 +85,47 @@ class UserResource extends Resource
                     ->mutateDehydratedStateUsing(static fn (?string $state): string => filled($state)
                         ? basename($state)
                         : config('chatify.user_avatar.default'))
-                    ->helperText('JPG, PNG, atau WebP. Ukuran maksimal 2 MB. Kosongkan untuk menggunakan avatar bawaan.')
+                    ->helperText('JPG, PNG, atau WebP, maksimal 2 MB. Avatar hanya memengaruhi identitas visual; tidak mengubah kewenangan. Kosongkan untuk avatar bawaan.')
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('name')
-                    ->label('Name')
-                    ->required(),
+                    ->label('Nama lengkap')
+                    ->required()
+                    ->helperText('Nama pegawai yang tampil pada daftar pengguna, penugasan, dan riwayat tindakan. Perubahan nama tidak mengubah identitas akun.'),
                 Forms\Components\TextInput::make('email')
                     ->label('E-mail')
                     ->email()
                     ->unique(ignoreRecord:true)
-                    ->required(),
+                    ->required()
+                    ->helperText('Alamat email unik untuk identitas akun dan komunikasi. Mengubahnya memengaruhi alamat yang tersimpan, bukan histori aktor.'),
                 Forms\Components\TextInput::make('password')
                     ->password()
                     ->required(fn (string $operation): bool => $operation === 'create')
+                    ->helperText('Wajib saat akun dibuat. Saat edit, biarkan kosong agar password lama tidak berubah. Isi ulang akan mengganti kredensial akun.')
                     ->rules([AccountPasswordPolicy::rule()])
                     ->dehydrateStateUsing(static fn (null|string $state): null|string => filled($state) ? Hash::make($state) : null,)
                     ->dehydrated(static fn (null|string $state): bool => filled($state)),
-                Forms\Components\TextInput::make('username'),
+                Forms\Components\TextInput::make('username')
+                    ->label('Username')
+                    ->helperText('Identitas yang digunakan saat login. Mengubah username dapat membuat pengguna perlu memakai nama login baru.'),
                 // Do not reuse Chatify active_status: it represents presence, not permission.
                 Forms\Components\Toggle::make('is_enabled')
                     ->label('Akun dapat login')
                     ->default(true)
+                    ->live()
                     ->disabled(fn (?User $record): bool => $record?->id === auth()->id())
-                    ->helperText('Nonaktifkan untuk mencabut akses pada permintaan berikutnya.'),
+                    ->helperText('Jika nonaktif, akun tidak dapat masuk/melanjutkan akses. Riwayat tindakan sebelumnya tetap tersimpan.'),
                 Forms\Components\Select::make('g001_m001_unit_id')
                     ->label('Unit')
                     ->relationship('unit', 'name')
                     ->searchable()
                     ->preload()
+                    ->live()
                     ->required(function (Get $get): bool {
                         $sarprasRoleId = Role::query()->where('name', config('role.sarpras'))->value('id');
 
                         return $sarprasRoleId && in_array($sarprasRoleId, $get('roles') ?? []);
                     })
-                    ->helperText('Wajib untuk akun sarpras; kosongkan untuk admin dan fasilitas.'),
+                    ->helperText('Wajib untuk akun Sarpras. Unit menentukan cakupan data dan operasi berbasis unit; kosong hanya untuk akun yang tidak memerlukannya.'),
                 Forms\Components\Select::make('roles')
                     ->relationship('roles', 'name', fn (Builder $query) => $query->whereIn('name', [
                         config('role.admin'),
@@ -126,14 +134,45 @@ class UserResource extends Resource
                     ]))
                     ->multiple()
                     ->preload()
-                    ->searchable(),
+                    ->searchable()
+                    ->live()
+                    ->helperText('Hak akses dasar. Role admin adalah super-admin; Sarpras membutuhkan unit. Role tidak otomatis membuat penugasan jabatan/tim.'),
                 Forms\Components\Select::make('itemManagements')
                     ->label('Pengelolaan Barang')
                     ->relationship('itemManagements', 'name')
                     ->multiple()
                     ->preload()
                     ->searchable()
-                    ->helperText('User memperoleh kewenangan flow hanya untuk aset kelompok yang dipilih.')
+                    ->live()
+                    ->helperText('Kelompok pengelola aset, misalnya IT/Perpustakaan. Menentukan batas kewenangan transaksi/aset milik kelompok tersebut.')
+                    ->columnSpanFull(),
+                Forms\Components\Placeholder::make('user_access_impact')
+                    ->label('Dampak konfigurasi pengguna')
+                    ->content(function (Get $get): string {
+                        if ($get('is_enabled') === false) {
+                            return 'Akun dinonaktifkan: pengguna tidak dapat melanjutkan akses meskipun masih memiliki role atau penugasan aktif. Riwayat tidak dihapus.';
+                        }
+
+                        $selected = Role::query()->whereIn('id', array_filter((array) $get('roles')))
+                            ->pluck('name')->all();
+
+                        if (in_array(config('role.admin'), $selected, true)) {
+                            return 'PERHATIAN: role Admin memiliki kewenangan global/super-admin. Berikan hanya kepada pengelola sistem yang dipercaya.';
+                        }
+
+                        if (in_array(config('role.sarpras'), $selected, true) && ! $get('g001_m001_unit_id')) {
+                            return 'Role Sarpras membutuhkan unit. Tanpa unit yang sesuai, pengguna tidak dapat menjalankan alur Sarpras unit secara benar.';
+                        }
+
+                        $scope = $get('g001_m001_unit_id')
+                            ? 'Akun terkait dengan satu unit.'
+                            : 'Akun belum terkait unit; hanya sesuai untuk peran yang tidak mensyaratkan unit.';
+                        $management = count(array_filter((array) $get('itemManagements')))
+                            ? ' Kelompok pengelola aset yang dipilih memberi cakupan operasional sesuai otorisasi yang berlaku.'
+                            : ' Belum ada kelompok pengelola aset yang ditugaskan.';
+
+                        return $scope.$management.' Jabatan Work Order dan keanggotaan tim diatur terpisah.';
+                    })
                     ->columnSpanFull(),
             ]);
     }
