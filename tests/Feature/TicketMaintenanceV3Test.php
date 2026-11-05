@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\TicketResource\Pages\ViewTicket;
 use App\Models\G001M001Unit;
 use App\Models\G002M003ItemManagement;
 use App\Models\G003M006Room;
@@ -18,6 +19,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class TicketMaintenanceV3Test extends TestCase
@@ -162,6 +164,21 @@ class TicketMaintenanceV3Test extends TestCase
         $this->assertStringStartsWith('%PDF', $response->baseResponse->getContent());
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
         $this->assertStringContainsString('private', $response->headers->get('Cache-Control'));
+
+        $preview = $this->actingAs($d['reporter'])->get($url.'?preview=1')
+            ->assertOk()->assertHeader('Content-Type', 'application/pdf')
+            ->assertHeader('X-Frame-Options', 'SAMEORIGIN');
+        $this->assertStringContainsString('inline', (string) $preview->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF', $preview->baseResponse->getContent());
+        $this->actingAs($d['outsider'])->get($url.'?preview=1')->assertNotFound();
+
+        Livewire::actingAs($d['reporter'])
+            ->test(ViewTicket::class, ['record' => $d['ticket']->id])
+            ->assertSee('Penanganan dan Hasil Perbaikan')
+            ->assertDontSee('Perawatan / Perbaikan V3')
+            ->mountAction('maintenancePdf')
+            ->assertSee('Unduh PDF')
+            ->assertSee('Pratinjau Form Perawatan');
     }
 
     public function test_sla_business_calendar_and_escalations_are_idempotent(): void
