@@ -13,6 +13,7 @@ class WorkOrderJobTitleResource extends Resource
 {
     protected static ?string $model = WorkOrderJobTitle::class;
     protected static ?string $navigationGroup = 'Pengaturan';
+    protected static ?int $navigationSort = 4;
     protected static ?string $navigationLabel = 'Jabatan Work Order';
     protected static ?string $navigationIcon = 'heroicon-o-identification';
     protected static ?string $slug = 'work-order-job-titles';
@@ -25,9 +26,17 @@ class WorkOrderJobTitleResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('name')->label('Nama jabatan')->required()->maxLength(100)->unique(ignoreRecord: true),
-            Forms\Components\Textarea::make('description')->label('Keterangan')->maxLength(255),
-            Forms\Components\Toggle::make('is_active')->label('Aktif')->default(true),
+            Forms\Components\TextInput::make('name')->label('Nama jabatan')->required()->maxLength(100)->unique(ignoreRecord: true)
+                ->helperText('Nama posisi dalam alur Work Order, misalnya Supervisor Fasilitas. Membuat jabatan tidak otomatis memberikan kewenangan kepada akun.'),
+            Forms\Components\Textarea::make('description')->label('Keterangan')->maxLength(255)
+                ->helperText('Penjelasan tugas atau batas tanggung jawab jabatan; tidak mengubah hak akses secara langsung.'),
+            Forms\Components\Toggle::make('is_active')->label('Aktif')->default(true)->live()
+                ->helperText('Hanya jabatan aktif yang dapat dipilih untuk penugasan dan dipakai pada keputusan Work Order.'),
+            Forms\Components\Placeholder::make('job_title_impact')
+                ->label('Dampak status jabatan')
+                ->content(fn (Forms\Get $get): string => $get('is_active')
+                    ? 'Jabatan dapat ditugaskan kepada pegawai dan dipilih dalam workflow. Tetap harus ada penugasan aktif agar seseorang berwenang.'
+                    : 'Jabatan tidak aktif. Penugasan yang mengandalkan jabatan ini dapat kehilangan kewenangan persetujuan. Periksa tiket yang sedang menunggu sebelum menonaktifkannya.'),
         ]);
     }
 
