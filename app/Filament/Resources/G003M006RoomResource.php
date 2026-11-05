@@ -118,14 +118,15 @@ class G003M006RoomResource extends Resource
                     ->relationship('unit', 'name')
                     ->label('Unit')
                     ->placeholder('Tanpa Unit')
+                    ->live()
                     ->helperText('Kosong berarti Ruangan Tanpa Unit dan dikelola Fasilitas; bukan otomatis Ruangan Bersama atau bebas dipinjam.'),
                 Forms\Components\Select::make('g002_m003_item_management_id')
                     ->label('Pengelola')
                     ->relationship('item_management', 'name')
                     ->searchable()
                     ->preload()
-                    ->required()
-                    ->helperText('User pada kelompok ini memproses persetujuan dan serah-terima ruangan.'),
+                    ->required(fn (Forms\Get $get): bool => filled($get('g001_m001_unit_id')))
+                    ->helperText('Kelompok pengelola wajib untuk ruangan ber-unit. Ruangan Tanpa Unit tetap dikelola Fasilitas; kelompok tidak memberi hak persetujuan.'),
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Ruangan'),
                 Forms\Components\Toggle::make('is_borrowable')
