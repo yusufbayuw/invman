@@ -63,6 +63,9 @@ class RoleSeeder extends Seeder
             "view_any_{$roomReservation}", "view_{$roomReservation}",
             "view_any_{$vehicleReservation}", "view_{$vehicleReservation}",
             'page_AjukanPeminjaman',
+            // Unit Sarpras may maintain only Barang and Barang Satuan belonging to their own unit.
+            'view_any_g002::m007::item', 'view_g002::m007::item', 'create_g002::m007::item', 'update_g002::m007::item',
+            'view_any_g002::m015::item::instance', 'view_g002::m015::item::instance', 'create_g002::m015::item::instance', 'update_g002::m015::item::instance',
         ];
 
         $permissions = collect($facilityPermissions)->merge($sarprasPermissions)->merge($managerPermissions)->unique()
