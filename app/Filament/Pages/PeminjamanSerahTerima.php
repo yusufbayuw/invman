@@ -96,7 +96,7 @@ class PeminjamanSerahTerima extends Page implements HasForms
                 ->columnSpanFull(),
         ];
 
-        if ($this->type === 'item') {
+        if ($this->type === 'item' && ! ($this->reservation() instanceof G005M009ItemReservation && $this->reservation()->item?->isBulk())) {
             return [
                 Forms\Components\Repeater::make('instances')
                     ->label('Kondisi setiap barang satuan')
@@ -147,7 +147,7 @@ class PeminjamanSerahTerima extends Page implements HasForms
                 ->label('Catatan penyerahan awal')->maxLength(2000)->columnSpanFull(),
         ];
 
-        if ($this->type === 'item') {
+        if ($this->type === 'item' && ! ($this->reservation() instanceof G005M009ItemReservation && $this->reservation()->item?->isBulk())) {
             return [
                 Forms\Components\Repeater::make('instances')
                     ->label('Kondisi setiap barang satuan')
@@ -224,7 +224,7 @@ class PeminjamanSerahTerima extends Page implements HasForms
     /** @return array<string, mixed> */
     private function initialChecklist(Model $reservation): array
     {
-        if (! $reservation instanceof G005M009ItemReservation) {
+        if (! $reservation instanceof G005M009ItemReservation || $reservation->item?->isBulk()) {
             return ['is_ok' => true];
         }
 
