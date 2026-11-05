@@ -96,7 +96,7 @@ class AssetStructureAndShieldTest extends TestCase
         } catch (ValidationException) {
             $this->assertDatabaseCount('asset_relations', 2);
         }
-        $this->expectException(\Illuminate\Auth\Access\AuthorizationException::class);
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
         $links->connect($a->id, $external->id, 'component', $manager);
     }
 
