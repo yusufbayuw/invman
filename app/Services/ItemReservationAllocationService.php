@@ -12,6 +12,12 @@ class ItemReservationAllocationService
 {
     public function allocate(G005M009ItemReservation $reservation): void
     {
+        if ($reservation->item?->isBulk()) {
+            if ($reservation->item_reservation_detail()->exists()) {
+                throw ValidationException::withMessages(['status' => 'Bulk tidak boleh memiliki alokasi barang satuan.']);
+            }
+            return; // Reserved by the time-window engine, not by fake instances.
+        }
         $required = max(0, (int) $reservation->quantity);
         $allocatedIds = $reservation->item_reservation_detail()
             ->lockForUpdate()
@@ -102,6 +108,9 @@ class ItemReservationAllocationService
     /** @param array<int, bool> $conditions */
     public function releaseByInstance(G005M009ItemReservation $reservation, array $conditions): void
     {
+        if ($reservation->item?->isBulk()) {
+            return; // Quantity remains physical stock; reservation window releases on return.
+        }
         $instanceIds = $reservation->item_reservation_detail()
             ->pluck('g002_m015_item_instance_id')
             ->filter();
