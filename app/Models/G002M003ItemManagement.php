@@ -8,6 +8,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class G002M003ItemManagement extends Model
 {
+    /** @var list<int> */
+    private array $previousMemberIds = [];
+
+    protected static function booted(): void
+    {
+        // FK cascades bypass pivot model events. Reconcile former members when
+        // an empty/unused management group is deleted through Eloquent.
+        static::deleting(function (self $management): void {
+            $management->previousMemberIds = $management->users()
+                ->pluck('users.id')->map(fn ($id): int => (int) $id)->all();
+        });
+
+        static::deleted(function (self $management): void {
+            app(\App\Services\AssetManagerRoleSynchronizer::class)
+                ->syncUserIds($management->previousMemberIds);
+        });
+    }
+
     /** Explicit, audited mass-assignment allowlist. */
     protected $fillable = [
         'name',
@@ -22,6 +40,7 @@ class G002M003ItemManagement extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'g002_m003_item_management_user')
+            ->using(ItemManagementMembership::class)
             ->withTimestamps();
     }
 
