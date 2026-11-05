@@ -33,7 +33,7 @@ final class AssetRelationService
             }
             // Do not alter asset composition while physical custody is outstanding.
             foreach ([$parent, $child] as $unit) {
-                if ($unit->item_reservation_detail()->whereHas('reservation', fn ($q) => $q->whereIn('status', [
+                if ($unit->item_reservation_detail()->whereHas('item_reservation', fn ($q) => $q->whereIn('status', [
                     'submitted', 'approved', 'checked_out', 'return_requested', 'partially_approved',
                 ]))->exists()) {
                     throw ValidationException::withMessages(['child_instance_id' => 'Tidak boleh mengubah susunan saat ada peminjaman aktif.']);
