@@ -18,12 +18,18 @@ The `Barang Satuan` detail screen exposes **Hubungan dan Komponen Aset**. Asset 
 
 A relationship checks access to the parent and child, cross-unit/group scope, duplicate installation and cycles. A kit parent must not be borrowable: **atomic reservation/checkout of a kit and its members is not implemented**. Do not advertise a kit as reservable or falsely count its constituent assets as reserved. Normal room placement remains a separate relation.
 
+### Ruangan Tanpa Unit (NOT Ruangan Bersama)
+
+`g003_m006_rooms.g001_m001_unit_id` already exists and is nullable. Null means **Ruangan Tanpa Unit** (room without assigned organizational unit), **not** a universally available/shared room. Facility manages this room's master data and reservation decisions. An optional legacy management-group link does not grant the group approval authority for no-unit rooms.
+
+A unit-owned item may be physically located in a room assigned to its own unit or in a no-unit room, **without changing the catalog unit ownership**. Sarpras users cannot place assets into another unit's room. Room loanability continues to depend on explicit `is_borrowable` and existing reservation rules, never on the nullable unit field. On the room form, group manager selection is optional for no-unit rooms only.
+
 ## Access model
 
 - `admin`: super-admin existing Shield Gate.
 - `fasilitas`: Staff, Supervisor and Manager; master catalog/physical-unit and location/vehicle resources are available through Shield permissions; Work Order-specific titles/workflows remain separate.
 - `pengelola_barang`: only `Barang` and `Barang Satuan`; rows are restricted by `itemManagements` memberships, including list, search and guarded save.
-- `sarpras`: unchanged.
+- `sarpras`: may view/create/update **Barang** and **Barang Satuan** only when the catalog owner is their own non-null unit. List, global search, record policy and form writes are scoped to the authenticated unit; even a second `pengelola_barang` role does not expand Sarpras beyond this unit.
 
 The asset-manager role is provisioned on existing group users by role migration/RoleSeeder and when a group is managed through the Filament resource; API / direct pivot writes should also explicitly assign the role. Group membership is *never* a grant for unrelated master modules.
 
@@ -34,7 +40,7 @@ The asset-manager role is provisioned on existing group users by role migration/
 1. Back up application, current database and audit tables.
 2. Review PR and run its Quality Guard + Operational UAT. Do not merge on a green status alone: inspect branch-specific MySQL/SQLite security and transaction tests.
 3. Run `php artisan migrate --force` only after CI; validate that legacy items receive the `individual` default and that no old item instance/reservation count changes.
-4. For old installs, confirm Facility and asset-manager roles/permissions, and that IT/Perpustakaan users are in assigned groups.
+4. For old installs, confirm Facility, Sarpras and asset-manager roles/permissions; verify Sarpras SD cannot read/edit SMP assets or forge foreign units, and that IT/Perpustakaan users are in assigned groups.
 5. Manually test a bulk loan with two-person checkout, on-time/damaged return, and concurrent booking; test individual and cross-group URL/payload denial.
 6. New bundle definitions do not support whole-kit loan and must remain non-borrowable pending a dedicated atomic bundle allocation feature.
 
