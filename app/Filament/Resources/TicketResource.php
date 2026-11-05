@@ -227,7 +227,7 @@ class TicketResource extends Resource
                     Infolists\Components\TextEntry::make('maintenance.approver.name')->label('Disetujui oleh')->placeholder('Menunggu persetujuan'),
                     Infolists\Components\TextEntry::make('maintenance.accepted_at')->label('Diterima petugas')->dateTime('d M Y H:i')->placeholder('Belum diterima'),
                 ])->columns(2),
-            Infolists\Components\Section::make('Perawatan / Perbaikan V3')
+            Infolists\Components\Section::make('Penanganan dan Hasil Perbaikan')
                 ->visible(fn ($record): bool => $record->maintenance !== null)
                 ->schema([
                     Infolists\Components\TextEntry::make('maintenance.approver.name')->label('Disetujui oleh')->placeholder('Belum'),
