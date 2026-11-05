@@ -132,12 +132,12 @@ class PengaturanPeminjaman extends Page implements HasForms
                                 return "{$hours} jam KERJA: hanya {$schedule} pukul "
                                     .($get('work_start') ?: '--:--').'–'.($get('work_end') ?: '--:--')
                                     .' yang dihitung; malam/akhir pekan di luar pilihan tidak dihitung. '
-                                    .'Contoh 24 jam dengan Senin–Jumat 07:00–15:00 berarti 3 hari kerja. '
+                                    .($hours === 24 ? 'Contoh 24 jam dengan Senin–Jumat 07:00–15:00 berarti 3 hari kerja. ' : 'Durasi akan dijumlahkan melintasi beberapa hari kerja bila melebihi jam operasional harian. ')
                                     .'Jika peminjaman dimulai lebih awal, tenggat dipotong. Perubahan hanya untuk pengajuan baru.';
                             }
 
                             return "{$hours} jam KALENDER: waktu malam, Sabtu, Minggu, dan hari libur tetap dihitung. "
-                                .'Contoh pengajuan Senin 14:00 dengan 24 jam kalender berakhir Selasa 14:00, '
+                                .($hours === 24 ? 'Contoh pengajuan Senin 14:00 dengan 24 jam kalender berakhir Selasa 14:00, ' : 'Tenggat dihitung terus-menerus sejak pengajuan masuk, ')
                                 .'kecuali jadwal peminjaman mulai lebih awal. Perubahan hanya untuk pengajuan baru.';
                         })
                         ->columnSpanFull(),
