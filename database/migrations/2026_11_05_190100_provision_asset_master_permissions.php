@@ -14,6 +14,7 @@ return new class extends Migration
             return;
         }
         $facility = Role::query()->where('name', 'fasilitas')->where('guard_name', 'web')->first();
+        $sarpras = Role::query()->where('name', 'sarpras')->where('guard_name', 'web')->first();
         $manager = Role::query()->firstOrCreate(['name' => 'pengelola_barang', 'guard_name' => 'web']);
         $masters = [
             'g002::m002::item::type', 'g002::m003::item::management',
@@ -31,6 +32,9 @@ return new class extends Migration
                 }
                 if (in_array($slug, ['g002::m007::item', 'g002::m015::item::instance'], true)) {
                     $manager->givePermissionTo($permission);
+                    if ($sarpras) {
+                        $sarpras->givePermissionTo($permission);
+                    }
                 }
             }
         }
