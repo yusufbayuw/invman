@@ -87,10 +87,9 @@ class RoleSeeder extends Seeder
             $roles[config('role.admin')]->givePermissionTo(Permission::query()->get());
         }
 
-        // Existing group-linked users retain their assignments, and gain the dedicated role.
-        \App\Models\User::query()->whereHas('itemManagements')->get()->each(
-            fn ($user) => $user->assignRole(config('role.pengelola_barang')),
-        );
+        // Reconcile both newly assigned and detached groups without overwriting
+        // Shield permissions configured by administrators.
+        app(\App\Services\AssetManagerRoleSynchronizer::class)->reconcileExisting();
 
         Role::query()->where('name', 'unit')->first()?->users?->each(
             fn ($user) => $user->assignRole(config('role.sarpras')),
