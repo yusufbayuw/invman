@@ -114,11 +114,16 @@ class G002M015ItemInstancePolicy
 
     private function mayAccessRecord(User $user, G002M015ItemInstance $item): bool
     {
-        return $user->isFacility()
-            || ($user->isSarpras() && $user->belongsToUnit($item->item?->g001_m001_unit_id))
-            || ($user->hasRole(config('role.pengelola_barang'))
-                && filled($item->item?->g002_m003_item_management_id)
-                && $user->itemManagements()->whereKey($item->item?->g002_m003_item_management_id)->exists());
+        if ($user->isFacility()) {
+            return true;
+        }
+        if ($user->isSarpras()) {
+            // Sarpras unit boundary takes precedence even when the user has multiple roles.
+            return $user->belongsToUnit($item->item?->g001_m001_unit_id);
+        }
+        return $user->hasRole(config('role.pengelola_barang'))
+            && filled($item->item?->g002_m003_item_management_id)
+            && $user->itemManagements()->whereKey($item->item?->g002_m003_item_management_id)->exists();
     }
 
 }
