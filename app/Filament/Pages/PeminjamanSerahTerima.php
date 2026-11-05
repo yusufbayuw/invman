@@ -248,14 +248,25 @@ class PeminjamanSerahTerima extends Page implements HasForms
     {
         return [
             Actions\Action::make('downloadHandoverPdf')
-                ->label('Unduh Bukti PDF')
-                ->icon('heroicon-o-document-arrow-down')
+                ->label('Lihat Bukti PDF')
+                ->icon('heroicon-o-eye')
                 ->color('gray')
-                ->url(fn (): string => route('loans.handover.pdf', [
-                    'type' => $this->type,
-                    'reservation' => $this->reservation()->getKey(),
-                ]))
-                ->openUrlInNewTab(),
+                ->modalHeading('Pratinjau Bukti Serah-Terima')
+                ->modalWidth('7xl')
+                ->modalSubmitAction(false)
+                ->modalCancelActionLabel('Tutup')
+                ->modalContent(fn () => view('filament.components.pdf-preview-modal', [
+                    'title' => 'Bukti Serah-Terima',
+                    'previewUrl' => route('loans.handover.pdf', [
+                        'type' => $this->type,
+                        'reservation' => $this->reservation()->getKey(),
+                        'preview' => 1,
+                    ]),
+                    'downloadUrl' => route('loans.handover.pdf', [
+                        'type' => $this->type,
+                        'reservation' => $this->reservation()->getKey(),
+                    ]),
+                ])),
             Actions\Action::make('confirmCheckout')
                 ->label('Konfirmasi Penerimaan')
                 ->icon('heroicon-o-check-badge')
