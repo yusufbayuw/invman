@@ -34,8 +34,8 @@ class WorkOrderAssignmentResource extends Resource
             Forms\Components\Select::make('g001_m001_unit_id')->label('Cakupan unit')->placeholder('Semua unit')
                 ->helperText('Pilih satu unit bila kewenangan hanya berlaku di unit tersebut. Kosong berarti seluruh unit, bukan hanya kantor pusat.')
                 ->relationship('unit', 'name')->searchable()->preload()->live(),
-            Forms\Components\Select::make('g002_m003_item_management_id')->label('Cakupan pengelola aset')->placeholder('Semua pengelola')
-                ->helperText('Batasi jabatan pada satu kelompok pengelola, misalnya IT atau Perpustakaan. Kosong berarti semua kelompok dalam cakupan lainnya.')
+            Forms\Components\Select::make('g002_m003_item_management_id')->label('Cakupan Jabatan: Kelompok Aset')->placeholder('Tidak dibatasi')
+                ->helperText('Hanya membatasi kewenangan jabatan pada workflow Work Order, misalnya approval IT atau Perpustakaan. Kosong berarti semua kelompok dalam cakupan unit. Ini tidak mendaftarkan pegawai sebagai pengelola inventaris atau memberikan role Filament Shield.')
                 ->relationship('management', 'name')->searchable()->preload()->live(),
             Forms\Components\Select::make('supervisor_user_id')->label('Atasan langsung (opsional)')
                 ->options(fn (): array => User::query()->where('is_enabled', true)->orderBy('name')->pluck('name', 'id')->all())->searchable()->live()
@@ -59,7 +59,7 @@ class WorkOrderAssignmentResource extends Resource
             Tables\Columns\TextColumn::make('user.name')->label('Pegawai')->searchable(),
             Tables\Columns\TextColumn::make('jobTitle.name')->label('Jabatan'),
             Tables\Columns\TextColumn::make('unit.name')->label('Unit')->placeholder('Semua unit'),
-            Tables\Columns\TextColumn::make('management.name')->label('Pengelola')->placeholder('Semua pengelola'),
+            Tables\Columns\TextColumn::make('management.name')->label('Cakupan Kelompok Aset')->placeholder('Tidak dibatasi'),
             Tables\Columns\TextColumn::make('supervisor.name')->label('Atasan')->placeholder('—'),
             Tables\Columns\IconColumn::make('is_active')->label('Aktif')->boolean(),
         ])->actions([Tables\Actions\EditAction::make()]);
