@@ -262,7 +262,7 @@ class TicketService
         }
         if (! $allowLegacy && ! $category->reporting_enabled) {
             throw ValidationException::withMessages([
-                'ticket_category_id' => 'Kategori lama hanya untuk kompatibilitas tiket V1. Pilih kategori laporan perawatan yang aktif.',
+                'ticket_category_id' => 'Kategori ini tidak tersedia untuk laporan baru. Pilih kategori laporan perawatan yang aktif.',
             ]);
         }
         $location = trim((string) ($data['location'] ?? ''));
