@@ -547,12 +547,15 @@ class TicketService
      */
     public function damagedReturn(string $type, Model $reservation): void
     {
-        $assetType = match ($type) { 'item' => 'item_instance', 'room' => 'room', 'vehicle' => 'vehicle', default => null };
+        $assetType = match ($type) {
+            'item' => $reservation->item?->isBulk() ? 'item' : 'item_instance',
+            'room' => 'room', 'vehicle' => 'vehicle', default => null,
+        };
         if (! $assetType) { return; }
         $checks = $reservation->returnChecklists()->where('is_ok', false)->get();
         foreach ($checks as $check) {
             $assetId = match ($type) {
-                'item' => $check->g002_m015_item_instance_id,
+                'item' => $assetType === 'item' ? $reservation->g002_m007_item_id : $check->g002_m015_item_instance_id,
                 'room' => $reservation->g003_m006_room_id,
                 'vehicle' => $reservation->g008_m017_vehicle_id,
             };

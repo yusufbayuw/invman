@@ -9,4 +9,10 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateG002M015ItemInstance extends CreateRecord
 {
     protected static string $resource = G002M015ItemInstanceResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        return app(\App\Services\AssetManagerMutationGuard::class)->instance($data, auth()->user());
+    }
+
 }

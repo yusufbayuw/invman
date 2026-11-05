@@ -15,7 +15,7 @@ class G002M007ItemPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_g002::m007::item');
+        return $user->can('view_any_g002::m007::item') && $this->mayUseResource($user);
     }
 
     /**
@@ -23,7 +23,7 @@ class G002M007ItemPolicy
      */
     public function view(User $user, G002M007Item $g002M007Item): bool
     {
-        return $user->can('view_g002::m007::item');
+        return $user->can('view_g002::m007::item') && $this->mayAccessRecord($user, $g002M007Item);
     }
 
     /**
@@ -31,7 +31,7 @@ class G002M007ItemPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_g002::m007::item');
+        return $user->can('create_g002::m007::item') && $this->mayUseResource($user);
     }
 
     /**
@@ -39,7 +39,7 @@ class G002M007ItemPolicy
      */
     public function update(User $user, G002M007Item $g002M007Item): bool
     {
-        return $user->can('update_g002::m007::item');
+        return $user->can('update_g002::m007::item') && $this->mayAccessRecord($user, $g002M007Item);
     }
 
     /**
@@ -47,7 +47,7 @@ class G002M007ItemPolicy
      */
     public function delete(User $user, G002M007Item $g002M007Item): bool
     {
-        return $user->can('delete_g002::m007::item');
+        return $user->can('delete_g002::m007::item') && $this->mayAccessRecord($user, $g002M007Item);
     }
 
     /**
@@ -55,7 +55,7 @@ class G002M007ItemPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_g002::m007::item');
+        return $user->can('delete_any_g002::m007::item') && $user->isFacility();
     }
 
     /**
@@ -63,7 +63,7 @@ class G002M007ItemPolicy
      */
     public function forceDelete(User $user, G002M007Item $g002M007Item): bool
     {
-        return $user->can('force_delete_g002::m007::item');
+        return $user->can('force_delete_g002::m007::item') && $this->mayAccessRecord($user, $g002M007Item);
     }
 
     /**
@@ -71,7 +71,7 @@ class G002M007ItemPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_g002::m007::item');
+        return $user->can('force_delete_any_g002::m007::item') && $user->isFacility();
     }
 
     /**
@@ -79,7 +79,7 @@ class G002M007ItemPolicy
      */
     public function restore(User $user, G002M007Item $g002M007Item): bool
     {
-        return $user->can('restore_g002::m007::item');
+        return $user->can('restore_g002::m007::item') && $this->mayAccessRecord($user, $g002M007Item);
     }
 
     /**
@@ -87,7 +87,7 @@ class G002M007ItemPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_g002::m007::item');
+        return $user->can('restore_any_g002::m007::item') && $user->isFacility();
     }
 
     /**
@@ -95,7 +95,7 @@ class G002M007ItemPolicy
      */
     public function replicate(User $user, G002M007Item $g002M007Item): bool
     {
-        return $user->can('replicate_g002::m007::item');
+        return $user->can('replicate_g002::m007::item') && $this->mayAccessRecord($user, $g002M007Item);
     }
 
     /**
@@ -103,6 +103,27 @@ class G002M007ItemPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_g002::m007::item');
+        return $user->can('reorder_g002::m007::item') && $user->isFacility();
     }
+    private function mayUseResource(User $user): bool
+    {
+        return $user->isFacility()
+            || ($user->isSarpras() && $user->g001_m001_unit_id !== null)
+            || ($user->hasRole(config('role.pengelola_barang')) && $user->isAssetManager());
+    }
+
+    private function mayAccessRecord(User $user, G002M007Item $item): bool
+    {
+        if ($user->isFacility()) {
+            return true;
+        }
+        if ($user->isSarpras()) {
+            // Sarpras unit boundary takes precedence even when the user has multiple roles.
+            return $user->belongsToUnit($item->g001_m001_unit_id);
+        }
+        return $user->hasRole(config('role.pengelola_barang'))
+            && filled($item->g002_m003_item_management_id)
+            && $user->itemManagements()->whereKey($item->g002_m003_item_management_id)->exists();
+    }
+
 }

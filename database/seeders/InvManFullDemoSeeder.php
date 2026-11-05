@@ -113,6 +113,7 @@ class InvManFullDemoSeeder extends Seeder
             }
 
             $assetManager->itemManagements()->syncWithoutDetaching([$management->id]);
+            $assetManager->assignRole(config('role.pengelola_barang'));
             $driver = G008M018Driver::query()->firstOrCreate(
                 ['user_id' => $driverUser->id],
                 ['sim_number' => 'DEMO-INVMAN-SIM-001', 'sim_type' => 'A'],

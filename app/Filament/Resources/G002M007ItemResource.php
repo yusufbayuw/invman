@@ -47,9 +47,40 @@ class G002M007ItemResource extends Resource
         ];
     }
 
-    public static function getGlobalSearchEloquentQuery(): Builder
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getGlobalSearchEloquentQuery()->with(['unit', 'item_type', 'room']);
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+        if ($user?->isFacility()) {
+            return $query;
+        }
+        if (! $user) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $unitId = $user->isSarpras() ? $user->g001_m001_unit_id : null;
+        $managementIds = ! $user->isSarpras() && $user->hasRole(config('role.pengelola_barang'))
+            ? $user->itemManagements()->pluck('g002_m003_item_management.id')
+            : collect();
+
+        if ($unitId === null && $managementIds->isEmpty()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function (\Illuminate\Database\Eloquent\Builder $scope) use ($unitId, $managementIds): void {
+            if ($unitId !== null) {
+                $scope->orWhere('g001_m001_unit_id', $unitId);
+            }
+            if ($managementIds->isNotEmpty()) {
+                $scope->orWhereIn('g002_m003_item_management_id', $managementIds);
+            }
+        });
+    }
+
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return static::getEloquentQuery()->with(['unit', 'item_type', 'room']);
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -67,6 +98,7 @@ class G002M007ItemResource extends Resource
                             ->label('Kode Barang')
                             ->badge()
                             ->inlineLabel(),
+                        \Filament\Infolists\Components\TextEntry::make('tracking_mode')->label('Metode Pencatatan')->badge(),
                         \Filament\Infolists\Components\TextEntry::make('quantity')
                             ->label('Jumlah Barang')
                             ->inlineLabel()
@@ -111,10 +143,17 @@ class G002M007ItemResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Select::make('g001_m001_unit_id')
-                    ->relationship('unit', 'name')
-                    ->label('Unit Pemilik'),
+                    ->relationship('unit', 'name', modifyQueryUsing: fn (\Illuminate\Database\Eloquent\Builder $query) =>
+                        auth()->user()?->isSarpras() && ! auth()->user()?->isFacility()
+                            ? $query->whereKey(auth()->user()->g001_m001_unit_id)
+                            : $query)
+                    ->default(fn () => auth()->user()?->isSarpras() && ! auth()->user()?->isFacility()
+                        ? auth()->user()->g001_m001_unit_id : null)
+                    ->required(fn (): bool => auth()->user()?->isSarpras() && ! auth()->user()?->isFacility())
+                    ->label('Unit Pemilik')
+                    ->helperText('Sarpras hanya boleh mencatat barang milik unitnya sendiri.'),
                 Forms\Components\Select::make('g002_m003_item_management_id')
-                    ->relationship('item_management', 'name')
+                    ->relationship('item_management', 'name', modifyQueryUsing: fn (\Illuminate\Database\Eloquent\Builder $query) => (auth()->user()?->isFacility() || auth()->user()?->isSarpras()) ? $query : $query->whereIn('id', auth()->user()?->itemManagements()->pluck('g002_m003_item_management.id') ?? []))
                     ->label('Pengelola Barang')
                     ->searchable()
                     ->preload()
@@ -124,12 +163,28 @@ class G002M007ItemResource extends Resource
                     ->relationship('item_type', 'name')
                     ->label('Jenis Barang'),
                 Forms\Components\Select::make('g003_m006_room_id')
-                    ->relationship('room', 'name')
-                    ->label('Ruangan Penempatan'),
+                    ->relationship('room', 'name', modifyQueryUsing: function (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder {
+                        $user = auth()->user();
+                        if ($user?->isSarpras() && ! $user->isFacility()) {
+                            $query->where(fn (\Illuminate\Database\Eloquent\Builder $rooms) =>
+                                $rooms->where('g001_m001_unit_id', $user->g001_m001_unit_id)
+                                    ->orWhereNull('g001_m001_unit_id'));
+                        }
+                        return $query;
+                    })
+                    ->label('Ruangan Penempatan')
+                    ->helperText('Ruangan Tanpa Unit boleh dipakai sebagai lokasi barang, tanpa mengubah unit pemilik barang.'),
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Barang'),
                 Forms\Components\TextInput::make('code')
                     ->label('Kode Barang')->unique(ignoreRecord: true),
+                Forms\Components\Select::make('tracking_mode')
+                    ->label('Metode Pencatatan')
+                    ->options(['individual' => 'Individual (nomor inventaris per unit)', 'bulk' => 'Kuantitas / Bulk (tanpa unit satuan)'])
+                    ->default('individual')
+                    ->required()
+                    ->disabledOn('edit')
+                    ->helperText('Metode pencatatan tidak dapat diganti setelah aset dibuat.'),
                 Forms\Components\TextInput::make('quantity')
                     ->label('Jumlah Barang')
                     ->numeric()
@@ -150,6 +205,7 @@ class G002M007ItemResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Barang')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('tracking_mode')->label('Pencatatan')->badge(),
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Jumlah Barang')
                     ->numeric()
@@ -191,6 +247,18 @@ class G002M007ItemResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('adjustBulkStock')
+                    ->label('Koreksi Stok Bulk')
+                    ->icon('heroicon-o-calculator')
+                    ->visible(fn (G002M007Item $record): bool => $record->isBulk() && static::canEdit($record))
+                    ->form([
+                        Forms\Components\TextInput::make('delta')->label('Perubahan (+/-)')->integer()->required()->notIn([0]),
+                        Forms\Components\Textarea::make('reason')->label('Alasan koreksi stok')->required()->minLength(5),
+                    ])
+                    ->action(fn (G002M007Item $record, array $data) =>
+                        app(\App\Services\AssetBulkStockService::class)->adjust(
+                            $record, (int) $data['delta'], $data['reason'], auth()->user(),
+                        )),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])

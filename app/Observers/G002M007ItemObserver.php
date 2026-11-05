@@ -29,6 +29,9 @@ class G002M007ItemObserver
 
     public function creating(G002M007Item $item): void
     {
+        if (! in_array($item->tracking_mode ?? 'individual', ['individual', 'bulk'], true)) {
+            throw ValidationException::withMessages(['tracking_mode' => 'Metode pencatatan aset tidak valid.']);
+        }
         if (blank($item->quantity)) {
             $item->quantity = 0;
 
@@ -44,6 +47,9 @@ class G002M007ItemObserver
 
     public function updating(G002M007Item $item): void
     {
+        if ($item->isDirty('tracking_mode') && ($item->item_instance()->exists() || $item->item_reservation()->exists())) {
+            throw ValidationException::withMessages(['tracking_mode' => 'Aset dengan barang satuan atau histori reservasi tidak boleh berganti metode pencatatan.']);
+        }
         if ($item->isDirty('quantity')) {
             throw ValidationException::withMessages([
                 'quantity' => 'Jumlah barang dikelola melalui data Barang Satuan.',
@@ -61,6 +67,9 @@ class G002M007ItemObserver
             : 0;
         $g002M007Item->status = 'tersedia';
         $g002M007Item->saveQuietly();
+        if ($g002M007Item->isBulk()) {
+            return; // Bulk stock never materializes fake per-unit identities.
+        }
         // create item instance based on item quantity
         for ($i = 0; $i < $g002M007Item->quantity; $i++) {
             [, $instanceCode] = app(\App\Services\InventoryIdentityService::class)->nextInstance($g002M007Item);

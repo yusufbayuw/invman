@@ -42,10 +42,10 @@ class RoleAndUnitAccessTest extends TestCase
         $this->assertSame(7, G001M001Unit::query()->count());
         $this->assertDatabaseHas('g001_m001_units', ['name' => 'Organ Yayasan']);
 
-        foreach (['admin', 'fasilitas', 'sarpras'] as $role) {
+        foreach (['admin', 'fasilitas', 'pengelola_barang', 'sarpras'] as $role) {
             $this->assertDatabaseHas('roles', ['name' => $role, 'guard_name' => 'web']);
         }
-        $this->assertSame(['admin', 'fasilitas', 'sarpras'], Role::query()->orderBy('name')->pluck('name')->all());
+        $this->assertSame(['admin', 'fasilitas', 'pengelola_barang', 'sarpras'], Role::query()->orderBy('name')->pluck('name')->all());
 
         $this->assertTrue(User::query()->where('username', 'admin')->firstOrFail()->hasRole('admin'));
         $facility = User::query()->where('username', 'fasilitas')->firstOrFail();

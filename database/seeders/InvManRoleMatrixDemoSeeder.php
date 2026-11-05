@@ -112,9 +112,11 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             // Do not silently restore memberships intentionally removed by an admin.
             if ($itManager->wasRecentlyCreated) {
                 $itManager->itemManagements()->syncWithoutDetaching([$groups['it']->id]);
+            $itManager->assignRole(config('role.pengelola_barang'));
             }
             if ($libraryManager->wasRecentlyCreated) {
                 $libraryManager->itemManagements()->syncWithoutDetaching([$groups['perpustakaan']->id]);
+            $libraryManager->assignRole(config('role.pengelola_barang'));
             }
 
             $this->assignment($staff, $titles['Staf Fasilitas'], null, null, $supervisor);

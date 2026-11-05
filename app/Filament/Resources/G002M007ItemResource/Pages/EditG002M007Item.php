@@ -10,6 +10,12 @@ class EditG002M007Item extends EditRecord
 {
     protected static string $resource = G002M007ItemResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return app(\App\Services\AssetManagerMutationGuard::class)->item($data, auth()->user(), $this->record);
+    }
+
+
     protected function getHeaderActions(): array
     {
         return [

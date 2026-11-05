@@ -31,6 +31,16 @@ class G002M015ItemInstance extends Model
         'is_borrowable',
     ];
 
+    public function childRelations(): HasMany
+    {
+        return $this->hasMany(AssetRelation::class, 'parent_instance_id');
+    }
+
+    public function parentRelations(): HasMany
+    {
+        return $this->hasMany(AssetRelation::class, 'child_instance_id');
+    }
+
     public function item_review(): HasMany
     {
         return $this->hasMany(G006M011ItemReview::class, 'g002_m015_item_instance_id');
