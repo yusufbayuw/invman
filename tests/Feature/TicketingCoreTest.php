@@ -248,6 +248,29 @@ class TicketingCoreTest extends TestCase
             ->assertHasNoFormErrors();
         $this->assertDatabaseCount('tickets', 2);
     }
+    public function test_pdf_attachment_uses_private_preview_and_download_in_ticket(): void
+    {
+        [$reporter, , $outsider, , $room] = $this->context();
+        Storage::fake('local');
+
+        $ticket = app(TicketService::class)->openLegacy($reporter, $this->data($room));
+        $comment = app(TicketService::class)->comment($ticket, $reporter, 'Lampiran pemeriksaan');
+        $path = 'tickets/attachments/pemeriksaan.pdf';
+        Storage::disk('local')->put($path, \Barryvdh\DomPDF\Facade\Pdf::loadHTML('<h1>Hasil Pemeriksaan</h1>')->output());
+        app(TicketService::class)->attach($ticket, $reporter, [$path], $comment);
+        $attachment = $ticket->attachments()->firstOrFail();
+
+        Livewire::actingAs($reporter)->test(ViewTicket::class, ['record' => $ticket->id])
+            ->assertSee('Lihat PDF')
+            ->assertSee('pemeriksaan.pdf');
+
+        $this->actingAs($reporter)->get($attachment->preview_url)
+            ->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->actingAs($reporter)->get($attachment->download_url)->assertOk();
+        $this->actingAs($outsider)->get($attachment->preview_url)->assertNotFound();
+        $this->actingAs($outsider)->get($attachment->download_url)->assertNotFound();
+    }
+
     public function test_comment_images_render_through_authorized_native_filament_entries(): void
     {
         [$reporter, $manager, $outsider, , $room] = $this->context();
