@@ -4,10 +4,14 @@ namespace Tests\Feature;
 
 use App\Enums\ReservationStatus;
 use App\Filament\Resources\G002M007ItemResource;
+use App\Filament\Resources\G002M007ItemResource\Pages\EditG002M007Item;
+use App\Filament\Resources\G002M007ItemResource\RelationManagers\ItemInstanceRelationManager;
+use App\Filament\Resources\G002M015ItemInstanceResource;
 use App\Filament\Resources\G004M008ActivityResource;
 use App\Filament\Widgets\RecentLoanRequests;
 use App\Models\G001M001Unit;
 use App\Models\G002M007Item;
+use App\Models\G002M015ItemInstance;
 use App\Models\G004M008Activity;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
@@ -63,6 +67,30 @@ class FilamentExperienceTest extends TestCase
         $this->assertSame($ownActivity->name, (string) $activityResults->first()->title);
         $this->assertCount(1, $itemResults);
         $this->assertSame($item->name, (string) $itemResults->first()->title);
+    }
+
+    public function test_item_instance_relation_manager_renders_view_and_edit_links(): void
+    {
+        [$facility, , , , $item] = $this->fixtures();
+        $instance = G002M015ItemInstance::query()->create([
+            'g002_m007_item_id' => $item->id,
+            'g001_m001_unit_id' => $item->g001_m001_unit_id,
+            'name' => 'Proyektor Rapat 01',
+            'code' => 'PRJ-001-01',
+            'is_available' => true,
+            'is_borrowable' => true,
+        ]);
+
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+        Livewire::actingAs($facility)
+            ->test(ItemInstanceRelationManager::class, [
+                'ownerRecord' => $item,
+                'pageClass' => EditG002M007Item::class,
+            ])
+            ->assertOk()
+            ->assertSee(G002M015ItemInstanceResource::getUrl('view', ['record' => $instance]))
+            ->assertSee(G002M015ItemInstanceResource::getUrl('edit', ['record' => $instance]));
     }
 
     private function fixtures(): array
