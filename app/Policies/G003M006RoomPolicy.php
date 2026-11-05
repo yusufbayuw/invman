@@ -15,7 +15,7 @@ class G003M006RoomPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_g003::m006::room');
+        return $user->can('view_any_g003::m006::room') && $user->isFacility();
     }
 
     /**
@@ -23,7 +23,7 @@ class G003M006RoomPolicy
      */
     public function view(User $user, G003M006Room $g003M006Room): bool
     {
-        return $user->can('view_g003::m006::room');
+        return $user->can('view_g003::m006::room') && $user->isFacility();
     }
 
     /**
@@ -31,7 +31,7 @@ class G003M006RoomPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_g003::m006::room');
+        return $user->can('create_g003::m006::room') && $user->isFacility();
     }
 
     /**
@@ -39,7 +39,7 @@ class G003M006RoomPolicy
      */
     public function update(User $user, G003M006Room $g003M006Room): bool
     {
-        return $user->can('update_g003::m006::room');
+        return $user->can('update_g003::m006::room') && $user->isFacility();
     }
 
     /**
@@ -47,7 +47,7 @@ class G003M006RoomPolicy
      */
     public function delete(User $user, G003M006Room $g003M006Room): bool
     {
-        return $user->can('delete_g003::m006::room');
+        return $user->can('delete_g003::m006::room') && $user->isFacility();
     }
 
     /**
@@ -55,7 +55,7 @@ class G003M006RoomPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_g003::m006::room');
+        return $user->can('delete_any_g003::m006::room') && $user->isFacility();
     }
 
     /**
@@ -63,7 +63,7 @@ class G003M006RoomPolicy
      */
     public function forceDelete(User $user, G003M006Room $g003M006Room): bool
     {
-        return $user->can('force_delete_g003::m006::room');
+        return $user->can('force_delete_g003::m006::room') && $user->isFacility();
     }
 
     /**
@@ -71,7 +71,7 @@ class G003M006RoomPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_g003::m006::room');
+        return $user->can('force_delete_any_g003::m006::room') && $user->isFacility();
     }
 
     /**
@@ -79,7 +79,7 @@ class G003M006RoomPolicy
      */
     public function restore(User $user, G003M006Room $g003M006Room): bool
     {
-        return $user->can('restore_g003::m006::room');
+        return $user->can('restore_g003::m006::room') && $user->isFacility();
     }
 
     /**
@@ -87,7 +87,7 @@ class G003M006RoomPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_g003::m006::room');
+        return $user->can('restore_any_g003::m006::room') && $user->isFacility();
     }
 
     /**
@@ -95,7 +95,7 @@ class G003M006RoomPolicy
      */
     public function replicate(User $user, G003M006Room $g003M006Room): bool
     {
-        return $user->can('replicate_g003::m006::room');
+        return $user->can('replicate_g003::m006::room') && $user->isFacility();
     }
 
     /**
@@ -103,6 +103,6 @@ class G003M006RoomPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_g003::m006::room');
+        return $user->can('reorder_g003::m006::room') && $user->isFacility();
     }
 }
