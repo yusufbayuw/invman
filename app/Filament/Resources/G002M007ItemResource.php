@@ -55,11 +55,27 @@ class G002M007ItemResource extends Resource
         if ($user?->isFacility()) {
             return $query;
         }
-        if (! $user?->hasRole(config('role.pengelola_barang')) || ! $user->isAssetManager()) {
+        if (! $user) {
             return $query->whereRaw('1 = 0');
         }
-        $ids = $user->itemManagements()->pluck('g002_m003_item_management.id');
-        return $query->whereIn('g002_m003_item_management_id', $ids);
+
+        $unitId = $user->isSarpras() ? $user->g001_m001_unit_id : null;
+        $managementIds = $user->hasRole(config('role.pengelola_barang'))
+            ? $user->itemManagements()->pluck('g002_m003_item_management.id')
+            : collect();
+
+        if ($unitId === null && $managementIds->isEmpty()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function (\Illuminate\Database\Eloquent\Builder $scope) use ($unitId, $managementIds): void {
+            if ($unitId !== null) {
+                $scope->orWhere('g001_m001_unit_id', $unitId);
+            }
+            if ($managementIds->isNotEmpty()) {
+                $scope->orWhereIn('g002_m003_item_management_id', $managementIds);
+            }
+        });
     }
 
     public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
