@@ -69,8 +69,7 @@ class G002M003ItemManagementResource extends Resource
                     ->multiple()
                     ->searchable()
                     ->preload()
-                    ->required()
-                    ->helperText('Pegawai yang ditetapkan otomatis mendapat role teknis pengelola_barang; saat dicabut dari kelompok terakhir, role itu dilepas. Akses Barang tetap dibatasi izin Shield dan kelompok aset. Penugasan Jabatan Work Order tidak berubah.')
+                    ->helperText('Pegawai yang ditetapkan otomatis mendapat role teknis pengelola_barang; saat dicabut dari kelompok terakhir, role itu dilepas. Kelompok boleh kosong, tetapi hanya Fasilitas yang bisa menangani transaksi kelompok tanpa petugas. Penugasan Jabatan Work Order tidak berubah.')
                     ->columnSpanFull(),
             ]);
     }
