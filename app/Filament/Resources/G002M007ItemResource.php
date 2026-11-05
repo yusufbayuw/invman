@@ -47,9 +47,24 @@ class G002M007ItemResource extends Resource
         ];
     }
 
-    public static function getGlobalSearchEloquentQuery(): Builder
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getGlobalSearchEloquentQuery()->with(['unit', 'item_type', 'room']);
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+        if ($user?->isFacility()) {
+            return $query;
+        }
+        if (! $user?->hasRole(config('role.pengelola_barang')) || ! $user->isAssetManager()) {
+            return $query->whereRaw('1 = 0');
+        }
+        $ids = $user->itemManagements()->pluck('g002_m003_item_management.id');
+        return $query->whereIn('g002_m003_item_management_id', $ids);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return static::getEloquentQuery()->with(['unit', 'item_type', 'room']);
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -114,7 +129,7 @@ class G002M007ItemResource extends Resource
                     ->relationship('unit', 'name')
                     ->label('Unit Pemilik'),
                 Forms\Components\Select::make('g002_m003_item_management_id')
-                    ->relationship('item_management', 'name')
+                    ->relationship('item_management', 'name', modifyQueryUsing: fn (\Illuminate\Database\Eloquent\Builder $query) => auth()->user()?->isFacility() ? $query : $query->whereIn('id', auth()->user()?->itemManagements()->pluck('g002_m003_item_management.id') ?? []))
                     ->label('Pengelola Barang')
                     ->searchable()
                     ->preload()
