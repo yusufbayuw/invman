@@ -12,7 +12,7 @@ class EditG002M007Item extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        return app(\App\Services\AssetManagerMutationGuard::class)->item($data, auth()->user());
+        return app(\App\Services\AssetManagerMutationGuard::class)->item($data, auth()->user(), $this->record);
     }
 
 
