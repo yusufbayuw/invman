@@ -70,11 +70,19 @@ class RoleSeeder extends Seeder
                 $name => Permission::query()->firstOrCreate(['name' => $name, 'guard_name' => 'web']),
             ]);
 
-        // Additive provisioning: never erase permissions edited in the Shield UI.
-        $roles[config('role.fasilitas')]->givePermissionTo($permissions->only($facilityPermissions)->values());
-        $roles[config('role.sarpras')]->givePermissionTo($permissions->only($sarprasPermissions)->values());
-        $roles[config('role.pengelola_barang')]->givePermissionTo($permissions->only($managerPermissions)->values());
-        $roles[config('role.admin')]->givePermissionTo(Permission::query()->get());
+        // Bootstrap only empty roles. Never restore permissions later revoked in the Shield UI.
+        foreach ([
+            config('role.fasilitas') => $facilityPermissions,
+            config('role.sarpras') => $sarprasPermissions,
+            config('role.pengelola_barang') => $managerPermissions,
+        ] as $name => $defaults) {
+            if (! $roles[$name]->permissions()->exists()) {
+                $roles[$name]->givePermissionTo($permissions->only($defaults)->values());
+            }
+        }
+        if (! $roles[config('role.admin')]->permissions()->exists()) {
+            $roles[config('role.admin')]->givePermissionTo(Permission::query()->get());
+        }
 
         // Existing group-linked users retain their assignments, and gain the dedicated role.
         \App\Models\User::query()->whereHas('itemManagements')->get()->each(
