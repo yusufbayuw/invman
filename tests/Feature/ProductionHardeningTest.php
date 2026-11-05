@@ -24,6 +24,9 @@ class ProductionHardeningTest extends TestCase
 
     public function test_demo_accounts_are_opt_in_and_production_always_disables_them(): void
     {
+        // Independent of .env.example or runner-specific opt-in defaults.
+        config()->set('security.seed_demo_users', false);
+        config()->set('security.seed_demo_password', null);
         $this->seed(RoleSeeder::class);
         $this->seed(UnitSeeder::class);
 

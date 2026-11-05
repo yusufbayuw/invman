@@ -218,6 +218,99 @@ class LoanBookingLifecycleTest extends TestCase
         $this->assertFalse($availability->vehicleIsAvailable($vehicle->id, $futureStart, $futureEnd));
     }
 
+    public function test_approval_time_strategy_allows_competing_pending_requests_but_only_one_room_approval(): void
+    {
+        [$user, $item, $room, $vehicle] = $this->fixtures();
+        $settings = app(\App\Services\LoanSettings::class);
+        $settings->saveConfiguration(['hold_strategy' => \App\Services\LoanSettings::HOLD_ON_APPROVAL]);
+
+        $first = $this->submit($user, $item, $room, $vehicle);
+        $second = $this->submit($user, $item, $room, $vehicle);
+        $availability = app(LoanAvailabilityService::class);
+        $start = Carbon::parse('2026-09-01 10:00:00');
+        $end = Carbon::parse('2026-09-01 11:00:00');
+
+        $this->assertSame('on_approval', $first->hold_strategy);
+        $this->assertSame('on_approval', $second->hold_strategy);
+        $this->assertSame(5, $availability->availableItemQuantity($item->id, $start, $end));
+        $this->assertTrue($availability->roomIsAvailable($room->id, $start, $end));
+        $this->assertTrue($availability->vehicleIsAvailable($vehicle->id, $start, $end));
+
+        app(LoanRequestService::class)->processReservation(
+            'room', $first->room_reservation()->sole()->id, ReservationStatus::Approved,
+        );
+
+        $this->assertFalse($availability->roomIsAvailable($room->id, $start, $end));
+        $this->expectException(ValidationException::class);
+        app(LoanRequestService::class)->processReservation(
+            'room', $second->room_reservation()->sole()->id, ReservationStatus::Approved,
+        );
+    }
+
+    public function test_approval_time_strategy_enforces_remaining_item_stock(): void
+    {
+        [$user, $item, $room, $vehicle] = $this->fixtures();
+        app(\App\Services\LoanSettings::class)->saveConfiguration(['hold_strategy' => 'on_approval']);
+        $first = $this->submit($user, $item, $room, $vehicle);
+        $second = $this->submit($user, $item, $room, $vehicle);
+        $third = $this->submit($user, $item, $room, $vehicle);
+
+        $service = app(LoanRequestService::class);
+        $service->processReservation('item', $first->item_reservation()->sole()->id, ReservationStatus::Approved);
+        $service->processReservation('item', $second->item_reservation()->sole()->id, ReservationStatus::Approved);
+
+        $this->assertSame(1, app(LoanAvailabilityService::class)->availableItemQuantity(
+            $item->id, '2026-09-01 10:00', '2026-09-01 11:00',
+        ));
+
+        try {
+            $service->processReservation('item', $third->item_reservation()->sole()->id, ReservationStatus::Approved);
+            $this->fail('Expected conflicting approval to be blocked.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('status', $exception->errors());
+        }
+
+        $this->assertSame(ReservationStatus::Submitted->value, $third->item_reservation()->sole()->status);
+    }
+
+    public function test_changed_strategy_does_not_remove_existing_submission_hold(): void
+    {
+        [$user, $item, $room, $vehicle] = $this->fixtures();
+        $activity = $this->submit($user, $item, $room, $vehicle);
+        $deadline = $activity->hold_expires_at->toDateTimeString();
+
+        app(\App\Services\LoanSettings::class)->saveConfiguration([
+            'hold_strategy' => 'on_approval',
+            'hold_hours' => 72,
+        ]);
+
+        $this->assertSame('on_submission', $activity->fresh()->hold_strategy);
+        $this->assertSame($deadline, $activity->fresh()->hold_expires_at->toDateTimeString());
+        $this->assertSame(3, app(LoanAvailabilityService::class)->availableItemQuantity(
+            $item->id, '2026-09-01 10:00', '2026-09-01 11:00',
+        ));
+    }
+
+    public function test_working_hours_deadline_excludes_off_hours_and_respects_start_time(): void
+    {
+        $settings = app(\App\Services\LoanSettings::class);
+        $settings->saveConfiguration([
+            'hold_clock' => 'working_hours',
+            'hold_hours' => 2,
+            'work_start' => '08:00',
+            'work_end' => '17:00',
+            'work_days' => ['1', '2', '3', '4', '5'],
+        ]);
+
+        $this->assertSame('2026-09-01 10:00:00', $settings->expiresAt()->toDateTimeString());
+        $this->assertSame('2026-09-01 09:00:00', $settings->expiresAt(
+            Carbon::parse('2026-09-01 09:00:00'),
+        )->toDateTimeString());
+
+        Carbon::setTestNow('2026-09-04 16:00:00');
+        $this->assertSame('2026-09-07 09:00:00', $settings->expiresAt()->toDateTimeString());
+    }
+
     private function submit(User $user, G002M007Item $item, G003M006Room $room, G008M017Vehicle $vehicle)
     {
         return app(LoanRequestService::class)->submit($user, [
