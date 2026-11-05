@@ -55,6 +55,11 @@ final class AssetRelationService
                 $visited[$id] = true;
                 foreach ($adj[$id] ?? [] as $next) $todo[] = (int) $next;
             }
+            if (in_array($type, ['component', 'installed'], true) && $child->is_borrowable) {
+                throw ValidationException::withMessages([
+                    'child_instance_id' => 'Nonaktifkan Dapat Dipinjam pada komponen/instalasi agar tidak terhitung sebagai aset mandiri.',
+                ]);
+            }
             if (in_array($type, ['component', 'installed'], true)
                 && AssetRelation::query()->where('child_instance_id', $childId)
                     ->whereIn('relation_type', ['component', 'installed'])->exists()) {
