@@ -208,6 +208,7 @@ class G002M015ItemInstanceResource extends Resource
     {
         return [
             ItemHistoryRelationManager::class,
+            \App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers\AssetRelationsRelationManager::class,
             ItemReservationDetailRelationManager::class,
             ItemReviewRelationManager::class,
             ItemChecklistRelationManager::class,
