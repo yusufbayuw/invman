@@ -15,7 +15,7 @@ class G002M015ItemInstancePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_g002::m015::item::instance');
+        return $user->can('view_any_g002::m015::item::instance') && ($user->isFacility() || ($user->hasRole(config('role.pengelola_barang')) && $user->isAssetManager()));
     }
 
     /**
@@ -23,7 +23,7 @@ class G002M015ItemInstancePolicy
      */
     public function view(User $user, G002M015ItemInstance $g002M015ItemInstance): bool
     {
-        return $user->can('view_g002::m015::item::instance');
+        return $user->can('view_g002::m015::item::instance') && ($user->isFacility() || ($user->hasRole(config('role.pengelola_barang')) && $user->itemManagements()->whereKey($g002M015ItemInstance->item?->g002_m003_item_management_id)->exists()));
     }
 
     /**
@@ -31,7 +31,7 @@ class G002M015ItemInstancePolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_g002::m015::item::instance');
+        return $user->can('create_g002::m015::item::instance') && ($user->isFacility() || ($user->hasRole(config('role.pengelola_barang')) && $user->isAssetManager()));
     }
 
     /**
@@ -39,7 +39,7 @@ class G002M015ItemInstancePolicy
      */
     public function update(User $user, G002M015ItemInstance $g002M015ItemInstance): bool
     {
-        return $user->can('update_g002::m015::item::instance');
+        return $user->can('update_g002::m015::item::instance') && ($user->isFacility() || ($user->hasRole(config('role.pengelola_barang')) && $user->itemManagements()->whereKey($g002M015ItemInstance->item?->g002_m003_item_management_id)->exists()));
     }
 
     /**
