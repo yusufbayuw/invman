@@ -1,0 +1,151 @@
+name: InvMan Operational UAT
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/Support/OperationalUat/**'
+      - '.github/workflows/operational-uat.yml'
+      - 'app/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  operational-uat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: invman_uat_20261104
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s --health-timeout=5s --health-retries=8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,pdo_sqlite,sqlite3,sodium,gd,zip,intl,fileinfo,bcmath
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci && npm run build
+      - name: Create disposable application
+        run: |
+          mkdir -p output/operational-uat-runtime/app docs/operational-readiness/evidence/2026-11-04
+          if [ -d docs/operational-readiness/evidence/2026-11-04 ]; then
+            mv docs/operational-readiness/evidence/2026-11-04 output/operational-uat-runtime/previous-committed-evidence
+          fi
+          mkdir -p docs/operational-readiness/evidence/2026-11-04
+          git log -1 --format='{"testedSourceSha":"%H","commitDate":"%cI"}' > docs/operational-readiness/evidence/2026-11-04/source-revision.json
+          git archive HEAD | tar -x -C output/operational-uat-runtime/app
+          ln -s "$GITHUB_WORKSPACE/vendor" output/operational-uat-runtime/app/vendor
+          cp -r public/build output/operational-uat-runtime/app/public/build
+          php tests/Support/OperationalUat/prepare.php
+          php tests/Support/OperationalUat/use-mysql.php
+          php output/operational-uat-runtime/app/artisan livewire:publish --assets
+          php output/operational-uat-runtime/app/artisan filament:upgrade
+          php output/operational-uat-runtime/app/artisan migrate --force --no-interaction
+          php output/operational-uat-runtime/app/artisan db:seed --force --no-interaction
+          php tests/Support/OperationalUat/fixtures.php
+      - name: Install browser runtime
+        run: |
+          npm install --prefix output/operational-uat-runtime/browser --no-package-lock --no-audit --no-fund playwright
+          output/operational-uat-runtime/browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Start isolated Nginx and PHP-FPM
+        run: bash tests/Support/OperationalUat/serve-ci.sh
+      - name: Real browser UAT
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-smoke.cjs
+      - name: Two-party item room and vehicle browser lifecycle
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-loans.cjs
+      - name: Reconcile browser stock and two-party receipts
+        if: always()
+        run: php tests/Support/OperationalUat/browser-invariants.php
+      - name: Preserve early loan diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loan-diagnostic-${{ github.sha }}
+          path: |
+            docs/operational-readiness/evidence/2026-11-04/source-revision.json
+            docs/operational-readiness/evidence/2026-11-04/browser-loan-lifecycle.json
+            docs/operational-readiness/evidence/2026-11-04/browser-database-invariants.json
+            docs/operational-readiness/evidence/2026-11-04/LOAN-*-error.png
+          retention-days: 30
+      - name: Operational browser roles and Work Order
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-operational.cjs
+      - name: Work Order browser fix retest across unit SMP
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-work-order-retest.cjs
+      - name: Hierarchical recovery audit and responsive ticket actions
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-hierarchy.cjs
+      - name: Workflow publication and versioned cost approval in browser
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-cost.cjs
+      - name: Browser session revocation and Livewire polling
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-security.cjs
+      - name: Controlled authenticated read load
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: |
+          php tests/Support/OperationalUat/load-metrics.php before
+          node tests/Support/OperationalUat/http-load.cjs
+      - name: Capture database counters after load
+        if: always()
+        run: php tests/Support/OperationalUat/load-metrics.php after
+      - name: Concurrent inventory transaction probes
+        if: always()
+        run: php tests/Support/OperationalUat/transaction-probes.php
+      - name: Queue scheduler and backup restore rehearsal
+        if: always()
+        run: php tests/Support/OperationalUat/infra-recovery.php
+      - name: Capture database invariants after operations
+        if: always()
+        run: php tests/Support/OperationalUat/state.php
+      - name: Collect sanitized server evidence
+        if: always()
+        run: php tests/Support/OperationalUat/collect-runtime.php
+      - name: Preserve sanitized evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: operational-uat-${{ github.sha }}
+          path: docs/operational-readiness/evidence/2026-11-04
+          retention-days: 30
+
+
+
+
+
+
+
+
+

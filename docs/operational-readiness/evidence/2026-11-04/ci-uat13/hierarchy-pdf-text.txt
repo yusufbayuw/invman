@@ -1,0 +1,144 @@
+                                             FORMULIR PERMINTAAN PERAWATAN / PERBAIKAN
+                                                        Dokumen: TKT-2026-VR1OYNUL5FBM · Dicetak 04/11/2026 14:38
+                                                   Rekaman digital InvMan · Persetujuan dan identitas bersumber dari akun login
+
+
+
+I. DATA PEMOHON (DIISI OLEH PELAPOR)
+
+
+ Nama pelapor                             Sarpras SMA
+
+ Unit kerja                               SMA
+
+ Tanggal / jam laporan                    04/11/2026 14:37
+
+ Lokasi kerusakan                         QA Safety Room
+
+
+II. DESKRIPSI KERUSAKAN
+
+
+ Jenis masalah                            Bangunan & Interior
+
+ Urgensi pelapor                          normal
+
+ Prioritas operasional                    normal
+
+ Uraian kerusakan                         Synthetic hierarchy exception; preserve real actor and safety hold.
+
+ Inventaris terkait                       QA Override Safety Room (room #7)
+
+
+III. VALIDASI & PERSETUJUAN
+
+
+ Diajukan oleh                          Disetujui oleh                      Penerimaan tugas
+
+ Sarpras SMA                            Administrator                       Petugas ditugaskan: Demo Teknisi
+ 04/11/2026 14:37                       04/11/2026 14:38                    Penerimaan dicatat oleh: Administrator (override)
+                                                                            04/11/2026 14:38
+
+
+Catatan persetujuan: -
+
+Deadline respons: 05/11/2026 13:38 Deadline penyelesaian: 09/11/2026 11:38
+
+Jejak persetujuan Work Order · Konfigurasi versi 1
+
+
+ Tahap                                                                      Status              Keputusan oleh / waktu                     Catatan
+
+ Diketahui Atasan Pelapor                                                   Disetujui           Administrator                              -
+ Revisi 1 · Aktif · Sebelum penugasan                                                           04/11/2026 14:38
+
+ Diterima Staf Fasilitas                                                    Disetujui           Administrator                              -
+ Revisi 1 · Aktif · Sebelum penugasan                                                           04/11/2026 14:38
+
+ Ditinjau Supervisor Fasilitas                                              Disetujui           Administrator                              -
+ Revisi 1 · Aktif · Sebelum penugasan                                                           04/11/2026 14:38
+
+ Pengesahan Manager Fasilitas                                               Disetujui           Administrator                              -
+ Revisi 1 · Aktif · Pengesahan akhir                                                            04/11/2026 14:38
+
+
+
+IV. TINDAKAN PERBAIKAN (DIISI OLEH TEKNISI / MAINTENANCE)
+
+
+ Teknisi penanggung jawab                 Demo Teknisi
+
+ Tanggal mulai                            04/11/2026 14:38
+
+ Tanggal selesai                          04/11/2026 14:38
+
+ Analisis masalah                         Synthetic room electrical fault
+
+ Tindakan perbaikan                       Synthetic administrative completion, safety not released
+
+
+Hasil dicatat oleh: Administrator (override atas nama petugas)
+
+Material / Sparepart:
+
+
+ Nama material                                                                                 Qty                                Satuan
+
+ Tidak ada material tercatat.
+
+
+Status akhir: Selesai sempurna
+V. SERAH TERIMA & PENYELESAIAN
+
+
+ Teknisi penanggung jawab                                             Pelapor (verifikasi)                                Manajer (mengetahui)
+
+ Demo Teknisi                                                         Administrator                                       Administrator
+ 04/11/2026 14:38                                                     04/11/2026 14:38                                    04/11/2026 14:38
+
+
+Kondisi kelayakan: Belum dinyatakan layak pakai / penahanan aset tetap berlaku
+
+Catatan pengesahan: -
+
+
+VI. AUDIT PENGECUALIAN HIERARKI
+
+Identitas petugas dan pelapor asli dipertahankan. Tindakan berikut dicatat oleh akun pelaku yang benar-benar login. Waktu audit ditampilkan sesuai rekaman
+tersimpan; zona waktu audit lama tidak tercatat.
+
+
+ Tindakan                         Pelaku login         Pegawai diwakili                      Waktu tersimpan / alasan
+
+ Keputusan persetujuan            Administrator        Demo Atasan Unit SMA                  04/11/2026 07:38
+ pending → approved                                                                          Synthetic justified approval recovery by actual admin actor
+
+ Keputusan persetujuan            Administrator        Demo Staf Fasilitas                   04/11/2026 07:38
+ pending → approved                                                                          Synthetic UAT superior recovery; original employee unavailable.
+
+ Keputusan persetujuan            Administrator        Demo Supervisor Fasilitas             04/11/2026 07:38
+ pending → approved                                                                          Synthetic UAT superior recovery; original employee unavailable.
+
+ Penugasan petugas                Administrator        Kewenangan tahap                      04/11/2026 07:38
+ open → triaged                                                                              Synthetic UAT superior recovery; original employee unavailable.
+
+ Penerimaan tugas                 Administrator        Demo Teknisi                          04/11/2026 07:38
+ triaged → in_progress                                                                       Synthetic UAT superior recovery; original employee unavailable.
+
+ Pencatatan hasil                 Administrator        Demo Teknisi                          04/11/2026 07:38
+ in_progress → resolved                                                                      Synthetic UAT superior recovery; original employee unavailable.
+
+ Verifikasi hasil                 Administrator        Sarpras SMA                           04/11/2026 07:38
+ resolved → resolved                                                                         Synthetic UAT superior recovery; original employee unavailable.
+
+ Keputusan persetujuan            Administrator        Demo Manager Fasilitas                04/11/2026 07:38
+ pending → approved                                                                          Synthetic UAT superior recovery; original employee unavailable.
+
+ Pengesahan akhir                 Administrator        Kewenangan tahap                      04/11/2026 07:38
+ resolved → closed                                                                           Synthetic UAT superior recovery; original employee unavailable.
+
+
+
+ Ini adalah catatan persetujuan elektronik internal berdasarkan identitas login dan waktu server, bukan tanda tangan digital tersertifikasi. Kolom yang belum diproses tidak
+ direkayasa menjadi persetujuan. Detail histori dan lampiran bukti tersimpan privat di InvMan; perubahan yang sah setelah cetak akan tercermin pada versi PDF berikutnya.
+

@@ -1,0 +1,29 @@
+{
+    "workflow": 2,
+    "old_ticket": "01a1a576-654b-7024-b0c7-98d573e5851d",
+    "old_workflow": 1,
+    "phase": "verified",
+    "ticket": "01a1a57e-f7e9-70b2-839c-1b2eb49d9df8",
+    "quotes": [
+        {
+            "id": 1,
+            "version": 1,
+            "amount": "2500000",
+            "recorded_by": 9
+        },
+        {
+            "id": 2,
+            "version": 2,
+            "amount": "2600000",
+            "recorded_by": 9
+        }
+    ],
+    "approval": {
+        "status": "approved",
+        "estimate_id": 2,
+        "decided_by": 19
+    },
+    "old_ticket_workflow_unchanged": true,
+    "pass": true,
+    "workflow_label": "Diketahui Atasan dan Biaya QA"
+}

@@ -1,0 +1,5886 @@
+{
+  "scope": "controlled authenticated HTTP load using sessions established by normal real-browser login; read workload only",
+  "productionCapacityCertified": false,
+  "results": [
+    {
+      "concurrency": 10,
+      "distinctAuthenticatedUsers": 10,
+      "requests": 10,
+      "wallMs": 850.4391440000036,
+      "p50Ms": 507.24405099998694,
+      "p95Ms": 830.5988160000124,
+      "maxMs": 830.5988160000124,
+      "errorRate": 0,
+      "driverCpuMicroseconds": {
+        "user": 169594,
+        "system": 8798
+      },
+      "serverProcessSamples": [
+        {
+          "at": 1793778222893,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3,
+              "memoryPercent": 2.9,
+              "rssKiB": 481540
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78928
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.8,
+              "memoryPercent": 0.9,
+              "rssKiB": 147828
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3,
+              "memoryPercent": 0.8,
+              "rssKiB": 144620
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.7,
+              "memoryPercent": 0.8,
+              "rssKiB": 143652
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 1.9,
+              "memoryPercent": 0.8,
+              "rssKiB": 143188
+            }
+          ]
+        },
+        {
+          "at": 1793778223749,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 2.9,
+              "rssKiB": 482216
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78932
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.9,
+              "memoryPercent": 0.8,
+              "rssKiB": 145896
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3,
+              "memoryPercent": 0.9,
+              "rssKiB": 148528
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.8,
+              "memoryPercent": 0.9,
+              "rssKiB": 148784
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2,
+              "memoryPercent": 0.8,
+              "rssKiB": 145300
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 75,
+              "memoryPercent": 0.5,
+              "rssKiB": 89072
+            }
+          ]
+        }
+      ],
+      "driverRssBytes": 138039296,
+      "freeHostMemoryAfter": 14292942848,
+      "samples": [
+        {
+          "ms": 352.19873199998983,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 369.45171999998274,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 398.1630080000032,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 477.62277199997334,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 507.24405099998694,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 613.3510489999899,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 662.5777950000193,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 814.4982329999912,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 815.1024859999889,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 830.5988160000124,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "concurrency": 50,
+      "distinctAuthenticatedUsers": 10,
+      "requests": 50,
+      "wallMs": 3210.2945380000165,
+      "p50Ms": 2126.4281979999796,
+      "p95Ms": 3119.7242600000172,
+      "maxMs": 3194.5919970000105,
+      "errorRate": 0,
+      "driverCpuMicroseconds": {
+        "user": 338260,
+        "system": 71465
+      },
+      "serverProcessSamples": [
+        {
+          "at": 1793778223767,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 2.9,
+              "rssKiB": 482216
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78932
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.9,
+              "memoryPercent": 0.8,
+              "rssKiB": 145896
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3,
+              "memoryPercent": 0.9,
+              "rssKiB": 148528
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.8,
+              "memoryPercent": 0.9,
+              "rssKiB": 148784
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2,
+              "memoryPercent": 0.8,
+              "rssKiB": 145300
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 66.6,
+              "memoryPercent": 0.5,
+              "rssKiB": 93600
+            }
+          ]
+        },
+        {
+          "at": 1793778224780,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 2.9,
+              "rssKiB": 483256
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78932
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.9,
+              "memoryPercent": 0.9,
+              "rssKiB": 150000
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.8,
+              "rssKiB": 146104
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.9,
+              "memoryPercent": 0.9,
+              "rssKiB": 147828
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2,
+              "memoryPercent": 0.9,
+              "rssKiB": 147592
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 46.2,
+              "memoryPercent": 0.7,
+              "rssKiB": 114648
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.5,
+              "memoryPercent": 0.5,
+              "rssKiB": 87616
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 28.5,
+              "memoryPercent": 0.4,
+              "rssKiB": 73196
+            }
+          ]
+        },
+        {
+          "at": 1793778225780,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 2.9,
+              "rssKiB": 484908
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3,
+              "memoryPercent": 0.9,
+              "rssKiB": 149368
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.8,
+              "rssKiB": 146448
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.9,
+              "memoryPercent": 0.8,
+              "rssKiB": 147156
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.1,
+              "memoryPercent": 0.9,
+              "rssKiB": 148076
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 40.7,
+              "memoryPercent": 0.7,
+              "rssKiB": 117892
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 28,
+              "memoryPercent": 0.6,
+              "rssKiB": 112068
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 25.4,
+              "memoryPercent": 0.7,
+              "rssKiB": 116296
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 71.4,
+              "memoryPercent": 0.6,
+              "rssKiB": 105376
+            }
+          ]
+        },
+        {
+          "at": 1793778226781,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 2.9,
+              "rssKiB": 485676
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3,
+              "memoryPercent": 0.9,
+              "rssKiB": 149368
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.9,
+              "rssKiB": 148688
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.9,
+              "memoryPercent": 0.8,
+              "rssKiB": 146852
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.1,
+              "memoryPercent": 0.8,
+              "rssKiB": 143860
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.6,
+              "memoryPercent": 0.7,
+              "rssKiB": 117552
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 32.6,
+              "memoryPercent": 0.6,
+              "rssKiB": 114184
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 29.6,
+              "memoryPercent": 0.7,
+              "rssKiB": 116712
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 46.2,
+              "memoryPercent": 0.7,
+              "rssKiB": 118816
+            }
+          ]
+        },
+        {
+          "at": 1793778226977,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 2.9,
+              "rssKiB": 485696
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3,
+              "memoryPercent": 0.9,
+              "rssKiB": 149368
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.8,
+              "rssKiB": 147244
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.9,
+              "memoryPercent": 0.8,
+              "rssKiB": 145844
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.1,
+              "memoryPercent": 0.8,
+              "rssKiB": 143860
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.7,
+              "memoryPercent": 0.7,
+              "rssKiB": 117016
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 33.9,
+              "memoryPercent": 0.6,
+              "rssKiB": 114232
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 29.7,
+              "memoryPercent": 0.7,
+              "rssKiB": 116716
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 48.8,
+              "memoryPercent": 0.7,
+              "rssKiB": 118052
+            }
+          ]
+        }
+      ],
+      "driverRssBytes": 161845248,
+      "freeHostMemoryAfter": 14224429056,
+      "samples": [
+        {
+          "ms": 151.7476200000092,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 189.77225300000282,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 437.4552829999884,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 438.4725960000069,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 440.44760000001406,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 441.07740199999535,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 441.81199099999503,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 558.9123050000053,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 594.8472019999754,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 973.8005009999906,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 974.9773829999904,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 980.4525330000033,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 987.0451150000154,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 989.8863249999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1184.6635239999741,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 1488.6992970000138,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1488.9551300000167,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 1489.9120519999997,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1494.948074999993,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1498.6398479999916,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1503.2599289999926,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1512.1429869999993,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2124.9487040000095,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2125.893447999988,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2126.4281979999796,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2127.674262000015,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2149.4274129999976,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2149.7180389999994,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2150.596152000013,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2157.1995400000014,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2375.3283970000048,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2399.4190649999946,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2421.568748999998,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2553.167504000012,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2557.9950850000023,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2666.909163000004,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2670.0649730000005,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2694.3283300000185,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2694.904503000027,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2854.1108949999907,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2917.8476809999847,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2936.11484699999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2954.6865540000144,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2983.3840539999946,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3056.7374249999993,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3086.7407539999986,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3106.0976359999913,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3119.7242600000172,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 3175.6103719999956,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3194.5919970000105,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "concurrency": 100,
+      "distinctAuthenticatedUsers": 10,
+      "requests": 100,
+      "wallMs": 5305.509963999997,
+      "p50Ms": 2782.4502020000073,
+      "p95Ms": 5131.788648999995,
+      "maxMs": 5287.515450000006,
+      "errorRate": 0,
+      "driverCpuMicroseconds": {
+        "user": 414513,
+        "system": 137510
+      },
+      "serverProcessSamples": [
+        {
+          "at": 1793778226991,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 2.9,
+              "rssKiB": 485696
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3,
+              "memoryPercent": 0.9,
+              "rssKiB": 149368
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.8,
+              "rssKiB": 147244
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.9,
+              "memoryPercent": 0.8,
+              "rssKiB": 145844
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.1,
+              "memoryPercent": 0.8,
+              "rssKiB": 143860
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.6,
+              "memoryPercent": 0.7,
+              "rssKiB": 117016
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 33.9,
+              "memoryPercent": 0.6,
+              "rssKiB": 114232
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 29.5,
+              "memoryPercent": 0.7,
+              "rssKiB": 116716
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 48.4,
+              "memoryPercent": 0.7,
+              "rssKiB": 118052
+            }
+          ]
+        },
+        {
+          "at": 1793778228004,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 2.9,
+              "rssKiB": 486004
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3,
+              "memoryPercent": 0.9,
+              "rssKiB": 150040
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 0.9,
+              "rssKiB": 148500
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3,
+              "memoryPercent": 0.9,
+              "rssKiB": 147844
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.2,
+              "memoryPercent": 0.9,
+              "rssKiB": 147524
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.5,
+              "memoryPercent": 0.7,
+              "rssKiB": 119056
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35,
+              "memoryPercent": 0.7,
+              "rssKiB": 116152
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 33.3,
+              "memoryPercent": 0.7,
+              "rssKiB": 116732
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 42.4,
+              "memoryPercent": 0.7,
+              "rssKiB": 118164
+            }
+          ]
+        },
+        {
+          "at": 1793778229005,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.3,
+              "memoryPercent": 2.9,
+              "rssKiB": 486084
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.9,
+              "rssKiB": 148820
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 0.8,
+              "rssKiB": 146560
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3,
+              "memoryPercent": 0.9,
+              "rssKiB": 147540
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.2,
+              "memoryPercent": 0.8,
+              "rssKiB": 146028
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.2,
+              "memoryPercent": 0.7,
+              "rssKiB": 119056
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.5,
+              "memoryPercent": 0.7,
+              "rssKiB": 116912
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 34.6,
+              "memoryPercent": 0.7,
+              "rssKiB": 118828
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 42.5,
+              "memoryPercent": 0.7,
+              "rssKiB": 116876
+            }
+          ]
+        },
+        {
+          "at": 1793778230005,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.3,
+              "memoryPercent": 2.9,
+              "rssKiB": 486292
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.9,
+              "rssKiB": 148820
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.3,
+              "memoryPercent": 0.9,
+              "rssKiB": 148496
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.9,
+              "rssKiB": 148032
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.3,
+              "memoryPercent": 0.8,
+              "rssKiB": 145892
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.9,
+              "memoryPercent": 0.7,
+              "rssKiB": 115956
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.5,
+              "memoryPercent": 0.7,
+              "rssKiB": 118868
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.1,
+              "memoryPercent": 0.7,
+              "rssKiB": 116780
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 41.6,
+              "memoryPercent": 0.7,
+              "rssKiB": 117872
+            }
+          ]
+        },
+        {
+          "at": 1793778231006,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.3,
+              "memoryPercent": 2.9,
+              "rssKiB": 486504
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 0.8,
+              "rssKiB": 146996
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.3,
+              "memoryPercent": 0.8,
+              "rssKiB": 146544
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.9,
+              "rssKiB": 148792
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.3,
+              "memoryPercent": 0.8,
+              "rssKiB": 146764
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.1,
+              "memoryPercent": 0.7,
+              "rssKiB": 117156
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.9,
+              "memoryPercent": 0.7,
+              "rssKiB": 116964
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.4,
+              "memoryPercent": 0.7,
+              "rssKiB": 117616
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 40.8,
+              "memoryPercent": 0.7,
+              "rssKiB": 118896
+            }
+          ]
+        },
+        {
+          "at": 1793778232008,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 2.9,
+              "rssKiB": 486528
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 0.9,
+              "rssKiB": 148820
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 0.8,
+              "rssKiB": 146104
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.9,
+              "rssKiB": 148804
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.4,
+              "memoryPercent": 0.9,
+              "rssKiB": 148812
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.2,
+              "memoryPercent": 0.7,
+              "rssKiB": 117188
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.7,
+              "memoryPercent": 0.7,
+              "rssKiB": 116968
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.3,
+              "memoryPercent": 0.7,
+              "rssKiB": 118916
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 41.3,
+              "memoryPercent": 0.7,
+              "rssKiB": 116168
+            }
+          ]
+        },
+        {
+          "at": 1793778232295,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 2.9,
+              "rssKiB": 486528
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 0.9,
+              "rssKiB": 149256
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 0.8,
+              "rssKiB": 146104
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.9,
+              "rssKiB": 148804
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.4,
+              "memoryPercent": 0.9,
+              "rssKiB": 148892
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.8,
+              "memoryPercent": 0.7,
+              "rssKiB": 117188
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.1,
+              "memoryPercent": 0.7,
+              "rssKiB": 115884
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.4,
+              "memoryPercent": 0.7,
+              "rssKiB": 116868
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 40.6,
+              "memoryPercent": 0.7,
+              "rssKiB": 118832
+            }
+          ]
+        }
+      ],
+      "driverRssBytes": 213585920,
+      "freeHostMemoryAfter": 14176669696,
+      "samples": [
+        {
+          "ms": 301.1888789999939,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 314.3219709999976,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 334.22320199999376,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 416.26659299997846,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 443.64948700001696,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 494.2979429999832,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 518.9337159999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 555.131361000007,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 569.1581940000178,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 756.1912329999905,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 821.1221559999976,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 841.385849000013,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 847.3659749999933,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 852.5197340000013,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 943.9970740000135,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1065.1493199999968,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1067.4442930000077,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1112.564029000001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 1173.612053000019,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 1301.6218669999798,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1311.6289579999866,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1321.2079369999992,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1386.4746520000044,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1409.2718800000148,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 1473.7439610000001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1593.4290819999878,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 1630.9033510000154,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1680.1852039999794,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 1707.2785340000119,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1793.4186289999925,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1854.6115540000028,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1884.8914109999896,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1921.0201430000016,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2037.881384999986,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2059.995406000002,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2064.297411000007,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2202.100811000011,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2213.097080000007,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2245.782917000004,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2328.103607999976,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2331.1889480000245,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2381.4277820000134,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2462.645724000002,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2487.8501680000045,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2591.463698000007,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2669.6250469999795,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2673.0691290000104,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2701.7240699999966,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2711.126936000015,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2782.4502020000073,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2863.707366000017,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2942.8434490000072,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2952.0144490000093,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2999.952866000007,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3065.3381539999973,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3128.944744999986,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 3207.3793479999877,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3210.6572710000037,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3225.271372999996,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 3325.5379050000047,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3444.999993000005,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3453.419808000006,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3473.943559999985,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 3553.4810130000114,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3578.550891000021,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 3601.2178549999953,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3678.8279539999785,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3689.3935800000036,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 3745.9280459999864,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3870.3034290000214,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 3933.32577700002,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3952.513945999992,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3954.8439360000193,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4055.8628390000085,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 4056.537007999985,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 4197.215672999999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 4197.366258999973,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 4231.155180000002,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4281.784027999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 4384.947148000007,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 4412.3664059999865,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4450.67403699999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 4455.275048999989,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4555.739107000001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4558.516161000007,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 4656.96776900001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 4760.654427000001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4763.498672000016,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 4783.2331840000115,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 4839.572453000001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 4937.361318999989,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4967.9041889999935,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 5057.830774000002,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 5099.7816049999965,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 5131.788648999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 5168.87466999999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 5180.817731999996,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 5236.006633000012,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 5269.267682000005,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 5287.515450000006,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "concurrency": 250,
+      "distinctAuthenticatedUsers": 10,
+      "requests": 250,
+      "wallMs": 13431.271810999984,
+      "p50Ms": 6874.324396000011,
+      "p95Ms": 12798.381467999978,
+      "maxMs": 13343.690963000001,
+      "errorRate": 0,
+      "driverCpuMicroseconds": {
+        "user": 842436,
+        "system": 368846
+      },
+      "serverProcessSamples": [
+        {
+          "at": 1793778232310,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 2.9,
+              "rssKiB": 486528
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 0.9,
+              "rssKiB": 149256
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 0.8,
+              "rssKiB": 146104
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.9,
+              "rssKiB": 148804
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.4,
+              "memoryPercent": 0.9,
+              "rssKiB": 148892
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.8,
+              "memoryPercent": 0.7,
+              "rssKiB": 117188
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36,
+              "memoryPercent": 0.7,
+              "rssKiB": 115884
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.3,
+              "memoryPercent": 0.7,
+              "rssKiB": 116868
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 40.6,
+              "memoryPercent": 0.7,
+              "rssKiB": 118832
+            }
+          ]
+        },
+        {
+          "at": 1793778233324,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 2.9,
+              "rssKiB": 486656
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 0.9,
+              "rssKiB": 149260
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 0.8,
+              "rssKiB": 146408
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 0.8,
+              "rssKiB": 146852
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.5,
+              "memoryPercent": 0.8,
+              "rssKiB": 146292
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.6,
+              "memoryPercent": 0.7,
+              "rssKiB": 119248
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36,
+              "memoryPercent": 0.7,
+              "rssKiB": 118908
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.3,
+              "memoryPercent": 0.7,
+              "rssKiB": 117904
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 40.2,
+              "memoryPercent": 0.7,
+              "rssKiB": 118908
+            }
+          ]
+        },
+        {
+          "at": 1793778234327,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.5,
+              "memoryPercent": 2.9,
+              "rssKiB": 486996
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.3,
+              "memoryPercent": 0.9,
+              "rssKiB": 148324
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 0.9,
+              "rssKiB": 148456
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 0.8,
+              "rssKiB": 146744
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.5,
+              "memoryPercent": 0.9,
+              "rssKiB": 148324
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.2,
+              "memoryPercent": 0.7,
+              "rssKiB": 115692
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36,
+              "memoryPercent": 0.7,
+              "rssKiB": 118972
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.6,
+              "memoryPercent": 0.7,
+              "rssKiB": 116512
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 39.6,
+              "memoryPercent": 0.7,
+              "rssKiB": 118180
+            }
+          ]
+        },
+        {
+          "at": 1793778235328,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.5,
+              "memoryPercent": 2.9,
+              "rssKiB": 487056
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.3,
+              "memoryPercent": 0.9,
+              "rssKiB": 150032
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.5,
+              "memoryPercent": 0.8,
+              "rssKiB": 146560
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.3,
+              "memoryPercent": 0.9,
+              "rssKiB": 148748
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.6,
+              "memoryPercent": 0.8,
+              "rssKiB": 146764
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.8,
+              "memoryPercent": 0.7,
+              "rssKiB": 116244
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.3,
+              "memoryPercent": 0.7,
+              "rssKiB": 118304
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37,
+              "memoryPercent": 0.7,
+              "rssKiB": 116844
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 39.9,
+              "memoryPercent": 0.7,
+              "rssKiB": 118932
+            }
+          ]
+        },
+        {
+          "at": 1793778236329,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.6,
+              "memoryPercent": 2.9,
+              "rssKiB": 487112
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 0.9,
+              "rssKiB": 150020
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.5,
+              "memoryPercent": 0.8,
+              "rssKiB": 146556
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.3,
+              "memoryPercent": 0.8,
+              "rssKiB": 145768
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.6,
+              "memoryPercent": 0.9,
+              "rssKiB": 147348
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36,
+              "memoryPercent": 0.7,
+              "rssKiB": 116248
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.2,
+              "memoryPercent": 0.7,
+              "rssKiB": 119916
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.4,
+              "memoryPercent": 0.7,
+              "rssKiB": 118896
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 40.2,
+              "memoryPercent": 0.7,
+              "rssKiB": 116784
+            }
+          ]
+        },
+        {
+          "at": 1793778237330,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.6,
+              "memoryPercent": 2.9,
+              "rssKiB": 487276
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 0.9,
+              "rssKiB": 148820
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.6,
+              "memoryPercent": 0.8,
+              "rssKiB": 146448
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.3,
+              "memoryPercent": 0.9,
+              "rssKiB": 147540
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.7,
+              "memoryPercent": 0.8,
+              "rssKiB": 144828
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.9,
+              "memoryPercent": 0.7,
+              "rssKiB": 119336
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.3,
+              "memoryPercent": 0.7,
+              "rssKiB": 118116
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.9,
+              "memoryPercent": 0.7,
+              "rssKiB": 116204
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 40.1,
+              "memoryPercent": 0.7,
+              "rssKiB": 117856
+            }
+          ]
+        },
+        {
+          "at": 1793778238330,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.7,
+              "memoryPercent": 2.9,
+              "rssKiB": 487288
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 0.9,
+              "rssKiB": 150020
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.6,
+              "memoryPercent": 0.8,
+              "rssKiB": 146552
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 0.9,
+              "rssKiB": 149648
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.8,
+              "memoryPercent": 0.9,
+              "rssKiB": 147528
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 35.8,
+              "memoryPercent": 0.7,
+              "rssKiB": 119328
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.5,
+              "memoryPercent": 0.7,
+              "rssKiB": 119080
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.6,
+              "memoryPercent": 0.7,
+              "rssKiB": 116872
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 39.8,
+              "memoryPercent": 0.7,
+              "rssKiB": 116792
+            }
+          ]
+        },
+        {
+          "at": 1793778239332,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.7,
+              "memoryPercent": 2.9,
+              "rssKiB": 487620
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.5,
+              "memoryPercent": 0.9,
+              "rssKiB": 148388
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.6,
+              "memoryPercent": 0.8,
+              "rssKiB": 145472
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.4,
+              "memoryPercent": 0.9,
+              "rssKiB": 148792
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.8,
+              "memoryPercent": 0.9,
+              "rssKiB": 147332
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36,
+              "memoryPercent": 0.7,
+              "rssKiB": 117328
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.7,
+              "memoryPercent": 0.7,
+              "rssKiB": 119108
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.5,
+              "memoryPercent": 0.7,
+              "rssKiB": 118920
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 39.4,
+              "memoryPercent": 0.7,
+              "rssKiB": 116868
+            }
+          ]
+        },
+        {
+          "at": 1793778240334,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.7,
+              "memoryPercent": 2.9,
+              "rssKiB": 487620
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.5,
+              "memoryPercent": 0.9,
+              "rssKiB": 149368
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.7,
+              "memoryPercent": 0.8,
+              "rssKiB": 147056
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.5,
+              "memoryPercent": 0.9,
+              "rssKiB": 148792
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.9,
+              "memoryPercent": 0.8,
+              "rssKiB": 145480
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.2,
+              "memoryPercent": 0.7,
+              "rssKiB": 117324
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.7,
+              "memoryPercent": 0.7,
+              "rssKiB": 119208
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.2,
+              "memoryPercent": 0.7,
+              "rssKiB": 119196
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 39.2,
+              "memoryPercent": 0.7,
+              "rssKiB": 118808
+            }
+          ]
+        },
+        {
+          "at": 1793778241333,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.8,
+              "memoryPercent": 2.9,
+              "rssKiB": 487672
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.6,
+              "memoryPercent": 0.9,
+              "rssKiB": 147972
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.7,
+              "memoryPercent": 0.9,
+              "rssKiB": 147844
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.5,
+              "memoryPercent": 0.9,
+              "rssKiB": 147844
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 2.9,
+              "memoryPercent": 0.9,
+              "rssKiB": 147528
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.1,
+              "memoryPercent": 0.7,
+              "rssKiB": 119272
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37,
+              "memoryPercent": 0.7,
+              "rssKiB": 117928
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.5,
+              "memoryPercent": 0.7,
+              "rssKiB": 116980
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 39.1,
+              "memoryPercent": 0.7,
+              "rssKiB": 118832
+            }
+          ]
+        },
+        {
+          "at": 1793778242333,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.8,
+              "memoryPercent": 2.9,
+              "rssKiB": 487744
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.6,
+              "memoryPercent": 0.9,
+              "rssKiB": 147968
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.8,
+              "memoryPercent": 0.9,
+              "rssKiB": 147428
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.6,
+              "memoryPercent": 0.8,
+              "rssKiB": 146852
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3,
+              "memoryPercent": 0.9,
+              "rssKiB": 147604
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.1,
+              "memoryPercent": 0.7,
+              "rssKiB": 115716
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.9,
+              "memoryPercent": 0.7,
+              "rssKiB": 118476
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.7,
+              "memoryPercent": 0.7,
+              "rssKiB": 116872
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 39.2,
+              "memoryPercent": 0.7,
+              "rssKiB": 115808
+            }
+          ]
+        },
+        {
+          "at": 1793778243333,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.9,
+              "memoryPercent": 2.9,
+              "rssKiB": 487884
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.7,
+              "memoryPercent": 0.9,
+              "rssKiB": 147972
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.8,
+              "memoryPercent": 0.8,
+              "rssKiB": 146876
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.6,
+              "memoryPercent": 0.9,
+              "rssKiB": 148796
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.8,
+              "rssKiB": 146328
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.1,
+              "memoryPercent": 0.7,
+              "rssKiB": 117224
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.1,
+              "memoryPercent": 0.7,
+              "rssKiB": 118380
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.9,
+              "memoryPercent": 0.7,
+              "rssKiB": 116220
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 39,
+              "memoryPercent": 0.7,
+              "rssKiB": 117196
+            }
+          ]
+        },
+        {
+          "at": 1793778244335,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 3.9,
+              "memoryPercent": 2.9,
+              "rssKiB": 488084
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.7,
+              "memoryPercent": 0.8,
+              "rssKiB": 146996
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.8,
+              "memoryPercent": 0.8,
+              "rssKiB": 146544
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.6,
+              "memoryPercent": 0.8,
+              "rssKiB": 147212
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.1,
+              "memoryPercent": 0.9,
+              "rssKiB": 147528
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.3,
+              "memoryPercent": 0.7,
+              "rssKiB": 118064
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 37.1,
+              "memoryPercent": 0.7,
+              "rssKiB": 115476
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 38,
+              "memoryPercent": 0.7,
+              "rssKiB": 119000
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 38.8,
+              "memoryPercent": 0.7,
+              "rssKiB": 118008
+            }
+          ]
+        },
+        {
+          "at": 1793778245336,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 4,
+              "memoryPercent": 2.9,
+              "rssKiB": 488240
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.7,
+              "memoryPercent": 0.9,
+              "rssKiB": 148788
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.9,
+              "memoryPercent": 0.8,
+              "rssKiB": 146104
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.7,
+              "memoryPercent": 0.8,
+              "rssKiB": 146788
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 0.9,
+              "rssKiB": 147488
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.4,
+              "memoryPercent": 0.7,
+              "rssKiB": 117324
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.9,
+              "memoryPercent": 0.7,
+              "rssKiB": 117100
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 38.1,
+              "memoryPercent": 0.7,
+              "rssKiB": 117684
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 38.7,
+              "memoryPercent": 0.7,
+              "rssKiB": 118104
+            }
+          ]
+        },
+        {
+          "at": 1793778245676,
+          "processes": [
+            {
+              "pid": 2252,
+              "name": "mysqld",
+              "averageCpuPercent": 4,
+              "memoryPercent": 2.9,
+              "rssKiB": 488240
+            },
+            {
+              "pid": 2990,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 61736
+            },
+            {
+              "pid": 2991,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 2992,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22356
+            },
+            {
+              "pid": 4622,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.3,
+              "rssKiB": 58780
+            },
+            {
+              "pid": 4623,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22228
+            },
+            {
+              "pid": 4624,
+              "name": "php-fpm8.5",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.1,
+              "rssKiB": 22236
+            },
+            {
+              "pid": 4735,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 0,
+              "memoryPercent": 0.4,
+              "rssKiB": 78936
+            },
+            {
+              "pid": 4738,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.8,
+              "memoryPercent": 0.9,
+              "rssKiB": 149256
+            },
+            {
+              "pid": 4739,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.9,
+              "memoryPercent": 0.8,
+              "rssKiB": 144512
+            },
+            {
+              "pid": 4741,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.7,
+              "memoryPercent": 0.8,
+              "rssKiB": 144740
+            },
+            {
+              "pid": 6288,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 3.2,
+              "memoryPercent": 0.8,
+              "rssKiB": 143428
+            },
+            {
+              "pid": 9580,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.3,
+              "memoryPercent": 0.6,
+              "rssKiB": 114192
+            },
+            {
+              "pid": 9584,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 36.9,
+              "memoryPercent": 0.7,
+              "rssKiB": 117124
+            },
+            {
+              "pid": 9585,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 38.1,
+              "memoryPercent": 0.7,
+              "rssKiB": 115820
+            },
+            {
+              "pid": 9590,
+              "name": "php-fpm8.4",
+              "averageCpuPercent": 38.5,
+              "memoryPercent": 0.7,
+              "rssKiB": 115356
+            }
+          ]
+        }
+      ],
+      "driverRssBytes": 352387072,
+      "freeHostMemoryAfter": 14064095232,
+      "samples": [
+        {
+          "ms": 323.22394999998505,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 345.4049830000149,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 413.7187510000076,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 441.3762390000047,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 550.6787560000084,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 563.2773309999902,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 576.6454080000112,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 618.7723109999788,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 711.635277000023,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 783.4052220000012,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 830.8693720000156,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 834.556333000015,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 919.9693240000051,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 987.2574320000131,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 988.3065530000022,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 1062.592067999998,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1074.4634749999968,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 1091.1113410000107,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1269.7612910000025,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 1326.8514739999955,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1329.5672600000107,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1372.0993249999883,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 1429.8247799999954,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1467.745179999998,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1544.9020500000042,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1571.2491900000023,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 1699.3345069999923,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1764.8260199999786,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1784.173008999991,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 1819.2014879999915,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1928.3485079999955,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 1984.3781529999978,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 1998.1617229999974,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2066.613115999993,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2134.755388999998,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2142.1619190000056,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2205.656492000009,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2222.4807530000107,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2311.3439010000147,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2398.990056999988,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2432.5441090000095,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2531.0429040000017,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2532.4221600000164,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2535.5660170000046,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2552.655866999994,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2644.91771400001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2663.1919259999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 2784.644672000024,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2788.5971000000136,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 2873.2539899999974,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2947.491068000003,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 2948.2257879999815,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3047.584330999991,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3069.4190559999843,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3090.8008719999925,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 3181.6957819999952,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 3225.733124999999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3312.526914999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3346.936027000018,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 3401.791363999975,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3505.8062590000045,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3513.061332000012,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 3579.4146699999983,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3656.336228,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3710.613124000025,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 3757.1319580000127,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3783.7260990000213,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 3813.300522000005,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 3835.763986999984,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 3999.8119120000047,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 4044.3432160000084,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4045.782220000023,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 4090.129602000001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 4132.3212829999975,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 4139.295024999999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4313.127500999981,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 4325.3667669999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 4331.17571499999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4385.6809730000095,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 4444.001549000008,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 4541.960706999991,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4553.173225000006,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 4571.113849000016,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 4642.147280000005,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4741.443759999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4783.676466000004,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 4871.915890000004,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4875.972554999986,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 4948.293234000012,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 4958.778102000011,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 4970.884370000014,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 4977.854997000017,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 5141.571395999985,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 5225.939363000012,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 5288.684012999991,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 5363.595822000003,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 5375.8312519999745,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 5405.342250000016,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 5446.092207000009,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 5456.695283000008,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 5526.430739999982,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 5625.350146000012,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 5685.803555999999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 5825.607974000013,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 5829.242235999991,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 5829.741373999976,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 5846.739085000008,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 5881.395978000015,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 5968.810211000004,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 6067.264190999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 6103.51340700002,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 6135.7927009999985,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 6172.0650429999805,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 6239.6785620000155,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 6333.300988000003,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 6397.45423600002,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 6450.858731000015,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 6480.174046,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 6519.454130999977,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 6556.018511000002,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 6621.05479200001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 6684.572729999985,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 6697.625203000003,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 6872.376129000011,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 6874.324396000011,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 6915.974450000009,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 6933.109606999991,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 6986.742614000017,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 7062.09693,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 7143.187283999985,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 7181.351819000003,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 7271.541043000005,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 7315.155719999981,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 7334.971400000009,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 7376.747493000003,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 7399.533421,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 7473.745045999996,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 7490.039759999985,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 7635.535151000018,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 7664.059460999997,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 7741.94931299999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 7769.764185999986,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 7836.088933999999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 7874.852705999976,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 7919.90907199998,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 7979.337195,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 8062.950088999991,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 8074.667535000015,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 8117.535591000022,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 8130.183198999992,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 8324.139731000003,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 8333.075704000017,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 8334.621436999994,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 8377.371967000014,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 8445.46213900001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 8557.661984999984,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 8572.344639000017,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 8634.757994999993,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 8636.656426000001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 8770.229003000015,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 8782.39323799999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 8838.178444999998,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 8841.136100999982,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 8874.626653000014,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 8959.371118999989,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 9045.088256999996,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 9102.941434000008,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 9105.54457899998,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 9225.686306000018,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 9285.249226999993,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 9290.416120000009,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 9316.883629999997,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 9346.714363999985,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 9418.985083000007,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 9490.252811000013,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 9580.362997999997,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 9649.528679999989,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 9734.968217999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 9739.677916000015,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 9740.274749000004,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 9761.908025000012,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 9803.399479999993,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 9956.655249000003,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 9971.74883299999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 9994.879719999997,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 10064.52962700001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 10232.571739999985,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 10267.24280799998,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 10268.965947999997,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 10271.84109999999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 10273.536496999994,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 10302.256083000015,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 10332.098025000014,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 10484.217792999989,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 10539.887612999999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 10592.092116999993,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 10682.58953300002,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 10716.299341999984,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 10737.960070000001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 10812.299593999982,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 10817.491249000013,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 10824.308881999983,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 10953.180469000014,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 10999.726308000012,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 11043.30141699998,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 11078.564661000011,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 11132.883524000004,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 11234.890476,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 11235.448070000013,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 11280.035002999997,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 11360.824951999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 11429.297645999992,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 11471.987941,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 11540.43806700001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 11639.826919999992,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 11725.363211999997,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 11727.530605000007,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 11728.06091900001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 11732.179932999978,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 11787.438251999993,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 11839.550873,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 11962.683531000017,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 12070.895437999978,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 12073.829849000002,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 12080.282395999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 12161.091994000017,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 12193.700626000005,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 12235.700182,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 12267.451128999994,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 12305.331210000004,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 12311.184670000017,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 12453.718733999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 12464.001461999986,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 12520.676200000016,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 12537.967207999987,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 12619.642201999988,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 12715.077497999999,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 12798.381467999978,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 12799.30728400001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 12803.848079999996,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 12925.648313999991,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 12945.592120999994,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 12988.434066999995,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 13066.835506000003,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 13072.493514000002,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/peminjaman-cepat"
+        },
+        {
+          "ms": 13285.27025099998,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 13308.326085999986,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        },
+        {
+          "ms": 13313.871946,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 13314.611902999983,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin"
+        },
+        {
+          "ms": 13343.690963000001,
+          "status": 200,
+          "authenticated": true,
+          "route": "/admin/tiket"
+        }
+      ],
+      "status": "PASS"
+    }
+  ],
+  "identities": [
+    "admin",
+    "fasilitas",
+    "sarpras.daycare",
+    "sarpras.sd",
+    "sarpras.smp",
+    "sarpras.sma",
+    "sarpras.tbu",
+    "sarpras.adm",
+    "wo.demo.fasilitas.staff",
+    "wo.demo.fasilitas.spv"
+  ],
+  "limits": "Read load does not certify concurrent write workflow throughput. SLA and production hardware unknown.",
+  "environment": {
+    "node": "v22.23.4",
+    "cpuCount": 4,
+    "memoryBytes": 16759443456,
+    "freeMemoryBefore": 14308368384
+  },
+  "postLoadHealthy": true
+}

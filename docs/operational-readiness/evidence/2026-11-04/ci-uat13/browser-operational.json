@@ -1,0 +1,3482 @@
+{
+  "scope": "real browser; synthetic identities; official Turnstile test keys; actual middleware",
+  "engine": "156.0.8078.4",
+  "results": [
+    {
+      "id": "AUTH-admin",
+      "description": "Normal login for admin",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-admin.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-admin",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-admin-360.png",
+        "viewport-admin-390.png",
+        "viewport-admin-430.png",
+        "viewport-admin-768.png",
+        "viewport-admin-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-admin",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "ADMIN-TITLE",
+      "description": "Create a synthetic job title without assigning authority",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open job title form",
+        "Fill name and description",
+        "Create"
+      ],
+      "expected": "New title is saved; no permission grant",
+      "status": "PASS",
+      "evidence": [
+        "admin-title-before.png",
+        "admin-title-after.png"
+      ],
+      "actual": "http://127.0.0.1:8876/admin/work-order-job-titles/13/edit"
+    },
+    {
+      "id": "LOGOUT-admin",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-unit-daycare-atasan",
+      "description": "Normal login for wo.demo.unit.daycare.atasan",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-unit-daycare-atasan.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-unit-daycare-atasan",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-unit-daycare-atasan-360.png",
+        "viewport-wo-demo-unit-daycare-atasan-390.png",
+        "viewport-wo-demo-unit-daycare-atasan-430.png",
+        "viewport-wo-demo-unit-daycare-atasan-768.png",
+        "viewport-wo-demo-unit-daycare-atasan-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-unit-daycare-atasan",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "WO-HEAD-daycare",
+      "description": "Unit supervisor approves own unit Work Order",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open pending unit ticket",
+        "Review approval modal",
+        "Approve"
+      ],
+      "expected": "Decision saved by the unit supervisor",
+      "status": "PASS",
+      "evidence": [
+        "head-daycare-before.png",
+        "head-daycare-after.png"
+      ],
+      "actual": "Authorized approval completed"
+    },
+    {
+      "id": "LOGOUT-wo-demo-unit-daycare-atasan",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-unit-sd-atasan",
+      "description": "Normal login for wo.demo.unit.sd.atasan",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-unit-sd-atasan.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-unit-sd-atasan",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-unit-sd-atasan-360.png",
+        "viewport-wo-demo-unit-sd-atasan-390.png",
+        "viewport-wo-demo-unit-sd-atasan-430.png",
+        "viewport-wo-demo-unit-sd-atasan-768.png",
+        "viewport-wo-demo-unit-sd-atasan-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-unit-sd-atasan",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "WO-HEAD-sd",
+      "description": "Unit supervisor approves own unit Work Order",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open pending unit ticket",
+        "Review approval modal",
+        "Approve"
+      ],
+      "expected": "Decision saved by the unit supervisor",
+      "status": "PASS",
+      "evidence": [
+        "head-sd-before.png",
+        "head-sd-after.png"
+      ],
+      "actual": "Authorized approval completed"
+    },
+    {
+      "id": "LOGOUT-wo-demo-unit-sd-atasan",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-unit-smp-atasan",
+      "description": "Normal login for wo.demo.unit.smp.atasan",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-unit-smp-atasan.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-unit-smp-atasan",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-unit-smp-atasan-360.png",
+        "viewport-wo-demo-unit-smp-atasan-390.png",
+        "viewport-wo-demo-unit-smp-atasan-430.png",
+        "viewport-wo-demo-unit-smp-atasan-768.png",
+        "viewport-wo-demo-unit-smp-atasan-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-unit-smp-atasan",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "WO-HEAD-smp",
+      "description": "Unit supervisor approves own unit Work Order",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open pending unit ticket",
+        "Review approval modal",
+        "Approve"
+      ],
+      "expected": "Decision saved by the unit supervisor",
+      "status": "PASS",
+      "evidence": [
+        "head-smp-before.png",
+        "head-smp-after.png"
+      ],
+      "actual": "Authorized approval completed"
+    },
+    {
+      "id": "LOGOUT-wo-demo-unit-smp-atasan",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-unit-sma-atasan",
+      "description": "Normal login for wo.demo.unit.sma.atasan",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-unit-sma-atasan.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-unit-sma-atasan",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-unit-sma-atasan-360.png",
+        "viewport-wo-demo-unit-sma-atasan-390.png",
+        "viewport-wo-demo-unit-sma-atasan-430.png",
+        "viewport-wo-demo-unit-sma-atasan-768.png",
+        "viewport-wo-demo-unit-sma-atasan-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-unit-sma-atasan",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "WO-HEAD-sma",
+      "description": "Unit supervisor approves own unit Work Order",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open pending unit ticket",
+        "Review approval modal",
+        "Approve"
+      ],
+      "expected": "Decision saved by the unit supervisor",
+      "status": "PASS",
+      "evidence": [
+        "head-sma-before.png",
+        "head-sma-after.png"
+      ],
+      "actual": "Authorized approval completed"
+    },
+    {
+      "id": "LOGOUT-wo-demo-unit-sma-atasan",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-unit-tbu-atasan",
+      "description": "Normal login for wo.demo.unit.tbu.atasan",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-unit-tbu-atasan.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-unit-tbu-atasan",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-unit-tbu-atasan-360.png",
+        "viewport-wo-demo-unit-tbu-atasan-390.png",
+        "viewport-wo-demo-unit-tbu-atasan-430.png",
+        "viewport-wo-demo-unit-tbu-atasan-768.png",
+        "viewport-wo-demo-unit-tbu-atasan-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-unit-tbu-atasan",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "WO-HEAD-tbu",
+      "description": "Unit supervisor approves own unit Work Order",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open pending unit ticket",
+        "Review approval modal",
+        "Approve"
+      ],
+      "expected": "Decision saved by the unit supervisor",
+      "status": "PASS",
+      "evidence": [
+        "head-tbu-before.png",
+        "head-tbu-after.png"
+      ],
+      "actual": "Authorized approval completed"
+    },
+    {
+      "id": "LOGOUT-wo-demo-unit-tbu-atasan",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-unit-adm-atasan",
+      "description": "Normal login for wo.demo.unit.adm.atasan",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-unit-adm-atasan.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-unit-adm-atasan",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-unit-adm-atasan-360.png",
+        "viewport-wo-demo-unit-adm-atasan-390.png",
+        "viewport-wo-demo-unit-adm-atasan-430.png",
+        "viewport-wo-demo-unit-adm-atasan-768.png",
+        "viewport-wo-demo-unit-adm-atasan-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-unit-adm-atasan",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "WO-HEAD-adm",
+      "description": "Unit supervisor approves own unit Work Order",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open pending unit ticket",
+        "Review approval modal",
+        "Approve"
+      ],
+      "expected": "Decision saved by the unit supervisor",
+      "status": "PASS",
+      "evidence": [
+        "head-adm-before.png",
+        "head-adm-after.png"
+      ],
+      "actual": "Authorized approval completed"
+    },
+    {
+      "id": "LOGOUT-wo-demo-unit-adm-atasan",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-fasilitas-staff",
+      "description": "Normal login for wo.demo.fasilitas.staff",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-fasilitas-staff.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-fasilitas-staff",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-fasilitas-staff-360.png",
+        "viewport-wo-demo-fasilitas-staff-390.png",
+        "viewport-wo-demo-fasilitas-staff-430.png",
+        "viewport-wo-demo-fasilitas-staff-768.png",
+        "viewport-wo-demo-fasilitas-staff-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-fasilitas-staff",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "WO-STAFF-daycare",
+      "description": "Facility staff acknowledges unit daycare",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open ticket after supervisor decision",
+        "Approve facility receipt"
+      ],
+      "expected": "Facility receipt recorded by a separate actor",
+      "status": "PASS",
+      "evidence": [
+        "staff-daycare-after.png"
+      ],
+      "actual": "Facility acknowledgement saved"
+    },
+    {
+      "id": "WO-STAFF-sd",
+      "description": "Facility staff acknowledges unit sd",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open ticket after supervisor decision",
+        "Approve facility receipt"
+      ],
+      "expected": "Facility receipt recorded by a separate actor",
+      "status": "PASS",
+      "evidence": [
+        "staff-sd-after.png"
+      ],
+      "actual": "Facility acknowledgement saved"
+    },
+    {
+      "id": "WO-STAFF-smp",
+      "description": "Facility staff acknowledges unit smp",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open ticket after supervisor decision",
+        "Approve facility receipt"
+      ],
+      "expected": "Facility receipt recorded by a separate actor",
+      "status": "PASS",
+      "evidence": [
+        "staff-smp-after.png"
+      ],
+      "actual": "Facility acknowledgement saved"
+    },
+    {
+      "id": "WO-STAFF-sma",
+      "description": "Facility staff acknowledges unit sma",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open ticket after supervisor decision",
+        "Approve facility receipt"
+      ],
+      "expected": "Facility receipt recorded by a separate actor",
+      "status": "PASS",
+      "evidence": [
+        "staff-sma-after.png"
+      ],
+      "actual": "Facility acknowledgement saved"
+    },
+    {
+      "id": "WO-STAFF-tbu",
+      "description": "Facility staff acknowledges unit tbu",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open ticket after supervisor decision",
+        "Approve facility receipt"
+      ],
+      "expected": "Facility receipt recorded by a separate actor",
+      "status": "PASS",
+      "evidence": [
+        "staff-tbu-after.png"
+      ],
+      "actual": "Facility acknowledgement saved"
+    },
+    {
+      "id": "WO-STAFF-adm",
+      "description": "Facility staff acknowledges unit adm",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open ticket after supervisor decision",
+        "Approve facility receipt"
+      ],
+      "expected": "Facility receipt recorded by a separate actor",
+      "status": "PASS",
+      "evidence": [
+        "staff-adm-after.png"
+      ],
+      "actual": "Facility acknowledgement saved"
+    },
+    {
+      "id": "LOGOUT-wo-demo-fasilitas-staff",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-fasilitas-spv",
+      "description": "Normal login for wo.demo.fasilitas.spv",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-fasilitas-spv.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-fasilitas-spv",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-fasilitas-spv-360.png",
+        "viewport-wo-demo-fasilitas-spv-390.png",
+        "viewport-wo-demo-fasilitas-spv-430.png",
+        "viewport-wo-demo-fasilitas-spv-768.png",
+        "viewport-wo-demo-fasilitas-spv-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-fasilitas-spv",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "WO-SUPERVISOR-daycare",
+      "description": "Facility supervisor examines unit daycare",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open ticket",
+        "Approve supervisor gate"
+      ],
+      "expected": "Supervisor decision recorded",
+      "status": "PASS",
+      "evidence": [
+        "supervisor-daycare-after.png"
+      ],
+      "actual": "Supervisor decision saved"
+    },
+    {
+      "id": "WO-SUPERVISOR-sd",
+      "description": "Facility supervisor examines unit sd",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open ticket",
+        "Approve supervisor gate"
+      ],
+      "expected": "Supervisor decision recorded",
+      "status": "PASS",
+      "evidence": [
+        "supervisor-sd-after.png"
+      ],
+      "actual": "Supervisor decision saved"
+    },
+    {
+      "id": "WO-SUPERVISOR-smp",
+      "description": "Facility supervisor examines unit smp",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open ticket",
+        "Approve supervisor gate"
+      ],
+      "expected": "Supervisor decision recorded",
+      "status": "PASS",
+      "evidence": [
+        "supervisor-smp-after.png"
+      ],
+      "actual": "Supervisor decision saved"
+    },
+    {
+      "id": "WO-SUPERVISOR-sma",
+      "description": "Facility supervisor examines unit sma",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open ticket",
+        "Approve supervisor gate"
+      ],
+      "expected": "Supervisor decision recorded",
+      "status": "PASS",
+      "evidence": [
+        "supervisor-sma-after.png"
+      ],
+      "actual": "Supervisor decision saved"
+    },
+    {
+      "id": "WO-SUPERVISOR-tbu",
+      "description": "Facility supervisor examines unit tbu",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open ticket",
+        "Approve supervisor gate"
+      ],
+      "expected": "Supervisor decision recorded",
+      "status": "PASS",
+      "evidence": [
+        "supervisor-tbu-after.png"
+      ],
+      "actual": "Supervisor decision saved"
+    },
+    {
+      "id": "WO-SUPERVISOR-adm",
+      "description": "Facility supervisor examines unit adm",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open ticket",
+        "Approve supervisor gate"
+      ],
+      "expected": "Supervisor decision recorded",
+      "status": "PASS",
+      "evidence": [
+        "supervisor-adm-after.png"
+      ],
+      "actual": "Supervisor decision saved"
+    },
+    {
+      "id": "WO-DISPATCH",
+      "description": "Assign a central technician to SD",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open SD ticket",
+        "Assign technician and SLA priority"
+      ],
+      "expected": "Ticket is triaged and assigned to a different user",
+      "status": "PASS",
+      "evidence": [
+        "work-order-dispatched.png"
+      ],
+      "actual": "atakan layak pakai\nBelum\nPersetujuan & Riwayat Revisi\nSeluruh keputusan\nRevisi\n1\nID estimasi disetujui\n-\nTahap\nDiketahui Atasan Pelapor\nKeputusan\nDisetujui\nOleh\nDemo Atasan Unit SD\nWaktu\nNov 4, 2026 14:30:32\nDigantikan revisi\nAktif\nCatatan / alasan\nSynthetic browser approval by separate authorized account\nRevisi\n1\nID estimasi disetujui\n-\nTahap\nDiterima Staf Fasilitas\nKeputusan\nDisetujui\nOleh\nDemo Staf Fasilitas\nWaktu\nNov 4, 2026 14:31:49\nDigantikan revisi\nAktif\nCatatan / alasan\nSynthetic browser approval by separate authorized account\nRevisi\n1\nID estimasi disetujui\n-\nTahap\nPengesahan Manager Fasilitas\nKeputusan\nMenunggu\nOleh\n-\nWaktu\n-\nDigantikan revisi\nAktif\nCatatan / alasan\nRevisi\n1\nID estimasi disetujui\n-\nTahap\nDitinjau Supervisor Fasilitas\nKeputusan\nDisetujui\nOleh\nDemo Supervisor Fasilitas\nWaktu\nNov 4, 2026 14:32:04\nDigantikan revisi\nAktif\nCatatan / alasan\nSynthetic browser approval by separate authorized account\nPengiriman ulang\nAset terkait\nAssets\nPercakapan\nKomentar\nSemua Lampiran\n\nLampiran awal dan lampiran komentar. Foto/PDF dibuka privat; gunakan tautan unduh bila ingin menyimpan file.\n\nAudit Override Hierarki\nAudit perubahan\nPerluas menu\nPekerjaan disetujui dan ditugaskan"
+    },
+    {
+      "id": "LOGOUT-wo-demo-fasilitas-spv",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-teknisi-petugas",
+      "description": "Normal login for wo.demo.teknisi.petugas",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-teknisi-petugas.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-teknisi-petugas",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-teknisi-petugas-360.png",
+        "viewport-wo-demo-teknisi-petugas-390.png",
+        "viewport-wo-demo-teknisi-petugas-430.png",
+        "viewport-wo-demo-teknisi-petugas-768.png",
+        "viewport-wo-demo-teknisi-petugas-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-teknisi-petugas",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "WO-TECH-ACCEPT",
+      "description": "Central technician accepts SD work",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open assigned ticket",
+        "Confirm acceptance"
+      ],
+      "expected": "Status changes to in progress",
+      "status": "PASS",
+      "evidence": [
+        "technician-accepted.png"
+      ],
+      "actual": "Work started"
+    },
+    {
+      "id": "WO-TECH-FINISH",
+      "description": "Technician records completed work",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter diagnosis and work",
+        "Select completed outcome",
+        "Submit"
+      ],
+      "expected": "Result waits for reporter verification",
+      "status": "PASS",
+      "evidence": [
+        "technician-finished.png"
+      ],
+      "actual": "Awaiting reporter verification"
+    },
+    {
+      "id": "LOGOUT-wo-demo-teknisi-petugas",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-sarpras-sd",
+      "description": "Normal login for sarpras.sd",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-sarpras-sd.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-sarpras-sd",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-sarpras-sd-360.png",
+        "viewport-sarpras-sd-390.png",
+        "viewport-sarpras-sd-430.png",
+        "viewport-sarpras-sd-768.png",
+        "viewport-sarpras-sd-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-sarpras-sd",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "WO-REPORTER-VERIFY",
+      "description": "Reporter verifies completed work",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open SD ticket using reporter account",
+        "Accept result"
+      ],
+      "expected": "Verification saved by original reporter",
+      "status": "PASS",
+      "evidence": [
+        "reporter-verified.png"
+      ],
+      "actual": "Verification submitted"
+    },
+    {
+      "id": "LOAN-BROWSER-SUBMIT",
+      "description": "Request three items from stock ten",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open quick loan",
+        "Choose stock10",
+        "Set quantity3",
+        "Enter purpose",
+        "Submit"
+      ],
+      "expected": "Submitted loan with three items and success feedback",
+      "status": "PASS",
+      "evidence": [
+        "loan-three-before.png",
+        "loan-three-after.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin/activity/01a1a579-59b5-717a-b13b-d2fbf1225c62",
+        "requested": 3
+      }
+    },
+    {
+      "id": "SEC-IDOR",
+      "description": "Deny cross-unit ticket access",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Navigate directly to SMA ticket as SD requester"
+      ],
+      "expected": "404 or403 without other unit ticket content",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "status": 404
+      }
+    },
+    {
+      "id": "SEC-CSRF",
+      "description": "Reject missing CSRF and modified Livewire snapshot",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Load authenticated dashboard",
+        "POST without CSRF",
+        "POST modified snapshot with valid CSRF"
+      ],
+      "expected": "Both requests return419",
+      "status": "PASS",
+      "evidence": [],
+      "actual": [
+        419,
+        419
+      ]
+    },
+    {
+      "id": "REPORT-sarpras-sd",
+      "description": "Create operational damage report as sarpras.sd",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open create form",
+        "Check required validation",
+        "Select category and describe defect",
+        "Submit"
+      ],
+      "expected": "New ticket saved through browser form",
+      "status": "PASS",
+      "evidence": [
+        "ticket-sarpras-sd-before.png",
+        "ticket-sarpras-sd-after.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin/tiket/01a1a579-5fbd-723c-a136-aff24a1ca9f3",
+        "validation": "required fields rejected before valid submit"
+      }
+    },
+    {
+      "id": "LOGOUT-sarpras-sd",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-fasilitas-manager",
+      "description": "Normal login for wo.demo.fasilitas.manager",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-fasilitas-manager.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-fasilitas-manager",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-fasilitas-manager-360.png",
+        "viewport-wo-demo-fasilitas-manager-390.png",
+        "viewport-wo-demo-fasilitas-manager-430.png",
+        "viewport-wo-demo-fasilitas-manager-768.png",
+        "viewport-wo-demo-fasilitas-manager-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-fasilitas-manager",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "WO-MANAGER-FINAL",
+      "description": "Manager final approval",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open verified SD ticket",
+        "Approve final checkpoint"
+      ],
+      "expected": "Manager approval is recorded after reporter verification",
+      "status": "PASS",
+      "evidence": [
+        "manager-final-approved.png"
+      ],
+      "actual": "Final checkpoint approved"
+    },
+    {
+      "id": "WO-MANAGER-CLOSE",
+      "description": "Manager closes the verified Work Order",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open close modal",
+        "Confirm physical safety",
+        "Submit"
+      ],
+      "expected": "Work Order closed with retained audit history",
+      "status": "PASS",
+      "evidence": [
+        "manager-closed.png"
+      ],
+      "actual": "i\nclosed\nDisetujui oleh\nDemo Supervisor Fasilitas\nDiterima petugas\n04 Nov 2026 14:32\nPerawatan / Perbaikan V3\nDisetujui oleh\nDemo Supervisor Fasilitas\nWaktu persetujuan\nNov 4, 2026 14:32:12\nDiterima teknisi\nDemo Teknisi\nDiterima pada\nNov 4, 2026 14:32:19\nDeadline respons\nNov 4, 2026 16:29:22\nDeadline perbaikan\nNov 5, 2026 13:30:00\nAnalisis masalah\nSynthetic damaged connection found\nTindakan perbaikan\nSynthetic connection repaired and physically checked\nHasil pekerjaan\ncomplete\nPekerjaan selesai pada\nNov 4, 2026 14:32:21\nMaterial / Sparepart\nDiverifikasi oleh\nSarpras SD\nVerifikasi pada\nNov 4, 2026 14:32:34\nDisahkan oleh\nDemo Manager Fasilitas\nPengesahan akhir\nNov 4, 2026 14:32:50\nDinyatakan layak pakai\nNov 4, 2026 14:32:50\nPersetujuan & Riwayat Revisi\nSeluruh keputusan\nRevisi\n1\nID estimasi disetujui\n-\nTahap\nDiketahui Atasan Pelapor\nKeputusan\nDisetujui\nOleh\nDemo Atasan Unit SD\nWaktu\nNov 4, 2026 14:30:32\nDigantikan revisi\nAktif\nCatatan / alasan\nSynthetic browser approval by separate authorized account\nRevisi\n1\nID estimasi disetujui\n-\nTahap\nDiterima Staf Fasilitas\nKeputusan\nDisetujui\nOleh\nDemo Staf Fasilitas\nWaktu\nNov 4, 2026 14:31:49\nDigantikan revisi\nAktif\nCatatan / alasan\nSynthetic browser approval by separate authorized account\nRevisi\n1\nID estimasi disetujui\n-\nTahap\nPengesahan Manager Fasilitas\nKeputusan\nDisetujui\nOleh\nDemo Manager Fasilitas\nWaktu\nNov 4, 2026 14:32:49\nDigantikan revisi\nAktif\nCatatan / alasan\nSynthetic browser approval by separate authorized account\nRevisi\n1\nID estimasi disetujui\n-\nTahap\nDitinjau Supervisor Fasilitas\nKeputusan\nDisetujui\nOleh\nDemo Supervisor Fasilitas\nWaktu\nNov 4, 2026 14:32:04\nDigantikan revisi\nAktif\nCatatan / alasan\nSynthetic browser approval by separate authorized account\nPengiriman ulang\nAset terkait\nAssets\nPercakapan\nKomentar\nSemua Lampiran\n\nLampiran awal dan lampiran komentar. Foto/PDF dibuka privat; gunakan tautan unduh bila ingin menyimpan file.\n\nAudit Override Hierarki\nAudit perubahan\nPerluas menu\nKeputusan Work Order dicatat"
+    },
+    {
+      "id": "WO-PDF",
+      "description": "Download authorized Work Order PDF",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open PDF link with browser authenticated request"
+      ],
+      "expected": "PDF200 and PDF signature",
+      "status": "PASS",
+      "evidence": [
+        "work-order-browser-authorized.pdf"
+      ],
+      "actual": {
+        "status": 200,
+        "bytes": 882329
+      }
+    },
+    {
+      "id": "LOGOUT-wo-demo-fasilitas-manager",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-fasilitas",
+      "description": "Normal login for fasilitas",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-fasilitas.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-fasilitas",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-fasilitas-360.png",
+        "viewport-fasilitas-390.png",
+        "viewport-fasilitas-430.png",
+        "viewport-fasilitas-768.png",
+        "viewport-fasilitas-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-fasilitas",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "REPORT-fasilitas",
+      "description": "Create operational damage report as fasilitas",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open create form",
+        "Check required validation",
+        "Select category and describe defect",
+        "Submit"
+      ],
+      "expected": "New ticket saved through browser form",
+      "status": "PASS",
+      "evidence": [
+        "ticket-fasilitas-before.png",
+        "ticket-fasilitas-after.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin/tiket/01a1a579-c640-7144-b079-9b040f4321a6",
+        "validation": "required fields rejected before valid submit"
+      }
+    },
+    {
+      "id": "LOGOUT-fasilitas",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-sarpras-daycare",
+      "description": "Normal login for sarpras.daycare",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-sarpras-daycare.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-sarpras-daycare",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-sarpras-daycare-360.png",
+        "viewport-sarpras-daycare-390.png",
+        "viewport-sarpras-daycare-430.png",
+        "viewport-sarpras-daycare-768.png",
+        "viewport-sarpras-daycare-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-sarpras-daycare",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "REPORT-sarpras-daycare",
+      "description": "Create operational damage report as sarpras.daycare",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open create form",
+        "Check required validation",
+        "Select category and describe defect",
+        "Submit"
+      ],
+      "expected": "New ticket saved through browser form",
+      "status": "PASS",
+      "evidence": [
+        "ticket-sarpras-daycare-before.png",
+        "ticket-sarpras-daycare-after.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin/tiket/01a1a579-ff57-70a0-80aa-95611a7e4251",
+        "validation": "required fields rejected before valid submit"
+      }
+    },
+    {
+      "id": "LOGOUT-sarpras-daycare",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-sarpras-smp",
+      "description": "Normal login for sarpras.smp",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-sarpras-smp.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-sarpras-smp",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-sarpras-smp-360.png",
+        "viewport-sarpras-smp-390.png",
+        "viewport-sarpras-smp-430.png",
+        "viewport-sarpras-smp-768.png",
+        "viewport-sarpras-smp-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-sarpras-smp",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "REPORT-sarpras-smp",
+      "description": "Create operational damage report as sarpras.smp",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open create form",
+        "Check required validation",
+        "Select category and describe defect",
+        "Submit"
+      ],
+      "expected": "New ticket saved through browser form",
+      "status": "PASS",
+      "evidence": [
+        "ticket-sarpras-smp-before.png",
+        "ticket-sarpras-smp-after.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin/tiket/01a1a57a-3acb-7270-9b21-f8ec033370ff",
+        "validation": "required fields rejected before valid submit"
+      }
+    },
+    {
+      "id": "LOGOUT-sarpras-smp",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-sarpras-sma",
+      "description": "Normal login for sarpras.sma",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-sarpras-sma.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-sarpras-sma",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-sarpras-sma-360.png",
+        "viewport-sarpras-sma-390.png",
+        "viewport-sarpras-sma-430.png",
+        "viewport-sarpras-sma-768.png",
+        "viewport-sarpras-sma-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-sarpras-sma",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "REPORT-sarpras-sma",
+      "description": "Create operational damage report as sarpras.sma",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open create form",
+        "Check required validation",
+        "Select category and describe defect",
+        "Submit"
+      ],
+      "expected": "New ticket saved through browser form",
+      "status": "PASS",
+      "evidence": [
+        "ticket-sarpras-sma-before.png",
+        "ticket-sarpras-sma-after.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin/tiket/01a1a57a-74a9-736e-bba6-a2937f9c6dc6",
+        "validation": "required fields rejected before valid submit"
+      }
+    },
+    {
+      "id": "LOGOUT-sarpras-sma",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-sarpras-tbu",
+      "description": "Normal login for sarpras.tbu",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-sarpras-tbu.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-sarpras-tbu",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-sarpras-tbu-360.png",
+        "viewport-sarpras-tbu-390.png",
+        "viewport-sarpras-tbu-430.png",
+        "viewport-sarpras-tbu-768.png",
+        "viewport-sarpras-tbu-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-sarpras-tbu",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "REPORT-sarpras-tbu",
+      "description": "Create operational damage report as sarpras.tbu",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open create form",
+        "Check required validation",
+        "Select category and describe defect",
+        "Submit"
+      ],
+      "expected": "New ticket saved through browser form",
+      "status": "PASS",
+      "evidence": [
+        "ticket-sarpras-tbu-before.png",
+        "ticket-sarpras-tbu-after.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin/tiket/01a1a57a-afb7-7259-8454-d1c6842ebac7",
+        "validation": "required fields rejected before valid submit"
+      }
+    },
+    {
+      "id": "LOGOUT-sarpras-tbu",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-sarpras-adm",
+      "description": "Normal login for sarpras.adm",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-sarpras-adm.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-sarpras-adm",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-sarpras-adm-360.png",
+        "viewport-sarpras-adm-390.png",
+        "viewport-sarpras-adm-430.png",
+        "viewport-sarpras-adm-768.png",
+        "viewport-sarpras-adm-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-sarpras-adm",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "REPORT-sarpras-adm",
+      "description": "Create operational damage report as sarpras.adm",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open create form",
+        "Check required validation",
+        "Select category and describe defect",
+        "Submit"
+      ],
+      "expected": "New ticket saved through browser form",
+      "status": "PASS",
+      "evidence": [
+        "ticket-sarpras-adm-before.png",
+        "ticket-sarpras-adm-after.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin/tiket/01a1a57a-eb8e-716f-a71d-6988a56e3b93",
+        "validation": "required fields rejected before valid submit"
+      }
+    },
+    {
+      "id": "LOGOUT-sarpras-adm",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-it-staff",
+      "description": "Normal login for wo.demo.it.staff",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-it-staff.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-it-staff",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-it-staff-360.png",
+        "viewport-wo-demo-it-staff-390.png",
+        "viewport-wo-demo-it-staff-430.png",
+        "viewport-wo-demo-it-staff-768.png",
+        "viewport-wo-demo-it-staff-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-it-staff",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "COLLAB-wo-demo-it-staff",
+      "description": "Authorized ticket collaboration as wo.demo.it.staff",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open visible ticket",
+        "Add operational comment",
+        "Read success notification"
+      ],
+      "expected": "Comment saved within actual visibility scope",
+      "status": "PASS",
+      "evidence": [
+        "comment-wo-demo-it-staff-before.png",
+        "comment-wo-demo-it-staff-after.png"
+      ],
+      "actual": "Comment persisted and success notification rendered"
+    },
+    {
+      "id": "LOGOUT-wo-demo-it-staff",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-it-spv",
+      "description": "Normal login for wo.demo.it.spv",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-it-spv.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-it-spv",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-it-spv-360.png",
+        "viewport-wo-demo-it-spv-390.png",
+        "viewport-wo-demo-it-spv-430.png",
+        "viewport-wo-demo-it-spv-768.png",
+        "viewport-wo-demo-it-spv-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-it-spv",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "COLLAB-wo-demo-it-spv",
+      "description": "Authorized ticket collaboration as wo.demo.it.spv",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open visible ticket",
+        "Add operational comment",
+        "Read success notification"
+      ],
+      "expected": "Comment saved within actual visibility scope",
+      "status": "PASS",
+      "evidence": [
+        "comment-wo-demo-it-spv-before.png",
+        "comment-wo-demo-it-spv-after.png"
+      ],
+      "actual": "Comment persisted and success notification rendered"
+    },
+    {
+      "id": "LOGOUT-wo-demo-it-spv",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-perpustakaan-staff",
+      "description": "Normal login for wo.demo.perpustakaan.staff",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-perpustakaan-staff.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-perpustakaan-staff",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-perpustakaan-staff-360.png",
+        "viewport-wo-demo-perpustakaan-staff-390.png",
+        "viewport-wo-demo-perpustakaan-staff-430.png",
+        "viewport-wo-demo-perpustakaan-staff-768.png",
+        "viewport-wo-demo-perpustakaan-staff-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-perpustakaan-staff",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "COLLAB-wo-demo-perpustakaan-staff",
+      "description": "Authorized ticket collaboration as wo.demo.perpustakaan.staff",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open visible ticket",
+        "Add operational comment",
+        "Read success notification"
+      ],
+      "expected": "Comment saved within actual visibility scope",
+      "status": "PASS",
+      "evidence": [
+        "comment-wo-demo-perpustakaan-staff-before.png",
+        "comment-wo-demo-perpustakaan-staff-after.png"
+      ],
+      "actual": "Comment persisted and success notification rendered"
+    },
+    {
+      "id": "LOGOUT-wo-demo-perpustakaan-staff",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-perpustakaan-spv",
+      "description": "Normal login for wo.demo.perpustakaan.spv",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-perpustakaan-spv.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-perpustakaan-spv",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-perpustakaan-spv-360.png",
+        "viewport-wo-demo-perpustakaan-spv-390.png",
+        "viewport-wo-demo-perpustakaan-spv-430.png",
+        "viewport-wo-demo-perpustakaan-spv-768.png",
+        "viewport-wo-demo-perpustakaan-spv-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-perpustakaan-spv",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "COLLAB-wo-demo-perpustakaan-spv",
+      "description": "Authorized ticket collaboration as wo.demo.perpustakaan.spv",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open visible ticket",
+        "Add operational comment",
+        "Read success notification"
+      ],
+      "expected": "Comment saved within actual visibility scope",
+      "status": "PASS",
+      "evidence": [
+        "comment-wo-demo-perpustakaan-spv-before.png",
+        "comment-wo-demo-perpustakaan-spv-after.png"
+      ],
+      "actual": "Comment persisted and success notification rendered"
+    },
+    {
+      "id": "LOGOUT-wo-demo-perpustakaan-spv",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-wo-demo-teknisi-koordinator",
+      "description": "Normal login for wo.demo.teknisi.koordinator",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-wo-demo-teknisi-koordinator.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-wo-demo-teknisi-koordinator",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-wo-demo-teknisi-koordinator-360.png",
+        "viewport-wo-demo-teknisi-koordinator-390.png",
+        "viewport-wo-demo-teknisi-koordinator-430.png",
+        "viewport-wo-demo-teknisi-koordinator-768.png",
+        "viewport-wo-demo-teknisi-koordinator-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-wo-demo-teknisi-koordinator",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "COLLAB-wo-demo-teknisi-koordinator",
+      "description": "Authorized ticket collaboration as wo.demo.teknisi.koordinator",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open visible ticket",
+        "Add operational comment",
+        "Read success notification"
+      ],
+      "expected": "Comment saved within actual visibility scope",
+      "status": "PASS",
+      "evidence": [
+        "comment-wo-demo-teknisi-koordinator-before.png",
+        "comment-wo-demo-teknisi-koordinator-after.png"
+      ],
+      "actual": "Comment persisted and success notification rendered"
+    },
+    {
+      "id": "LOGOUT-wo-demo-teknisi-koordinator",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-qa-employee",
+      "description": "Normal login for qa.employee",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Account denied without dashboard",
+      "status": "PASS",
+      "evidence": [
+        "denied-qa-employee.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin/login",
+        "expectedAccess": false
+      }
+    },
+    {
+      "id": "AUTH-qa-disabled",
+      "description": "Normal login for qa.disabled",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Account denied without dashboard",
+      "status": "PASS",
+      "evidence": [
+        "denied-qa-disabled.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin/login",
+        "expectedAccess": false
+      }
+    },
+    {
+      "id": "AUTH-qa-multi",
+      "description": "Normal login for qa.multi",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-qa-multi.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-qa-multi",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-qa-multi-360.png",
+        "viewport-qa-multi-390.png",
+        "viewport-qa-multi-430.png",
+        "viewport-qa-multi-768.png",
+        "viewport-qa-multi-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-qa-multi",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "REPORT-qa-multi",
+      "description": "Create operational damage report as qa.multi",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open create form",
+        "Check required validation",
+        "Select category and describe defect",
+        "Submit"
+      ],
+      "expected": "New ticket saved through browser form",
+      "status": "PASS",
+      "evidence": [
+        "ticket-qa-multi-before.png",
+        "ticket-qa-multi-after.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin/tiket/01a1a57c-c11a-7245-b1eb-1b94949c5ee6",
+        "validation": "required fields rejected before valid submit"
+      }
+    },
+    {
+      "id": "COLLAB-qa-multi",
+      "description": "Authorized ticket collaboration as qa.multi",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open visible ticket",
+        "Add operational comment",
+        "Read success notification"
+      ],
+      "expected": "Comment saved within actual visibility scope",
+      "status": "PASS",
+      "evidence": [
+        "comment-qa-multi-before.png",
+        "comment-qa-multi-after.png"
+      ],
+      "actual": "Comment persisted and success notification rendered"
+    },
+    {
+      "id": "LOGOUT-qa-multi",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    },
+    {
+      "id": "AUTH-qa-driver",
+      "description": "Normal login for qa.driver",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Account denied without dashboard",
+      "status": "PASS",
+      "evidence": [
+        "denied-qa-driver.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin/login",
+        "expectedAccess": false
+      }
+    },
+    {
+      "id": "AUTH-qa-security",
+      "description": "Normal login for qa.security",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Enter synthetic credentials",
+        "Wait for official test widget",
+        "Submit login"
+      ],
+      "expected": "Authenticated dashboard",
+      "status": "PASS",
+      "evidence": [
+        "dashboard-qa-security.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin",
+        "expectedAccess": true
+      }
+    },
+    {
+      "id": "VIEW-qa-security",
+      "description": "Role dashboard at five viewport widths",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Resize to 360,390,430,768,1366",
+        "Measure page width",
+        "Capture screenshots"
+      ],
+      "expected": "No document horizontal overflow and dashboard readable",
+      "status": "PASS",
+      "evidence": [
+        "viewport-qa-security-360.png",
+        "viewport-qa-security-390.png",
+        "viewport-qa-security-430.png",
+        "viewport-qa-security-768.png",
+        "viewport-qa-security-1366.png"
+      ],
+      "actual": [
+        {
+          "viewport": 360,
+          "document": 360,
+          "body": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390,
+          "body": 390
+        },
+        {
+          "viewport": 430,
+          "document": 430,
+          "body": 430
+        },
+        {
+          "viewport": 768,
+          "document": 768,
+          "body": 768
+        },
+        {
+          "viewport": 1366,
+          "document": 1366,
+          "body": 1366
+        }
+      ]
+    },
+    {
+      "id": "SESSION-qa-security",
+      "description": "Refresh, multiple tabs, and live session",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Reload dashboard",
+        "Open second tab in same browser context",
+        "Open notifications"
+      ],
+      "expected": "Both tabs stay authenticated and notifications open",
+      "status": "PASS",
+      "evidence": [],
+      "actual": {
+        "tabs": 2,
+        "refresh": true
+      }
+    },
+    {
+      "id": "REPORT-qa-security",
+      "description": "Create operational damage report as qa.security",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open create form",
+        "Check required validation",
+        "Select category and describe defect",
+        "Submit"
+      ],
+      "expected": "New ticket saved through browser form",
+      "status": "PASS",
+      "evidence": [
+        "ticket-qa-security-before.png",
+        "ticket-qa-security-after.png"
+      ],
+      "actual": {
+        "url": "http://127.0.0.1:8876/admin/tiket/01a1a57d-3560-71ab-8d81-70e40e11fc80",
+        "validation": "required fields rejected before valid submit"
+      }
+    },
+    {
+      "id": "LOGOUT-qa-security",
+      "description": "Normal logout",
+      "preconditions": "Isolated QA organization seeded with actual roles and published synthetic workflow",
+      "steps": [
+        "Open user menu",
+        "Click logout",
+        "Reload protected page"
+      ],
+      "expected": "Login page shown and dashboard no longer accessible",
+      "status": "PASS",
+      "evidence": [],
+      "actual": "Logout invalidated authenticated browser session"
+    }
+  ],
+  "coverage": [
+    {
+      "username": "admin",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.unit.daycare.atasan",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.unit.sd.atasan",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.unit.smp.atasan",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.unit.sma.atasan",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.unit.tbu.atasan",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.unit.adm.atasan",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.fasilitas.staff",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.fasilitas.spv",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.teknisi.petugas",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "sarpras.sd",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [
+        {
+          "path": "/admin/tiket/01a1a576-6568-7286-a75f-c18aad1c11bb",
+          "status": 404
+        },
+        {
+          "path": "/livewire/update",
+          "status": 419
+        },
+        {
+          "path": "/livewire/update",
+          "status": 419
+        }
+      ],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.fasilitas.manager",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "fasilitas",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "sarpras.daycare",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "sarpras.smp",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "sarpras.sma",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "sarpras.tbu",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "sarpras.adm",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.it.staff",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.it.spv",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.perpustakaan.staff",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.perpustakaan.spv",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "wo.demo.teknisi.koordinator",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "qa.employee",
+      "expectedAccess": false,
+      "authenticated": false,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "qa.disabled",
+      "expectedAccess": false,
+      "authenticated": false,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "qa.multi",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "qa.driver",
+      "expectedAccess": false,
+      "authenticated": false,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    },
+    {
+      "username": "qa.security",
+      "expectedAccess": true,
+      "authenticated": true,
+      "javascriptErrors": [],
+      "httpErrors": [],
+      "fullRoleUat": false,
+      "note": "Individual scenarios carry evidence; complete role certification requires all relevant transaction paths"
+    }
+  ]
+}

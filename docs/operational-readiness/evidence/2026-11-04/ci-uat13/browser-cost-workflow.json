@@ -1,0 +1,121 @@
+{
+  "scope": "real browser workflow edit/publication, estimate revision and distinct-actor approval",
+  "results": [
+    {
+      "id": "COST-WORKFLOW-EDIT",
+      "description": "COST-WORKFLOW-EDIT",
+      "preconditions": "Synthetic SD unit workflow cloned from existing titles/permissions, with explicit estimate approval; no new authority grants",
+      "steps": [
+        "Use normal login",
+        "Operate actual Filament form/modal",
+        "Inspect persisted version and distinct approver"
+      ],
+      "expected": "Draft workflow form saves explicit budget-review stage",
+      "status": "PASS",
+      "evidence": [
+        "COST-WORKFLOW-EDIT.png"
+      ],
+      "actual": "Draft edited through form; estimate toggle remains enabled"
+    },
+    {
+      "id": "COST-WORKFLOW-PUBLISH",
+      "description": "COST-WORKFLOW-PUBLISH",
+      "preconditions": "Synthetic SD unit workflow cloned from existing titles/permissions, with explicit estimate approval; no new authority grants",
+      "steps": [
+        "Use normal login",
+        "Operate actual Filament form/modal",
+        "Inspect persisted version and distinct approver"
+      ],
+      "expected": "Only admin publishes validated draft",
+      "status": "PASS",
+      "evidence": [
+        "COST-WORKFLOW-PUBLISH.png"
+      ],
+      "actual": "Published via confirmation modal"
+    },
+    {
+      "id": "COST-ESTIMATE-V1",
+      "description": "COST-ESTIMATE-V1",
+      "preconditions": "Synthetic SD unit workflow cloned from existing titles/permissions, with explicit estimate approval; no new authority grants",
+      "steps": [
+        "Use normal login",
+        "Operate actual Filament form/modal",
+        "Inspect persisted version and distinct approver"
+      ],
+      "expected": "Version 1 is recorded immutably with vendor and amount",
+      "status": "PASS",
+      "evidence": [
+        "COST-ESTIMATE-V1.png"
+      ],
+      "actual": {
+        "version": 1,
+        "amount": "2500000",
+        "recorderCannotApproveThisCheckpoint": true
+      }
+    },
+    {
+      "id": "COST-ESTIMATE-V2",
+      "description": "COST-ESTIMATE-V2",
+      "preconditions": "Synthetic SD unit workflow cloned from existing titles/permissions, with explicit estimate approval; no new authority grants",
+      "steps": [
+        "Use normal login",
+        "Operate actual Filament form/modal",
+        "Inspect persisted version and distinct approver"
+      ],
+      "expected": "Version 2 is recorded immutably with vendor and amount",
+      "status": "PASS",
+      "evidence": [
+        "COST-ESTIMATE-V2.png"
+      ],
+      "actual": {
+        "version": 2,
+        "amount": "2600000",
+        "recorderCannotApproveThisCheckpoint": true
+      }
+    },
+    {
+      "id": "COST-DISTINCT-APPROVAL",
+      "description": "COST-DISTINCT-APPROVAL",
+      "preconditions": "Synthetic SD unit workflow cloned from existing titles/permissions, with explicit estimate approval; no new authority grants",
+      "steps": [
+        "Use normal login",
+        "Operate actual Filament form/modal",
+        "Inspect persisted version and distinct approver"
+      ],
+      "expected": "Different actor approves exact latest estimate version",
+      "status": "PASS",
+      "evidence": [
+        "COST-DISTINCT-APPROVAL.png"
+      ],
+      "actual": {
+        "workflow": 2,
+        "old_ticket": "01a1a576-654b-7024-b0c7-98d573e5851d",
+        "old_workflow": 1,
+        "phase": "verified",
+        "ticket": "01a1a57e-f7e9-70b2-839c-1b2eb49d9df8",
+        "quotes": [
+          {
+            "id": 1,
+            "version": 1,
+            "amount": "2500000",
+            "recorded_by": 9
+          },
+          {
+            "id": 2,
+            "version": 2,
+            "amount": "2600000",
+            "recorded_by": 9
+          }
+        ],
+        "approval": {
+          "status": "approved",
+          "estimate_id": 2,
+          "decided_by": 19
+        },
+        "old_ticket_workflow_unchanged": true,
+        "pass": true,
+        "workflow_label": "Diketahui Atasan dan Biaya QA"
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "baseline": "81a966641888af4937da9cd1c02d4565a3f2b0cd",
+  "regression_before": "work-order-stale-ui-before.txt",
+  "regression_after": "work-order-stale-ui-after.txt",
+  "root_cause": "Service updates a separately locked model; ViewTicket retains stale record until reload",
+  "browser_status": "triaged",
+  "accepted_at": "2026-11-04T03:06:06Z",
+  "database_status": "in_progress",
+  "browser_evidence": "WO-TECH-ACCEPT-error.png",
+  "severity": "P2"
+}

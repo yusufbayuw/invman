@@ -51,6 +51,15 @@ class ObserverBusinessFlowTest extends TestCase
         $this->assertSame(1, (int) $item->fresh()->available_quantity);
     }
 
+    public function test_master_edits_preserve_physical_instance_identity_and_qr_labels(): void
+    {
+        $item = G002M007Item::create(['name' => 'Laptop Lama', 'code' => 'INV-LAMA', 'quantity' => 2, 'is_borrowable' => true]);
+        $before = $item->item_instance()->orderBy('id')->get(['id', 'code', 'name'])->toArray();
+        $item->update(['name' => 'Laptop Baru', 'code' => 'INV-BARU']);
+        $this->assertSame($before, $item->item_instance()->orderBy('id')->get(['id', 'code', 'name'])->toArray());
+        $this->assertSame('INV-BARU', $item->fresh()->code);
+    }
+
     public function test_master_quantity_cannot_be_changed_directly_after_creation(): void
     {
         $item = G002M007Item::query()->create([

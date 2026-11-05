@@ -1,0 +1,10 @@
+PHPUnit 11.5.57 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.14
+Configuration: D:\herd\invman\output\operational-uat-runtime\app\phpunit.xml
+
+............                                                      12 / 12 (100%)
+
+Time: 00:05.600, Memory: 82.00 MB
+
+OK (12 tests, 60 assertions)

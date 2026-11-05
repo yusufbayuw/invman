@@ -376,7 +376,7 @@ class TicketMaintenanceService
             if ($overrideReason !== null) {
                 app(HierarchyOverrideService::class)->record($manager, null, 'ticket', $locked->id,
                     'close_work', $overrideReason, 'resolved', 'closed',
-                    ['asset_released' => $safe, 'self_approval' => $locked->reporter_id === $manager->id]);
+                    ['asset_released' => $safe, 'self_approval' => $locked->reporter_id === $manager->id || $locked->assigned_to === $manager->id]);
             }
             if ($safe) {
                 $this->restorePreviouslyDamagedAssets($locked);
@@ -428,8 +428,12 @@ class TicketMaintenanceService
             if (! in_array($locked->status, ['open', 'triaged'], true) || $case->accepted_at) {
                 $this->reject('Pekerjaan yang telah dimulai tidak dapat dibatalkan secara langsung.');
             }
+            if ($case->asset_hold_at && ! $case->asset_released_at) {
+                $this->reject('Tiket dengan safety hold harus diselesaikan melalui pemeriksaan dan pengesahan kelayakan aset sebelum dapat dibatalkan.');
+            }
             $locked->forceFill(['status' => 'cancelled'])->save();
-            $case->forceFill(['asset_released_at' => now(), 'asset_released_by' => $manager->id])->save();
+            // Administrative cancellation is not a physical safety inspection.
+            // Keep the existing hold until a separately verified repair releases it.
             $this->record($locked, $manager, 'maintenance_cancelled', null, 'cancelled', $notes);
         }, 3);
     }

@@ -58,6 +58,7 @@ class PublicPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                \App\Http\Middleware\EnsureAccountEnabled::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,
@@ -66,3 +67,4 @@ class PublicPanelProvider extends PanelProvider
             ]);
     }
 }
+

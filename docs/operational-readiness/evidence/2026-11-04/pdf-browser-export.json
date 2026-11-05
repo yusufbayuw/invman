@@ -1,0 +1,15 @@
+{
+  "normalLogin": true,
+  "results": [
+    {
+      "file": "hierarchy-browser.pdf",
+      "status": 200,
+      "bytes": 884125
+    },
+    {
+      "file": "work-order-pdf-after.pdf",
+      "status": 200,
+      "bytes": 882365
+    }
+  ]
+}

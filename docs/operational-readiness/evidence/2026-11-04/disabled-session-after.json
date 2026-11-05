@@ -1,0 +1,9 @@
+{
+  "phase": "after",
+  "baseline": "candidate with panel session guard fix",
+  "disabledResponse": 403,
+  "afterReenableResponse": 200,
+  "afterReenablePath": "/admin/login",
+  "oldSessionResumedWithoutLogin": false,
+  "cookieValuesRecorded": false
+}

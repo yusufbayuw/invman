@@ -1,0 +1,28 @@
+{
+  "qaRuntimeExcludedFromGit": true,
+  "browser": "Microsoft Edge 156.0.4314.58",
+  "os": "Microsoft Windows NT 10.0.26300.0",
+  "logicalProcessors": 12,
+  "productionCredentialsUsed": false,
+  "physicalMemoryBytes": 16505966592,
+  "originalEnvironmentRead": false,
+  "workspaceDiskAvailableBytes": 308077711360,
+  "scope": "Isolated local QA host only; no production server inspected",
+  "http": "127.0.0.1:8876",
+  "packages": [
+    {
+      "name": "filament/filament",
+      "version": "v3.3.57"
+    },
+    {
+      "name": "laravel/framework",
+      "version": "v12.69.3"
+    },
+    {
+      "name": "livewire/livewire",
+      "version": "v3.8.10"
+    }
+  ],
+  "workspaceDiskTotalBytes": 1000186310656,
+  "php": "8.4.14"
+}

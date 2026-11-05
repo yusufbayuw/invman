@@ -74,7 +74,7 @@ class LoanHandoverDocumentService
         )->all();
 
         $status = ReservationStatus::tryFrom((string) $reservation->status);
-        $hasException = filled($checkout?->fallback_reason);
+        $hasException = filled($checkout?->fallback_reason) || filled($return?->fallback_reason);
         $complete = $checkout?->completed_at !== null && $return?->completed_at !== null;
 
         return [
@@ -96,6 +96,13 @@ class LoanHandoverDocumentService
             'returnEvidence' => $this->receipt($return, $actor, 'loan-return-receipts/'),
             'checkoutRows' => $checkoutRows,
             'returnRows' => $returnRows,
+            'overrides' => \App\Models\OperationalOverride::query()
+                ->where('entity_type', 'loan')->where('entity_id', $reservation->g004_m008_activity_id)
+                ->with(['actor', 'subject'])->orderBy('created_at')->orderBy('id')->get()
+                ->filter(fn ($entry) => isset($entry->details['reservation_id'])
+                    ? (string) $entry->details['reservation_id'] === (string) $reservation->getKey()
+                    : in_array($entry->action, ['save_draft_on_behalf', 'submit_on_behalf'], true))
+                ->values(),
             'generatedAt' => now(),
         ];
     }
@@ -117,6 +124,7 @@ class LoanHandoverDocumentService
             'notes' => $receipt->notes,
             'fallbackReason' => $receipt->fallback_reason,
             'odometer' => $receipt->checkout_odometer,
+            'returnOdometer' => $receipt->return_odometer,
             'proofImage' => $this->safeImage($receipt->proof_path, $folder),
             'hasProof' => filled($receipt->proof_path),
         ];

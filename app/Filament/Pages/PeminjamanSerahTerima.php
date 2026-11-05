@@ -128,6 +128,10 @@ class PeminjamanSerahTerima extends Page implements HasForms
             Forms\Components\FileUpload::make('photo')
                 ->label('Foto kondisi')->image()
                 ->directory('loan-return-checklists')->maxSize(5120),
+            ...($this->type === 'vehicle' ? [
+                Forms\Components\TextInput::make('return_odometer')
+                    ->label('Kilometer akhir (opsional)')->integer()->minValue(0),
+            ] : []),
             ...$common,
         ];
     }
@@ -270,9 +274,10 @@ class PeminjamanSerahTerima extends Page implements HasForms
                 ->icon('heroicon-o-exclamation-triangle')
                 ->color('warning')
                 ->visible(fn (): bool => $this->reservation()->status === ReservationStatus::Approved->value
+                    && $this->reservation()->outboundReceipt?->manager_confirmed_at !== null
                     && (auth()->user()?->managesReservation($this->reservation()) ?? false))
                 ->requiresConfirmation()
-                ->modalDescription('Hanya untuk kondisi khusus saat peminjam tidak dapat mengonfirmasi. Alasan akan disimpan permanen dalam bukti penyerahan.')
+                ->modalDescription('Catat kondisi awal terlebih dahulu. Pengecualian hanya menggantikan konfirmasi peminjam; alasan disimpan permanen.')
                 ->form([
                     Forms\Components\Textarea::make('reason')
                         ->label('Alasan pengecualian')

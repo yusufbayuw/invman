@@ -1,0 +1,76 @@
+{
+  "baseline": "e7b8b9ac3508ab67570c8c75bf9f2c86db844676",
+  "candidate": "4345107993ad1dd83d678789ae34ab6546fa8f1b",
+  "rawTrialsPreserved": true,
+  "notes": "Runner exceptions initially use BLOCKED pending diagnosis; confirmed product failures are classified below without rewriting raw trial evidence.",
+  "bugs": [
+    {
+      "id": "BUG-SESSION-01",
+      "severity": "P1",
+      "before": "FAIL",
+      "candidate": "FIXED; regression and candidate UAT CI passed at 4345107993ad1dd83d678789ae34ab6546fa8f1b",
+      "evidence": [
+        "disabled-session-before.json",
+        "disabled-session-after.json",
+        "disabled-session-regression-after.txt"
+      ]
+    },
+    {
+      "id": "BUG-WO-UI-01",
+      "severity": "P2",
+      "before": "FAIL",
+      "candidate": "FIXED; regression and candidate UAT CI passed at 4345107993ad1dd83d678789ae34ab6546fa8f1b",
+      "evidence": [
+        "work-order-stale-ui-before.txt",
+        "work-order-stale-ui-after.txt"
+      ]
+    },
+    {
+      "id": "BUG-WO-HEADER-01",
+      "severity": "P2",
+      "before": "FAIL",
+      "candidate": "FIXED; regression and candidate UAT CI passed at 4345107993ad1dd83d678789ae34ab6546fa8f1b",
+      "evidence": [
+        "hierarchy-header-before.json",
+        "hierarchy-header-before.png"
+      ]
+    },
+    {
+      "id": "BUG-PDF-ACTOR-01",
+      "severity": "P2",
+      "before": "FAIL",
+      "candidate": "FIXED; regression and candidate UAT CI passed at 4345107993ad1dd83d678789ae34ab6546fa8f1b",
+      "evidence": [
+        "pdf-override-regression-before.txt",
+        "pdf-override-regression-after.txt",
+        "pdf-qa.json"
+      ]
+    }
+  ],
+  "open": [
+    {
+      "id": "GAP-VEH-01",
+      "severity": "P2",
+      "status": "FAIL against requested feature",
+      "description": "No end-odometer input exists in the return form; business requirement/implementation decision pending."
+    },
+    {
+      "id": "AUDIT-TIMEZONE-01",
+      "severity": "P2",
+      "status": "BLOCKED for operational interpretation",
+      "description": "Audit timestamps default to DB time without retained timezone; QA DB/application displays differ. Stored history remains unchanged and PDF labels the limitation."
+    },
+    {
+      "id": "ENV-PHP83-RESET",
+      "severity": "P2",
+      "status": "BLOCKED for PHP8.3 browser certification",
+      "description": "One PHP8.3 FPM reset at item handover; no fatal app exception captured. New QA uses PHP8.4; this does not establish the root cause of the older failure."
+    },
+    {
+      "id": "UX-PWA-01",
+      "severity": "P2",
+      "status": "RECOMMENDATION",
+      "description": "Normal close action resolves banner covering CTA; no security bypass used."
+    }
+  ]
+}

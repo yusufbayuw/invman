@@ -26,10 +26,13 @@ class LoanHandoverReceipt extends Model
         'notes',
         'completed_at',
         'checkout_odometer',
+        'return_odometer',
         'fallback_reason',
     ];
 
     protected $casts = [
+        'checkout_odometer' => 'integer',
+        'return_odometer' => 'integer',
         'borrower_confirmed_at' => 'datetime',
         'manager_confirmed_at' => 'datetime',
         'completed_at' => 'datetime',

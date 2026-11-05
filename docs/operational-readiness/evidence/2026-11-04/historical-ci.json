@@ -1,0 +1,210 @@
+{
+  "retentionDays": 30,
+  "countedAsCurrent": false,
+  "runs": [
+    {
+      "number": 12,
+      "id": 41790576933,
+      "sourceHead": "e1fb22cb417000e3967808518e12838ff0747552",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/yusufbayuw/invman/actions/runs/41790576933",
+      "artifacts": [
+        {
+          "id": 13303324635,
+          "url": "https://github.com/yusufbayuw/invman/actions/runs/41790576933/artifacts/13303324635",
+          "bytes": 32547907,
+          "expired": false
+        }
+      ],
+      "note": "Successful earlier candidate; superseded by PDF attribution fix"
+    },
+    {
+      "number": 11,
+      "id": 41772922289,
+      "sourceHead": "4bfdfbd4cf762bdd8b3291378785098766057b0c",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/yusufbayuw/invman/actions/runs/41772922289",
+      "artifacts": [
+        {
+          "id": 13296396910,
+          "url": "https://github.com/yusufbayuw/invman/actions/runs/41772922289/artifacts/13296396910",
+          "bytes": 26878470,
+          "expired": false
+        }
+      ],
+      "note": "147 role-browser cases passed; SMP header clipped; one item-handover PHP8.3 upstream reset"
+    },
+    {
+      "number": 10,
+      "id": 41772449087,
+      "sourceHead": "bc5b09a10d9d2b6f800914bc40f1d4f65249b843",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/yusufbayuw/invman/actions/runs/41772449087",
+      "artifacts": [
+        {
+          "id": 13294899896,
+          "url": "https://github.com/yusufbayuw/invman/actions/runs/41772449087/artifacts/13294899896",
+          "bytes": 7992,
+          "expired": false
+        }
+      ],
+      "note": "QA startup package step failed; no browser success implied"
+    },
+    {
+      "number": 9,
+      "id": 41771171467,
+      "sourceHead": "46ffe5515d970a217111c102142e20fa660ea7fa",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/yusufbayuw/invman/actions/runs/41771171467",
+      "artifacts": [
+        {
+          "id": 13295525142,
+          "url": "https://github.com/yusufbayuw/invman/actions/runs/41771171467/artifacts/13295525142",
+          "bytes": 1267589,
+          "expired": false
+        }
+      ],
+      "note": "Historical investigation; superseded by current candidate; see run logs"
+    },
+    {
+      "number": 8,
+      "id": 41768605606,
+      "sourceHead": "462565e544a54a72271d8f74e871fdccc200bfb0",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "url": "https://github.com/yusufbayuw/invman/actions/runs/41768605606",
+      "artifacts": [
+        {
+          "id": 13294598929,
+          "url": "https://github.com/yusufbayuw/invman/actions/runs/41768605606/artifacts/13294598929",
+          "bytes": 16797609,
+          "expired": false
+        }
+      ],
+      "note": "Superseded run cancelled; not counted as application pass"
+    },
+    {
+      "number": 7,
+      "id": 41767354821,
+      "sourceHead": "72904363888c2a054befde671c7c9446defb0ff6",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/yusufbayuw/invman/actions/runs/41767354821",
+      "artifacts": [
+        {
+          "id": 13294336198,
+          "url": "https://github.com/yusufbayuw/invman/actions/runs/41767354821/artifacts/13294336198",
+          "bytes": 31017790,
+          "expired": false
+        }
+      ],
+      "note": "Historical investigation; superseded by current candidate; see run logs"
+    },
+    {
+      "number": 6,
+      "id": 41766491071,
+      "sourceHead": "d5331bf4510c60982058bf910b9271a316c50879",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/yusufbayuw/invman/actions/runs/41766491071",
+      "artifacts": [
+        {
+          "id": 13293510762,
+          "url": "https://github.com/yusufbayuw/invman/actions/runs/41766491071/artifacts/13293510762",
+          "bytes": 22501947,
+          "expired": false
+        }
+      ],
+      "note": "Historical investigation; superseded by current candidate; see run logs"
+    },
+    {
+      "number": 5,
+      "id": 41766231505,
+      "sourceHead": "826c538d414199c38824d4686e1d33ac07a6d396",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/yusufbayuw/invman/actions/runs/41766231505",
+      "artifacts": [
+        {
+          "id": 13293600090,
+          "url": "https://github.com/yusufbayuw/invman/actions/runs/41766231505/artifacts/13293600090",
+          "bytes": 22551557,
+          "expired": false
+        }
+      ],
+      "note": "Historical investigation; superseded by current candidate; see run logs"
+    },
+    {
+      "number": 4,
+      "id": 41765489551,
+      "sourceHead": "ad9d854867536c6e08b2c23f203820411f80fcd9",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/yusufbayuw/invman/actions/runs/41765489551",
+      "artifacts": [
+        {
+          "id": 13293260159,
+          "url": "https://github.com/yusufbayuw/invman/actions/runs/41765489551/artifacts/13293260159",
+          "bytes": 1153875,
+          "expired": false
+        }
+      ],
+      "note": "Historical investigation; superseded by current candidate; see run logs"
+    },
+    {
+      "number": 3,
+      "id": 41763566344,
+      "sourceHead": "accaf6244dc92123f1095d86b5d71e628afab3f5",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/yusufbayuw/invman/actions/runs/41763566344",
+      "artifacts": [
+        {
+          "id": 13290909124,
+          "url": "https://github.com/yusufbayuw/invman/actions/runs/41763566344/artifacts/13290909124",
+          "bytes": 234771,
+          "expired": false
+        }
+      ],
+      "note": "Historical investigation; superseded by current candidate; see run logs"
+    },
+    {
+      "number": 2,
+      "id": 41763011354,
+      "sourceHead": "b3f8251a14e4024110845984afe9b98b62799384",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/yusufbayuw/invman/actions/runs/41763011354",
+      "artifacts": [
+        {
+          "id": 13291462493,
+          "url": "https://github.com/yusufbayuw/invman/actions/runs/41763011354/artifacts/13291462493",
+          "bytes": 214729,
+          "expired": false
+        }
+      ],
+      "note": "Historical investigation; superseded by current candidate; see run logs"
+    },
+    {
+      "number": 1,
+      "id": 41762496293,
+      "sourceHead": "712065b5511039f76d674c6dc26a65765adecb9d",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "url": "https://github.com/yusufbayuw/invman/actions/runs/41762496293",
+      "artifacts": [
+        {
+          "id": 13292487015,
+          "url": "https://github.com/yusufbayuw/invman/actions/runs/41762496293/artifacts/13292487015",
+          "bytes": 1182,
+          "expired": false
+        }
+      ],
+      "note": "Historical investigation; superseded by current candidate; see run logs"
+    }
+  ]
+}

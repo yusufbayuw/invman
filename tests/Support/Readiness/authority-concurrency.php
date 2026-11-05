@@ -190,8 +190,14 @@ function stateOfContender(array $worker): string
 function finishWorker(array $w): array
 {
     waitFile($w['prefix'].'.done');
+    // A completion file becomes visible as soon as writing starts. Waiting for
+    // the child to exit ensures the JSON is fully written before reading it.
+    $exitCode = proc_close($w['proc']);
     $r = json_decode(file_get_contents($w['prefix'].'.done'), true);
-    $r['exit_code'] = proc_close($w['proc']);
+    if (! is_array($r) || ! isset($r['outcome'])) {
+        throw new RuntimeException('Concurrency worker returned invalid completion JSON (exit '.$exitCode.').');
+    }
+    $r['exit_code'] = $exitCode;
 
     return $r;
 }

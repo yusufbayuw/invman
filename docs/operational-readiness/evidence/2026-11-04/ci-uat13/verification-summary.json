@@ -1,0 +1,74 @@
+{
+  "source": "4345107993ad1dd83d678789ae34ab6546fa8f1b",
+  "run": "https://github.com/yusufbayuw/invman/actions/runs/41792438401",
+  "browser": {
+    "cases": 195,
+    "pass": 195,
+    "fail": 0,
+    "blocked": 0,
+    "personas": 28,
+    "javascriptErrors": [],
+    "expectedHttpRejections": [
+      {
+        "path": "/admin/tiket/01a1a576-6568-7286-a75f-c18aad1c11bb",
+        "status": 404
+      },
+      {
+        "path": "/livewire/update",
+        "status": 419
+      },
+      {
+        "path": "/livewire/update",
+        "status": 419
+      }
+    ],
+    "scope": "Individual browser-led scenarios, including authenticated PDF HTTP downloads and explicit DB reconciliation. Not full-role certification."
+  },
+  "pdf": {
+    "normalAndOverrideDownloadedFromApplication": true,
+    "pagesNormal": 2,
+    "pagesOverride": 2,
+    "actualRecorderLabel": true,
+    "originalTechnician": true,
+    "overrideHistory": true,
+    "originalReporter": true,
+    "safetyHold": true,
+    "normalFourApprovers": true,
+    "visualInspection": "Both override pages and normal receipt page inspected; no clipped data or overlapping; receipt heading/header/data remain together."
+  },
+  "database": {
+    "browserInvariants": true,
+    "transactionCases": 8,
+    "allTransactionCasesPass": true
+  },
+  "recovery": {
+    "pass": true,
+    "tables": 70,
+    "foreignKeys": 139,
+    "orphans": 0,
+    "privateFiles": {
+      ".gitignore": true,
+      "uat-recovery/private-sentinel.txt": true
+    }
+  },
+  "server": {
+    "browserPhp": "8.4",
+    "nginxReadiness": "One initial health request reached Nginx before FPM socket existed; readiness subsequently succeeded before browser steps. No browser upstream-reset failure in this run.",
+    "fpmErrorLogBytes": 0
+  },
+  "readLoad": {
+    "distinctIdentities": 10,
+    "maxConcurrentRequests": 250,
+    "postLoadHealthy": true,
+    "productionCapacityCertified": false
+  },
+  "nonCertified": [
+    "Production infrastructure",
+    "Existing real-data upgrade and restore",
+    "50/100/250 distinct-user mixed workload",
+    "Complete organization-specific role duties",
+    "Commit-order interleavings across every newly added override path",
+    "End odometer input (confirmed absent)",
+    "Historical audit timezone interpretation"
+  ]
+}

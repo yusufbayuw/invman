@@ -1,0 +1,261 @@
+{
+  "engine": "156.0.8078.4",
+  "scope": "real browser with official provider test keys; no auth/session injection",
+  "pass": true,
+  "fields": [
+    {
+      "id": "data.email",
+      "type": "text",
+      "name": ""
+    },
+    {
+      "id": "data.password",
+      "type": "password",
+      "name": ""
+    },
+    {
+      "id": "cf-chl-widget-mxzjr_response",
+      "type": "hidden",
+      "name": "cf-turnstile-response"
+    },
+    {
+      "id": "data.remember",
+      "type": "checkbox",
+      "name": ""
+    }
+  ],
+  "loginText": "Masuk ke akun Anda\nEmail/Username*\nKata sandi*\nTampilkan kata sandi\nKode Keamanan*\nIngat saya\nMasuk",
+  "authenticatedUrl": "http://127.0.0.1:8876/admin",
+  "dashboard": "Pencarian global\nCTRL+K\nDasbor Operasional\n\nPantau pekerjaan operasional dan kelola sistem dari satu tempat.\n\nAkses Lainnya\nTinjau Pengajuan\nPeriksa kebutuhan dan persetujuan.\nPeminjaman Dikelola\nLihat status dan tindak lanjut pinjaman.\nLihat Jadwal\nCek jadwal peminjaman aset.\nLapor Kerusakan\nLaporkan masalah fasilitas unit.\nPerlu Tindakan Anda\n\nPeminjaman yang perlu Anda tindak lanjuti.\n\nLihat pemantauan aset\n\nTidak ada tindakan yang menunggu\n\nStatus dan jadwal peminjaman tetap tersedia pada pemantauan aset.\n\nTiket yang Perlu Perhatian\n\nLaporan aktif dalam kewenangan Anda. Filter unit hanya berlaku pada daftar tiket ini.\n\nCari\nFilter\n0\nTKT-2026-OLPDYLWNKRJC\n\nQA Operational daycare\n\nPerlu ditinjau\nBelum ditugaskan\n09 Nov 2026 11:30\nBuka Tiket\nTKT-2026-YUNXZEBOK3CM\n\nQA Operational sd\n\nPerlu ditinjau\nBelum ditugaskan\n09 Nov 2026 11:30\nBuka Tiket\nTKT-2026-IGIOWJNM8FCQ\n\nQA Operational smp\n\nPerlu ditinjau\nBelum ditugaskan\n09 Nov 2026 11:30\nBuka Tiket\nTKT-2026-M494ICV022RB\n\nQA Operational sma\n\nPerlu ditinjau\nBelum ditugaskan\n09 Nov 2026 11:30\nBuka Tiket\nTKT-2026-QJHJU3WTOCIX\n\nQA Operational tbu\n\nPerlu ditinjau\nBelum ditugaskan\n09 Nov 2026 11:30\nBuka Tiket\nper halaman\n5\n10\nSelanjutnya\nPersempit menu\nDasbor\nPeminjaman\nPeminjaman\nPeminjaman Dikelola\nDaftar Pengajuan\nLaporan & Perbaikan\nLaporan & Perbaikan\nLaporan Kerusakan\nKoordinasi\nKoordinasi\nChat\nLaporan\nLaporan\nRingkasan Peminjaman\nRekapan Penggunaan\n0\nKelola Peminjaman\nKelola Peminjaman\nOpsi Peminjaman\nOpsi Peminjaman\nData Aset\nData Aset\nPemeriksaan & Riwayat\nPemeriksaan & Riwayat\nPengaturan\nPengaturan\n×\nGunakan LIST sebagai aplikasi\nNotifikasi diblokir. Izinkan kembali melalui pengaturan browser.",
+  "links": [
+    {
+      "text": "Profil saya",
+      "href": "http://127.0.0.1:8876/admin/profile"
+    },
+    {
+      "text": "Rekapan Penggunaan",
+      "href": "http://127.0.0.1:8876/admin/rekapan-penggunaan"
+    },
+    {
+      "text": "Ajukan Peminjaman",
+      "href": "http://127.0.0.1:8876/admin/peminjaman-cepat"
+    },
+    {
+      "text": "Kelola Pengguna",
+      "href": "http://127.0.0.1:8876/admin/users"
+    },
+    {
+      "text": "Ringkasan Peminjaman",
+      "href": "http://127.0.0.1:8876/admin/ringkasan-peminjaman"
+    },
+    {
+      "text": "Semua Menu & Favorit",
+      "href": "http://127.0.0.1:8876/admin/semua-menu"
+    },
+    {
+      "text": "Tinjau Pengajuan\nPeriksa kebutuhan dan persetujuan.",
+      "href": "http://127.0.0.1:8876/admin/activity"
+    },
+    {
+      "text": "Peminjaman Dikelola\nLihat status dan tindak lanjut pinjaman.",
+      "href": "http://127.0.0.1:8876/admin/peminjaman-saya"
+    },
+    {
+      "text": "Lihat Jadwal\nCek jadwal peminjaman aset.",
+      "href": "http://127.0.0.1:8876"
+    },
+    {
+      "text": "Lapor Kerusakan\nLaporkan masalah fasilitas unit.",
+      "href": "http://127.0.0.1:8876/admin/tiket/create"
+    },
+    {
+      "text": "Lihat pemantauan aset",
+      "href": "http://127.0.0.1:8876/admin/ringkasan-peminjaman"
+    },
+    {
+      "text": "Buka Tiket",
+      "href": "http://127.0.0.1:8876/admin/tiket/01a1a576-6530-713f-b052-2dc2eaef2404"
+    },
+    {
+      "text": "Buka Tiket",
+      "href": "http://127.0.0.1:8876/admin/tiket/01a1a576-654b-7024-b0c7-98d573e5851d"
+    },
+    {
+      "text": "Buka Tiket",
+      "href": "http://127.0.0.1:8876/admin/tiket/01a1a576-655a-7327-9a4a-a1cd4ea22259"
+    },
+    {
+      "text": "Buka Tiket",
+      "href": "http://127.0.0.1:8876/admin/tiket/01a1a576-6568-7286-a75f-c18aad1c11bb"
+    },
+    {
+      "text": "Buka Tiket",
+      "href": "http://127.0.0.1:8876/admin/tiket/01a1a576-6577-7251-8779-d94500b35724"
+    },
+    {
+      "text": "",
+      "href": "http://127.0.0.1:8876/admin"
+    },
+    {
+      "text": "Dasbor",
+      "href": "http://127.0.0.1:8876/admin"
+    },
+    {
+      "text": "Peminjaman Dikelola",
+      "href": "http://127.0.0.1:8876/admin/peminjaman-saya"
+    },
+    {
+      "text": "Daftar Pengajuan",
+      "href": "http://127.0.0.1:8876/admin/activity"
+    },
+    {
+      "text": "Laporan Kerusakan",
+      "href": "http://127.0.0.1:8876/admin/tiket"
+    },
+    {
+      "text": "Chat",
+      "href": "http://127.0.0.1:8876/admin/chat"
+    },
+    {
+      "text": "Ringkasan Peminjaman",
+      "href": "http://127.0.0.1:8876/admin/ringkasan-peminjaman"
+    },
+    {
+      "text": "Rekapan Penggunaan\n0",
+      "href": "http://127.0.0.1:8876/admin/rekapan-penggunaan"
+    },
+    {
+      "text": "Peminjaman Barang",
+      "href": "http://127.0.0.1:8876/admin/fdf5ffbe-f082-4e9a-a93f-5ceee206ae49"
+    },
+    {
+      "text": "Peminjaman Ruangan",
+      "href": "http://127.0.0.1:8876/admin/d345aa3b-0dc3-43ee-8ae4-b8916fb2a48f"
+    },
+    {
+      "text": "Peminjaman Kendaraan",
+      "href": "http://127.0.0.1:8876/admin/f8907dc8-c460-41f1-8ea7-b1eac45c2054"
+    },
+    {
+      "text": "Pengajuan Multi-aset",
+      "href": "http://127.0.0.1:8876/admin/ajukan-peminjaman"
+    },
+    {
+      "text": "Jenis Barang",
+      "href": "http://127.0.0.1:8876/admin/item-type"
+    },
+    {
+      "text": "Pengelola Barang",
+      "href": "http://127.0.0.1:8876/admin/item-management"
+    },
+    {
+      "text": "Barang",
+      "href": "http://127.0.0.1:8876/admin/item"
+    },
+    {
+      "text": "Barang Satuan",
+      "href": "http://127.0.0.1:8876/admin/item-instance"
+    },
+    {
+      "text": "Bangunan",
+      "href": "http://127.0.0.1:8876/admin/building"
+    },
+    {
+      "text": "Lantai",
+      "href": "http://127.0.0.1:8876/admin/floor"
+    },
+    {
+      "text": "Ruangan",
+      "href": "http://127.0.0.1:8876/admin/room"
+    },
+    {
+      "text": "Kendaraan",
+      "href": "http://127.0.0.1:8876/admin/vehicle"
+    },
+    {
+      "text": "Pengemudi",
+      "href": "http://127.0.0.1:8876/admin/driver"
+    },
+    {
+      "text": "Kenek Bus",
+      "href": "http://127.0.0.1:8876/admin/vehicle-assistants"
+    },
+    {
+      "text": "Ulasan Barang",
+      "href": "http://127.0.0.1:8876/admin/item-review"
+    },
+    {
+      "text": "Riwayat Barang",
+      "href": "http://127.0.0.1:8876/admin/item-history"
+    },
+    {
+      "text": "Checklist Barang",
+      "href": "http://127.0.0.1:8876/admin/item-instance-checklist"
+    },
+    {
+      "text": "Ulasan Ruangan",
+      "href": "http://127.0.0.1:8876/admin/room-review"
+    },
+    {
+      "text": "Riwayat Ruangan",
+      "href": "http://127.0.0.1:8876/admin/room-history"
+    },
+    {
+      "text": "Checklist Ruangan",
+      "href": "http://127.0.0.1:8876/admin/room-checklist"
+    },
+    {
+      "text": "Ulasan Kendaraan",
+      "href": "http://127.0.0.1:8876/admin/vehicle-review"
+    },
+    {
+      "text": "Riwayat Kendaraan",
+      "href": "http://127.0.0.1:8876/admin/vehicle-history"
+    },
+    {
+      "text": "Checklist Kendaraan",
+      "href": "http://127.0.0.1:8876/admin/vehicle-checklist"
+    },
+    {
+      "text": "Pengaturan Peminjaman",
+      "href": "http://127.0.0.1:8876/admin/pengaturan-peminjaman"
+    },
+    {
+      "text": "Unit",
+      "href": "http://127.0.0.1:8876/admin/unit"
+    },
+    {
+      "text": "Pengguna",
+      "href": "http://127.0.0.1:8876/admin/users"
+    },
+    {
+      "text": "Penugasan Jabatan",
+      "href": "http://127.0.0.1:8876/admin/work-order-assignments"
+    },
+    {
+      "text": "Jabatan Work Order",
+      "href": "http://127.0.0.1:8876/admin/work-order-job-titles"
+    },
+    {
+      "text": "Alur Persetujuan Work Order",
+      "href": "http://127.0.0.1:8876/admin/work-order-workflows"
+    },
+    {
+      "text": "Peran\n        \n\n                    \n                \n            \n            \n    \n        \n            3",
+      "href": "http://127.0.0.1:8876/admin/shield/roles"
+    },
+    {
+      "text": "Kategori Laporan",
+      "href": "http://127.0.0.1:8876/admin/kategori-laporan"
+    },
+    {
+      "text": "Tim & Hierarki Petugas",
+      "href": "http://127.0.0.1:8876/admin/tim-teknis"
+    },
+    {
+      "text": "Semua Menu & Favorit",
+      "href": "http://127.0.0.1:8876/admin/semua-menu"
+    }
+  ],
+  "errors": []
+}

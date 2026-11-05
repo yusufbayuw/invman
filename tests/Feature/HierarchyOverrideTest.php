@@ -60,6 +60,81 @@ class HierarchyOverrideTest extends TestCase
             'management', 'room', 'ticket');
     }
 
+    public function test_multi_role_technician_cannot_normally_approve_or_close_own_completed_work(): void
+    {
+        $d = $this->context();
+        $maintenance = app(TicketMaintenanceService::class);
+        $workflow = app(WorkOrderWorkflowService::class);
+        $this->actingAs($d['facility']);
+        $maintenance->approve($d['ticket'], $d['facility'], $d['technician']->id);
+        $this->actingAs($d['technician']);
+        $maintenance->accept($d['ticket'], $d['technician']);
+        $maintenance->finish($d['ticket'], $d['technician'], 'Komponen rusak ditemukan.', 'Komponen diperbaiki dan diperiksa.', [], 'complete');
+        $this->actingAs($d['reporter']);
+        $maintenance->verify($d['ticket'], $d['reporter'], true);
+        $d['technician']->assignRole(config('role.fasilitas'));
+        $ticket = $d['ticket']->fresh();
+        $this->actingAs($d['technician']);
+        $this->assertFalse($workflow->canPerform($ticket, $d['technician'], 'close'));
+        try {
+            $maintenance->close($ticket, $d['technician'], false, 'Pengesahan pekerjaan sendiri.');
+            $this->fail('Normal self-signoff must be denied');
+        } catch (ValidationException) {
+            $this->assertSame('resolved', $ticket->fresh()->status);
+            $this->assertNull($ticket->fresh()->maintenance->final_approved_at);
+        }
+        $title = \App\Models\WorkOrderJobTitle::create(['name' => 'Synthetic dual role approver', 'is_active' => true]);
+        \App\Models\WorkOrderAssignment::create(['user_id' => $d['technician']->id,
+            'work_order_job_title_id' => $title->id, 'g001_m001_unit_id' => $d['unit']->id, 'is_active' => true]);
+        $rule = \App\Models\WorkOrderWorkflow::create(['version' => 1, 'status' => 'published',
+            'steps' => [['key' => 'final', 'label' => 'Final', 'checkpoint' => 'final', 'resolver' => 'job_title', 'job_title_id' => $title->id]],
+            'created_by' => $d['admin']->id]);
+        $approval = \App\Models\WorkOrderApproval::create(['ticket_id' => $ticket->id,
+            'work_order_workflow_id' => $rule->id, 'step_key' => 'final', 'label' => 'Final',
+            'checkpoint' => 'final', 'resolver' => 'job_title', 'job_title_id' => $title->id,
+            'candidate_user_ids' => [$d['technician']->id], 'sequence' => 0, 'status' => 'pending']);
+        $this->assertFalse($workflow->canDecide($approval->fresh(), $d['technician']));
+        try {
+            $workflow->decide($approval, $d['technician'], true, 'Pengesahan sendiri.');
+            $this->fail('Normal dynamic self-approval must be denied');
+        } catch (ValidationException) {
+            $this->assertSame('pending', $approval->fresh()->status);
+            $this->assertNull($approval->fresh()->decided_by);
+        }
+        $workflow->decide($approval->fresh(), $d['technician'], true, 'Pengecualian eksplisit.', null,
+            'Manager pengganti sedang tidak tersedia; pengecualian dicatat.');
+        $maintenance->close($ticket->fresh(), $d['technician'], false, 'Administratif, aset tetap ditahan.',
+            'Manager pengganti tidak tersedia untuk pengesahan administratif.');
+        $this->assertSame('closed', $ticket->fresh()->status);
+        $this->assertNull($ticket->fresh()->maintenance->asset_released_at);
+        $entries = OperationalOverride::where('entity_id', $ticket->id)->get();
+        $this->assertCount(2, $entries);
+        $this->assertTrue($entries->every(fn ($entry) => $entry->actor_id === $d['technician']->id
+            && $entry->details['self_approval'] === true));
+    }
+
+    public function test_maintenance_pdf_distinguishes_assigned_technician_from_actual_override_recorder(): void
+    {
+        $d = $this->context();
+        $this->actingAs($d['facility']);
+        $service = app(TicketMaintenanceService::class);
+        $service->approve($d['ticket'], $d['facility'], $d['technician']->id);
+        $service->accept($d['ticket'], $d['facility'], 'Teknisi bertugas di lokasi lain.');
+        $service->finish($d['ticket'], $d['facility'], 'Diagnosis tercatat oleh atasan.',
+            'Hasil lapangan dimasukkan oleh atasan.', [], 'complete', 'Teknisi belum dapat mengisi laporan.');
+        $ticket = $d['ticket']->fresh();
+        $html = view('pdf.tickets.maintenance', compact('ticket'))->render();
+        $this->assertStringContainsString('Penerimaan dicatat oleh: <strong>'.e($d['facility']->name).'</strong>', $html);
+        $this->assertStringContainsString('Hasil dicatat oleh: <strong>'.e($d['facility']->name).'</strong>', $html);
+        $this->assertStringContainsString('<td class="key">Teknisi penanggung jawab</td><td>'.e($d['technician']->name).'</td>', $html);
+        $this->assertStringContainsString('AUDIT PENGECUALIAN HIERARKI', $html);
+        $this->assertStringContainsString('Teknisi bertugas di lokasi lain.', $html);
+        $this->assertStringContainsString('Teknisi belum dapat mengisi laporan.', $html);
+        $this->assertStringContainsString(e($d['technician']->name), $html);
+        $this->assertSame($d['technician']->id, $ticket->assigned_to);
+        $this->assertSame(2, $ticket->operationalOverrides()->count());
+    }
+
     public function test_facility_can_complete_technician_and_reporter_work_with_real_actor_audit(): void
     {
         $d = $this->context();

@@ -23,7 +23,7 @@
         .block.long { page-break-inside: auto; }
         table { border-collapse: collapse; width: 100%; }
         .facts th { width: 29%; text-align: left; vertical-align: top; font-weight: normal; color: #5b687b; padding: 1.25mm 2mm 1.25mm 0; }
-        .facts td { vertical-align: top; padding: 1.25mm 0; font-weight: 600; overflow-wrap: break-word; }
+        .facts td { vertical-align: top; padding: 1.25mm 0; font-weight: bold; overflow-wrap: break-word; }
         .half { width: 49%; vertical-align: top; }
         .line { border-top: 1px solid #dce4ee; margin: 3mm 0; }
         .panel { border: 1px solid #dce4ee; padding: 3.5mm; margin: 2mm 0; }
@@ -57,7 +57,7 @@
     <div class="status {{ $hasException ? 'danger' : (! $complete ? 'warning' : '') }}">
         @if($hasException)
             <strong>PENYERAHAN KHUSUS / PENGECUALIAN TERCATAT</strong>
-            <p>Konfirmasi penerimaan peminjam tidak lengkap. Alasan pengecualian tercantum di bagian bukti penyerahan.</p>
+            <p>Terdapat pengecualian konfirmasi pada penyerahan atau pengembalian. Lihat alasan dan aktor dalam bukti serta audit di bawah.</p>
         @elseif(!$complete)
             <strong>DOKUMEN BELUM LENGKAP</strong>
             <p>Setidaknya satu tahap penyerahan/pengembalian belum memiliki konfirmasi lengkap. Jangan dianggap bukti serah-terima selesai.</p>
@@ -149,8 +149,14 @@
                     <tr><th>Peminjam</th><td>{{ $returnEvidence['borrower'] }} &mdash; {{ $returnEvidence['borrowerAt']?->format('d/m/Y H:i') ?? 'Belum konfirmasi' }}</td></tr>
                     <tr><th>Pengelola</th><td>{{ $returnEvidence['manager'] }} &mdash; {{ $returnEvidence['managerAt']?->format('d/m/Y H:i') ?? 'Belum konfirmasi' }}</td></tr>
                     <tr><th>Penyelesaian</th><td>{{ $returnEvidence['completedAt']?->format('d/m/Y H:i') ?? 'Belum selesai' }}</td></tr>
+                    @if($returnEvidence['returnOdometer'] !== null)
+                        <tr><th>KM akhir kendaraan</th><td>{{ number_format($returnEvidence['returnOdometer'], 0, ',', '.') }} km</td></tr>
+                    @endif
                     <tr><th>Catatan</th><td>{{ $returnEvidence['notes'] ?: '-' }}</td></tr>
                 </table>
+                @if($returnEvidence['fallbackReason'])
+                    <p class="alert"><strong>Alasan pengecualian pengembalian:</strong> {{ $returnEvidence['fallbackReason'] }}</p>
+                @endif
                 @if($returnEvidence['proofImage'])
                     <div class="evidence"><p class="small">Foto bukti pengembalian</p><img class="photo" src="{{ $returnEvidence['proofImage'] }}" alt="Bukti pengembalian"></div>
                 @elseif($returnEvidence['hasProof'])
@@ -186,5 +192,21 @@
         <div class="line"></div>
         <p class="small muted">Bukti ini dihasilkan otomatis dari pencatatan InvMan saat diunduh. Nama dan waktu adalah catatan konfirmasi akun pada aplikasi, <strong>bukan tanda tangan elektronik tersertifikasi</strong>. Dokumen dapat berubah apabila histori transaksinya diperbarui secara sah. Periksa nomor reservasi dan bukti asli di aplikasi untuk validasi.</p>
     </section>
+    @if($overrides->isNotEmpty())
+    <section class="block">
+        <h2>Audit Pengecualian</h2>
+        <table class="data">
+            <thead><tr><th>Aktor sebenarnya</th><th>Pihak yang diwakili</th><th>Tindakan / waktu</th><th>Alasan</th></tr></thead>
+            <tbody>
+            @foreach($overrides as $entry)
+                <tr><td>{{ $entry->actor?->name ?? 'Akun tidak lagi tersedia' }}</td>
+                    <td>{{ $entry->subject?->name ?? '-' }}</td>
+                    <td>{{ $entry->action }}<div class="small muted">{{ $entry->created_at?->format('d/m/Y H:i') }} ({{ $entry->details['recorded_timezone'] ?? 'zona waktu historis tidak terekam' }})</div></td>
+                    <td>{{ $entry->reason }}</td></tr>
+            @endforeach
+            </tbody>
+        </table>
+    </section>
+    @endif
 </body>
 </html>

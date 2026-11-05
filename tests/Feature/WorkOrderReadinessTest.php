@@ -20,6 +20,49 @@ class WorkOrderReadinessTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_browser_actions_refresh_work_order_state_and_next_action_without_reload(): void
+    {
+        $d = $this->organization();
+        $workflows = app(WorkOrderWorkflowService::class);
+        $maintenance = app(TicketMaintenanceService::class);
+        $workflows->publish($d['workflow'], $d['admin']);
+        $reporter = User::where('username', 'sarpras.sd')->firstOrFail();
+        $ticket = $this->report($reporter);
+        $head = $reporter->workOrderAssignments()->whereNotNull('supervisor_user_id')->firstOrFail()->supervisor;
+        foreach ([$head, $d['staff'], $d['supervisor']] as $actor) {
+            $workflows->decide($workflows->next($ticket, 'start'), $actor, true, 'Synthetic browser prerequisite');
+        }
+        $maintenance->approve($ticket, $d['supervisor'], $d['technician']->id, 'high');
+        Livewire::actingAs($d['technician'])
+            ->test(\App\Filament\Resources\TicketResource\Pages\ViewTicket::class, ['record' => $ticket->id])
+            ->callAction('acceptMaintenance')
+            ->assertHasNoActionErrors()
+            ->assertSet('record.status', 'in_progress')
+            ->assertActionHidden('acceptMaintenance')
+            ->assertActionVisible('finishMaintenance')
+            ->callAction('finishMaintenance', data: [
+                'diagnosis' => 'Synthetic loose connector', 'actions' => 'Repaired and checked safely',
+                'materials' => [], 'outcome' => 'complete',
+            ])
+            ->assertHasNoActionErrors()
+            ->assertSet('record.status', 'resolved')
+            ->assertActionHidden('finishMaintenance');
+        Livewire::actingAs($reporter)
+            ->test(\App\Filament\Resources\TicketResource\Pages\ViewTicket::class, ['record' => $ticket->id])
+            ->callAction('verifyMaintenance', data: ['accepted' => 'yes', 'notes' => 'Checked physically'])
+            ->assertHasNoActionErrors()
+            ->assertActionHidden('verifyMaintenance');
+        $final = $workflows->next($ticket->fresh(), 'final');
+        Livewire::actingAs($d['manager'])
+            ->test(\App\Filament\Resources\TicketResource\Pages\ViewTicket::class, ['record' => $ticket->id])
+            ->callAction('workOrderApproval', data: ['approval_id' => $final->id, 'decision' => 'approve', 'notes' => 'Approved'])
+            ->assertHasNoActionErrors()
+            ->assertActionVisible('closeMaintenance')
+            ->callAction('closeMaintenance', data: ['safe' => true, 'notes' => 'Safe to use'])
+            ->assertHasNoActionErrors()
+            ->assertSet('record.status', 'closed')
+            ->assertActionHidden('closeMaintenance');
+    }
     private function organization(): array
     {
         config(['security.seed_demo_users' => true, 'security.seed_demo_password' => 'Synthetic!Readiness2026']);
@@ -241,3 +284,4 @@ class WorkOrderReadinessTest extends TestCase
     }
 
 }
+

@@ -53,6 +53,22 @@ class TicketMaintenanceV3Test extends TestCase
         return compact('unit', 'reporter', 'facility', 'managerTeam', 'technician', 'outsider', 'room', 'ticket');
     }
 
+    public function test_cancellation_preserves_unreleased_safety_hold_and_inventory_state(): void
+    {
+        $d = $this->context();
+        $this->actingAs($d['facility']);
+        try {
+            app(TicketMaintenanceService::class)->cancel($d['ticket'], $d['facility'], 'Laporan duplikat perlu ditinjau kembali.');
+            $this->fail('Safety hold cancellation must require physical clearance.');
+        } catch (ValidationException) {
+            $this->assertSame('open', $d['ticket']->fresh()->status);
+        }
+        $this->assertNull($d['ticket']->fresh()->maintenance->asset_released_at);
+        $this->assertTrue(app(TicketAssetSafetyService::class)->isBlocked('room', $d['room']->id));
+        $this->assertFalse(app(LoanAvailabilityService::class)->roomIsAvailable($d['room']->id, now()->addDay(), now()->addDay()->addHour()));
+        $this->assertSame('Tersedia', $d['room']->fresh()->status);
+    }
+
     public function test_full_maintenance_signoffs_and_safety_release(): void
     {
         $d = $this->context();

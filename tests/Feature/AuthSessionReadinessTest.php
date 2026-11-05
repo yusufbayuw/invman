@@ -16,6 +16,19 @@ class AuthSessionReadinessTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_disabled_existing_session_is_signed_out_on_admin_and_public_panel_requests(): void
+    {
+        $this->seed(RoleSeeder::class);
+        $user = User::factory()->create();
+        $user->assignRole(config('role.sarpras'));
+        foreach (['/admin', '/'] as $url) {
+            $user->update(['is_enabled' => false]);
+            $this->actingAs($user)->get($url)->assertForbidden();
+            $this->assertGuest();
+            $user->update(['is_enabled' => true]);
+            $this->get('/admin')->assertRedirect('/admin/login');
+        }
+    }
     private function attempt(User $user, string $identifier): \Livewire\Features\SupportTesting\Testable
     {
         Filament::setCurrentPanel(Filament::getPanel('admin'));
@@ -51,3 +64,4 @@ class AuthSessionReadinessTest extends TestCase
         $this->assertGuest();
     }
 }
+

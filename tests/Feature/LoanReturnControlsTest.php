@@ -118,7 +118,7 @@ class LoanReturnControlsTest extends TestCase
         $this->assertFalse((bool) $instances[1]->fresh()->is_borrowable);
     }
 
-    public function test_admin_correction_reopens_return_without_deleting_original_history(): void
+    public function test_completed_return_cannot_be_reopened_without_a_compensating_custody_cycle(): void
     {
         [$borrower, , $unit, $management] = $this->actors();
         $admin = User::factory()->create();
@@ -140,27 +140,17 @@ class LoanReturnControlsTest extends TestCase
         ]);
 
         $this->actingAs($admin);
-        app(LoanRequestService::class)->correctReservationStatus(
-            'room',
-            $reservation->id,
-            ReservationStatus::CheckedOut->value,
-            'Pengembalian tercatat pada reservasi yang salah.',
-        );
-
-        $this->assertSame(ReservationStatus::CheckedOut->value, $reservation->fresh()->status);
-        $this->assertNull($reservation->fresh()->returned_at);
-        $this->assertDatabaseHas('loan_reservation_corrections', [
-            'reservation_id' => $reservation->id,
-            'old_value' => ReservationStatus::Returned->value,
-            'new_value' => ReservationStatus::CheckedOut->value,
-            'corrected_by' => $admin->id,
-        ]);
-        $this->assertDatabaseHas('loan_reservation_status_histories', [
-            'reservation_id' => $reservation->id,
-            'from_status' => ReservationStatus::Returned->value,
-            'to_status' => ReservationStatus::CheckedOut->value,
-            'changed_by' => $admin->id,
-        ]);
+        try {
+            app(LoanRequestService::class)->correctReservationStatus(
+                'room', $reservation->id, ReservationStatus::CheckedOut->value,
+                'Pengembalian tercatat pada reservasi yang salah.',
+            );
+            $this->fail('Completed return must not reopen or overwrite evidence.');
+        } catch (\Illuminate\Validation\ValidationException) {
+            $this->assertSame(ReservationStatus::Returned->value, $reservation->fresh()->status);
+            $this->assertNotNull($reservation->fresh()->returned_at);
+            $this->assertDatabaseCount('loan_reservation_corrections', 0);
+        }
     }
 
     private function actors(): array

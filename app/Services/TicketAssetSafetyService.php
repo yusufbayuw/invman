@@ -13,8 +13,7 @@ class TicketAssetSafetyService
             ->join('tickets as t', 't.id', '=', 'm.ticket_id')
             ->join('ticket_asset_links as a', 'a.ticket_id', '=', 't.id')
             ->whereNotNull('m.asset_hold_at')
-            ->whereNull('m.asset_released_at')
-            ->whereNotIn('t.status', ['cancelled']);
+            ->whereNull('m.asset_released_at');
     }
 
     /**

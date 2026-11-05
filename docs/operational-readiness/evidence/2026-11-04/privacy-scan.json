@@ -1,0 +1,7 @@
+{
+  "candidate": "4345107993ad1dd83d678789ae34ab6546fa8f1b",
+  "nonBinaryFilesScanned": 55,
+  "runtimeSecretValuesPrinted": false,
+  "findings": 0,
+  "scope": "Exact QA runtime secret literals and unredacted sensitive query values; screenshots additionally inspected at capture/render time. Not a general secret-scanner certification."
+}

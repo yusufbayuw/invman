@@ -19,6 +19,19 @@ class OperationalOverride extends Model
 
     protected $casts = ['details' => 'array', 'created_at' => 'datetime'];
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $entry): void {
+            // Database CURRENT_TIMESTAMP may use another timezone. Capture the
+            // application clock and its zone together for every new audit entry.
+            $zone = (string) config('app.timezone', 'UTC');
+            $entry->created_at ??= now($zone);
+            $details = $entry->details ?? [];
+            $details['recorded_timezone'] = $zone;
+            $entry->details = $details;
+        });
+    }
+
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id');

@@ -187,12 +187,15 @@ class TicketService
             throw ValidationException::withMessages(['asset_id' => 'Jenis atau identitas aset tidak valid.']);
         }
 
-        $asset = self::ASSETS[$type]::query()->find((int) $id);
+        $asset = self::ASSETS[$type]::query()
+            ->when(DB::transactionLevel() > 0, fn ($query) => $query->lockForUpdate())->find((int) $id);
         if (! $asset) {
             throw ValidationException::withMessages(['asset_id' => 'Aset tidak ditemukan.']);
         }
 
-        $parent = $type === 'item_instance' ? $asset->item : $asset;
+        $parent = $type === 'item_instance'
+            ? $asset->item()->when(DB::transactionLevel() > 0, fn ($query) => $query->lockForUpdate())->first()
+            : $asset;
         $managementId = $parent?->g002_m003_item_management_id;
         $unitId = $parent?->g001_m001_unit_id
             ?? ($type === 'item_instance' ? $asset->g001_m001_unit_id : null);
@@ -205,6 +208,18 @@ class TicketService
 
         return ['type' => $type, 'id' => (int) $id,
             'name' => $asset->name, 'management' => $managementId, 'unit' => $unitId];
+    }
+
+    private function lockUnchangedAsset(?array $snapshot, User $actor): ?array
+    {
+        if (! $snapshot) {
+            return null;
+        }
+        $current = $this->resolveAsset($snapshot['type'], $snapshot['id'], $actor);
+        if ($current['unit'] !== $snapshot['unit'] || $current['management'] !== $snapshot['management']) {
+            throw ValidationException::withMessages(['asset_id' => 'Cakupan aset berubah. Muat ulang sebelum mengaitkan inventaris.']);
+        }
+        return $current;
     }
 
     public function open(User $actor, array $data): Ticket
@@ -296,6 +311,7 @@ class TicketService
             ? $data['priority'] : 'normal';
 
         $ticket = DB::transaction(function () use ($actor, $category, $asset, $activity, $title, $description, $priority, $unitId, $location, $urgency, $reporter, $overrideReason): Ticket {
+            $asset = $this->lockUnchangedAsset($asset, $actor);
             $ticket = Ticket::query()->create([
                 'number' => 'TKT-'.now()->format('Y').'-'.Str::upper(Str::random(12)),
                 'ticket_category_id' => $category->id,
@@ -352,6 +368,7 @@ class TicketService
                 || $locked->assets()->exists()) {
                 throw ValidationException::withMessages(['asset_id' => 'Tiket tidak dapat ditautkan ke aset lain.']);
             }
+            $asset = $this->lockUnchangedAsset($asset, $actor);
             $locked->assets()->create(['asset_type' => $asset['type'], 'asset_id' => $asset['id']]);
             if (! $locked->g002_m003_item_management_id && $asset['management']) {
                 $locked->forceFill(['g002_m003_item_management_id' => $asset['management']])->save();

@@ -1,0 +1,107 @@
+                                             FORMULIR PERMINTAAN PERAWATAN / PERBAIKAN
+                                                       Dokumen: TKT-2026-IGIOWJNM8FCQ · Dicetak 04/11/2026 14:37
+                                                    Rekaman digital InvMan · Persetujuan dan identitas bersumber dari akun login
+
+
+
+I. DATA PEMOHON (DIISI OLEH PELAPOR)
+
+
+ Nama pelapor                             Sarpras SMP
+
+ Unit kerja                               SMP
+
+ Tanggal / jam laporan                    04/11/2026 14:29
+
+ Lokasi kerusakan                         QA smp
+
+
+II. DESKRIPSI KERUSAKAN
+
+
+ Jenis masalah                            AC & Tata Udara
+
+ Urgensi pelapor                          normal
+
+ Prioritas operasional                    high
+
+ Uraian kerusakan                         Synthetic operational evidence; no real asset or person.
+
+ Inventaris terkait                       Tidak diketahui / belum ditautkan
+
+
+III. VALIDASI & PERSETUJUAN
+
+
+ Diajukan oleh                          Disetujui oleh                                        Penerimaan tugas
+
+ Sarpras SMP                            Demo Supervisor Fasilitas                             Petugas ditugaskan: Demo Teknisi
+ 04/11/2026 14:29                       04/11/2026 14:37                                      Penerimaan dicatat oleh: Demo Teknisi
+                                                                                              04/11/2026 14:37
+
+
+Catatan persetujuan: -
+
+Deadline respons: 04/11/2026 16:29 Deadline penyelesaian: 05/11/2026 13:30
+
+Jejak persetujuan Work Order · Konfigurasi versi 1
+
+
+ Tahap                                           Status       Keputusan oleh / waktu               Catatan
+
+ Diketahui Atasan Pelapor                        Disetujui    Demo Atasan Unit SMP                 Synthetic browser approval by separate authorized account
+ Revisi 1 · Aktif · Sebelum penugasan                         04/11/2026 14:30
+
+ Diterima Staf Fasilitas                         Disetujui    Demo Staf Fasilitas                  Synthetic browser approval by separate authorized account
+ Revisi 1 · Aktif · Sebelum penugasan                         04/11/2026 14:31
+
+ Ditinjau Supervisor Fasilitas                   Disetujui    Demo Supervisor Fasilitas            Synthetic browser approval by separate authorized account
+ Revisi 1 · Aktif · Sebelum penugasan                         04/11/2026 14:32
+
+ Pengesahan Manager Fasilitas                    Disetujui    Demo Manager Fasilitas               Final synthetic manager approval
+ Revisi 1 · Aktif · Pengesahan akhir                          04/11/2026 14:37
+
+
+
+IV. TINDAKAN PERBAIKAN (DIISI OLEH TEKNISI / MAINTENANCE)
+
+
+ Teknisi penanggung jawab                 Demo Teknisi
+
+ Tanggal mulai                            04/11/2026 14:37
+
+ Tanggal selesai                          04/11/2026 14:37
+
+ Analisis masalah                         Synthetic damaged connector identified
+
+ Tindakan perbaikan                       Synthetic connector repaired and physically checked
+
+
+Hasil dicatat oleh: Demo Teknisi
+
+Material / Sparepart:
+
+
+ Nama material                                                                                  Qty                                Satuan
+
+ Tidak ada material tercatat.
+
+
+Status akhir: Selesai sempurna
+V. SERAH TERIMA & PENYELESAIAN
+
+
+ Teknisi penanggung jawab                                             Pelapor (verifikasi)                                Manajer (mengetahui)
+
+ Demo Teknisi                                                         Sarpras SMP                                         Demo Manager Fasilitas
+ 04/11/2026 14:37                                                     04/11/2026 14:37                                    04/11/2026 14:37
+
+
+Kondisi kelayakan: Dinyatakan layak pakai setelah pemeriksaan
+
+Catatan pengesahan: Synthetic physical inspection: safe to use
+
+
+ Ini adalah catatan persetujuan elektronik internal berdasarkan identitas login dan waktu server, bukan tanda tangan digital tersertifikasi. Kolom yang belum diproses tidak
+ direkayasa menjadi persetujuan. Detail histori dan lampiran bukti tersimpan privat di InvMan; perubahan yang sah setelah cetak akan tercermin pada versi PDF berikutnya.
+

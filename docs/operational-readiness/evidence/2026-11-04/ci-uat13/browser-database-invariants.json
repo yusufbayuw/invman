@@ -1,0 +1,61 @@
+{
+    "scope": "read-only reconciliation of completed browser transactions in isolated QA",
+    "item_stock_total": 10,
+    "item_stock_available": 9,
+    "ready_instances": 9,
+    "damaged_instances": [
+        {
+            "id": 1,
+            "code": "QA-1-1",
+            "status": "perlu_perbaikan",
+            "is_available": 0,
+            "is_borrowable": 0
+        }
+    ],
+    "receipts": [
+        {
+            "direction": "checkout",
+            "reservation_type": "item",
+            "borrower_confirmed_by": 4,
+            "manager_confirmed_by": 1,
+            "completed_at": "2026-11-04T07:39:45.000000Z"
+        },
+        {
+            "direction": "return",
+            "reservation_type": "item",
+            "borrower_confirmed_by": 4,
+            "manager_confirmed_by": 1,
+            "completed_at": "2026-11-04T07:39:47.000000Z"
+        },
+        {
+            "direction": "checkout",
+            "reservation_type": "room",
+            "borrower_confirmed_by": 4,
+            "manager_confirmed_by": 1,
+            "completed_at": "2026-11-04T07:39:52.000000Z"
+        },
+        {
+            "direction": "return",
+            "reservation_type": "room",
+            "borrower_confirmed_by": 4,
+            "manager_confirmed_by": 1,
+            "completed_at": "2026-11-04T07:39:54.000000Z"
+        },
+        {
+            "direction": "checkout",
+            "reservation_type": "vehicle",
+            "borrower_confirmed_by": 4,
+            "manager_confirmed_by": 1,
+            "completed_at": "2026-11-04T07:40:00.000000Z"
+        },
+        {
+            "direction": "return",
+            "reservation_type": "vehicle",
+            "borrower_confirmed_by": 4,
+            "manager_confirmed_by": 1,
+            "completed_at": "2026-11-04T07:40:02.000000Z"
+        }
+    ],
+    "two_party_receipts": true,
+    "pass": true
+}

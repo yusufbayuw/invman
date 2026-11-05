@@ -98,7 +98,7 @@ class G002M015ItemInstanceResource extends Resource
                     ->searchable()
                     ->preload(),
                 Forms\Components\TextInput::make('name')->label('Nama Barang Satuan')->required(),
-                Forms\Components\TextInput::make('code')->label('Kode')->required(),
+                Forms\Components\TextInput::make('code')->label('Kode')->required()->unique(ignoreRecord: true),
                 Forms\Components\TextInput::make('status')->label('Status'),
                 Forms\Components\Toggle::make('is_available')
                     ->label('Tersedia')

@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-11-04T07:40:36.391Z",
+  "originalBaseline": "81a966641888af4937da9cd1c02d4565a3f2b0cd",
+  "latestMain": "e7b8b9ac3508ab67570c8c75bf9f2c86db844676",
+  "mainMessage": "Merge PR #36: audited hierarchical operational overrides and named demo employees\n\nfeat: hierarchical operational override + one employee account per demo role",
+  "mergedPrs": [
+    {
+      "number": 35,
+      "title": "feat: opt-in InvManFullDemoSeeder untuk demo termasuk production",
+      "merged": true,
+      "mergedAt": "2026-11-04T03:59:30Z",
+      "mergeCommit": "79702af6ab8536dd2d0fbee4aa15cd5d5d76adf8",
+      "url": "https://github.com/yusufbayuw/invman/pull/35"
+    },
+    {
+      "number": 36,
+      "title": "feat: hierarchical operational override + one employee account per demo role",
+      "merged": true,
+      "mergedAt": "2026-11-04T03:59:59Z",
+      "mergeCommit": "e7b8b9ac3508ab67570c8c75bf9f2c86db844676",
+      "url": "https://github.com/yusufbayuw/invman/pull/36"
+    }
+  ],
+  "environmentCount": 0,
+  "deploymentCount": 0,
+  "conclusion": "No authorized staging endpoint discovered in repository environment/deployment metadata; not a claim that no external staging exists."
+}

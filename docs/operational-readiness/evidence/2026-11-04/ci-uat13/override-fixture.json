@@ -1,0 +1,145 @@
+{
+    "ticket": "01a1a57e-28db-7376-8c0d-47a1f308e887",
+    "room": 7,
+    "reporter": 6,
+    "admin": 1,
+    "technician": 17,
+    "status": "closed",
+    "reporter_unchanged": true,
+    "assignee_unchanged": true,
+    "audit_count": 9,
+    "actors": [
+        1
+    ],
+    "actions": [
+        "work_order_decision",
+        "work_order_decision",
+        "work_order_decision",
+        "approve_assign",
+        "accept_task",
+        "finish_work",
+        "verify_work",
+        "work_order_decision",
+        "close_work"
+    ],
+    "room_borrowable": 1,
+    "room_status": null,
+    "audit": [
+        {
+            "actor_id": 1,
+            "subject_user_id": 21,
+            "action": "work_order_decision",
+            "from_status": "pending",
+            "to_status": "approved",
+            "reason": "Synthetic justified approval recovery by actual admin actor",
+            "details": {
+                "step_key": "diketahui_atasan",
+                "checkpoint": "start",
+                "estimate_id": null,
+                "self_approval": false
+            }
+        },
+        {
+            "actor_id": 1,
+            "subject_user_id": 9,
+            "action": "work_order_decision",
+            "from_status": "pending",
+            "to_status": "approved",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+                "step_key": "diterima_fasilitas",
+                "checkpoint": "start",
+                "estimate_id": null,
+                "self_approval": false
+            }
+        },
+        {
+            "actor_id": 1,
+            "subject_user_id": 10,
+            "action": "work_order_decision",
+            "from_status": "pending",
+            "to_status": "approved",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+                "step_key": "tinjauan_supervisor",
+                "checkpoint": "start",
+                "estimate_id": null,
+                "self_approval": false
+            }
+        },
+        {
+            "actor_id": 1,
+            "subject_user_id": null,
+            "action": "approve_assign",
+            "from_status": "open",
+            "to_status": "triaged",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+                "self_approval": false,
+                "technician_id": 17
+            }
+        },
+        {
+            "actor_id": 1,
+            "subject_user_id": 17,
+            "action": "accept_task",
+            "from_status": "triaged",
+            "to_status": "in_progress",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": []
+        },
+        {
+            "actor_id": 1,
+            "subject_user_id": 17,
+            "action": "finish_work",
+            "from_status": "in_progress",
+            "to_status": "resolved",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+                "outcome": "complete"
+            }
+        },
+        {
+            "actor_id": 1,
+            "subject_user_id": 6,
+            "action": "verify_work",
+            "from_status": "resolved",
+            "to_status": "resolved",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+                "accepted": true,
+                "self_approval": false
+            }
+        },
+        {
+            "actor_id": 1,
+            "subject_user_id": 11,
+            "action": "work_order_decision",
+            "from_status": "pending",
+            "to_status": "approved",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+                "step_key": "pengesahan_manager",
+                "checkpoint": "final",
+                "estimate_id": null,
+                "self_approval": false
+            }
+        },
+        {
+            "actor_id": 1,
+            "subject_user_id": null,
+            "action": "close_work",
+            "from_status": "resolved",
+            "to_status": "closed",
+            "reason": "Synthetic UAT superior recovery; original employee unavailable.",
+            "details": {
+                "self_approval": false,
+                "asset_released": false
+            }
+        }
+    ],
+    "safety_hold_active": true,
+    "not_in_loan_options": true,
+    "asset_released_at": null,
+    "pass": true
+}

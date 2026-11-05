@@ -135,22 +135,7 @@ class LoanCheckoutService
                 $type, $id, ReservationStatus::CheckedOut,
             );
 
-            if ($type === 'item') {
-                // Confirm exactly the instances recorded at handover, not another
-                // set silently chosen by a changed inventory allocation.
-                $expected = LoanCheckoutChecklist::query()
-                    ->where('reservation_type', 'item')->where('reservation_id', $id)
-                    ->whereNotNull('g002_m015_item_instance_id')
-                    ->pluck('g002_m015_item_instance_id')->map(fn ($x): int => (int) $x)->sort()->values()->all();
-                $actual = G005M009ItemReservation::query()->findOrFail($id)
-                    ->item_reservation_detail()->pluck('g002_m015_item_instance_id')
-                    ->map(fn ($x): int => (int) $x)->sort()->values()->all();
-                if ($expected !== $actual) {
-                    throw ValidationException::withMessages([
-                        'status' => 'Barang satuan berubah sejak pemeriksaan awal; penyerahan dibatalkan. Hubungi pengelola.',
-                    ]);
-                }
-            }
+            $this->assertAllocatedInstancesMatchChecklist($type, $reservation);
         }, 3);
     }
 
@@ -174,20 +159,20 @@ class LoanCheckoutService
                 throw ValidationException::withMessages(['status' => 'Penyerahan ini sudah diselesaikan.']);
             }
 
-            if (! $receipt) {
-                $receipt = LoanHandoverReceipt::query()->create([
-                    'receipt_number' => 'OUT-'.now()->format('Ymd').'-'.Str::upper(Str::random(8)),
-                    'reservation_type' => $type,
-                    'reservation_id' => $id,
-                    'g004_m008_activity_id' => $reservation->g004_m008_activity_id,
-                    'direction' => 'checkout',
-                    'initiated_by' => auth()->id(),
+            // The exception waives only the absent borrower's confirmation.
+            // Physical inspection must already have been recorded by begin().
+            $checks = $reservation->outboundChecklists()->get();
+            $expectedCount = $type === 'item' ? (int) $reservation->quantity : 1;
+            if (! $receipt?->manager_confirmed_at || $expectedCount < 1
+                || $checks->count() !== $expectedCount
+                || $checks->contains(fn ($check) => ! $check->checked_at
+                    || (! $check->is_ok && blank($check->notes)))) {
+                throw ValidationException::withMessages([
+                    'status' => 'Catat kondisi awal setiap aset sebelum menggunakan Penyerahan Khusus.',
                 ]);
             }
 
             $receipt->forceFill([
-                'manager_confirmed_by' => auth()->id(),
-                'manager_confirmed_at' => now(),
                 'fallback_reason' => $reason,
                 'completed_at' => now(),
             ])->save();
@@ -195,7 +180,33 @@ class LoanCheckoutService
             app(LoanRequestService::class)->processReservation(
                 $type, $id, ReservationStatus::CheckedOut,
             );
+            $this->assertAllocatedInstancesMatchChecklist($type, $reservation);
+            app(HierarchyOverrideService::class)->record(
+                auth()->user(), $reservation->activity?->user, 'loan',
+                $reservation->g004_m008_activity_id, 'checkout_confirmation_exception',
+                $reason, ReservationStatus::Approved->value, ReservationStatus::CheckedOut->value,
+                ['reservation_type' => $type, 'reservation_id' => $id,
+                    'receipt_id' => $receipt->id, 'borrower_confirmed' => false],
+            );
         }, 3);
+    }
+
+    private function assertAllocatedInstancesMatchChecklist(string $type, Model $reservation): void
+    {
+        if ($type !== 'item') {
+            return;
+        }
+        $expected = $reservation->outboundChecklists()
+            ->pluck('g002_m015_item_instance_id')->map(fn ($id): int => (int) $id)
+            ->sort()->values()->all();
+        $actual = $reservation->item_reservation_detail()
+            ->pluck('g002_m015_item_instance_id')->map(fn ($id): int => (int) $id)
+            ->sort()->values()->all();
+        if ($expected !== $actual || count($expected) !== (int) $reservation->quantity) {
+            throw ValidationException::withMessages([
+                'status' => 'Barang satuan berubah sejak pemeriksaan awal; penyerahan dibatalkan. Hubungi pengelola.',
+            ]);
+        }
     }
 
     private function lockReservation(string $type, string $id): Model

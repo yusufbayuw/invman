@@ -207,6 +207,7 @@ final class WorkOrderWorkflowService
         }
 
         return $user->id !== $approval->ticket->reporter_id
+            && ($approval->checkpoint !== 'final' || $user->id !== $approval->ticket->assigned_to)
             && in_array($user->id, array_map('intval', $approval->candidate_user_ids ?? []), true)
             && $this->currentlyEligible($approval, $user, $authority);
     }
@@ -296,7 +297,7 @@ final class WorkOrderWorkflowService
                     $user, $subject, 'ticket', $ticket->id, 'work_order_decision',
                     $overrideReason, 'pending', $approved ? 'approved' : 'rejected',
                     ['step_key' => $locked->step_key, 'checkpoint' => $locked->checkpoint,
-                        'estimate_id' => $estimateId, 'self_approval' => $ticket->reporter_id === $user->id],
+                        'estimate_id' => $estimateId, 'self_approval' => $ticket->reporter_id === $user->id || $ticket->assigned_to === $user->id],
                 );
             }
             $ticket->events()->create([
@@ -468,7 +469,8 @@ final class WorkOrderWorkflowService
     public function canPerform(Ticket $ticket, User $user, string $action, ?WorkOrderAuthoritySnapshot $authority = null): bool
     {
         $user = $authority ? $authority->user($user->id) : User::query()->findOrFail($user->id);
-        if (! $user->is_enabled || (int) $user->id === (int) $ticket->reporter_id) {
+        if (! $user->is_enabled || (int) $user->id === (int) $ticket->reporter_id
+            || ($action === 'close' && (int) $user->id === (int) $ticket->assigned_to)) {
             return false;
         }
         $record = $ticket->workOrderApprovals()->with('workflow')->orderBy('sequence')->first();
