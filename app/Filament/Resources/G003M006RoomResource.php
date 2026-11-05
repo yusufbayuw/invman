@@ -41,7 +41,7 @@ class G003M006RoomResource extends Resource
     public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
     {
         return [
-            'Unit' => $record->unit?->name ?? '-',
+            'Unit' => $record->unit?->name ?? 'Tanpa Unit (Fasilitas)',
             'Lokasi' => collect([$record->floor?->building?->name, $record->floor?->name])->filter()->implode(' · ') ?: '-',
             'Kapasitas' => $record->capacity ? number_format($record->capacity).' orang' : '-',
             'Status' => $record->status ?? '-',
@@ -67,7 +67,8 @@ class G003M006RoomResource extends Resource
                             ->label('Lantai')
                             ->size('md'),
                         \Filament\Infolists\Components\TextEntry::make('unit.name')
-                            ->label('Unit'),
+                            ->label('Unit')
+                            ->placeholder('Tanpa Unit (Fasilitas)'),
                         \Filament\Infolists\Components\TextEntry::make('name')
                             ->label('Nama Ruangan'),
                         \Filament\Infolists\Components\ImageEntry::make('qrcode')
@@ -114,7 +115,10 @@ class G003M006RoomResource extends Resource
                         })->toArray();
                     }),
                 Forms\Components\Select::make('g001_m001_unit_id')
-                    ->relationship('unit', 'name'),
+                    ->relationship('unit', 'name')
+                    ->label('Unit')
+                    ->placeholder('Tanpa Unit')
+                    ->helperText('Kosong berarti Ruangan Tanpa Unit dan dikelola Fasilitas; bukan otomatis Ruangan Bersama atau bebas dipinjam.'),
                 Forms\Components\Select::make('g002_m003_item_management_id')
                     ->label('Pengelola')
                     ->relationship('item_management', 'name')
@@ -155,6 +159,7 @@ class G003M006RoomResource extends Resource
                 Tables\Columns\TextColumn::make('unit.name')
                     ->label('Unit')
                     ->badge()
+                    ->placeholder('Tanpa Unit (Fasilitas)')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('item_management.name')
                     ->label('Pengelola')
