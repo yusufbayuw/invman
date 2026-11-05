@@ -239,6 +239,7 @@ class LoanRequestService
             $locked->update([
                 'status' => ReservationStatus::Submitted->value,
                 'hold_expires_at' => $this->holdExpiresAt($locked->start_time),
+                'hold_strategy' => app(LoanSettings::class)->holdStrategy(),
             ]);
             $this->transitionReservations($locked, [ReservationStatus::Draft], ReservationStatus::Submitted, $user);
         }, 3);
@@ -589,6 +590,25 @@ class LoanRequestService
                 G004M008Activity::query()->lockForUpdate()->findOrFail($activityId);
             }
 
+            // Serialize approval with concurrent submissions and other approvals.
+            // Always lock the physical asset before its reservation row.
+            if ($status === ReservationStatus::Approved) {
+                $assetKey = match ($type) {
+                    'item' => 'g002_m007_item_id',
+                    'room' => 'g003_m006_room_id',
+                    'vehicle' => 'g008_m017_vehicle_id',
+                };
+                $assetClass = match ($type) {
+                    'item' => G002M007Item::class,
+                    'room' => G003M006Room::class,
+                    'vehicle' => G008M017Vehicle::class,
+                };
+                $assetId = $modelClass::query()->whereKey($reservationId)->value($assetKey);
+                if ($assetId) {
+                    $assetClass::query()->whereKey($assetId)->lockForUpdate()->firstOrFail();
+                }
+            }
+
             $reservation = $modelClass::query()->lockForUpdate()->findOrFail($reservationId);
 
             if ($activityId && $reservation->g004_m008_activity_id !== $activityId) {
@@ -644,6 +664,11 @@ class LoanRequestService
                         'status' => 'Aset sedang ditahan karena laporan kerusakan. Serah-terima/persetujuan diblokir.',
                     ]);
                 }
+            }
+
+            if ($status === ReservationStatus::Approved
+                && $reservation->activity?->hold_strategy === LoanSettings::HOLD_ON_APPROVAL) {
+                $this->assertApprovalAvailability($reservation);
             }
 
             if ($reservation instanceof G005M019VehicleReservation
@@ -1283,9 +1308,30 @@ class LoanRequestService
 
     private function holdExpiresAt(Carbon $start): Carbon
     {
-        $deadline = now()->addHours(app(LoanSettings::class)->holdHours());
+        return app(LoanSettings::class)->expiresAt($start);
+    }
 
-        return $start->lessThan($deadline) ? $start : $deadline;
+    private function assertApprovalAvailability(Model $reservation): void
+    {
+        $start = $reservation->start_time;
+        $end = $reservation->end_time;
+        if (! $start || ! $end || ! $end->greaterThan($start)) {
+            throw ValidationException::withMessages(['status' => 'Jadwal reservasi tidak valid untuk persetujuan.']);
+        }
+
+        if ($reservation instanceof G005M009ItemReservation) {
+            if ($this->availability->availableItemQuantity($reservation->g002_m007_item_id, $start, $end, locking: true) < $reservation->quantity) {
+                throw ValidationException::withMessages(['status' => 'Stok barang sudah tidak mencukupi. Pengajuan tidak disetujui; pilih jadwal lain.']);
+            }
+        } elseif ($reservation instanceof G005M010RoomReservation) {
+            if (! $this->availability->roomIsAvailable($reservation->g003_m006_room_id, $start, $end, locking: true)) {
+                throw ValidationException::withMessages(['status' => 'Ruangan sudah digunakan pada jadwal tersebut. Pengajuan tidak disetujui.']);
+            }
+        } elseif ($reservation instanceof G005M019VehicleReservation) {
+            if (! $this->availability->vehicleIsAvailable($reservation->g008_m017_vehicle_id, $start, $end, locking: true)) {
+                throw ValidationException::withMessages(['status' => 'Kendaraan sudah digunakan pada jadwal tersebut. Pengajuan tidak disetujui.']);
+            }
+        }
     }
 
     private function validateDraftAvailability(G004M008Activity $activity): void

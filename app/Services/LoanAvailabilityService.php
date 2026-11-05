@@ -335,6 +335,7 @@ class LoanAvailabilityService
                     ->whereHas('activity', function (Builder $query) use ($locking): void {
                         $query
                             ->where('status', ReservationStatus::Submitted->value)
+                            ->where('hold_strategy', LoanSettings::HOLD_ON_SUBMISSION)
                             ->where(function (Builder $query): void {
                                 $query
                                     ->whereNull('hold_expires_at')

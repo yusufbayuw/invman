@@ -40,7 +40,10 @@ class LoanNotificationService
 
         if ($activity->user) {
             $title = 'Pengajuan berhasil dikirim';
-            $body = "{$activity->name} telah masuk ke antrean. Aset ditahan hingga ".($activity->hold_expires_at?->translatedFormat('d M Y, H:i') ?? '-').'.';
+            $deadline = $activity->hold_expires_at?->translatedFormat('d M Y, H:i') ?? '-';
+            $body = $activity->hold_strategy === LoanSettings::HOLD_ON_APPROVAL
+                ? "{$activity->name} menunggu keputusan sampai {$deadline}. Aset dicadangkan setelah disetujui jika tersedia."
+                : "{$activity->name} telah masuk ke antrean. Aset ditahan hingga {$deadline}.";
 
             Notification::make()
                 ->title($title)
@@ -139,7 +142,9 @@ class LoanNotificationService
                 : 'Masa tahan pengajuan berakhir';
             $body = $to === ReservationStatus::PartiallyApproved
                 ? "Kebutuhan {$activity->name} yang belum diputuskan telah dilepaskan. Kebutuhan yang disetujui tetap tercatat."
-                : "Pengajuan {$activity->name} tidak diproses dalam batas waktu dan aset telah tersedia kembali.";
+                : ($activity->hold_strategy === LoanSettings::HOLD_ON_APPROVAL
+                    ? "Pengajuan {$activity->name} tidak diproses dalam batas waktu dan dinyatakan kedaluwarsa."
+                    : "Pengajuan {$activity->name} tidak diproses dalam batas waktu dan aset telah tersedia kembali.");
 
             Notification::make()
                 ->title($title)
