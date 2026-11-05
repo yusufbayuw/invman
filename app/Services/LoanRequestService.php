@@ -702,7 +702,12 @@ class LoanRequestService
             }
 
             if ($status === ReservationStatus::Returned) {
-                if ($reservation instanceof G005M009ItemReservation) {
+                if ($reservation instanceof G005M009ItemReservation && $reservation->item?->isBulk()) {
+                    // A failed bulk inspection blocks future loans until maintenance resolves it.
+                    if (! (bool) $reservation->returnChecklists()->value('is_ok')) {
+                        $reservation->item->update(['is_borrowable' => false, 'status' => 'perlu_perbaikan']);
+                    }
+                } elseif ($reservation instanceof G005M009ItemReservation) {
                     $conditions = $reservation->returnChecklists()
                         ->pluck('is_ok', 'g002_m015_item_instance_id')
                         ->map(fn ($condition): bool => (bool) $condition)
@@ -1366,6 +1371,25 @@ class LoanRequestService
         }
 
         /** @var G005M009ItemReservation $reservation */
+        if ($reservation->item?->isBulk()) {
+            if ($reservation->item_reservation_detail()->exists()) {
+                throw ValidationException::withMessages(['checklist' => 'Alokasi individual tidak boleh ada pada stok bulk.']);
+            }
+            $this->validateChecklistCondition($data);
+            LoanReservationChecklist::query()->updateOrCreate([
+                'reservation_type' => $type,
+                'reservation_id' => $reservation->getKey(),
+                'g002_m015_item_instance_id' => null,
+            ], [
+                'g004_m008_activity_id' => $reservation->g004_m008_activity_id,
+                'checked_by' => auth()->id(),
+                'is_ok' => (bool) ($data['is_ok'] ?? false),
+                'notes' => $data['notes'] ?? null,
+                'photo' => $data['photo'] ?? null,
+                'checked_at' => now(),
+            ]);
+            return;
+        }
         $details = $reservation->item_reservation_detail()->with('item_instance')->get();
         if ($details->isEmpty()) {
             throw ValidationException::withMessages([
