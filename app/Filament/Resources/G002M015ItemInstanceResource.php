@@ -79,12 +79,32 @@ class G002M015ItemInstanceResource extends Resource
             ]);
     }
 
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+        if ($user?->isFacility()) {
+            return $query;
+        }
+        if (! $user?->hasRole(config('role.pengelola_barang')) || ! $user->isAssetManager()) {
+            return $query->whereRaw('1 = 0');
+        }
+        $ids = $user->itemManagements()->pluck('g002_m003_item_management.id');
+        return $query->whereHas('item', fn ($q) => $q->whereIn('g002_m003_item_management_id', $ids));
+    }
+
+    public static function getGlobalSearchEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return static::getEloquentQuery()->with(['item', 'room', 'unit']);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\Select::make('g002_m007_item_id')
-                    ->relationship('item', 'name')
+                    ->relationship('item', 'name', modifyQueryUsing: fn (\Illuminate\Database\Eloquent\Builder $query) => auth()->user()?->isFacility() ? $query : $query->whereIn('g002_m003_item_management_id', auth()->user()?->itemManagements()->pluck('g002_m003_item_management.id') ?? []))
                     ->searchable()
                     ->required(),
                 Forms\Components\Select::make('g001_m001_unit_id')
