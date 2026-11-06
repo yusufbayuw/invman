@@ -75,7 +75,7 @@ async function comment(p,id,username,r){await p.goto(base+'/admin/tiket/'+id);r.
     r.evidence.push(await shot(p,'wo-pdf-modal'));
     await fs.writeFile(path.join(out,'work-order-browser-authorized.pdf'),downloadBody);
     r.evidence.push('work-order-browser-authorized.pdf');
-    await dialog.getByRole('button',{name:'Tutup',exact:true}).click();
+    await dialog.locator('button.fi-modal-close-btn').click();
     await dialog.waitFor({state:'hidden'});
     return{status:200,previewBytes:previewBody.length,downloadBytes:downloadBody.length};
    });
