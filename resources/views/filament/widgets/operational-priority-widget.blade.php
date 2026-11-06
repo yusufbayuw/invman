@@ -8,7 +8,7 @@
             Satu pengajuan dapat berisi beberapa reservasi aset. Angka berikut menghitung reservasi, bukan jumlah pengajuan atau jumlah barang fisik. Hanya filter unit yang berlaku di sini; tanggal dan status ringkasan tidak memengaruhi daftar ini.
         </x-slot>
 
-        <div wire:poll.30s wire:loading.class.delay="opacity-60" class="space-y-6 transition-opacity">
+        <div wire:poll.visible.60s wire:loading.class.delay="opacity-60" class="space-y-6 transition-opacity">
             {{-- The category cards are filters, not independent navigation links. --}}
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
                 @foreach ($categories as $key => $meta)
@@ -53,7 +53,7 @@
                     @endif
                 </div>
                 <p class="text-xs leading-5 text-gray-500 dark:text-gray-400">
-                    Diperbarui setiap 30 detik · kategori dapat beririsan
+                    Diperbarui setiap 60 detik saat terlihat · kategori dapat beririsan
                 </p>
             </div>
 
