@@ -14,10 +14,20 @@ class ViewG003M006Room extends ViewRecord
     {
         return [
             Actions\Action::make('downloadQrPdf')
-                ->label('Unduh QR A4')
-                ->icon('heroicon-o-arrow-down-tray')
-                ->color('success')
-                ->url(fn (): string => $this->getRecord()->qrCodePdfUrl()),
+                ->label('Lihat QR A4')
+                ->icon('heroicon-o-eye')
+                ->color('gray')
+                ->modalHeading('Pratinjau QR Ruangan A4')
+                ->modalWidth('7xl')
+                ->modalSubmitAction(false)
+                ->modalCancelActionLabel('Tutup')
+                ->modalContent(fn () => view('filament.components.pdf-preview-modal', [
+                    'title' => 'QR Ruangan '.$this->getRecord()->name,
+                    'previewUrl' => route('public.rooms.qrcode-pdf', [
+                        'room' => $this->getRecord()->qr_uuid, 'preview' => 1,
+                    ]),
+                    'downloadUrl' => $this->getRecord()->qrCodePdfUrl(),
+                ])),
             Actions\EditAction::make(),
         ];
     }

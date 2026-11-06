@@ -227,7 +227,7 @@ class TicketResource extends Resource
                     Infolists\Components\TextEntry::make('maintenance.approver.name')->label('Disetujui oleh')->placeholder('Menunggu persetujuan'),
                     Infolists\Components\TextEntry::make('maintenance.accepted_at')->label('Diterima petugas')->dateTime('d M Y H:i')->placeholder('Belum diterima'),
                 ])->columns(2),
-            Infolists\Components\Section::make('Perawatan / Perbaikan V3')
+            Infolists\Components\Section::make('Penanganan dan Hasil Perbaikan')
                 ->visible(fn ($record): bool => $record->maintenance !== null)
                 ->schema([
                     Infolists\Components\TextEntry::make('maintenance.approver.name')->label('Disetujui oleh')->placeholder('Belum'),
@@ -309,9 +309,11 @@ class TicketResource extends Resource
                                     ->openUrlInNewTab()
                                     ->visible(fn (Infolists\Components\ImageEntry $component): bool => filled($component->getState())),
                                 Infolists\Components\TextEntry::make('original_name')
-                                    ->label('Buka lampiran')
-                                    ->url(fn (\App\Models\TicketAttachment $record): string => $record->preview_url)
-                                    ->openUrlInNewTab(),
+                                    ->label('Lampiran')
+                                    ->url(fn (\App\Models\TicketAttachment $record): ?string => $record->mime_type === 'application/pdf'
+                                        ? null : $record->preview_url)
+                                    ->openUrlInNewTab()
+                                    ->suffixAction(static::previewPdfAttachmentAction()),
                                 Infolists\Components\TextEntry::make('download_url')
                                     ->label('Unduh')
                                     ->formatStateUsing(fn (): string => 'Unduh file')
@@ -324,9 +326,11 @@ class TicketResource extends Resource
                 ->description('Lampiran awal dan lampiran komentar. Foto/PDF dibuka privat; gunakan tautan unduh bila ingin menyimpan file.')
                 ->schema([
                     Infolists\Components\RepeatableEntry::make('visibleAttachments')->hiddenLabel()->schema([
-                        Infolists\Components\TextEntry::make('original_name')->label('Buka file')
-                            ->url(fn (\App\Models\TicketAttachment $record): string => $record->preview_url)
-                            ->openUrlInNewTab(),
+                        Infolists\Components\TextEntry::make('original_name')->label('Lampiran')
+                            ->url(fn (\App\Models\TicketAttachment $record): ?string => $record->mime_type === 'application/pdf'
+                                ? null : $record->preview_url)
+                            ->openUrlInNewTab()
+                            ->suffixAction(static::previewPdfAttachmentAction()),
                         Infolists\Components\TextEntry::make('download_url')->label('Unduh')
                             ->formatStateUsing(fn (): string => 'Unduh file')
                             ->url(fn (\App\Models\TicketAttachment $record): string => $record->download_url)
@@ -356,6 +360,23 @@ class TicketResource extends Resource
                 ])->columns(3),
             ])->collapsed(),
         ]);
+    }
+
+    private static function previewPdfAttachmentAction(): Infolists\Components\Actions\Action
+    {
+        return Infolists\Components\Actions\Action::make('previewPdf')
+            ->label('Lihat PDF')
+            ->icon('heroicon-o-eye')
+            ->visible(fn (\App\Models\TicketAttachment $record): bool => $record->mime_type === 'application/pdf')
+            ->modalHeading(fn (\App\Models\TicketAttachment $record): string => 'Pratinjau '.$record->original_name)
+            ->modalWidth('7xl')
+            ->modalSubmitAction(false)
+            ->modalCancelActionLabel('Tutup')
+            ->modalContent(fn (\App\Models\TicketAttachment $record) => view('filament.components.pdf-preview-modal', [
+                'title' => 'Lampiran '.$record->original_name,
+                'previewUrl' => $record->preview_url,
+                'downloadUrl' => $record->download_url,
+            ]));
     }
 
     public static function getPages(): array

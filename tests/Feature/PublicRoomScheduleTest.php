@@ -110,5 +110,11 @@ class PublicRoomScheduleTest extends TestCase
             ->assertHeader('content-disposition', 'attachment; filename=ruang-rapat-utama-qrcode-a4.pdf');
 
         $this->assertStringStartsWith('%PDF-', (string) $response->getContent());
+
+        $preview = $this->get($room->qrCodePdfUrl().'?preview=1')->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf')
+            ->assertHeader('X-Frame-Options', 'SAMEORIGIN');
+        $this->assertStringContainsString('inline', (string) $preview->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF-', (string) $preview->getContent());
     }
 }
