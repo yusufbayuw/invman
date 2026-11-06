@@ -61,10 +61,11 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::BODY_END, fn () => view('pwa.client', [
                 'showBanner' => auth()->check(),
             ]))
+            ->renderHook(PanelsRenderHook::BODY_END, fn () => view('filament.components.session-recovery'))
             ->login(Login::class)
             ->profile(EditProfile::class, isSimple: false)
             ->databaseNotifications()
-            ->databaseNotificationsPolling('15s')
+            ->databaseNotificationsPolling('60s')
             ->globalSearchKeyBindings(['ctrl+k', 'command+k'])
             ->globalSearchFieldKeyBindingSuffix()
             ->globalSearchDebounce('400ms')

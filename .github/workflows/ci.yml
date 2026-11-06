@@ -85,6 +85,8 @@ jobs:
           echo "::warning::Build-time npm dependencies have unresolved advisories (tracked in issue #21)."
           echo "### ⚠️ npm build dependency audit" >> "$GITHUB_STEP_SUMMARY"
           echo "Build dependencies contain published advisories. Functional CI success does not imply a clean supply-chain audit." >> "$GITHUB_STEP_SUMMARY"
+      - name: Test Livewire session recovery in the browser runtime
+        run: node --test tests/Support/SessionExpiry/session-recovery.test.cjs
       - name: Build Vite assets
         run: npm run build
       - name: Run Laravel tests

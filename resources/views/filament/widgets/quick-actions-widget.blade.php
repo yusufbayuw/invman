@@ -8,7 +8,7 @@
             Peminjaman yang perlu Anda tindak lanjuti.
         </x-slot>
 
-        <div wire:poll.30s wire:loading.class.delay="opacity-70" class="space-y-4 transition-opacity">
+        <div wire:poll.visible.60s wire:loading.class.delay="opacity-70" class="space-y-4 transition-opacity">
             <div class="flex flex-wrap items-center gap-2">
                 @if ($overdueCount > 0)
                     <x-filament::badge color="danger" icon="heroicon-m-exclamation-triangle">{{ $overdueCount }} reservasi terlambat</x-filament::badge>
