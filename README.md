@@ -198,14 +198,14 @@ Setelah memperbarui versi ini, muat ulang penuh halaman browser sekali agar skri
 
 ## Ekspor, impor, dan template data
 
-Tabel data menyediakan **Ekspor CSV**, **Unduh Template**, dan **Impor Data** sesuai hak akses. Gunakan CSV UTF-8 dengan pemisah koma atau titik koma, maksimal 5 MB dan 1.000 baris per unggahan. Ekspor mengikuti filter tabel serta cakupan unit/pengelola; password selalu kosong dan teks yang berpotensi menjadi formula spreadsheet dilindungi.
+Tabel data menyediakan **Ekspor Excel (.xlsx)**, **Unduh Template (.xlsx)**, dan **Impor Data (.xlsx)** sesuai hak akses. Gunakan template XLSX terbaru dengan satu lembar kerja; ukuran berkas maksimal 5 MB dan 1.000 baris data per unggahan. Format CSV tidak diterima untuk fitur impor ini. Jangan mengubah nama header; isi sel dengan nilai langsung, bukan formula. Formatkan nomor telepon, kode, atau identitas yang diawali nol sebagai teks. Ekspor mengikuti filter tabel serta cakupan unit/pengelola; password tetap kosong dan teks berawalan tanda formula diekspor sebagai sel teks yang aman.
 
 - ID kosong menambahkan data; ID terisi memperbarui data yang sama. Tersedia mode tambah saja, edit saja, atau campuran. ID terisi yang tidak ditemukan tidak dibuat menjadi data baru.
 - Satu berkas merupakan satu transaksi: kesalahan pada baris mana pun membatalkan seluruh perubahan dan menampilkan nomor baris. Untuk edit sebagian, hapus kolom yang tidak diubah. Sel kosong mengosongkan kolom opsional; password kosong mempertahankan password lama.
 - Relasi menggunakan ID dari ekspor menu terkait. `roles`, `permissions`, `member_ids`, `weekdays`, `steps`, dan `needs` memakai JSON. Contoh hari: `[1,3,5]` berarti Senin, Rabu, Jumat. Kolom informatif `available_quantity`, status/version workflow, serta status/pemilik pengajuan dari hasil ekspor tidak diimpor ulang.
 - Master yang didukung: unit, jenis/pengelola/barang/barang satuan, gedung/lantai/ruangan, kendaraan/pengemudi/pendamping, pengguna/peran, kategori laporan, jabatan/penugasan/tim, workflow draft, kegiatan, jadwal rutin, checklist, serta catatan histori/ulasan mandiri. Impor tetap memakai validasi relasi, pembatasan akses, dan observer inventaris. Role otomatis pengelola tetap mengikuti keanggotaan, jumlah barang mengikuti Barang Satuan/pergerakan stok, dan workflow published tetap tidak dapat diedit.
 - Pada peminjaman dan tabel reservasi, **Impor Draf Pengajuan** memakai ID pengajuan dan daftar kebutuhan lengkap, bukan mengubah status reservasi atau alokasi satuan. Contoh `needs`: `[{"type":"room","room_id":1},{"type":"item","item_id":2,"quantity":3}]`. Ketersediaan diperiksa saat impor; draf tetap harus diajukan melalui aplikasi. Mengimpor atas nama Sarpras lain membutuhkan `borrower_id` dan `override_reason` sesuai kewenangan.
-- Laporan kerusakan dapat diimpor sebagai tiket baru. Triase, penugasan, persetujuan, ulasan terkait pengajuan, serah terima, lampiran/foto, serta perubahan status tetap memakai tindakan aplikasi yang diaudit. Kolom berkas tidak menerima path dari CSV.
+- Laporan kerusakan dapat diimpor sebagai tiket baru. Triase, penugasan, persetujuan, ulasan terkait pengajuan, serah terima, lampiran/foto, serta perubahan status tetap memakai tindakan aplikasi yang diaudit. Kolom berkas tidak menerima path dari XLSX.
 
 ## Jadwal rutin aset
 

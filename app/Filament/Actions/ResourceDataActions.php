@@ -9,6 +9,7 @@ use App\Models\G005M016ItemReservationDetail;
 use App\Models\G005M019VehicleReservation;
 use App\Models\Ticket;
 use App\Services\DataExchange\ResourceDataExchange;
+use App\Services\DataExchange\XlsxDataFile;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
@@ -31,7 +32,7 @@ class ResourceDataActions
         $loanImport = $importResource === G004M008ActivityResource::class;
 
         return [
-            Action::make('exportData')->label('Ekspor CSV')->icon('heroicon-o-arrow-down-tray')
+            Action::make('exportData')->label('Ekspor Excel (.xlsx)')->icon('heroicon-o-arrow-down-tray')
                 ->visible(fn () => $resource::canViewAny())
                 ->action(fn ($livewire) => $exchange->download($resource, query: $livewire->getFilteredSortedTableQuery())),
             Action::make('downloadTemplate')->label($loanImport ? 'Template Pengajuan' : 'Unduh Template')->icon('heroicon-o-document-arrow-down')
@@ -40,10 +41,10 @@ class ResourceDataActions
             Action::make('importData')->label($loanImport ? 'Impor Draf Pengajuan' : 'Impor Data')->icon('heroicon-o-arrow-up-tray')
                 ->visible(fn () => $editable && $resource::canViewAny())
                 ->modalHeading('Impor '.$importResource::getPluralModelLabel())
-                ->modalDescription(($loanImport ? 'Impor selalu menyimpan DRAF pengajuan lengkap, tanpa mengubah status persetujuan, serah terima, atau alokasi. ID adalah ID pengajuan, bukan ID reservasi. ' : '').'CSV UTF-8 (koma atau titik koma), maksimal 5 MB / 1.000 baris. Semua baris disimpan bersama; bila ada kesalahan, seluruh impor dibatalkan.')
+                ->modalDescription(($loanImport ? 'Impor selalu menyimpan DRAF pengajuan lengkap, tanpa mengubah status persetujuan, serah terima, atau alokasi. ID adalah ID pengajuan, bukan ID reservasi. ' : '').'Gunakan Excel Workbook (.xlsx) dari template terbaru, satu lembar kerja, maksimal 5 MB / 1.000 baris data. Jika ada kesalahan, seluruh impor dibatalkan.')
                 ->form([
                     Placeholder::make('guide')->label('Cara mengisi')
-                        ->content('Unduh template atau ekspor data terlebih dahulu. ID kosong = tambah, ID terisi = edit data tersebut. ID dari menu master terkait digunakan untuk kolom relasi. Nilai 1 = ya/aktif, 0 = tidak. Untuk edit sebagian, hapus kolom yang tidak ingin diubah; sel kosong mengosongkan kolom. Password kosong mempertahankan password lama. Daftar roles, member_ids, weekdays, dan steps diisi JSON (contoh weekdays: [1,3,5], Senin=1). Kolom status transaksi dan penghitung stok mengikuti alur aplikasi.'),
+                        ->content('Unduh template Excel (.xlsx) atau ekspor data terlebih dahulu. Isi sel dengan nilai langsung (bukan formula); nomor yang diawali nol disimpan sebagai teks. Jangan ubah judul kolom. ID kosong = tambah, ID terisi = edit data tersebut. ID dari menu master terkait digunakan untuk kolom relasi. Nilai 1 = ya/aktif, 0 = tidak. Untuk edit sebagian, hapus kolom yang tidak ingin diubah; sel kosong mengosongkan kolom. Password kosong mempertahankan password lama. Daftar roles, member_ids, weekdays, dan steps diisi JSON (contoh weekdays: [1,3,5], Senin=1). Kolom status transaksi dan penghitung stok mengikuti alur aplikasi.'),
                     Placeholder::make('ticket_guide')->label('Laporan kerusakan')->visible($createOnly)
                         ->content('Impor membuat laporan baru. Tiket yang sudah dibuat diperbarui melalui tindakan triase, penugasan, dan perubahan status yang tercatat dalam audit.'),
                     Placeholder::make('loan_guide')->label('Kebutuhan peminjaman')->visible($loanImport)
@@ -51,8 +52,8 @@ class ResourceDataActions
                     Select::make('mode')->label('Mode impor')->required()->default($createOnly ? 'create' : 'upsert')->options($createOnly ? ['create' => 'Tambah laporan baru (ID kosong)'] : [
                         'create' => 'Tambah saja (ID harus kosong)', 'update' => 'Edit saja (ID wajib)', 'upsert' => 'Tambah dan edit sesuai ID',
                     ]),
-                    FileUpload::make('file')->label('Berkas CSV')->required()->storeFiles(false)
-                        ->acceptedFileTypes(['text/csv', 'text/plain', 'application/csv', 'application/vnd.ms-excel'])->maxSize(5120),
+                    FileUpload::make('file')->label('Berkas Excel (.xlsx)')->required()->storeFiles(false)
+                        ->acceptedFileTypes([XlsxDataFile::MIME_TYPE])->maxSize(5120),
                 ])
                 ->action(function (array $data, $livewire) use ($exchange, $importResource): void {
                     abort_unless($data['file'] instanceof TemporaryUploadedFile, 422);
