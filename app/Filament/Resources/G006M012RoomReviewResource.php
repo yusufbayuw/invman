@@ -16,7 +16,7 @@ class G006M012RoomReviewResource extends Resource
 {
     protected static ?string $model = G006M012RoomReview::class;
 
-    protected static ?string $navigationGroup = 'Pemeriksaan & Riwayat';
+    protected static ?string $navigationGroup = 'Data Aset';
 
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
 

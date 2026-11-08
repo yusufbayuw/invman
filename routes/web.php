@@ -115,3 +115,11 @@ Route::get('/storage/users-avatar/avatar.png', function () {
 Route::get('/login', function () {
     return redirect('/admin/login');
 })->name('login');
+
+// Read the current session before a Livewire write; never create a new login or replay a write.
+Route::get('/session/status', function (\Illuminate\Http\Request $request) {
+    return response()->json([
+        'user' => (string) ($request->user()?->getAuthIdentifier() ?? ''),
+        'token' => csrf_token(),
+    ])->header('Cache-Control', 'no-store, private');
+})->middleware(\Filament\Http\Middleware\AuthenticateSession::class)->name('session.status');

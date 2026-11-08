@@ -73,12 +73,8 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 NavigationGroup::make()->label('Peminjaman'),
                 NavigationGroup::make()->label('Laporan & Perbaikan'),
-                NavigationGroup::make()->label('Koordinasi'),
                 NavigationGroup::make()->label('Laporan'),
-                NavigationGroup::make()->label('Kelola Peminjaman')->collapsed(),
-                NavigationGroup::make()->label('Opsi Peminjaman')->collapsed(),
                 NavigationGroup::make()->label('Data Aset')->collapsed(),
-                NavigationGroup::make()->label('Pemeriksaan & Riwayat')->collapsed(),
                 NavigationGroup::make()->label('Pengaturan')->collapsed(),
             ])
             ->unsavedChangesAlerts()
@@ -132,7 +128,8 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugins([
-                ChatifyPlugin::make()->customPage(CustomChatifyPage::class),
+                ChatifyPlugin::make()->customPage(CustomChatifyPage::class)
+                    ->disableFloatingChatWidget(fn (): bool => ! CustomChatifyPage::canAccess()),
                 SimpleLightBoxPlugin::make(),
                 FilamentShieldPlugin::make(),
                 FilamentBackgroundsPlugin::make()

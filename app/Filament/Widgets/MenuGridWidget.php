@@ -38,7 +38,10 @@ class MenuGridWidget extends Widget
 
     public function loadPinnedMenus()
     {
-        $this->pinnedMenus = PinnedMenu::where('user_id', auth()->id())->get()->toArray();
+        $this->pinnedMenus = PinnedMenu::where('user_id', auth()->id())->get()
+            ->reject(fn ($menu): bool => ! \App\Filament\Pages\CustomChatifyPage::canAccess()
+                && rtrim($menu->url, '/') === rtrim(\App\Filament\Pages\CustomChatifyPage::getUrl(), '/'))
+            ->values()->toArray();
     }
 
     public function togglePin($label, $url, $icon = null)

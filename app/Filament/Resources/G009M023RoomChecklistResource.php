@@ -14,7 +14,7 @@ class G009M023RoomChecklistResource extends Resource
 {
     protected static ?string $model = G009M023RoomChecklist::class;
 
-    protected static ?string $navigationGroup = 'Pemeriksaan & Riwayat';
+    protected static ?string $navigationGroup = 'Data Aset';
 
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
 

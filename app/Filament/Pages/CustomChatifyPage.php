@@ -2,12 +2,15 @@
 
 namespace App\Filament\Pages;
 
+use App\Services\ApplicationSettings;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Monzer\FilamentChatifyIntegration\Pages\Chatify;
 
 class CustomChatifyPage extends Chatify
 {
-    use HasPageShield;
+    use HasPageShield {
+        canAccess as protected shieldCanAccess;
+    }
 
     protected static string $view = 'filament.pages.custom-chatify-page';
 
@@ -17,7 +20,14 @@ class CustomChatifyPage extends Chatify
 
     protected static ?string $navigationLabel = 'Chat';
 
-    protected static ?string $navigationGroup = 'Koordinasi';
+    protected static ?string $navigationGroup = 'Laporan & Perbaikan';
+
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check()
+            && app(ApplicationSettings::class)->chatEnabled()
+            && static::shieldCanAccess($parameters);
+    }
 
     public function getTitle(): string
     {

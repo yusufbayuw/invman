@@ -16,7 +16,7 @@ class G009M022ItemInstanceChecklistResource extends Resource
 {
     protected static ?string $model = G009M022ItemInstanceChecklist::class;
 
-    protected static ?string $navigationGroup = 'Pemeriksaan & Riwayat';
+    protected static ?string $navigationGroup = 'Data Aset';
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
 

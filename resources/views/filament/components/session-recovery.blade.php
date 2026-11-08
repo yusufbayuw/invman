@@ -1,5 +1,5 @@
 {{-- This panel-level notice intentionally leaves unsaved form inputs visible. --}}
-<aside id="invman-session-expired" hidden role="alert" aria-live="assertive" aria-labelledby="invman-session-expired-title">
+<aside data-session-url="{{ route('session.status') }}" data-session-user="{{ auth()->id() }}" id="invman-session-expired" hidden role="alert" aria-live="assertive" aria-labelledby="invman-session-expired-title">
     <h2 id="invman-session-expired-title">Sesi halaman perlu diperbarui</h2>
     <p>Permintaan terakhir tidak dapat diproses (419). Anda mungkin perlu masuk kembali.</p>
     <p>Jika ada isian yang belum disimpan, salin dahulu sebelum memuat ulang. Periksa status transaksi sebelum mengulangi suatu tindakan.</p>
@@ -36,4 +36,4 @@
     }
     #invman-session-expired button:focus-visible { outline: 3px solid #818cf8; outline-offset: 2px; }
 </style>
-<script src="{{ asset('js/livewire-session-recovery.js') }}" defer></script>
+<script src="{{ asset('js/livewire-session-recovery.js').'?v=2' }}" defer></script>

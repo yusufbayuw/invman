@@ -16,7 +16,7 @@ class G007M014RoomHistoryResource extends Resource
 {
     protected static ?string $model = G007M014RoomHistory::class;
 
-    protected static ?string $navigationGroup = 'Pemeriksaan & Riwayat';
+    protected static ?string $navigationGroup = 'Data Aset';
 
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
 

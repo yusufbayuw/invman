@@ -35,7 +35,7 @@ class AjukanPeminjaman extends Page implements HasForms
 
     protected static ?string $navigationIcon = 'heroicon-o-plus-circle';
 
-    protected static ?string $navigationGroup = 'Opsi Peminjaman';
+    protected static ?string $navigationGroup = 'Peminjaman';
 
     protected static ?string $navigationLabel = 'Pengajuan Multi-aset';
 

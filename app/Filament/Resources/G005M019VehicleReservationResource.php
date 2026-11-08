@@ -21,7 +21,7 @@ class G005M019VehicleReservationResource extends Resource
 {
     protected static ?string $model = G005M019VehicleReservation::class;
 
-    protected static ?string $navigationGroup = 'Kelola Peminjaman';
+    protected static ?string $navigationGroup = 'Peminjaman';
     protected static ?string $navigationIcon = 'heroicon-o-calendar-date-range';
     protected static ?string $slug = 'f8907dc8-c460-41f1-8ea7-b1eac45c2054';//'vehicle-reservation';
     protected static ?string $modelLabel = 'Reservasi Kendaraan';

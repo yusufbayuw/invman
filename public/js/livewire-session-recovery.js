@@ -8,6 +8,37 @@
 
     let hooked = false;
 
+    const originalFetch = window.fetch.bind(window);
+    // Livewire's request hook is synchronous. Scope this async preflight to its
+    // JSON updates only, leaving uploads, chat, and other fetch calls unchanged.
+    window.fetch = async (input, options) => {
+        const headers = new Headers(options?.headers);
+        if (options?.method !== 'POST' || !headers.has('X-Livewire')) {
+            return originalFetch(input, options);
+        }
+        const target = new URL(typeof input === 'string' ? input : input.url, location.href);
+        const panel = document.getElementById('invman-session-expired');
+        if (target.origin !== location.origin || !panel?.dataset.sessionUrl) {
+            return originalFetch(input, options);
+        }
+
+        const status = await originalFetch(panel.dataset.sessionUrl, {
+            credentials: 'same-origin', cache: 'no-store',
+            headers: { Accept: 'application/json' },
+        });
+        if (!status.ok) return new Response('', { status: 419 });
+        const session = await status.json();
+        // Another tab may have signed out or changed accounts. Never submit an
+        // old form under a different identity, even with a valid fresh token.
+        if (session.user !== panel.dataset.sessionUser || !session.token) {
+            return new Response('', { status: 419 });
+        }
+        const payload = JSON.parse(options.body);
+        payload._token = session.token;
+        if (headers.has('X-CSRF-TOKEN')) headers.set('X-CSRF-TOKEN', session.token);
+        return originalFetch(input, { ...options, headers, body: JSON.stringify(payload) });
+    };
+
     const showNotice = () => {
         const notice = document.getElementById('invman-session-expired');
         if (!notice || !notice.hidden) return;

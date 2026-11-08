@@ -148,7 +148,7 @@ class RoleDashboardTest extends TestCase
     {
         $this->actingAs($this->user(config('role.admin')));
         $groups = collect(Filament::getPanel('admin')->getNavigationGroups())->keyBy(fn ($group) => $group->getLabel());
-        foreach (['Kelola Peminjaman', 'Opsi Peminjaman', 'Data Aset', 'Pemeriksaan & Riwayat', 'Pengaturan'] as $name) {
+        foreach (['Data Aset', 'Pengaturan'] as $name) {
             $this->assertTrue($groups[$name]->isCollapsed());
         }
         $paths = collect(Route::getRoutes())->map->uri();

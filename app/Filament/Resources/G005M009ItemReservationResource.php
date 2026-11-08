@@ -21,7 +21,7 @@ class G005M009ItemReservationResource extends Resource
 {
     protected static ?string $model = G005M009ItemReservation::class;
 
-    protected static ?string $navigationGroup = 'Kelola Peminjaman';
+    protected static ?string $navigationGroup = 'Peminjaman';
     protected static ?string $navigationIcon = 'heroicon-o-bookmark-square';
     protected static ?string $slug = 'fdf5ffbe-f082-4e9a-a93f-5ceee206ae49';//'item-reservation';
     protected static ?string $modelLabel = 'Reservasi Barang';
