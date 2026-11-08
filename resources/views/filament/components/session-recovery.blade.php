@@ -1,13 +1,14 @@
 {{-- This panel-level notice intentionally leaves unsaved form inputs visible. --}}
 <aside data-session-url="{{ route('session.status') }}" data-session-user="{{ auth()->id() }}" id="invman-session-expired" hidden role="alert" aria-live="assertive" aria-labelledby="invman-session-expired-title">
     <h2 id="invman-session-expired-title">Sesi halaman perlu diperbarui</h2>
-    <p>Permintaan terakhir tidak dapat diproses (419). Anda mungkin perlu masuk kembali.</p>
+    <p data-invman-session-message>Permintaan terakhir belum diproses. Periksa sesi halaman sebelum melanjutkan.</p>
     <p>Jika ada isian yang belum disimpan, salin dahulu sebelum memuat ulang. Periksa status transaksi sebelum mengulangi suatu tindakan.</p>
+    <a data-invman-session-login href="{{ route('filament.admin.auth.login') }}" target="_blank" rel="noopener" hidden>Buka halaman masuk</a>
     <button type="button" data-invman-session-reload>Muat ulang halaman</button>
 </aside>
 
 <style>
-    #invman-session-expired[hidden] { display: none !important; }
+    #invman-session-expired [hidden], #invman-session-expired[hidden] { display: none !important; }
     #invman-session-expired {
         position: fixed;
         z-index: 9999;
@@ -36,4 +37,4 @@
     }
     #invman-session-expired button:focus-visible { outline: 3px solid #818cf8; outline-offset: 2px; }
 </style>
-<script src="{{ asset('js/livewire-session-recovery.js').'?v=2' }}" defer></script>
+<script src="{{ asset('js/livewire-session-recovery.js').'?v=5' }}" defer></script>

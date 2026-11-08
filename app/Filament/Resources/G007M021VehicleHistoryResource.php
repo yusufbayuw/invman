@@ -101,6 +101,8 @@ class G007M021VehicleHistoryResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('vehicle.name')

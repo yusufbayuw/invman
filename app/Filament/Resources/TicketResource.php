@@ -93,7 +93,7 @@ class TicketResource extends Resource
                 ->getOptionLabelUsing(fn ($value, Forms\Get $get): ?string =>
                     app(TicketService::class)->assetOptionLabel((string) $get('asset_type'), $value))
                 ->default(fn () => is_numeric(request()->query('asset_id')) ? request()->query('asset_id') : null)
-                ->helperText('Hanya hasil yang diizinkan; ketik nama atau kode, bukan memuat seluruh inventaris.')
+                ->helperText('Pilihan awal mengikuti izin Anda. Ketik nama atau kode untuk mencari inventaris lainnya.')
                 ->required(),
         ];
     }
@@ -167,6 +167,8 @@ class TicketResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table->columns([
             Tables\Columns\TextColumn::make('number')->label('Tiket')->searchable()->copyable(),
             Tables\Columns\TextColumn::make('title')->label('Masalah')->searchable()->limit(55)->wrap(),
@@ -365,5 +367,17 @@ class TicketResource extends Resource
             'create' => Pages\CreateTicket::route('/create'),
             'view' => Pages\ViewTicket::route('/{record}'),
         ];
+    }
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\RelationManagers\TicketOperationalOverridesRelationManager::class,
+            \App\Filament\Resources\RelationManagers\TicketWorkOrderEstimatesRelationManager::class,
+            \App\Filament\Resources\RelationManagers\TicketWorkOrderRevisionsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\TicketWorkOrderApprovalHistoryRelationManager::class,
+            \App\Filament\Resources\RelationManagers\TicketEventsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\TicketVisibleAttachmentsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\TicketVisibleCommentsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\TicketAssetsRelationManager::class,\App\Filament\Resources\RelationManagers\TicketMaintenanceRelationManager::class];
     }
 }

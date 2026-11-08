@@ -27,8 +27,12 @@ class VehicleLoanSchedule extends TableWidget
             ->description('Jadwal peminjaman kendaraan yang aktif atau mendatang.')
             ->query($this->visibleReservations(G005M019VehicleReservation::query())->with(['vehicle', 'activity.unit']))
             ->columns([
-                Tables\Columns\TextColumn::make('vehicle.name')->label('Kendaraan')->weight('semibold')->searchable()->placeholder('Kendaraan tidak tercatat'),
-                Tables\Columns\TextColumn::make('vehicle.license_plate')->label('Nomor Polisi')->badge()->placeholder('Belum tercatat'),
+                Tables\Columns\TextColumn::make('vehicle.name')->label('Kendaraan')->weight('semibold')
+                    ->formatStateUsing(fn (?string $state): ?string => $this->scheduleText($state))
+                    ->searchable($this->canViewScheduleDetails())->placeholder('Kendaraan tidak tercatat'),
+                Tables\Columns\TextColumn::make('vehicle.license_plate')->label('Nomor Polisi')->badge()
+                    ->formatStateUsing(fn (?string $state): ?string => $this->scheduleText($state))
+                    ->placeholder('Belum tercatat'),
                 ...$this->commonColumns(),
             ])
             ->actions([

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Middleware\RecordLivewireSessionMismatch;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Http\Request;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Log;
@@ -12,7 +13,7 @@ use Tests\TestCase;
 
 class LivewireSessionStabilityTest extends TestCase
 {
-    public function test_livewire_csrf_rejection_is_logged_without_tokens_and_rethrown(): void
+    public function test_raw_csrf_exception_is_logged_without_tokens_and_rethrown_without_claiming_execution_status(): void
     {
         config(['session.cookie' => 'invman_session', 'session.driver' => 'database']);
         $request = Request::create('https://invman.test/livewire/update', 'POST');
@@ -36,6 +37,37 @@ class LivewireSessionStabilityTest extends TestCase
             $request,
             fn (): Response => throw new TokenMismatchException,
         );
+    }
+
+    public function test_real_csrf_middleware_still_rejects_invalid_tokens_before_the_operation_runs(): void
+    {
+        $csrf = new class(app(), app('encrypter')) extends \App\Http\Middleware\VerifyCsrfToken
+        {
+            protected function runningUnitTests()
+            {
+                return false;
+            }
+        };
+        $session = app('session.store');
+        $session->start();
+        $request = Request::create('https://invman.test/livewire/update', 'POST', ['_token' => 'invalid']);
+        $request->setLaravelSession($session);
+        $executed = 0;
+        $operation = function () use (&$executed): Response {
+            $executed++;
+
+            return new Response('done');
+        };
+        $observer = new RecordLivewireSessionMismatch;
+        $response = $observer->handle($request, fn ($request) => $csrf->handle($request, $operation));
+        $this->assertSame(419, $response->getStatusCode());
+        $this->assertSame('1', $response->headers->get('X-Invman-CSRF-Rejected'));
+        $this->assertSame(0, $executed);
+        $request->merge(['_token' => $session->token()]);
+        $response = $observer->handle($request, fn ($request) => $csrf->handle($request, $operation));
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertNull($response->headers->get('X-Invman-CSRF-Rejected'));
+        $this->assertSame(1, $executed);
     }
 
     public function test_other_routes_and_successful_livewire_requests_are_unchanged(): void

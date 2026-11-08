@@ -27,6 +27,11 @@ class PublicRoomScheduleController extends Controller
             ->orderBy('start_time')
             ->first();
 
-        return view('public.rooms.show', compact('room', 'reservations', 'currentReservation'));
+        $routineSchedules = $room->recurringSchedules()->where('is_active', true)
+            ->where(fn ($query) => $query->whereNull('valid_until')->orWhere('valid_until', '>=', today()->subDay()))
+            ->orderBy('start_time')->get();
+        $currentRoutine = $routineSchedules->first(fn ($schedule) => $schedule->overlaps(now(), now()->addSecond()));
+
+        return view('public.rooms.show', compact('room', 'reservations', 'currentReservation', 'routineSchedules', 'currentRoutine'));
     }
 }

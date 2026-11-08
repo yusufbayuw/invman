@@ -27,10 +27,13 @@ class RoomLoanSchedule extends TableWidget
             ->description('Jadwal peminjaman ruangan yang aktif atau mendatang.')
             ->query($this->visibleReservations(G005M010RoomReservation::query())->with(['room.floor.building', 'activity.unit']))
             ->columns([
-                Tables\Columns\TextColumn::make('room.name')->label('Ruangan')->weight('semibold')->searchable()->placeholder('Ruangan tidak tercatat'),
+                Tables\Columns\TextColumn::make('room.name')->label('Ruangan')->weight('semibold')
+                    ->formatStateUsing(fn (?string $state): ?string => $this->scheduleText($state))
+                    ->searchable($this->canViewScheduleDetails())->placeholder('Ruangan tidak tercatat'),
                 Tables\Columns\TextColumn::make('location')
                     ->label('Lokasi')
-                    ->getStateUsing(fn (Model $record): string => $this->location($record)),
+                    ->getStateUsing(fn (Model $record): string => $this->location($record))
+                    ->formatStateUsing(fn (?string $state): ?string => $this->scheduleText($state)),
                 ...$this->commonColumns(),
             ])
             ->actions([

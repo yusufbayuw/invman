@@ -64,6 +64,8 @@ class TicketCategoryResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table->columns([
             Tables\Columns\TextColumn::make('name')->label('Nama')->searchable()->sortable(),
             Tables\Columns\TextColumn::make('slug')->label('Kode')->searchable(),
@@ -80,5 +82,9 @@ class TicketCategoryResource extends Resource
             'create' => Pages\CreateTicketCategory::route('/create'),
             'edit' => Pages\EditTicketCategory::route('/{record}/edit'),
         ];
+    }
+    public static function getRelations(): array
+    {
+        return [\App\Filament\Resources\RelationManagers\TicketCategoryTicketsRelationManager::class];
     }
 }

@@ -19,6 +19,11 @@ use Illuminate\Support\Facades\Auth;
 
 class RoomReservationRelationManager extends RelationManager
 {
+    use \App\Filament\Resources\Concerns\GuardsActivityRelationCrud;
+
+    protected static function reservationResource(): string { return \App\Filament\Resources\G005M010RoomReservationResource::class; }
+    protected static function reservationType(): string { return 'room'; }
+
     protected static string $relationship = 'room_reservation';
 
     protected static ?string $modelLabel = 'Reservasi Ruangan';
@@ -42,10 +47,10 @@ class RoomReservationRelationManager extends RelationManager
                     ->default($this->ownerRecord->id ?? null),
                 Forms\Components\Select::make('g003_m006_room_id')
                     ->relationship('room', 'name', function (Builder $query) {
-                        $query->where('is_borrowable', true);
+                        $query->where('is_borrowable', true)->with('floor.building');
                     })
                     ->getOptionLabelFromRecordUsing(function ($record) {
-                        return "{$record->name} - {$record->floor->name} - {$record->floor->building->name}";
+                        return collect([$record->name, $record->floor?->name, $record->floor?->building?->name])->filter()->implode(' · ');
                     })
                     ->searchable()
                     ->reactive()
@@ -116,7 +121,7 @@ class RoomReservationRelationManager extends RelationManager
                     ->preload()
                     ->label('Ruangan')
                     ->required(),
-                Flatpickr::make('start_time')
+                Flatpickr::make('start_time')->disabled()->dehydrated(false)->helperText('Mengikuti pengajuan induk; ubah melalui formulir pengajuan.')
                     ->label('Tanggal dan Waktu Mulai')
                     ->time(true)
                     ->seconds(false)
@@ -126,7 +131,7 @@ class RoomReservationRelationManager extends RelationManager
                     ->minDate(\Carbon\Carbon::parse($this->ownerRecord->start_time)->subMinute() ?? $this->ownerRecord->start_time)
                     ->maxDate(\Carbon\Carbon::parse($this->ownerRecord->end_time)->addMinute() ?? $this->ownerRecord->start_time)
                     ->before('end_time'),
-                Flatpickr::make('end_time')
+                Flatpickr::make('end_time')->disabled()->dehydrated(false)->helperText('Mengikuti pengajuan induk; ubah melalui formulir pengajuan.')
                     ->label('Tanggal dan Waktu Selesai')
                     ->time(true)
                     ->seconds(false)

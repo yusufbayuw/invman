@@ -7,6 +7,8 @@ use App\Filament\Public\Widgets\ItemLoanSchedule;
 use App\Filament\Public\Widgets\LoanScheduleStats;
 use App\Filament\Public\Widgets\RoomLoanSchedule;
 use App\Filament\Public\Widgets\VehicleLoanSchedule;
+use App\Http\Middleware\EnsureAccountEnabled;
+use App\Http\Middleware\PreventPublicScheduleCaching;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
@@ -31,6 +33,7 @@ class PublicPanelProvider extends PanelProvider
             ->brandName(config('app.name'))
             ->brandLogo(fn () => view('filament.components.logo'))
             ->brandLogoHeight('4rem')
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->favicon(asset(config('app.logo')))
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('pwa.meta'))
             ->renderHook(PanelsRenderHook::BODY_END, fn () => view('pwa.client', [
@@ -58,7 +61,8 @@ class PublicPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
-                \App\Http\Middleware\EnsureAccountEnabled::class,
+                PreventPublicScheduleCaching::class,
+                EnsureAccountEnabled::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,
@@ -67,4 +71,3 @@ class PublicPanelProvider extends PanelProvider
             ]);
     }
 }
-

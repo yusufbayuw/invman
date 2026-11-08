@@ -20,6 +20,11 @@ use Illuminate\Support\Facades\Auth;
 
 class ItemReservationRelationManager extends RelationManager
 {
+    use \App\Filament\Resources\Concerns\GuardsActivityRelationCrud;
+
+    protected static function reservationResource(): string { return \App\Filament\Resources\G005M009ItemReservationResource::class; }
+    protected static function reservationType(): string { return 'item'; }
+
     protected static string $relationship = 'item_reservation';
 
     protected static ?string $modelLabel = 'Reservasi Barang';
@@ -102,7 +107,7 @@ class ItemReservationRelationManager extends RelationManager
                     ->minValue(1)
                     ->label('Jumlah Barang')
                     ->required(),
-                Flatpickr::make('start_time')
+                Flatpickr::make('start_time')->disabled()->dehydrated(false)->helperText('Mengikuti pengajuan induk; ubah melalui formulir pengajuan.')
                     ->label('Tanggal dan Waktu Mulai')
                     ->time(true)
                     ->seconds(false)
@@ -112,7 +117,7 @@ class ItemReservationRelationManager extends RelationManager
                     ->minDate(\Carbon\Carbon::parse($this->ownerRecord->start_time)->subMinute() ?? $this->ownerRecord->start_time)
                     ->maxDate(\Carbon\Carbon::parse($this->ownerRecord->end_time)->addMinute() ?? $this->ownerRecord->start_time)
                     ->before('end_time'),
-                Flatpickr::make('end_time')
+                Flatpickr::make('end_time')->disabled()->dehydrated(false)->helperText('Mengikuti pengajuan induk; ubah melalui formulir pengajuan.')
                     ->label('Tanggal dan Waktu Selesai')
                     ->time(true)
                     ->seconds(false)

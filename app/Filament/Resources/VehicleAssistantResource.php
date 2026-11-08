@@ -50,6 +50,8 @@ class VehicleAssistantResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')->label('Nama Kenek')->searchable()->sortable(),
@@ -66,5 +68,9 @@ class VehicleAssistantResource extends Resource
             'create' => Pages\CreateVehicleAssistant::route('/create'),
             'edit' => Pages\EditVehicleAssistant::route('/{record}/edit'),
         ];
+    }
+    public static function getRelations(): array
+    {
+        return [\App\Filament\Resources\RelationManagers\VehicleAssistantReservationsRelationManager::class];
     }
 }

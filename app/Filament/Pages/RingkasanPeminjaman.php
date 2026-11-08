@@ -20,6 +20,7 @@ use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 class RingkasanPeminjaman extends BaseDashboard
 {
     use HasFiltersForm;
+    use \App\Filament\Widgets\Concerns\InteractsWithLoanDashboardFilters;
 
     protected static ?string $navigationLabel = 'Ringkasan Peminjaman';
 
@@ -30,6 +31,14 @@ class RingkasanPeminjaman extends BaseDashboard
     protected static ?int $navigationSort = 0;
 
     protected static ?string $title = 'Ringkasan Peminjaman';
+
+    protected function getHeaderActions(): array
+    {
+        return [\Filament\Actions\Action::make('exportData')->label('Ekspor Pengajuan')->icon('heroicon-o-arrow-down-tray')
+            ->action(fn () => app(\App\Services\DataExchange\ResourceDataExchange::class)->download(
+                \App\Filament\Resources\G004M008ActivityResource::class, query: $this->loanQuery(),
+            ))];
+    }
 
     public function getColumns(): int|array
     {

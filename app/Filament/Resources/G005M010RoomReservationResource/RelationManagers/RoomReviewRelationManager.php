@@ -2,49 +2,13 @@
 
 namespace App\Filament\Resources\G005M010RoomReservationResource\RelationManagers;
 
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\G006M012RoomReviewResource;
+use App\Filament\Resources\RelationManagers\ResourceRelationManager;
 
-class RoomReviewRelationManager extends RelationManager
+class RoomReviewRelationManager extends ResourceRelationManager
 {
     protected static string $relationship = 'room_review';
-
-    public function form(Form $form): Form
-    {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('id')
-                    ->required()
-                    ->maxLength(255),
-            ]);
-    }
-
-    public function table(Table $table): Table
-    {
-        return $table
-            ->recordTitleAttribute('id')
-            ->columns([
-                Tables\Columns\TextColumn::make('id'),
-            ])
-            ->filters([
-                //
-            ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make(),
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
-    }
+    protected static string $relatedResource = G006M012RoomReviewResource::class;
+    protected static ?string $title = 'Ulasan Ruangan';
+    protected static bool $allowMutations = false;
 }

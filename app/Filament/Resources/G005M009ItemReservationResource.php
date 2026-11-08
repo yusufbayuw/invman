@@ -106,6 +106,8 @@ class G005M009ItemReservationResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('item.name')
@@ -174,6 +176,13 @@ class G005M009ItemReservationResource extends Resource
     public static function getRelations(): array
     {
         return [
+            \App\Filament\Resources\RelationManagers\G005M009ItemReservationCorrectionsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G005M009ItemReservationReturnReceiptRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G005M009ItemReservationOutboundReceiptRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G005M009ItemReservationOutboundChecklistsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G005M009ItemReservationReturnChecklistsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G005M009ItemReservationStatusHistoriesRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G005M009ItemReservationItemReviewsRelationManager::class,
             ItemReservationDetailRelationManager::class,
         ];
     }

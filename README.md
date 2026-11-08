@@ -10,7 +10,7 @@
 
 | Kebutuhan | URL relatif | Keterangan |
 | --- | --- | --- |
-| Jadwal peminjaman publik | `/` | Jadwal barang, ruangan, dan kendaraan tanpa login |
+| Jadwal peminjaman publik | `/` | Pratinjau tersensor tanpa login; rincian tersedia setelah masuk |
 | Login pengguna | `/admin/login` | Autentikasi Filament |
 | Dashboard operasional | `/admin` | Memerlukan akun dan izin yang sesuai |
 | Peminjaman Cepat | `/admin/peminjaman-cepat` | Pengajuan satu jenis aset secara ringkas |
@@ -172,6 +172,48 @@ npm run build
 [GitHub Actions CI](.github/workflows/ci.yml) menjalankan pemeriksaan Composer/PHP, tes Laravel di SQLite, smoke test migrasi dan pembatasan akses di MySQL 8, audit dependensi produksi, serta build Vite. **Lulus CI bukan pengganti UAT di staging.** Audit npm untuk dependensi *build-time* dilaporkan terpisah dan masih memiliki advisory upstream yang dicatat pada [dokumen hardening npm](docs/NPM-BUILD-SECURITY-2026-10.md).
 
 Akses histori dan berkas privat selalu harus mengikuti izin pemohon, unit, atau pengelola. Jangan menaruh `.env`, bukti perawatan, lampiran tiket, atau token rahasia di direktori publik.
+
+## Tindakan operasional dan privasi halaman awal
+
+Dasbor `/admin` menampilkan **Pinjaman Cepat**, **Pinjaman Multi-aset**, dan **Laporan Kerusakan** sebagai tindakan utama sesuai izin pengguna. Tautan persetujuan, status pinjaman, jadwal, dan tugas dipisahkan pada bagian pemantauan. Pengelola/teknisi tetap tidak mendapat akses membuat pinjaman bila role-nya tidak mengizinkan.
+
+Halaman `/` memakai dasbor, statistik, dan tabel native Filament yang sama sebelum maupun setelah login. Pengunjung dapat melihat jumlah reservasi, jumlah barang, waktu, serta status; nama aset, kegiatan, unit, lokasi, dan nomor polisi hanya menampilkan maksimal tiga karakter awal diikuti `•••`. Keterangan kegiatan dan modal detail lengkap hanya tersedia untuk akun aktif. Masking dilakukan di server pada setiap render, termasuk pembaruan Livewire setelah logout; pencarian nama lengkap hanya tersedia setelah login. Respons halaman memakai `private, no-store` serta `Vary: Cookie`. Jadwal kedua sesi mengikuti filter status/waktu yang sama. Halaman QR ruangan terpisah tetap mengikuti fungsinya sendiri.
+
+## Relasi resource, dropdown, dan sesi halaman
+
+Tab relasi tersedia pada resource yang memiliki data turunan: unit, jenis/pengelola/barang/barang satuan, gedung/lantai/ruangan, kendaraan/pengemudi/pendamping, pengguna, kegiatan/pengajuan/reservasi, kategori/tiket, jabatan/tim, dan workflow. Resource tanpa koleksi turunan tetap memakai field relasi pada formulir utamanya.
+
+- CRUD master pada tab relasi memakai formulir dan kolom dari resource yang sama. Buka halaman **Ubah** induk untuk melakukan perubahan. Mode **Lihat** tetap hanya baca. Izin induk dan data terkait diperiksa kembali pada server, termasuk setelah role berubah.
+- Hubungan ke induk dikunci. Mengubah nilai tersembunyi tidak memindahkan data ke unit, kelompok, gedung, atau aset lain. Barang satuan tetap memakai observer inventaris; bulk tidak dapat dibuat menjadi satuan palsu.
+- Keanggotaan pengelola memakai pivot resmi dan menyelaraskan role otomatis. Menghapus keanggotaan di satu kelompok tidak mencabut akses dari kelompok lain.
+- Reservasi pada pengajuan hanya dapat ditambah/diubah/dihapus selama masih draf dan sesuai izin resource. Jadwal/status mengikuti pengajuan; aset duplikat dan jadwal tidak tersedia ditolak. Persetujuan, serah terima, alokasi, bukti, koreksi, dan audit tetap melalui layanan proses, bukan CRUD mentah.
+- Relasi komentar tiket memakai visibilitas internal/publik. Lampiran tetap diunduh melalui controller yang memeriksa izin. Riwayat dan estimasi internal tidak ditampilkan kepada pelapor yang tidak berwenang.
+- Semua select dan filter dropdown mempunyai pencarian serta pilihan awal. Pemuatan awal dibatasi dan tetap memakai query izin/dependensi yang sama dengan pencarian; inventaris besar dicari lebih lanjut dengan mengetik nama/kode.
+
+Widget dasbor yang hanya dipilih oleh role tetap didaftarkan untuk permintaan Livewire berikutnya. Tanpa pendaftaran ini, Livewire dapat mengembalikan 419 karena nama komponen tidak dikenali meskipun sesi dan token CSRF masih valid. Kesalahan komponen/versi ditampilkan terpisah dan tidak diulang sebagai transaksi.
+
+Pemulihan sesi membedakan kegagalan pemeriksaan koneksi/server, sesi berakhir (401), pergantian akun, dan penolakan CSRF (419). Kesalahan pemeriksaan sesi tidak lagi diubah menjadi 419. Hanya respons penolakan CSRF yang ditandai server sebagai **belum menjalankan tindakan** yang dapat dicoba sekali lagi, jika token berubah dan akun masih sama. Respons lain dan kegagalan jaringan tidak diulang otomatis. Token pada metadata halaman juga disegarkan agar unggahan tidak memakai token lama. Isian formulir tetap dipertahankan; masuk ulang dibuka di tab terpisah bila sesi berakhir.
+
+Setelah memperbarui versi ini, muat ulang penuh halaman browser sekali agar skrip pemulihan lama diganti.
+
+## Ekspor, impor, dan template data
+
+Tabel data menyediakan **Ekspor CSV**, **Unduh Template**, dan **Impor Data** sesuai hak akses. Gunakan CSV UTF-8 dengan pemisah koma atau titik koma, maksimal 5 MB dan 1.000 baris per unggahan. Ekspor mengikuti filter tabel serta cakupan unit/pengelola; password selalu kosong dan teks yang berpotensi menjadi formula spreadsheet dilindungi.
+
+- ID kosong menambahkan data; ID terisi memperbarui data yang sama. Tersedia mode tambah saja, edit saja, atau campuran. ID terisi yang tidak ditemukan tidak dibuat menjadi data baru.
+- Satu berkas merupakan satu transaksi: kesalahan pada baris mana pun membatalkan seluruh perubahan dan menampilkan nomor baris. Untuk edit sebagian, hapus kolom yang tidak diubah. Sel kosong mengosongkan kolom opsional; password kosong mempertahankan password lama.
+- Relasi menggunakan ID dari ekspor menu terkait. `roles`, `permissions`, `member_ids`, `weekdays`, `steps`, dan `needs` memakai JSON. Contoh hari: `[1,3,5]` berarti Senin, Rabu, Jumat. Kolom informatif `available_quantity`, status/version workflow, serta status/pemilik pengajuan dari hasil ekspor tidak diimpor ulang.
+- Master yang didukung: unit, jenis/pengelola/barang/barang satuan, gedung/lantai/ruangan, kendaraan/pengemudi/pendamping, pengguna/peran, kategori laporan, jabatan/penugasan/tim, workflow draft, kegiatan, jadwal rutin, checklist, serta catatan histori/ulasan mandiri. Impor tetap memakai validasi relasi, pembatasan akses, dan observer inventaris. Role otomatis pengelola tetap mengikuti keanggotaan, jumlah barang mengikuti Barang Satuan/pergerakan stok, dan workflow published tetap tidak dapat diedit.
+- Pada peminjaman dan tabel reservasi, **Impor Draf Pengajuan** memakai ID pengajuan dan daftar kebutuhan lengkap, bukan mengubah status reservasi atau alokasi satuan. Contoh `needs`: `[{"type":"room","room_id":1},{"type":"item","item_id":2,"quantity":3}]`. Ketersediaan diperiksa saat impor; draf tetap harus diajukan melalui aplikasi. Mengimpor atas nama Sarpras lain membutuhkan `borrower_id` dan `override_reason` sesuai kewenangan.
+- Laporan kerusakan dapat diimpor sebagai tiket baru. Triase, penugasan, persetujuan, ulasan terkait pengajuan, serah terima, lampiran/foto, serta perubahan status tetap memakai tindakan aplikasi yang diaudit. Kolom berkas tidak menerima path dari CSV.
+
+## Jadwal rutin aset
+
+Buka **Data Aset → Jadwal Rutin Aset**, atau tab **Jadwal Rutin (Blokir Booking)** pada barang, ruangan, atau kendaraan. Tentukan hari mingguan, jam mulai/selesai, tanggal mulai, batas tanggal opsional, dan keaktifan. Jam selesai sebelum/sama dengan mulai berarti selesai esok hari; jam yang sama memblokir 24 jam. Semua jam mengikuti `APP_TIMEZONE` (bawaan proyek: Asia/Jakarta).
+
+Jadwal rutin memblokir seluruh aset/jumlah barang selama waktu tersebut, termasuk pengajuan baru, pengiriman draf lama, persetujuan, dan jalur reservasi lama. Batas waktu bersifat `[mulai, selesai)`, sehingga booking boleh tepat setelah jadwal rutin selesai. Jadwal rutin baru/perubahan yang bentrok dengan booking aktif ditolak; sesuaikan booking terlebih dahulu. Nonaktifkan jadwal untuk membuka booking kembali. Halaman QR publik ruangan menampilkan hari/jam rutin tanpa judul kegiatan internal.
+
+Jalankan `php artisan migrate` saat memasang perubahan ini. Verifikasi fitur dengan `php artisan test --filter='ResourceDataExchangeTest|RecurringAssetScheduleTest'`.
 
 ## Troubleshooting singkat
 

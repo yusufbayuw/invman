@@ -107,6 +107,8 @@ class G005M010RoomReservationResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('activity.name')
@@ -160,6 +162,12 @@ class G005M010RoomReservationResource extends Resource
     public static function getRelations(): array
     {
         return [
+            \App\Filament\Resources\RelationManagers\G005M010RoomReservationCorrectionsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G005M010RoomReservationReturnReceiptRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G005M010RoomReservationOutboundReceiptRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G005M010RoomReservationOutboundChecklistsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G005M010RoomReservationReturnChecklistsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G005M010RoomReservationStatusHistoriesRelationManager::class,
             RoomReviewRelationManager::class,
         ];
     }

@@ -2,58 +2,12 @@
 
 namespace App\Filament\Resources\G001M001UnitResource\RelationManagers;
 
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\G002M007ItemResource;
+use App\Filament\Resources\RelationManagers\ResourceRelationManager;
 
-class ItemRelationManager extends RelationManager
+class ItemRelationManager extends ResourceRelationManager
 {
     protected static string $relationship = 'item';
-    protected static ?string $recordTitleAttribute = 'name';
-    protected static ?string $modelLabel = 'Barang';
+    protected static string $relatedResource = G002M007ItemResource::class;
     protected static ?string $title = 'Barang';
-    protected static ?string $icon = 'heroicon-o-cube';
-    protected static ?string $navigationLabel = 'Barang';
-
-    public function form(Form $form): Form
-    {
-        return $form
-            ->schema([
-                //
-            ]);
-    }
-
-    public function table(Table $table): Table
-    {
-        return $table
-            ->recordTitleAttribute('name')
-            ->columns([
-                Tables\Columns\TextColumn::make('name'),
-                Tables\Columns\TextColumn::make('description')
-                    ->limit(50),
-                Tables\Columns\TextColumn::make('quantity')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('room.name')
-            ])
-            ->filters([
-                //
-            ])
-            ->headerActions([
-                // Tables\Actions\CreateAction::make(),
-            ])
-            ->actions([
-                // Tables\Actions\EditAction::make(),
-                // Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                // Tables\Actions\BulkActionGroup::make([
-                //     Tables\Actions\DeleteBulkAction::make(),
-                // ]),
-            ]);
-    }
 }

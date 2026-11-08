@@ -94,6 +94,8 @@ class TicketTeamMemberResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')->label('Petugas')->searchable()->sortable(),
@@ -127,5 +129,9 @@ class TicketTeamMemberResource extends Resource
             'create' => Pages\CreateTicketTeamMember::route('/create'),
             'edit' => Pages\EditTicketTeamMember::route('/{record}/edit'),
         ];
+    }
+    public static function getRelations(): array
+    {
+        return [\App\Filament\Resources\RelationManagers\TicketTeamMemberSubordinatesRelationManager::class];
     }
 }

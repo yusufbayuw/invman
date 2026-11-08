@@ -122,4 +122,4 @@ Route::get('/session/status', function (\Illuminate\Http\Request $request) {
         'user' => (string) ($request->user()?->getAuthIdentifier() ?? ''),
         'token' => csrf_token(),
     ])->header('Cache-Control', 'no-store, private');
-})->middleware(\Filament\Http\Middleware\AuthenticateSession::class)->name('session.status');
+})->middleware(\Illuminate\Session\Middleware\AuthenticateSession::class)->name('session.status');

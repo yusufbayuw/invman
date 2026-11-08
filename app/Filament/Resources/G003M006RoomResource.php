@@ -152,6 +152,8 @@ class G003M006RoomResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -222,6 +224,10 @@ class G003M006RoomResource extends Resource
     public static function getRelations(): array
     {
         return [
+            \App\Filament\Resources\RelationManagers\G003M006RoomItemInstancesRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G003M006RoomRoomChecklistsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G003M006RoomRoomReviewsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\RecurringSchedulesRelationManager::class,
             ItemRelationManager::class,
             RoomHistoryRelationManager::class,
             RoomReservationRelationManager::class,

@@ -203,6 +203,8 @@ class UserResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -242,7 +244,7 @@ class UserResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()->url(fn (User $record): string => static::getUrl('edit', ['record' => $record])),
             ])
             ->bulkActions([]);
     }
@@ -251,6 +253,24 @@ class UserResource extends Resource
     {
         return [
             'index' => Pages\ManageUsers::route('/'),
+            'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
+    }
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\RelationManagers\UserManagementsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\UserVehicleChecklistsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\UserRoomChecklistsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\UserItemInstanceChecklistRelationManager::class,
+            \App\Filament\Resources\RelationManagers\UserVehicleReviewRelationManager::class,
+            \App\Filament\Resources\RelationManagers\UserRoomReviewsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\UserItemReviewsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\UserVehicleHistoryRelationManager::class,
+            \App\Filament\Resources\RelationManagers\UserRoomHistoryRelationManager::class,
+            \App\Filament\Resources\RelationManagers\UserItemHistoryRelationManager::class,
+            \App\Filament\Resources\RelationManagers\UserReportedTicketsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\UserTicketTeamMemberRelationManager::class,
+            \App\Filament\Resources\RelationManagers\UserWorkOrderAssignmentsRelationManager::class,\App\Filament\Resources\RelationManagers\UserActivityRelationManager::class];
     }
 }

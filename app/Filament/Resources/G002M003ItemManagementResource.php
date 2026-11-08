@@ -76,6 +76,8 @@ class G002M003ItemManagementResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -117,6 +119,10 @@ class G002M003ItemManagementResource extends Resource
     public static function getRelations(): array
     {
         return [
+            \App\Filament\Resources\RelationManagers\ManagementUsersRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G002M003ItemManagementWorkOrderAssignmentsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G002M003ItemManagementVehiclesRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G002M003ItemManagementRoomsRelationManager::class,
             ItemRelationManager::class,
         ];
     }

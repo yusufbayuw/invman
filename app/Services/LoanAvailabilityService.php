@@ -37,7 +37,8 @@ class LoanAvailabilityService
             ->chunk(200, function ($items) use (&$options, $start, $end, $safety): void {
                 $ids = $items->modelKeys();
                 $reserved = $this->peakReservedItemQuantities($ids, $start, $end);
-                $blocked = array_fill_keys($safety->blockedAssetIds('item', $ids), true);
+                $blocked = array_fill_keys(array_merge($safety->blockedAssetIds('item', $ids),
+                    app(RecurringAssetScheduleService::class)->blockedIds('item', $ids, $start, $end)), true);
                 $blockedQuantities = $safety->blockedBorrowableItemQuantities($ids);
 
                 foreach ($items as $item) {
@@ -79,8 +80,9 @@ class LoanAvailabilityService
             ->whereDoesntHave('room_reservation', fn (Builder $query) => $this->overlap($query, $start, $end))
             ->with(['floor.building', 'unit'])
             ->orderBy('name')->orderBy('id')
-            ->chunk(200, function ($rooms) use (&$options, $safety): void {
-                $blocked = array_fill_keys($safety->blockedAssetIds('room', $rooms->modelKeys()), true);
+            ->chunk(200, function ($rooms) use (&$options, $safety, $start, $end): void {
+                $blocked = array_fill_keys(array_merge($safety->blockedAssetIds('room', $rooms->modelKeys()),
+                    app(RecurringAssetScheduleService::class)->blockedIds('room', $rooms->modelKeys(), $start, $end)), true);
 
                 foreach ($rooms as $room) {
                     if (isset($blocked[$room->id])) {
@@ -114,8 +116,9 @@ class LoanAvailabilityService
             ->whereDoesntHave('vehicle_reservation', fn (Builder $query) => $this->overlap($query, $start, $end))
             ->with('unit')
             ->orderBy('name')->orderBy('id')
-            ->chunk(200, function ($vehicles) use (&$options, $safety): void {
-                $blocked = array_fill_keys($safety->blockedAssetIds('vehicle', $vehicles->modelKeys()), true);
+            ->chunk(200, function ($vehicles) use (&$options, $safety, $start, $end): void {
+                $blocked = array_fill_keys(array_merge($safety->blockedAssetIds('vehicle', $vehicles->modelKeys()),
+                    app(RecurringAssetScheduleService::class)->blockedIds('vehicle', $vehicles->modelKeys(), $start, $end)), true);
 
                 foreach ($vehicles as $vehicle) {
                     if (isset($blocked[$vehicle->id])) {
@@ -250,7 +253,8 @@ class LoanAvailabilityService
         }
 
         $safety = app(TicketAssetSafetyService::class);
-        if ($safety->isBlocked('item', (int) $item->id)) {
+        if ($safety->isBlocked('item', (int) $item->id)
+            || app(RecurringAssetScheduleService::class)->isBlocked('item', (int) $item->id, ...$period)) {
             return 0;
         }
         [$start, $end] = $period;
@@ -264,7 +268,8 @@ class LoanAvailabilityService
 
     public function roomIsAvailable(int $roomId, Carbon $start, Carbon $end, bool $locking = false): bool
     {
-        if (app(TicketAssetSafetyService::class)->isBlocked('room', $roomId)) {
+        if (app(TicketAssetSafetyService::class)->isBlocked('room', $roomId)
+            || app(RecurringAssetScheduleService::class)->isBlocked('room', $roomId, $start, $end)) {
             return false;
         }
         $query = G005M010RoomReservation::query()
@@ -276,7 +281,8 @@ class LoanAvailabilityService
 
     public function vehicleIsAvailable(int $vehicleId, Carbon $start, Carbon $end, bool $locking = false): bool
     {
-        if (app(TicketAssetSafetyService::class)->isBlocked('vehicle', $vehicleId)) {
+        if (app(TicketAssetSafetyService::class)->isBlocked('vehicle', $vehicleId)
+            || app(RecurringAssetScheduleService::class)->isBlocked('vehicle', $vehicleId, $start, $end)) {
             return false;
         }
         $query = G005M019VehicleReservation::query()

@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Services\WorkOrderWorkflowService;
+use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
@@ -12,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +23,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, HasAvatar
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, HasPushSubscriptions, HasRoles, Notifiable;
 
     /**
@@ -101,7 +104,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
             return $this->isFacility() || $this->isSarpras() || $this->isAssetManager()
                 || $this->ticketTeamMember()->where('is_active', true)->exists()
                 || $this->workOrderAssignments()->where('is_active', true)->whereHas('jobTitle', fn ($query) => $query->where('is_active', true))->exists()
-                || app(\App\Services\WorkOrderWorkflowService::class)->scopeEligibleCandidates(WorkOrderApproval::query(), $this)->exists();
+                || app(WorkOrderWorkflowService::class)->scopeEligibleCandidates(WorkOrderApproval::query(), $this)->exists();
         }
 
         return true;
@@ -129,7 +132,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
             && $this->g001_m001_unit_id === $unitId;
     }
 
-    public function ticketTeamMember(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function ticketTeamMember(): HasOne
     {
         return $this->hasOne(TicketTeamMember::class, 'user_id');
     }
@@ -225,5 +228,30 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     public function unit(): BelongsTo
     {
         return $this->belongsTo(G001M001Unit::class, 'g001_m001_unit_id');
+    }
+
+    public function item_reviews(): HasMany
+    {
+        return $this->hasMany(G006M011ItemReview::class, 'user_id');
+    }
+
+    public function room_reviews(): HasMany
+    {
+        return $this->hasMany(G006M012RoomReview::class, 'user_id');
+    }
+
+    public function room_checklists(): HasMany
+    {
+        return $this->hasMany(G009M023RoomChecklist::class, 'user_id');
+    }
+
+    public function vehicle_checklists(): HasMany
+    {
+        return $this->hasMany(G009M024VehicleChecklist::class, 'user_id');
+    }
+
+    public function reportedTickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'reporter_id');
     }
 }

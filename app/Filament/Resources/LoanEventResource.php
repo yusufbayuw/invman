@@ -108,6 +108,8 @@ class LoanEventResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table->columns([
             Tables\Columns\TextColumn::make('name')->label('Kegiatan')->searchable()->sortable()->wrap(),
             Tables\Columns\TextColumn::make('unit.name')->label('Unit'),
@@ -129,5 +131,9 @@ class LoanEventResource extends Resource
             'view' => Pages\ViewLoanEvent::route('/{record}'),
             'edit' => Pages\EditLoanEvent::route('/{record}/edit'),
         ];
+    }
+    public static function getRelations(): array
+    {
+        return [\App\Filament\Resources\RelationManagers\LoanEventRequestsRelationManager::class];
     }
 }

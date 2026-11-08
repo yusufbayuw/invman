@@ -42,6 +42,8 @@ class WorkOrderJobTitleResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table->columns([
             Tables\Columns\TextColumn::make('name')->label('Jabatan')->searchable()->sortable(),
             Tables\Columns\IconColumn::make('is_active')->label('Aktif')->boolean(),
@@ -55,5 +57,12 @@ class WorkOrderJobTitleResource extends Resource
             'create' => WorkOrderJobTitleResource\Pages\CreateJobTitle::route('/create'),
             'edit' => WorkOrderJobTitleResource\Pages\EditJobTitle::route('/{record}/edit'),
         ];
+    }
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\RelationManagers\WorkOrderJobTitleDispatchWorkflowsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\WorkOrderJobTitleClosingWorkflowsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\WorkOrderJobTitleAssignmentWorkflowsRelationManager::class,\App\Filament\Resources\RelationManagers\WorkOrderJobTitleAssignmentsRelationManager::class];
     }
 }

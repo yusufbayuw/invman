@@ -66,6 +66,8 @@ class G001M001UnitResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -92,6 +94,9 @@ class G001M001UnitResource extends Resource
     public static function getRelations(): array
     {
         return [
+            \App\Filament\Resources\RelationManagers\G001M001UnitWorkOrderAssignmentsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G001M001UnitLoanEventsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G001M001UnitVehicleRelationManager::class,
             ActivityRelationManager::class,
             ItemRelationManager::class,
             RoomRelationManager::class,

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasRecurringAssetSchedules;
+use App\Models\Concerns\RetainsTicketAssetHistory;
 use App\Services\RoomQrCodeService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +12,8 @@ use Illuminate\Support\Str;
 
 class G003M006Room extends Model
 {
-    use \App\Models\Concerns\RetainsTicketAssetHistory;
+    use HasRecurringAssetSchedules;
+    use RetainsTicketAssetHistory;
 
     /** Explicit, audited mass-assignment allowlist. */
     protected $fillable = [
@@ -75,5 +78,20 @@ class G003M006Room extends Model
     public function item_management(): BelongsTo
     {
         return $this->belongsTo(G002M003ItemManagement::class, 'g002_m003_item_management_id');
+    }
+
+    public function room_reviews(): HasMany
+    {
+        return $this->hasMany(G006M012RoomReview::class, 'g003_m006_room_id');
+    }
+
+    public function room_checklists(): HasMany
+    {
+        return $this->hasMany(G009M023RoomChecklist::class, 'g003_m006_room_id');
+    }
+
+    public function item_instances(): HasMany
+    {
+        return $this->hasMany(G002M015ItemInstance::class, 'g003_m006_room_id');
     }
 }

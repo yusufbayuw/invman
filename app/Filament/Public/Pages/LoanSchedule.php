@@ -13,6 +13,10 @@ class LoanSchedule extends Dashboard
 
     public function getSubheading(): ?string
     {
+        if (! auth()->user()?->is_enabled) {
+            return 'Jadwal, jumlah, dan status dapat dilihat. Nama aset, kegiatan, unit, lokasi, dan nomor polisi disamarkan sebagian. Masuk untuk melihat detail lengkap.';
+        }
+
         return 'Informasi peminjaman barang, ruangan, dan kendaraan yang sedang berjalan atau telah disetujui.';
     }
 
@@ -28,7 +32,7 @@ class LoanSchedule extends Dashboard
     {
         return [
             Action::make('login')
-                ->label('Masuk Aplikasi')
+                ->label(auth()->user()?->is_enabled ? 'Buka Dasbor' : 'Masuk untuk Melihat Data')
                 ->icon('heroicon-o-arrow-right-end-on-rectangle')
                 ->url('/admin'),
         ];

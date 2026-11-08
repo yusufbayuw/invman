@@ -62,7 +62,7 @@ class RoleDashboardTest extends TestCase
     {
         $this->actingAs($this->user(config('role.sarpras')))->get('/admin')->assertOk()
             ->assertSee('Ajukan Peminjaman')->assertSee('Peminjaman Saya')
-            ->assertSee('Lihat Jadwal')->assertSee('Lapor Kerusakan')
+            ->assertSee('Lihat Jadwal')->assertSee('Laporan Kerusakan')
             ->assertSee('Perlu Tindakan Anda')->assertSee('Lihat pemantauan aset')->assertDontSee('Prioritas Reservasi Aset')
             ->assertDontSee('Filter Dasbor')->assertDontSee('Ringkasan Pengajuan')
             ->assertDontSee('Komposisi Status')->assertDontSee('Cari menu');

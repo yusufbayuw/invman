@@ -50,6 +50,12 @@
             <p class="status-value">Dipakai {{ $currentReservation->activity?->unit?->name ?? 'unit yang belum tercatat' }}</p>
             <p class="status-time">Sampai {{ $currentReservation->end_time->locale('id')->translatedFormat('l, d F Y · H.i') }} WIB</p>
         </section>
+    @elseif ($currentRoutine)
+        <section class="status off" aria-label="Status ruangan saat ini">
+            <p class="status-label">Status saat ini</p>
+            <p class="status-value">Terpakai untuk jadwal rutin</p>
+            <p class="status-time">{{ substr($currentRoutine->start_time, 0, 5) }}–{{ substr($currentRoutine->end_time, 0, 5) }} · {{ config('app.timezone') }}</p>
+        </section>
     @elseif (! $room->is_borrowable || ($room->status && $room->status !== 'Tersedia'))
         <section class="status off" aria-label="Status ruangan saat ini">
             <p class="status-label">Status saat ini</p>
@@ -63,6 +69,20 @@
     @endif
 
     <p style="margin:0 0 24px"><a href="{{ route('tickets.report.room', ['room' => $room->qr_uuid]) }}" style="display:inline-block;background:#4f46e5;color:white;border-radius:12px;padding:12px 18px;font-weight:700;text-decoration:none">Laporkan Kerusakan Ruangan</a></p>
+
+    @if ($routineSchedules->isNotEmpty())
+    <section class="panel" style="margin-bottom:24px">
+        <div class="panel-head"><h2>Jadwal Rutin — Tidak Dapat Dipesan</h2><p>Berulang setiap minggu · {{ config('app.timezone') }}. Jam selesai sebelum/sama dengan mulai berakhir esok hari.</p></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>Hari</th><th>Jam</th><th>Masa Berlaku</th></tr></thead>
+            <tbody>@foreach ($routineSchedules as $schedule)
+                <tr><td>{{ collect($schedule->weekdays)->map(fn ($day) => [1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu', 7 => 'Minggu'][(int) $day])->implode(', ') }}</td>
+                <td>{{ substr($schedule->start_time, 0, 5) }}–{{ substr($schedule->end_time, 0, 5) }}</td>
+                <td>{{ $schedule->valid_from->format('d/m/Y') }}–{{ $schedule->valid_until?->format('d/m/Y') ?? 'Tanpa batas' }}</td></tr>
+            @endforeach</tbody>
+        </table></div>
+    </section>
+    @endif
 
     <section class="panel">
         <div class="panel-head"><h2>Daftar Peminjaman</h2><p>Pemakaian yang sedang berlangsung dan jadwal berikutnya.</p></div>

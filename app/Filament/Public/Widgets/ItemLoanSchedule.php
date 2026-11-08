@@ -27,7 +27,9 @@ class ItemLoanSchedule extends TableWidget
             ->description('Jadwal peminjaman barang yang aktif atau mendatang.')
             ->query($this->visibleReservations(G005M009ItemReservation::query())->with(['item', 'activity.unit']))
             ->columns([
-                Tables\Columns\TextColumn::make('item.name')->label('Barang')->weight('semibold')->searchable()->placeholder('Barang tidak tercatat'),
+                Tables\Columns\TextColumn::make('item.name')->label('Barang')->weight('semibold')
+                    ->formatStateUsing(fn (?string $state): ?string => $this->scheduleText($state))
+                    ->searchable($this->canViewScheduleDetails())->placeholder('Barang tidak tercatat'),
                 Tables\Columns\TextColumn::make('quantity')->label('Jumlah')->suffix(' unit'),
                 ...$this->commonColumns(),
             ])

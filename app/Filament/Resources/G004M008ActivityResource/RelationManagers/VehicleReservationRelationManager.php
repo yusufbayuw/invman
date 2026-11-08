@@ -21,6 +21,11 @@ use Illuminate\Support\Facades\Auth;
 
 class VehicleReservationRelationManager extends RelationManager
 {
+    use \App\Filament\Resources\Concerns\GuardsActivityRelationCrud;
+
+    protected static function reservationResource(): string { return \App\Filament\Resources\G005M019VehicleReservationResource::class; }
+    protected static function reservationType(): string { return 'vehicle'; }
+
     protected static string $relationship = 'vehicle_reservation';
 
     protected static ?string $modelLabel = 'Reservasi Kendaraan';
@@ -114,7 +119,7 @@ class VehicleReservationRelationManager extends RelationManager
                 Forms\Components\Select::make('g008_m018_driver_id')
                     ->relationship('driver', 'id')
                     ->getOptionLabelFromRecordUsing(function ($record) {
-                        return "{$record->user->name}";
+                        return $record->user?->name ?? 'Pengemudi #'.$record->id;
                     })
                     ->hint(
                         function ($state, Get $get) {
@@ -177,7 +182,7 @@ class VehicleReservationRelationManager extends RelationManager
                         Auth::user()
                         && Auth::user()->managesReservation($record)
                     )),
-                Flatpickr::make('start_time')
+                Flatpickr::make('start_time')->disabled()->dehydrated(false)->helperText('Mengikuti pengajuan induk; ubah melalui formulir pengajuan.')
                     ->label('Tanggal dan Waktu Mulai')
                     ->time(true)
                     ->seconds(false)
@@ -187,7 +192,7 @@ class VehicleReservationRelationManager extends RelationManager
                     ->minDate(\Carbon\Carbon::parse($this->ownerRecord->start_time)->subMinute() ?? $this->ownerRecord->start_time)
                     ->maxDate(\Carbon\Carbon::parse($this->ownerRecord->end_time)->addMinute() ?? $this->ownerRecord->start_time)
                     ->before('end_time'),
-                Flatpickr::make('end_time')
+                Flatpickr::make('end_time')->disabled()->dehydrated(false)->helperText('Mengikuti pengajuan induk; ubah melalui formulir pengajuan.')
                     ->label('Tanggal dan Waktu Selesai')
                     ->time(true)
                     ->seconds(false)
@@ -197,7 +202,7 @@ class VehicleReservationRelationManager extends RelationManager
                     ->after('start_time')
                     ->minDate(\Carbon\Carbon::parse($this->ownerRecord->start_time)->subMinute() ?? $this->ownerRecord->start_time)
                     ->maxDate(\Carbon\Carbon::parse($this->ownerRecord->end_time)->addMinute() ?? $this->ownerRecord->start_time),
-                Forms\Components\Hidden::make('status')
+                Forms\Components\Hidden::make('status')->disabled()->dehydrated(false)->helperText('Mengikuti pengajuan induk; ubah melalui formulir pengajuan.')
                     ->default(fn (): string => $this->ownerRecord->status),
             ]);
     }

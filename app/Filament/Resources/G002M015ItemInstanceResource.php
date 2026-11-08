@@ -176,6 +176,8 @@ class G002M015ItemInstanceResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -252,6 +254,7 @@ class G002M015ItemInstanceResource extends Resource
     public static function getRelations(): array
     {
         return [
+            \App\Filament\Resources\RelationManagers\G002M015ItemInstanceParentRelationsRelationManager::class,
             ItemHistoryRelationManager::class,
             \App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers\AssetRelationsRelationManager::class,
             ItemReservationDetailRelationManager::class,

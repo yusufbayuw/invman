@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[ObservedBy(G005M019VehicleReservationObserver::class)]
 class G005M019VehicleReservation extends Model
 {
+    use \App\Models\Concerns\GuardsRecurringAssetBookings;
+
     /** Explicit, audited mass-assignment allowlist. */
     protected $fillable = [
         'g004_m008_activity_id',

@@ -125,6 +125,8 @@ class G008M017VehicleResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -222,6 +224,11 @@ class G008M017VehicleResource extends Resource
     public static function getRelations(): array
     {
         return [
+            \App\Filament\Resources\RelationManagers\G008M017VehicleVehicleChecklistsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G008M017VehicleVehicleHistoryRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G008M017VehicleVehicleReviewRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G008M017VehicleVehicleReservationRelationManager::class,
+            \App\Filament\Resources\RelationManagers\RecurringSchedulesRelationManager::class,
             //
         ];
     }

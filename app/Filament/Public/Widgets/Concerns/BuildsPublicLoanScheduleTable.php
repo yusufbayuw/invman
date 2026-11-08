@@ -11,6 +11,17 @@ use Illuminate\Database\Eloquent\Model;
 
 trait BuildsPublicLoanScheduleTable
 {
+    public function callBuildsPublicLoanScheduleTable(string $methodName): void
+    {
+        // Filament exposes public record getters to Livewire. Guests may use
+        // table navigation, but must never invoke getters that return raw models.
+        if (! $this->canViewScheduleDetails()) {
+            abort_unless(in_array($methodName, [
+                '$refresh', 'sortTable', 'gotoPage', 'nextPage', 'previousPage', 'setPage', 'resetPage',
+            ], true), 403);
+        }
+    }
+
     protected function visibleReservations(Builder $query): Builder
     {
         return $query
@@ -18,8 +29,32 @@ trait BuildsPublicLoanScheduleTable
                 ReservationStatus::Approved->value,
                 ReservationStatus::CheckedOut->value,
             ])
-            ->where('end_time', '>=', now())
-            ->orderBy('start_time');
+            ->where('end_time', '>=', now());
+    }
+
+    protected function canViewScheduleDetails(): bool
+    {
+        return (bool) auth()->user()?->is_enabled;
+    }
+
+    public function getMountedTableAction(): ?Tables\Actions\Action
+    {
+        // Recheck during rendering too: an open modal snapshot or forged state
+        // must not render an infolist after the session becomes anonymous.
+        return $this->canViewScheduleDetails() ? parent::getMountedTableAction() : null;
+    }
+
+    protected function scheduleText(?string $state): ?string
+    {
+        if ($this->canViewScheduleDetails() || blank($state)) {
+            return $state;
+        }
+
+        // Mask before rendering: full values must not reach the guest's HTML,
+        // attributes, or Livewire response. Short names must also lose a character.
+        $visibleLength = min(3, max(0, mb_strlen($state) - 1));
+
+        return mb_substr($state, 0, $visibleLength).'•••';
     }
 
     protected function commonColumns(): array
@@ -27,14 +62,18 @@ trait BuildsPublicLoanScheduleTable
         return [
             Tables\Columns\TextColumn::make('activity.name')
                 ->label('Kegiatan')
-                ->description(fn (Model $record): string => $record->activity?->description ?: 'Keterangan acara belum tersedia.')
+                ->formatStateUsing(fn (?string $state): ?string => $this->scheduleText($state))
+                ->description(fn (Model $record): string => $this->canViewScheduleDetails()
+                    ? ($record->activity?->description ?: 'Keterangan acara belum tersedia.')
+                    : 'Masuk untuk melihat keterangan kegiatan.')
                 ->wrap()
-                ->searchable(),
+                ->searchable($this->canViewScheduleDetails()),
             Tables\Columns\TextColumn::make('activity.unit.name')
                 ->label('Unit Peminjam')
                 ->placeholder('Unit tidak tercatat')
+                ->formatStateUsing(fn (?string $state): ?string => $this->scheduleText($state))
                 ->badge()
-                ->searchable(),
+                ->searchable($this->canViewScheduleDetails()),
             Tables\Columns\TextColumn::make('start_time')
                 ->label('Mulai')
                 ->dateTime('d M Y, H:i')
@@ -55,6 +94,7 @@ trait BuildsPublicLoanScheduleTable
     {
         return Tables\Actions\ViewAction::make()
             ->label('Lihat Detail')
+            ->authorize(fn (): bool => $this->canViewScheduleDetails())
             ->modalHeading(fn (Model $record): string => $this->assetName($record))
             ->infolist([
                 Section::make('Informasi Aset')
@@ -80,7 +120,8 @@ trait BuildsPublicLoanScheduleTable
     protected function configurePublicTable(Tables\Table $table): Tables\Table
     {
         return $table
-            ->recordAction('view')
+            ->recordAction(fn (): ?string => $this->canViewScheduleDetails() ? 'view' : null)
+            ->defaultSort('start_time')
             ->paginated([5, 10, 25])
             ->defaultPaginationPageOption(5)
             ->poll('60s')

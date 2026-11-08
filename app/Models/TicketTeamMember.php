@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\WorkOrderWorkflowService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 
 class TicketTeamMember extends Model
@@ -15,8 +17,16 @@ class TicketTeamMember extends Model
 
     protected $casts = ['is_active' => 'boolean'];
 
-    public function user(): BelongsTo { return $this->belongsTo(User::class); }
-    public function supervisor(): BelongsTo { return $this->belongsTo(User::class, 'supervisor_user_id'); }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_user_id');
+    }
+
     public function management(): BelongsTo
     {
         return $this->belongsTo(G002M003ItemManagement::class, 'g002_m003_item_management_id');
@@ -64,6 +74,7 @@ class TicketTeamMember extends Model
                 if ($member->position !== 'lead') {
                     throw ValidationException::withMessages(['supervisor_user_id' => 'Petugas harus memiliki atasan tim.']);
                 }
+
                 return;
             }
             if ((int) $member->supervisor_user_id === (int) $member->user_id) {
@@ -133,6 +144,7 @@ class TicketTeamMember extends Model
                 $frontier[] = $child;
             }
         }
+
         return $result;
     }
 
@@ -159,10 +171,15 @@ class TicketTeamMember extends Model
         if (! $ticket->g002_m003_item_management_id) {
             return ! $ticket->g001_m001_unit_id
                 || (int) $technician->g001_m001_unit_id === (int) $ticket->g001_m001_unit_id
-                || app(\App\Services\WorkOrderWorkflowService::class)->canDispatchAcrossUnits($ticket, $technician);
+                || app(WorkOrderWorkflowService::class)->canDispatchAcrossUnits($ticket, $technician);
         }
 
         return (int) $member->g002_m003_item_management_id
             === (int) $ticket->g002_m003_item_management_id;
+    }
+
+    public function subordinates(): HasMany
+    {
+        return $this->hasMany(TicketTeamMember::class, 'supervisor_user_id', 'user_id');
     }
 }

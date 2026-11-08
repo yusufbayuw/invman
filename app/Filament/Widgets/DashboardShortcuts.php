@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\AjukanPeminjaman;
 use App\Filament\Pages\PeminjamanCepat;
 use App\Filament\Pages\PeminjamanSaya;
 use App\Filament\Pages\RingkasanPeminjaman;
@@ -22,10 +23,17 @@ class DashboardShortcuts extends Widget
     {
         $user = auth()->user();
         $links = [];
+        if (PeminjamanCepat::canAccess()) {
+            $links[] = $this->link('Pinjaman Cepat', 'Satu jenis aset, formulir ringkas.', 'heroicon-o-bolt', PeminjamanCepat::getUrl(), true);
+        }
+        if (AjukanPeminjaman::canAccess()) {
+            $links[] = $this->link('Pinjaman Multi-aset', 'Gabungkan barang, ruangan, dan kendaraan dalam satu pengajuan.', 'heroicon-o-squares-plus', AjukanPeminjaman::getUrl(), true);
+        }
+        if (TicketResource::canCreate()) {
+            $links[] = $this->link('Laporan Kerusakan', 'Laporkan kerusakan dan pantau penanganannya.', 'heroicon-o-wrench-screwdriver', TicketResource::getUrl('create'), true);
+        }
         if ($user?->isFacility() && G004M008ActivityResource::canViewAny()) {
             $links[] = $this->link('Tinjau Pengajuan', 'Periksa kebutuhan dan persetujuan.', 'heroicon-o-inbox-stack', G004M008ActivityResource::getUrl());
-        } elseif (PeminjamanCepat::canAccess()) {
-            $links[] = $this->link('Ajukan Peminjaman', 'Pinjam barang, ruangan, atau kendaraan.', 'heroicon-o-plus-circle', PeminjamanCepat::getUrl());
         }
         if (PeminjamanSaya::canAccess()) {
             $links[] = $this->link(PeminjamanSaya::getNavigationLabel(), 'Lihat status dan tindak lanjut pinjaman.', 'heroicon-o-clipboard-document-list', PeminjamanSaya::getUrl());
@@ -36,17 +44,15 @@ class DashboardShortcuts extends Widget
         if (RingkasanPeminjaman::canAccess()) {
             $links[] = $this->link('Lihat Jadwal', 'Cek jadwal peminjaman aset.', 'heroicon-o-calendar-days', url('/'));
         }
-        if (TicketResource::canCreate()) {
-            $links[] = $this->link('Lapor Kerusakan', 'Laporkan masalah fasilitas unit.', 'heroicon-o-wrench', TicketResource::getUrl('create'));
-        } elseif (TicketResource::canViewAny()) {
+        if (! TicketResource::canCreate() && TicketResource::canViewAny()) {
             $links[] = $this->link('Buka Tiket', 'Lihat percakapan dan riwayat penanganan.', 'heroicon-o-ticket', TicketResource::getUrl());
         }
 
         return $links;
     }
 
-    private function link(string $label, string $description, string $icon, string $url): array
+    private function link(string $label, string $description, string $icon, string $url, bool $featured = false): array
     {
-        return compact('label', 'description', 'icon', 'url');
+        return compact('label', 'description', 'icon', 'url', 'featured');
     }
 }

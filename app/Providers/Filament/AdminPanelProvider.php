@@ -8,6 +8,7 @@ use App\Filament\Pages\CustomChatifyPage;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\RekapanPenggunaan;
 use App\Filament\Widgets\CalendarWidget;
+use App\Filament\Widgets\DashboardShortcuts;
 use App\Filament\Widgets\LoanOperationsStats;
 use App\Filament\Widgets\LoanStatusChart;
 use App\Filament\Widgets\LoanUsageTrendChart;
@@ -15,6 +16,10 @@ use App\Filament\Widgets\MenuGridWidget;
 use App\Filament\Widgets\OperationalPriorityWidget;
 use App\Filament\Widgets\QuickActionsWidget;
 use App\Filament\Widgets\RecentLoanRequests;
+use App\Filament\Widgets\TechnicianTaskStats;
+use App\Filament\Widgets\TicketAttentionWidget;
+use App\Http\Middleware\EnsureAccountEnabled;
+use App\Http\Middleware\VerifyCsrfToken;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -30,7 +35,6 @@ use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
@@ -99,7 +103,14 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
-            // ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            // These role-specific widgets are mounted by Dashboard/TugasTeknisi,
+            // not by the panel's default widget list. Register their aliases on
+            // every request so Livewire can resolve later polling snapshots.
+            ->livewireComponents([
+                DashboardShortcuts::class,
+                TicketAttentionWidget::class,
+                TechnicianTaskStats::class,
+            ])
             ->widgets([
                 // Widgets\AccountWidget::class,
                 MenuGridWidget::class,
@@ -116,7 +127,7 @@ class AdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
-                \App\Http\Middleware\EnsureAccountEnabled::class,
+                EnsureAccountEnabled::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
@@ -142,4 +153,3 @@ class AdminPanelProvider extends PanelProvider
             ]);
     }
 }
-

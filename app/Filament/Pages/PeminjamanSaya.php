@@ -97,6 +97,12 @@ class PeminjamanSaya extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
+            ->headerActions([
+                Tables\Actions\Action::make('exportData')->label('Ekspor CSV')->icon('heroicon-o-arrow-down-tray')
+                    ->action(fn () => app(\App\Services\DataExchange\ResourceDataExchange::class)->downloadNeeds($this->getFilteredSortedTableQuery())),
+                Tables\Actions\Action::make('importDrafts')->label('Impor / Template Pengajuan')->icon('heroicon-o-arrow-up-tray')
+                    ->url(\App\Filament\Resources\G004M008ActivityResource::getUrl()),
+            ])
             ->query($this->getTableQuery())
             ->columns([
                 TextColumn::make('type')

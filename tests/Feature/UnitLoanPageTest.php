@@ -63,7 +63,10 @@ class UnitLoanPageTest extends TestCase
             ->get('/admin/ajukan-peminjaman')
             ->assertOk()
             ->assertSee('Ajukan Peminjaman')
-            ->assertSee('Ruangan / Tempat');
+            ->assertSee('Kebutuhan');
+
+        // Searchable choices are rendered as JSON; verify the visible room field after selecting its type.
+        Livewire::test(AjukanPeminjaman::class)->fillForm(['needs' => [['type' => 'room']]])->assertSee('Ruangan / Tempat');
 
         $this->actingAs($user)
             ->get('/admin/activity')

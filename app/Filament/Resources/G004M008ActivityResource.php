@@ -345,6 +345,8 @@ class G004M008ActivityResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -534,6 +536,13 @@ class G004M008ActivityResource extends Resource
     public static function getRelations(): array
     {
         return [
+            \App\Filament\Resources\RelationManagers\G004M008ActivityOperationalOverridesRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G004M008ActivityReviewRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G004M008ActivityReturnChecklistRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G004M008ActivityVehicleReviewsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G004M008ActivityRoomReviewsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G004M008ActivityItemReviewsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\G004M008ActivityLinkedRequestsRelationManager::class,
             ItemReservationRelationManager::class,
             RoomReservationRelationManager::class,
             VehicleReservationRelationManager::class,

@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[ObservedBy(G002M007ItemObserver::class)]
 class G002M007Item extends Model
 {
+    use \App\Models\Concerns\HasRecurringAssetSchedules;
+
     use \App\Models\Concerns\RetainsTicketAssetHistory;
 
     /** Keep inventory writes and observer-maintained quantities atomic. */

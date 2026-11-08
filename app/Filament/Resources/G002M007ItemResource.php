@@ -200,6 +200,8 @@ class G002M007ItemResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -268,6 +270,8 @@ class G002M007ItemResource extends Resource
     public static function getRelations(): array
     {
         return [
+            \App\Filament\Resources\RelationManagers\G002M007ItemBulkMovementsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\RecurringSchedulesRelationManager::class,
             ItemInstanceRelationManager::class,
             ItemReservationRelationManager::class,
         ];

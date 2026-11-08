@@ -16,6 +16,17 @@ class AssetRelationsRelationManager extends RelationManager
     protected static string $relationship = 'childRelations';
     protected static ?string $title = 'Hubungan dan Komponen Aset';
 
+    public function form(\Filament\Forms\Form $form): \Filament\Forms\Form
+    {
+        return $form->schema([
+            Forms\Components\Placeholder::make('parent')->label('Aset Induk')->content(fn (AssetRelation $record) => $record->parentInstance?->name ?? '—'),
+            Forms\Components\Placeholder::make('child')->label('Aset Terkait')->content(fn (AssetRelation $record) => $record->childInstance?->name ?? '—'),
+            Forms\Components\Select::make('relation_type')->label('Jenis Hubungan')->options([
+                'component' => 'Komponen / Bagian dari', 'contained' => 'Berada di dalam aset', 'installed' => 'Terpasang pada aset', 'bundle' => 'Anggota paket',
+            ]),
+        ]);
+    }
+
     public function table(Table $table): Table
     {
         return $table
@@ -24,11 +35,14 @@ class AssetRelationsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('childInstance.code')->label('Kode Aset')->searchable(),
                 Tables\Columns\TextColumn::make('childInstance.name')->label('Aset Terkait'),
                 Tables\Columns\TextColumn::make('relation_type')->label('Hubungan')->badge(),
+                Tables\Columns\TextColumn::make('childInstance.unit.name')->label('Unit')->placeholder('Tanpa Unit'),
+                Tables\Columns\TextColumn::make('created_at')->label('Dibuat pada')->dateTime()->toggleable(),
+                Tables\Columns\TextColumn::make('updated_at')->label('Diperbarui pada')->dateTime()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->headerActions([
                 Tables\Actions\Action::make('connect')
                     ->label('Hubungkan Aset')
-                    ->visible(fn () => auth()->user()?->can('update', $this->getOwnerRecord()) ?? false)
+                    ->authorize(fn () => !$this->isReadOnly() && (auth()->user()?->can('update', $this->getOwnerRecord()) ?? false))
                     ->form([
                         Forms\Components\Select::make('relation_type')
                             ->label('Jenis Hubungan')
@@ -64,9 +78,16 @@ class AssetRelationsRelationManager extends RelationManager
                     }),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()->label('Lihat'),
+                Tables\Actions\Action::make('edit')->label('Ubah Jenis Hubungan')->icon('heroicon-o-pencil-square')
+                    ->authorize(fn (AssetRelation $record) => !$this->isReadOnly() && (auth()->user()?->can('update', $record->parentInstance) ?? false))
+                    ->fillForm(fn (AssetRelation $record) => ['relation_type' => $record->relation_type])
+                    ->form([Forms\Components\Select::make('relation_type')->label('Jenis Hubungan')->required()
+                        ->options(['component' => 'Komponen / Bagian dari', 'contained' => 'Berada di dalam aset', 'installed' => 'Terpasang pada aset', 'bundle' => 'Anggota paket'])])
+                    ->action(fn (AssetRelation $record, array $data) => app(AssetRelationService::class)->changeType($record, $data['relation_type'], auth()->user())),
                 Tables\Actions\Action::make('unlink')
                     ->label('Lepaskan Relasi')->color('danger')->requiresConfirmation()
-                    ->visible(fn (AssetRelation $record) => auth()->user()?->can('update', $record->parentInstance) ?? false)
+                    ->authorize(fn (AssetRelation $record) => !$this->isReadOnly() && (auth()->user()?->can('update', $record->parentInstance) ?? false))
                     ->action(fn (AssetRelation $record) => app(AssetRelationService::class)->disconnect($record, auth()->user())),
             ]);
     }

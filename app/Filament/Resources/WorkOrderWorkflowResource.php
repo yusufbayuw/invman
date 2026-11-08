@@ -94,6 +94,8 @@ class WorkOrderWorkflowResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table->columns([
             Tables\Columns\TextColumn::make('unit.name')->label('Unit')->placeholder('Semua unit'),
             Tables\Columns\TextColumn::make('version')->label('Versi')->sortable(),
@@ -124,5 +126,9 @@ class WorkOrderWorkflowResource extends Resource
             'create' => WorkOrderWorkflowResource\Pages\CreateWorkflow::route('/create'),
             'edit' => WorkOrderWorkflowResource\Pages\EditWorkflow::route('/{record}/edit'),
         ];
+    }
+    public static function getRelations(): array
+    {
+        return [\App\Filament\Resources\RelationManagers\WorkOrderWorkflowApprovalsRelationManager::class];
     }
 }

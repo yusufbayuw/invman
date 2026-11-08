@@ -21,7 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Read security.trusted_proxies at request-time, not in this callback.
         $middleware->replace(TrustProxies::class, ConfigureTrustedProxies::class);
         // Observe CSRF failures without weakening Laravel or Livewire protection.
-        $middleware->web(prepend: [RecordLivewireSessionMismatch::class]);
+        $middleware->web(prepend: [RecordLivewireSessionMismatch::class], replace: [
+            \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class => \App\Http\Middleware\VerifyCsrfToken::class,
+        ]);
         $middleware->prepend(EnsureApplicationIsLicensed::class);
         // Runs after web session middleware and signs out revoked accounts on the next request.
         $middleware->web(append: [EnsureAccountEnabled::class]);

@@ -94,6 +94,8 @@ class G005M016ItemReservationDetailResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $table->headerActions(\App\Filament\Actions\ResourceDataActions::make(static::class));
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('g005_m009_item_reservation_id')

@@ -22,8 +22,8 @@ class Dashboard extends BaseDashboard
         $user = auth()->user();
 
         return match (true) {
-            $user?->isAdmin() => 'Pantau pekerjaan operasional dan kelola sistem dari satu tempat.',
-            $user?->isFacility() => 'Tinjau persetujuan, penyerahan, pengembalian, dan laporan yang perlu ditangani.',
+            $user?->isAdmin() => 'Buat pinjaman atau laporan kerusakan, lalu tindak lanjuti pengajuan yang menunggu.',
+            $user?->isFacility() => 'Mulai pinjaman, laporkan kerusakan, atau tindak lanjuti persetujuan dan serah terima.',
             $user?->isSarpras() => 'Ajukan dan tindak lanjuti kebutuhan unit Anda.',
             $user?->isAssetManager() => 'Tindak lanjuti peminjaman dan kerusakan aset yang Anda kelola.',
             ! TugasTeknisi::canAccess() => 'Tinjau laporan dan persetujuan dalam kewenangan Anda.',

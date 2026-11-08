@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\AssetManagerRoleSynchronizer;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class G002M003ItemManagement extends Model
 {
@@ -21,7 +22,7 @@ class G002M003ItemManagement extends Model
         });
 
         static::deleted(function (self $management): void {
-            app(\App\Services\AssetManagerRoleSynchronizer::class)
+            app(AssetManagerRoleSynchronizer::class)
                 ->syncUserIds($management->previousMemberIds);
         });
     }
@@ -52,5 +53,10 @@ class G002M003ItemManagement extends Model
     public function vehicles(): HasMany
     {
         return $this->hasMany(G008M017Vehicle::class, 'g002_m003_item_management_id');
+    }
+
+    public function workOrderAssignments(): HasMany
+    {
+        return $this->hasMany(WorkOrderAssignment::class, 'g002_m003_item_management_id');
     }
 }
