@@ -23,6 +23,15 @@ function setup({ user = '42', sessions = [{ user: '42', token: 'token-a' }], pos
 
 (async () => {
     let passed = 0;
+    {
+        const { calls, send } = setup();
+        await send();
+        assert.equal(calls[0].url, '/session/status');
+        assert.equal(calls[0].options.headers['X-Requested-With'], 'XMLHttpRequest',
+            'Session probes must not overwrite Laravel previous URL');
+        assert.equal(calls[0].options.cache, 'no-store');
+        passed++;
+    }
     for (const user of ['', '42']) {
         const { calls, send, window, tokenSources } = setup({ user, sessions: [{ user, token: 'fresh-token' }] });
         assert.equal((await send()).status, 200);

@@ -14,7 +14,9 @@
         let response;
         try {
             response = await originalFetch(panel.dataset.sessionUrl, {
-                credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' },
+                credentials: 'same-origin', cache: 'no-store',
+                // AJAX requests must not overwrite Laravel's stored previous page (used by Filament Cancel).
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             });
         } catch {
             return { error: failure(503, 'check-failed') };

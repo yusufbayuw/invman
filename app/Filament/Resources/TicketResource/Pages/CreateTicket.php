@@ -4,12 +4,18 @@ namespace App\Filament\Resources\TicketResource\Pages;
 
 use App\Filament\Resources\TicketResource;
 use App\Services\TicketService;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 
 class CreateTicket extends CreateRecord
 {
     protected static string $resource = TicketResource::class;
+
+    protected function getCancelFormAction(): Action
+    {
+        return parent::getCancelFormAction()->url(TicketResource::getUrl('index'));
+    }
 
     protected function handleRecordCreation(array $data): Model
     {

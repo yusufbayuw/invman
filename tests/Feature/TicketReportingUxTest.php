@@ -230,4 +230,17 @@ class TicketReportingUxTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_cancel_report_always_returns_to_ticket_list(): void
+    {
+        $fixture = $this->fixture();
+        $this->withSession(['_previous' => ['url' => url('/session/status')]]);
+
+        $component = Livewire::actingAs($fixture['reporter'])->test(CreateTicket::class);
+        $action = (new \ReflectionMethod(CreateTicket::class, 'getCancelFormAction'))
+            ->invoke($component->instance());
+
+        $this->assertSame(TicketResource::getUrl('index'), $action->getUrl());
+        $this->assertDatabaseCount('tickets', 0);
+    }
+
 }
