@@ -20,7 +20,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ResourceDataExchange
 {
-    public function __construct(private ResourceDataSchema $schema) {}
+    public function __construct(private ResourceDataSchema $schema, private XlsxDataFile $xlsx) {}
 
     public function supportsImport(string $resource): bool
     {
@@ -33,46 +33,41 @@ class ResourceDataExchange
         abort_if($template && ! $this->supportsImport($resource), 403);
         $model = $resource::getModel();
         $columns = ['id', ...$this->schema->columns($model), ...($template ? [] : $this->schema->readOnlyColumns($model))];
-        // Intersect the table filters with the resource scope, never trust a supplied query's scope.
+        // Intersect table filters with the resource scope, never trust a supplied query's scope.
         $scoped = $resource::getEloquentQuery();
         if ($query) {
             $scoped->whereIn((new $model)->qualifyColumn('id'), (clone $query)->reorder()->select((new $model)->qualifyColumn('id')));
         }
 
-        return response()->streamDownload(function () use ($resource, $template, $columns, $scoped): void {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, $columns, ',', '"', '');
-            if (! $template) {
-                foreach ($scoped->reorder()->lazyById(200) as $record) {
-                    if (! $resource::canView($record)) {
-                        continue;
-                    }
-                    $values = [];
-                    foreach ($columns as $column) {
-                        $values[] = $this->csvValue($this->exportValue($record, $column));
-                    }
-                    fputcsv($out, $values, ',', '"', '');
-                }
+        return $this->xlsx->download(
+            ($template ? 'template-' : 'export-').$resource::getSlug().'.xlsx',
+            $columns,
+            $template ? [] : $this->exportRows($resource, $scoped, $columns),
+        );
+    }
+
+    private function exportRows(string $resource, Builder $query, array $columns): \Generator
+    {
+        foreach ($query->reorder()->lazyById(200) as $record) {
+            if (! $resource::canView($record)) {
+                continue;
             }
-            fclose($out);
-        }, ($template ? 'template-' : 'export-').$resource::getSlug().'.csv', ['Content-Type' => 'text/csv; charset=UTF-8', 'Cache-Control' => 'no-store, private']);
+
+            yield array_map(fn ($column) => $this->exportValue($record, $column), $columns);
+        }
     }
 
     public function downloadNeeds(Builder $query): StreamedResponse
     {
         abort_unless(PeminjamanSaya::canAccess(), 403);
         $columns = ['type', 'need_name', 'activity_id', 'activity_name', 'activity_status', 'unit_name', 'start_time', 'end_time', 'returned_at', 'status', 'receipt_number'];
-
-        return response()->streamDownload(function () use ($query, $columns): void {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, $columns, ',', '"', '');
+        $rows = (function () use ($query, $columns): \Generator {
             foreach ((clone $query)->reorder()->cursor() as $record) {
-                fputcsv($out, array_map(fn ($key) => $this->csvValue($this->exportValue($record, $key)), $columns), ',', '"', '');
+                yield array_map(fn ($column) => $this->exportValue($record, $column), $columns);
             }
-            fclose($out);
-        }, 'peminjaman.csv', ['Content-Type' => 'text/csv; charset=UTF-8', 'Cache-Control' => 'no-store, private']);
+        })();
+
+        return $this->xlsx->download('peminjaman.xlsx', $columns, $rows);
     }
 
     private function exportValue(Model $record, string $column): mixed
@@ -112,20 +107,6 @@ class ResourceDataExchange
         return $value;
     }
 
-    private function csvValue(mixed $value): string
-    {
-        if (is_array($value)) {
-            $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-        }
-        if (is_bool($value)) {
-            return $value ? '1' : '0';
-        }
-        $value = (string) ($value ?? '');
-
-        // Spreadsheet apps must treat untrusted names/descriptions as text.
-        return preg_match('/^(?:\s*[=+@-]|[\t\r\n])/u', $value) ? "'".$value : $value;
-    }
-
     /** All rows commit together. Any invalid row rolls the entire upload back. */
     public function import(string $resource, string $path, string $mode = 'upsert'): array
     {
@@ -133,7 +114,7 @@ class ResourceDataExchange
         if (! in_array($mode, ['create', 'update', 'upsert'], true)) {
             throw ValidationException::withMessages(['file' => 'Mode impor tidak valid.']);
         }
-        $rows = $this->readRows($path, ['id', ...$this->schema->columns($resource::getModel()), ...$this->schema->readOnlyColumns($resource::getModel())]);
+        $rows = $this->xlsx->readRows($path, ['id', ...$this->schema->columns($resource::getModel()), ...$this->schema->readOnlyColumns($resource::getModel())]);
 
         return DB::transaction(function () use ($resource, $rows, $mode): array {
             $counts = ['created' => 0, 'updated' => 0];
@@ -178,60 +159,6 @@ class ResourceDataExchange
 
             return $counts;
         });
-    }
-
-    private function readRows(string $path, array $allowed): array
-    {
-        if (! is_file($path) || filesize($path) > 5 * 1024 * 1024) {
-            throw ValidationException::withMessages(['file' => 'Berkas CSV maksimal 5 MB.']);
-        }
-        $handle = fopen($path, 'r');
-        try {
-            $line = fgets($handle);
-            if ($line === false || ! mb_check_encoding($line, 'UTF-8')) {
-                throw ValidationException::withMessages(['file' => 'Gunakan CSV UTF-8 dengan header dari template.']);
-            }
-            $delimiter = count(str_getcsv($line, ';', '"', '')) > count(str_getcsv($line, ',', '"', '')) ? ';' : ',';
-            rewind($handle);
-            $header = fgetcsv($handle, 0, $delimiter, '"', '');
-            $header = array_map(fn ($field) => trim(ltrim((string) $field, "\xEF\xBB\xBF")), $header);
-            if (count(array_unique($header)) !== count($header) || array_diff($header, $allowed)) {
-                throw ValidationException::withMessages(['file' => 'Header duplikat/tidak dikenal. Unduh template terbaru dan pertahankan nama kolomnya.']);
-            }
-            $rows = [];
-            $lineNumber = 1;
-            while (($values = fgetcsv($handle, 0, $delimiter, '"', '')) !== false) {
-                $lineNumber++;
-                if (count($values) === 1 && ($values[0] === null || trim($values[0]) === '')) {
-                    continue;
-                }
-                if (count($values) !== count($header)) {
-                    throw ValidationException::withMessages(['file' => 'Baris '.$lineNumber.': jumlah kolom tidak cocok dengan header.']);
-                }
-                if (count($rows) >= 1000) {
-                    throw ValidationException::withMessages(['file' => 'Maksimal 1.000 baris per impor. Pecah berkas menjadi beberapa bagian.']);
-                }
-                $row = [];
-                foreach ($header as $i => $key) {
-                    $value = trim((string) $values[$i]);
-                    if (! mb_check_encoding($value, 'UTF-8')) {
-                        throw ValidationException::withMessages(['file' => 'Baris '.$lineNumber.': teks bukan UTF-8.']);
-                    }
-                    if (preg_match('/^\'[\s]*[=+@-]/u', $value)) {
-                        $value = substr($value, 1);
-                    }
-                    $row[$key] = $value === '' ? null : $value;
-                }
-                $rows[$lineNumber] = $row;
-            }
-            if (! $rows) {
-                throw ValidationException::withMessages(['file' => 'Berkas belum memiliki baris data. Isi template terlebih dahulu.']);
-            }
-
-            return $rows;
-        } finally {
-            fclose($handle);
-        }
     }
 
     private function saveRow(string $resource, array $row, ?Model $record): void

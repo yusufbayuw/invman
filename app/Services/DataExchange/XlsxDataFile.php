@@ -60,7 +60,14 @@ class XlsxDataFile
             $value = (int) $value;
         }
 
-        // Explicit text cells preserve leading zeros and never execute untrusted formulas.
+        // OpenSpout's reader classifies any shared string starting with "=" as a
+        // FormulaCell, even when the XLSX writer stored it as plain text. Prefix
+        // one apostrophe (including already-prefixed values) to make exports
+        // safe and preserve exact values when imported again.
+        if (is_string($value) && preg_match("/^'*=/" , $value) === 1) {
+            $value = "'".$value;
+        }
+
         return is_string($value) ? new StringCell($value, null) : Cell::fromValue($value);
     }
 
@@ -141,6 +148,11 @@ class XlsxDataFile
             $value = $value ? '1' : '0';
         }
         $value = trim((string) $value);
+        // Undo exactly one quote used to protect literal formula-looking text
+        // in exported XLSX. Real Excel FormulaCell values are rejected above.
+        if (preg_match("/^'+=/" , $value) === 1) {
+            $value = substr($value, 1);
+        }
 
         return $value === '' ? null : $value;
     }

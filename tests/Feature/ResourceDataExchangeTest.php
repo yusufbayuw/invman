@@ -42,32 +42,43 @@ class ResourceDataExchangeTest extends TestCase
         parent::tearDown();
     }
 
-    private function csv(array $rows): string
+    private function xlsx(array $rows): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'invman-import-');
+        return $this->tempXlsx($this->xlsxBytes(array_keys($rows[0]), array_map(fn (array $row) => array_values($row), $rows)));
+    }
+
+    private function xlsxBytes(array $columns, array $rows): string
+    {
+        $response = app(\App\Services\DataExchange\XlsxDataFile::class)->download('fixture.xlsx', $columns, $rows);
+        ob_start();
+        $response->sendContent();
+
+        return (string) ob_get_clean();
+    }
+
+    private function tempXlsx(string $bytes): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'invman-xlsx-test-');
         $this->paths[] = $path;
-        $handle = fopen($path, 'w');
-        fputcsv($handle, array_keys($rows[0]), ',', '"', '');
-        foreach ($rows as $row) {
-            fputcsv($handle, array_values($row), ',', '"', '');
-        }
-        fclose($handle);
+        file_put_contents($path, $bytes);
 
         return $path;
     }
 
     private function runImport(string $resource, array $rows, string $mode = 'upsert'): array
     {
-        return app(ResourceDataExchange::class)->import($resource, $this->csv($rows), $mode);
+        return app(ResourceDataExchange::class)->import($resource, $this->xlsx($rows), $mode);
     }
 
     private function download(string $resource, bool $template = false, $query = null): string
     {
         $response = app(ResourceDataExchange::class)->download($resource, $template, $query);
+        $this->assertSame(\App\Services\DataExchange\XlsxDataFile::MIME_TYPE, $response->headers->get('Content-Type'));
+        $this->assertStringContainsString('.xlsx', $response->headers->get('Content-Disposition'));
         ob_start();
         $response->sendContent();
 
-        return ob_get_clean();
+        return (string) ob_get_clean();
     }
 
     public function test_create_edit_and_export_round_trip_with_filtered_rows_and_formula_protection(): void
@@ -76,12 +87,12 @@ class ResourceDataExchangeTest extends TestCase
             ['id' => '', 'name' => '=1+2'], ['id' => '', 'name' => 'Unit kedua'],
         ]));
         $first = M\G001M001Unit::where('name', '=1+2')->firstOrFail();
-        $csv = $this->download(R\G001M001UnitResource::class, query: M\G001M001Unit::whereKey($first->id));
-        $this->assertStringContainsString("'=1+2", $csv);
-        $this->assertStringNotContainsString('Unit kedua', $csv);
-        $path = tempnam(sys_get_temp_dir(), 'invman-roundtrip-');
-        $this->paths[] = $path;
-        file_put_contents($path, $csv);
+        $xlsx = $this->download(R\G001M001UnitResource::class, query: M\G001M001Unit::whereKey($first->id));
+        $this->assertSame("PK\x03\x04", substr($xlsx, 0, 4));
+        $path = $this->tempXlsx($xlsx);
+        $rows = app(\App\Services\DataExchange\XlsxDataFile::class)->readRows($path, ['id', 'name']);
+        $this->assertCount(1, $rows);
+        $this->assertSame('=1+2', array_values($rows)[0]['name']);
         $this->assertSame(['created' => 0, 'updated' => 1], app(ResourceDataExchange::class)->import(R\G001M001UnitResource::class, $path, 'update'));
         $this->assertSame('=1+2', $first->fresh()->name);
         $this->assertSame(['created' => 0, 'updated' => 1], $this->runImport(R\G001M001UnitResource::class, [['id' => $first->id, 'name' => 'Diperbarui']], 'update'));
@@ -101,12 +112,28 @@ class ResourceDataExchangeTest extends TestCase
 
     public function test_real_table_upload_action_and_template_download_are_available(): void
     {
+        $upload = UploadedFile::fake()->createWithContent('units.xlsx', $this->xlsxBytes(['id', 'name'], [['', 'Unit via unggah']]));
         Livewire::test(R\G001M001UnitResource\Pages\ListG001M001Units::class)
             ->assertTableActionExists('downloadTemplate')
-            ->callTableAction('importData', data: ['file' => UploadedFile::fake()->createWithContent('units.csv', "id,name\n,Unit via unggah\n"), 'mode' => 'create'])
+            ->callTableAction('importData', data: ['file' => $upload, 'mode' => 'create'])
             ->assertHasNoTableActionErrors()->assertNotified('Impor selesai');
         $this->assertDatabaseHas('g001_m001_units', ['name' => 'Unit via unggah']);
-        $this->assertSame("\xEF\xBB\xBFid,name\n", $this->download(R\G001M001UnitResource::class, true));
+        $template = $this->download(R\G001M001UnitResource::class, true);
+        $this->assertSame("PK\x03\x04", substr($template, 0, 4));
+        $reader = new \OpenSpout\Reader\XLSX\Reader;
+        $reader->open($this->tempXlsx($template));
+        try {
+            $header = [];
+            foreach ($reader->getSheetIterator() as $sheet) {
+                foreach ($sheet->getRowIterator() as $row) {
+                    $header = array_map(fn ($cell) => $cell->getValue(), $row->getCells());
+                    break 2;
+                }
+            }
+            $this->assertSame(['id', 'name'], $header);
+        } finally {
+            $reader->close();
+        }
     }
 
     public function test_inventory_import_preserves_observers_and_forbids_counter_edits(): void
@@ -209,10 +236,10 @@ class ResourceDataExchangeTest extends TestCase
             $model = $resource::getModel();
             $record = $model::latest('id')->firstOrFail();
             // UUID models cannot be sorted by creation order; event has no older fixture.
-            $csv = $this->download($resource, query: $model::whereKey($record->id));
+            $xlsx = $this->download($resource, query: $model::whereKey($record->id));
             $path = tempnam(sys_get_temp_dir(), 'invman-master-roundtrip-');
             $this->paths[] = $path;
-            file_put_contents($path, $csv);
+            file_put_contents($path, $xlsx);
             $this->assertSame(['created' => 0, 'updated' => 1], app(ResourceDataExchange::class)->import($resource, $path, 'update'), $resource);
         }
     }
@@ -271,15 +298,30 @@ class ResourceDataExchangeTest extends TestCase
         $this->assertSame(1, $ticket->events()->where('action', 'created')->count());
     }
 
-    public function test_semicolon_bom_quoted_values_and_multiline_csv_are_supported(): void
+    public function test_excel_preserves_semicolons_newlines_and_leading_zero_text(): void
     {
-        $path = tempnam(sys_get_temp_dir(), 'invman-semicolon-');
-        $this->paths[] = $path;
-        file_put_contents($path, "\xEF\xBB\xBFid;name;description\n;\"Jenis; A\";\"Baris pertama\nBaris kedua\"\n");
-        $result = app(ResourceDataExchange::class)->import(R\G002M002ItemTypeResource::class, $path, 'create');
-        $this->assertSame(['created' => 1, 'updated' => 0], $result);
-        $type = M\G002M002ItemType::where('name', 'Jenis; A')->firstOrFail();
+        $this->assertSame(['created' => 1, 'updated' => 0], $this->runImport(R\G002M002ItemTypeResource::class, [
+            ['id' => '', 'name' => 'Jenis; 00123', 'description' => "Baris pertama\nBaris kedua"],
+        ], 'create'));
+        $type = M\G002M002ItemType::where('name', 'Jenis; 00123')->firstOrFail();
         $this->assertSame("Baris pertama\nBaris kedua", $type->description);
+        $xlsx = $this->download(R\G002M002ItemTypeResource::class, query: M\G002M002ItemType::whereKey($type->id));
+        $rows = app(\App\Services\DataExchange\XlsxDataFile::class)->readRows($this->tempXlsx($xlsx), ['id', 'name', 'description']);
+        $this->assertSame('Jenis; 00123', array_values($rows)[0]['name']);
+        $this->assertSame("Baris pertama\nBaris kedua", array_values($rows)[0]['description']);
+    }
+
+    public function test_csv_upload_is_rejected_without_database_changes(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'invman-invalid-csv-');
+        $this->paths[] = $path;
+        file_put_contents($path, "id,name\n,CSV tidak boleh masuk\n");
+        $this->expectException(ValidationException::class);
+        try {
+            app(ResourceDataExchange::class)->import(R\G001M001UnitResource::class, $path, 'create');
+        } finally {
+            $this->assertDatabaseMissing('g001_m001_units', ['name' => 'CSV tidak boleh masuk']);
+        }
     }
 
     public function test_unknown_headers_duplicate_ids_and_modes_do_not_write(): void

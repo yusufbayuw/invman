@@ -50,8 +50,21 @@ $user->assignRole(config('role.sarpras'));
 $item = G002M007Item::create(['name' => 'Legacy asset', 'g001_m001_unit_id' => $unit->id, 'quantity' => 2, 'is_borrowable' => true]);
 $activity = G004M008Activity::create(['user_id' => $user->id, 'g001_m001_unit_id' => $unit->id,
     'name' => 'Legacy booking', 'start_time' => now()->addDay(), 'end_time' => now()->addDays(2), 'status' => 'submitted']);
-$reservation = G005M009ItemReservation::create(['g004_m008_activity_id' => $activity->id, 'g002_m007_item_id' => $item->id,
-    'quantity' => 1, 'start_time' => $activity->start_time, 'end_time' => $activity->end_time, 'status' => 'submitted']);
+// This is a historical row created by the pre-upgrade application. Insert it
+// directly: today's reservation model guards against recurring schedules,
+// whose table intentionally does not exist in this legacy schema yet.
+$assert(! Schema::hasTable('recurring_asset_schedules'), 'Legacy fixture unexpectedly has recurring schedules');
+DB::table('g005_m009_item_reservations')->insert([
+    'id' => (string) \Illuminate\Support\Str::uuid(),
+    'g004_m008_activity_id' => $activity->id,
+    'g002_m007_item_id' => $item->id,
+    'quantity' => 1,
+    'start_time' => $activity->start_time,
+    'end_time' => $activity->end_time,
+    'status' => 'submitted',
+    'created_at' => now(),
+    'updated_at' => now(),
+]);
 $ticket = Ticket::create(['number' => 'UPGRADE-LEGACY', 'ticket_category_id' => DB::table('ticket_categories')->value('id'),
     'reporter_id' => $user->id, 'g001_m001_unit_id' => $unit->id, 'title' => 'Legacy repair', 'description' => 'Synthetic history', 'status' => 'open']);
 $case = $ticket->maintenance()->make();
@@ -89,6 +102,7 @@ $approvalId = DB::table('work_order_approvals')->insertGetId(['ticket_id' => $dy
 $originalApproval = (array) DB::table('work_order_approvals')->where('id', $approvalId)->first();
 $before = $fingerprint();
 $assert(Artisan::call('migrate', ['--force' => true]) === 0, 'Upgrade failed');
+$assert(Schema::hasTable('recurring_asset_schedules'), 'Recurring schedule table missing after upgrade');
 $assert($before === $fingerprint(), 'Existing rows changed during upgrade');
 $upgradedApproval = (array) DB::table('work_order_approvals')->where('id', $approvalId)->first();
 $assert(array_intersect_key($upgradedApproval, $originalApproval) === $originalApproval, 'Original approval identity/decision changed');
