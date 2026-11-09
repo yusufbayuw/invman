@@ -4,7 +4,9 @@ const pace=require('./login-pace.cjs'),{chromium}=require('../../../output/opera
 async function choose(d,suffix,label){
     const field=d.locator('select[id$=".'+suffix+'"]').last();
     await field.waitFor({state:'attached'});
-    const widget=d.locator('.choices').filter({has:field}).last();
+    // Use a relative CSS :has() selector. A locator rooted at the modal
+    // cannot be used as filter({has}) inside the nested Choices widget.
+    const widget=d.locator('.choices:has(select[id$=".'+suffix+'"])').last();
     if(await widget.count()){
         await widget.locator('.choices__inner').click();
         await widget.locator('.choices__list--dropdown .choices__item--choice').filter({hasText:label}).first().click();
