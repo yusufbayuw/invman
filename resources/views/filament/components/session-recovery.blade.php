@@ -37,4 +37,4 @@
     }
     #invman-session-expired button:focus-visible { outline: 3px solid #818cf8; outline-offset: 2px; }
 </style>
-<script src="{{ asset('js/livewire-session-recovery.js').'?v=5' }}" defer></script>
+<script src="{{ asset('js/livewire-session-recovery.js').'?v=6' }}" defer></script>
