@@ -13,7 +13,8 @@ Bertujuan mengeksplorasi alur lintas unit, jabatan dinamis Work Order, dan penge
 - Satu akun `teknisi` **tanpa role fasilitas global**, dengan jabatan Teknisi. Atasan langsung adalah Staf Fasilitas; staf merupakan lead tim lapangan `[DEMO-ORG] Tim Teknis Fasilitas`. Hierarki: Manager → Supervisor → Staf → Teknisi.
 - Dua akun `it` dan `perpus`, terhubung ke pengelola barang `[DEMO-ORG] IT` dan `[DEMO-ORG] Perpustakaan`, tanpa role fasilitas.
 - Akun **`driver`** dengan data SIM A demonstrasi dan kendaraan contoh, tanpa role `fasilitas` global. Akun ini adalah identitas pengemudi, bukan admin peminjaman.
-- Tiap unit memiliki kursi lipat (4), laptop (2), buku referensi (3), total 15 master barang dan 45 barang satuan.
+- Tiap unit memiliki kursi lipat (4), laptop (2), buku referensi (3), ditambah **11 master barang struktur** untuk bulk, komposit, contained, installed, dan bundle. Total 70 master barang, 95 Barang Satuan, 30 relasi pada lima unit; stok bulk 80 per unit tidak membuat Barang Satuan.
+- Hubungan dibuat melalui `AssetRelationService` dan tidak memintas pemeriksaan akses, kepemilikan unit, kelompok pengelola, atau larangan siklus. SSD/RAM komposit dan switch terpasang tidak bisa dipinjam terpisah; bundle kamera/lampu adalah **definisi inventaris, bukan paket yang dapat otomatis dipinjam**. Cari dengan kode `INVMAN-ORG-<UNIT>-STRUCT-` di menu Barang/Barang Satuan.
 - Satu draf peminjaman campuran laptop + buku di tiap unit (5 draf); semua masih `draft` dan **belum memblokir stok**.
 - Lima workflow Work Order per unit, semuanya `draft`, dengan jabatan **Teknisi** sebagai target dispatch. TK: staf + pengesahan manager. SD/SMP/SMA: staf + supervisor + pengesahan manager. Universitas: sama dengan tambahan checkpoint estimasi pada supervisor. Teknisi bukan approver final.
 - Jabatan `[DEMO-ORG]` terpisah; penugasan pengelola IT dan perpustakaan juga scoped berdasarkan kelompok inventaris.

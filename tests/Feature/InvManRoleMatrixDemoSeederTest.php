@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AssetRelation;
 use App\Models\G001M001Unit;
 use App\Models\G002M007Item;
 use App\Models\G002M015ItemInstance;
@@ -51,9 +52,32 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
         $this->assertSame(5, G001M001Unit::query()->where('name', 'like', '[DEMO-ORG]%')->count());
         $this->assertSame(13, User::query()->whereIn('username', ['admin', 'sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ', 'staf.fas', 'spv.fas', 'man.fas', 'teknisi', 'it', 'perpus', 'driver'])->count());
         $this->assertSame(5, User::query()->whereIn('username', ['sarpras.tk', 'sarpras.sd', 'sarpras.smp', 'sarpras.sma', 'sarpras.univ'])->count());
-        $this->assertSame(15, G002M007Item::query()->where('code', 'like', 'INVMAN-ORG-%')->count());
-        $this->assertSame(45, G002M015ItemInstance::query()->whereHas('item',
+        $this->assertSame(70, G002M007Item::query()->where('code', 'like', 'INVMAN-ORG-%')->count());
+        $this->assertSame(95, G002M015ItemInstance::query()->whereHas('item',
             fn ($query) => $query->where('code', 'like', 'INVMAN-ORG-%'))->count());
+        $this->assertSame(30, AssetRelation::query()->count());
+        foreach (['TK', 'SD', 'SMP', 'SMA', 'UNIVERSITAS'] as $slug) {
+            $prefix = 'INVMAN-ORG-'.$slug.'-STRUCT-';
+            $this->assertSame(11, G002M007Item::query()->where('code', 'like', $prefix.'%')->count());
+            $bulk = G002M007Item::query()->where('code', $prefix.'BULK')->firstOrFail();
+            $this->assertSame('bulk', $bulk->tracking_mode);
+            $this->assertSame(80, (int) $bulk->available_quantity);
+            $this->assertSame(0, $bulk->item_instance()->count());
+            $links = AssetRelation::query()->whereHas('parentInstance.item',
+                fn ($query) => $query->where('code', 'like', $prefix.'%'))->get();
+            $this->assertSame(['bundle' => 2, 'component' => 2, 'contained' => 1, 'installed' => 1],
+                $links->groupBy('relation_type')->map->count()->sortKeys()->all());
+            foreach ($links as $link) {
+                $this->assertSame($link->parentInstance->item->g001_m001_unit_id,
+                    $link->childInstance->item->g001_m001_unit_id);
+                if (in_array($link->relation_type, ['component', 'installed'], true)) {
+                    $this->assertFalse((bool) $link->childInstance->is_borrowable);
+                }
+                if ($link->relation_type === 'bundle') {
+                    $this->assertFalse((bool) $link->parentInstance->is_borrowable);
+                }
+            }
+        }
         $this->assertSame(5, G004M008Activity::query()->where('name', 'like', '[DEMO-ORG]%')->count());
         $this->assertSame(0, G004M008Activity::query()->where('name', 'like', '[DEMO-ORG]%')
             ->where('status', '!=', 'draft')->count());
@@ -117,6 +141,12 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
         $libAsset = G002M007Item::query()->where('code', 'INVMAN-ORG-SD-LIB')->firstOrFail();
         $this->assertTrue($it->itemManagements()->whereKey($itAsset->g002_m003_item_management_id)->exists());
         $this->assertFalse($it->itemManagements()->whereKey($libAsset->g002_m003_item_management_id)->exists());
+
+        $this->actingAs(User::query()->where('username', 'sarpras.tk')->firstOrFail());
+        $this->assertSame(11, \App\Filament\Resources\G002M007ItemResource::getEloquentQuery()
+            ->where('code', 'like', 'INVMAN-ORG-TK-STRUCT-%')->count());
+        $this->assertSame(0, \App\Filament\Resources\G002M007ItemResource::getEloquentQuery()
+            ->where('code', 'like', 'INVMAN-ORG-SD-STRUCT-%')->count());
     }
 
     public function test_second_run_is_idempotent_and_preserves_credentials_and_existing_user(): void
@@ -131,6 +161,7 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
             G001M001Unit::query()->count(),
             G002M007Item::query()->count(),
             G002M015ItemInstance::query()->count(),
+            AssetRelation::query()->count(),
             G004M008Activity::query()->count(),
             WorkOrderAssignment::query()->count(),
             G008M018Driver::query()->count(),
@@ -143,6 +174,7 @@ class InvManRoleMatrixDemoSeederTest extends TestCase
             G001M001Unit::query()->count(),
             G002M007Item::query()->count(),
             G002M015ItemInstance::query()->count(),
+            AssetRelation::query()->count(),
             G004M008Activity::query()->count(),
             WorkOrderAssignment::query()->count(),
             G008M018Driver::query()->count(),
