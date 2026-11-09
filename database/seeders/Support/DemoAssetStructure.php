@@ -85,7 +85,11 @@ final class DemoAssetStructure
             if (! $item->wasRecentlyCreated) {
                 // Never reset inventory, group/room placement, or a user's edits.
                 foreach ($attributes as $column => $expected) {
-                    if ((string) $item->getAttribute($column) !== (string) $expected) {
+                    $actual = $item->getAttribute($column);
+                    $matches = $column === 'is_borrowable'
+                        ? (bool) $actual === $expected
+                        : (string) $actual === (string) $expected;
+                    if (! $matches) {
                         throw new RuntimeException("Aset demo {$code} telah berubah pada {$column}; tidak ditimpa.");
                     }
                 }
