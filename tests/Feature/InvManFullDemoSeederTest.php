@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AssetRelation;
 use App\Models\G001M001Unit;
 use App\Models\G002M007Item;
 use App\Models\G002M015ItemInstance;
@@ -35,6 +36,7 @@ class InvManFullDemoSeederTest extends TestCase
             'users' => User::query()->count(),
             'items' => G002M007Item::query()->count(),
             'instances' => G002M015ItemInstance::query()->count(),
+            'relations' => AssetRelation::query()->count(),
             'drafts' => G004M008Activity::query()->count(),
             'tickets' => Ticket::query()->count(),
             'workflows' => WorkOrderWorkflow::query()->count(),
@@ -48,6 +50,7 @@ class InvManFullDemoSeederTest extends TestCase
             'users' => User::query()->count(),
             'items' => G002M007Item::query()->count(),
             'instances' => G002M015ItemInstance::query()->count(),
+            'relations' => AssetRelation::query()->count(),
             'drafts' => G004M008Activity::query()->count(),
             'tickets' => Ticket::query()->count(),
             'workflows' => WorkOrderWorkflow::query()->count(),
@@ -57,14 +60,62 @@ class InvManFullDemoSeederTest extends TestCase
         $this->assertSame($originalPassword, $demoBorrower->password);
         $this->assertSame($originalRoleNames, $demoBorrower->getRoleNames()->all());
         $this->assertTrue(Hash::check('DemoSecure!2026#Password', $demoBorrower->password));
-        $this->assertSame(3, $counts['items']);
-        $this->assertSame(8, $counts['instances']);
+        $this->assertSame(25, $counts['items']);
+        $this->assertSame(28, $counts['instances']);
+        $this->assertSame(12, $counts['relations']);
+        $this->assertStructure('INVMAN-DEMO-SD-STRUCT-');
+        $this->assertStructure('INVMAN-DEMO-SMA-STRUCT-');
         $this->assertSame(3, $counts['drafts']);
         $this->assertSame(2, $counts['tickets']);
         $this->assertSame(1, $counts['workflows']);
         $this->assertEquals(0, WorkOrderWorkflow::query()->where('status', 'published')->count());
         $this->assertEquals(0, G004M008Activity::query()->where('status', '!=', 'draft')->count());
         $this->assertEquals(0, User::query()->where('username', 'invman.demo.admin')->count());
+    }
+
+    private function assertStructure(string $prefix): void
+    {
+        $bulk = G002M007Item::query()->where('code', $prefix.'BULK')->firstOrFail();
+        $this->assertSame('bulk', $bulk->tracking_mode);
+        $this->assertSame(80, (int) $bulk->quantity);
+        $this->assertSame(80, (int) $bulk->available_quantity);
+        $this->assertSame(0, $bulk->item_instance()->count());
+
+        $links = AssetRelation::query()
+            ->whereHas('parentInstance.item', fn ($query) => $query->where('code', 'like', $prefix.'%'))
+            ->get();
+        $this->assertCount(6, $links);
+        $this->assertSame(['bundle' => 2, 'component' => 2, 'contained' => 1, 'installed' => 1],
+            $links->groupBy('relation_type')->map->count()->sortKeys()->all());
+        foreach ($links as $link) {
+            $this->assertSame($link->parentInstance->g001_m001_unit_id, $link->childInstance->g001_m001_unit_id);
+            $this->assertSame($link->parentInstance->item->g002_m003_item_management_id,
+                $link->childInstance->item->g002_m003_item_management_id);
+            if (in_array($link->relation_type, ['component', 'installed'], true)) {
+                $this->assertFalse((bool) $link->childInstance->is_borrowable);
+            }
+            if ($link->relation_type === 'bundle') {
+                $this->assertFalse((bool) $link->parentInstance->is_borrowable);
+            }
+        }
+    }
+
+    public function test_existing_demo_item_changes_are_not_silently_overwritten(): void
+    {
+        config()->set('security.seed_demo_password', 'DemoSecure!2026#Password');
+        $this->seed(RoleSeeder::class);
+        $this->seed(InvManFullDemoSeeder::class);
+        $item = G002M007Item::query()->where('code', 'INVMAN-DEMO-SD-STRUCT-BULK')->firstOrFail();
+        $item->update(['name' => '[DEMO-INVMAN] Ubah nama oleh operator']);
+        $original = $item->fresh()->name;
+        try {
+            $this->seed(InvManFullDemoSeeder::class);
+            $this->fail('Seeder must not silently overwrite an edited inventory item.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('tidak ditimpa', $exception->getMessage());
+        }
+        $this->assertSame($original, $item->fresh()->name);
+        $this->assertSame(12, AssetRelation::query()->count());
     }
 
     public function test_demo_has_one_named_employee_per_role_including_optional_global_roles(): void

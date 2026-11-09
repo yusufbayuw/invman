@@ -22,6 +22,7 @@ use App\Models\WorkOrderJobTitle;
 use App\Models\WorkOrderWorkflow;
 use App\Services\LoanRequestService;
 use App\Services\TicketService;
+use Database\Seeders\Support\DemoAssetStructure;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -144,6 +145,13 @@ class InvManFullDemoSeeder extends Seeder
             $this->demoItem('LTP-01', 'Laptop Latihan', 3, $unitB, $management, $itemType, $roomB);
             $damaged = $this->demoItem('AC-01', 'AC Perlu Perbaikan', 1, $unitA, $management, $itemType, $room);
 
+            // Both isolated demo units cover all supported asset structures.
+            $coverage = app(DemoAssetStructure::class);
+            $coverage->seed(self::PREFIX, 'INVMAN-DEMO-SD-STRUCT-',
+                $unitA, $management, $itemType, $room, $assetManager);
+            $coverage->seed(self::PREFIX, 'INVMAN-DEMO-SMA-STRUCT-',
+                $unitB, $management, $itemType, $roomB, $assetManager);
+
             $titles = [];
             foreach (['Atasan Unit', 'Kepala Sarpras', 'Staf Fasilitas', 'Supervisor Fasilitas',
                 'Manager Fasilitas', 'Koordinator Teknisi', 'Teknisi'] as $name) {
@@ -226,7 +234,7 @@ class InvManFullDemoSeeder extends Seeder
                 'AC latihan berbunyi keras dan tidak dapat digunakan; cek safety hold pada aset demo.', $damaged);
         }, 3);
 
-        $this->command?->info('Fixture [DEMO-INVMAN] tersedia: 2 unit, satu akun per jabatan/peran (9 + opsional Admin), aset, 3 draf pinjaman, 2 tiket dan workflow DRAFT.');
+        $this->command?->info('Fixture [DEMO-INVMAN]: 2 unit, 25 barang (individual/bulk + 4 relasi), 28 satuan, 12 relasi, 3 draf, 2 tiket.');
         $this->command?->warn('Peminjaman tetap draf; workflow unit demo dipublikasikan hanya dengan --include-privileged agar approval dapat diperagakan.');
     }
 

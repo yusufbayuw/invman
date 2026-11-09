@@ -15,6 +15,7 @@ use App\Models\WorkOrderJobTitle;
 use App\Models\WorkOrderWorkflow;
 use App\Services\LoanRequestService;
 use App\Services\WorkOrderWorkflowService;
+use Database\Seeders\Support\DemoAssetStructure;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -143,6 +144,13 @@ class InvManRoleMatrixDemoSeeder extends Seeder
                     'perpustakaan' => $this->item($unit, $slug, 'LIB', 'Buku Referensi '.$label, 3, $groups['perpustakaan'], $types['perpustakaan']),
                 ];
 
+                // Cover bulk, composite, contained, installed and bundle for
+                // EVERY demo unit using the existing asset-relations service.
+                app(DemoAssetStructure::class)->seed(
+                    self::PREFIX, 'INVMAN-ORG-'.strtoupper($slug).'-STRUCT-',
+                    $unit, $groups['fasilitas'], $types['fasilitas'], null, $admin,
+                );
+
                 // A mixed IT + library request demonstrates per-reservation
                 // approvals and scoped custody without submitting any hold.
                 $this->draft($sarpras, $label, $items['it'], $items['perpustakaan']);
@@ -150,7 +158,7 @@ class InvManRoleMatrixDemoSeeder extends Seeder
             }
         }, 3);
 
-        $this->command?->info('Demo organisasi dibuat: 5 unit, 13 akun sederhana (termasuk admin dan driver), 3 pengelola aset, 15 barang, 5 draf peminjaman, 5 workflow DRAFT.');
+        $this->command?->info('Demo organisasi: 5 unit, 13 akun, 3 pengelola, 70 barang, 95 satuan, 30 relasi, 5 draf, 5 workflow DRAFT.');
         $this->command?->warn('Password demo adalah password untuk seluruh akun. Jangan jalankan di server publik. Role fasilitas bersifat GLOBAL.');
     }
 

@@ -31,7 +31,7 @@ Semua data contoh memakai identitas `[DEMO-INVMAN]` atau `invman.demo.*`. Seeder
 
 - Dua unit baru SD Demo dan SMA Demo; satu kelompok pengelola aset dan satu jenis barang demo.
 - Satu gedung, satu lantai, dua ruangan demo (dengan QR melalui service existing).
-- Tiga master barang: empat proyektor, tiga laptop, satu AC, beserta delapan barang satuan.
+- Tiga master barang awal: empat proyektor, tiga laptop, satu AC (8 Barang Satuan), ditambah **11 barang struktur pada setiap unit**. Total 25 barang, 28 Barang Satuan, 12 relasi. Contoh meliputi stok bulk, PC komposit (SSD/RAM), mikrofon dalam lemari, switch terpasang pada rak, dan definisi bundle kamera/lampu.
 - Dua kendaraan dengan data pengemudi dan kenek bus contoh.
 - Akun Sarpras per unit, atasan, staf/SPV/manager fasilitas, pengelola aset, koordinator teknisi, teknisi dan pengemudi.
 - Jabatan dinamis dan assignment, tim koordinator/teknisi, dan workflow unit demo dalam status **DRAFT**, atau **PUBLISHED** jika sejak awal operator memilih `--include-privileged`. Publikasi terbatas pada unit demo dan dilakukan sebelum tiket contoh dibuat.
@@ -39,6 +39,8 @@ Semua data contoh memakai identitas `[DEMO-INVMAN]` atau `invman.demo.*`. Seeder
 - Dua tiket perawatan status awal `open`; satu tanpa aset, satu tertaut ke AC contoh sehingga dapat mengilustrasikan safety hold.
 
 Tiket demo yang belum disetujui dibuat dengan tenggat SLA kosong agar tidak langsung dieskalasi ke pengguna produksi. Saat operator mulai menangani tiket, service aplikasi menetapkan SLA normal kembali.
+
+Relasi demo dibuat melalui `AssetRelationService` dan mengikuti pembatasan unit/pengelola, larangan siklus, serta aturan peminjaman. **Bundle tidak dapat otomatis dipinjam sebagai paket**; komponen dan instalasi juga tidak dapat dipinjam sendiri. Relasi terlihat pada halaman Barang Satuan. Perubahan barang demo oleh operator tidak ditimpa diam-diam saat seeder dijalankan ulang.
 
 Data dibuat melalui model dan service existing; tidak melalui bypass authorization. Seeder membuat data secara idempotent, sehingga pemanggilan ulang tidak menambah salinan. Seeder **tidak mereset password, role, nama, unit, atau konfigurasi akun existing** dan hanya menerbitkan workflow unit demo (bukan workflow nyata) saat `--include-privileged` disetujui.
 
