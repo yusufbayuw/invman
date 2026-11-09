@@ -64,6 +64,16 @@ class ApplicationSettingsTest extends TestCase
             ->assertJsonPath('token', session()->token());
     }
 
+    public function test_ajax_session_probe_does_not_replace_previous_page(): void
+    {
+        $this->get('/login')->assertRedirect('/admin/login');
+        $previous = session()->previousUrl();
+        $this->withHeader('X-Requested-With', 'XMLHttpRequest')
+            ->getJson('/session/status')->assertOk();
+
+        $this->assertSame($previous, session()->previousUrl());
+    }
+
     public function test_sidebar_contains_only_five_defined_groups(): void
     {
         $this->assertSame(['Peminjaman', 'Laporan & Perbaikan', 'Laporan', 'Data Aset', 'Pengaturan'],
