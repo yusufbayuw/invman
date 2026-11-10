@@ -442,10 +442,7 @@ class PeminjamanSaya extends Page implements HasTable
     {
         $reservation = static::reservationForNeed($record);
 
-        return $reservation
-            && $reservation->status === ReservationStatus::Submitted->value
-            && (! $reservation->activity?->hold_expires_at || $reservation->activity->hold_expires_at->isFuture())
-            && (auth()->user()?->managesReservation($reservation) ?? false);
+        return $reservation !== null && app(LoanRequestService::class)->canDecideReservation($reservation);
     }
 
     private static function canRequestReturnNeed(LoanRequestNeed $record): bool
