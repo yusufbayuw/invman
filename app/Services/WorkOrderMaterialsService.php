@@ -113,9 +113,9 @@ final class WorkOrderMaterialsService
             }
         }
         $required = $this->milli($line->required_quantity);
-        $ready = $this->milli($line->stock_allocated_quantity, true) + $accepted;
+        $ready = $this->milli($line->stock_allocated_quantity ?? '0', true) + $accepted;
         return [
-            'ready' => $ready, 'issued' => $this->milli($line->issued_quantity, true),
+            'ready' => $ready, 'issued' => $this->milli($line->issued_quantity ?? '0', true),
             'needed' => $required, 'committed' => $committed,
             'shortage' => max(0, $required - $ready - $committed),
         ];
@@ -124,7 +124,8 @@ final class WorkOrderMaterialsService
     /** @return array{required:string,ready:string,issued:string,outstanding:string,shortage:string} */
     public function summary(WorkOrderMaterialLine $line): array
     {
-        $t = $this->totals($line);
+        // UI/tests may hold a model created before DB defaults were hydrated.
+        $t = $this->totals($line->fresh() ?? $line);
         return [
             'required' => $this->decimal($t['needed']),
             'ready' => $this->decimal($t['ready']),
