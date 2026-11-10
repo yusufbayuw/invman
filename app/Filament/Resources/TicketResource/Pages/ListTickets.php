@@ -40,7 +40,7 @@ class ListTickets extends ListRecords
                 ->modifyQueryUsing(fn (Builder $query) => $query
                     ->whereIn('status', ['open', 'resolved'])
                     ->whereHas('workOrderApprovals', fn (Builder $approvals) =>
-                        app(\\App\\Services\\WorkOrderWorkflowService::class)
+                        app(\App\Services\WorkOrderWorkflowService::class)
                             ->scopeEligibleCandidates($approvals, $user)));
         }
         $subordinates = $user ? TicketTeamMember::descendantsOf($user) : [];
