@@ -51,7 +51,7 @@ return new class extends Migration
 
         Schema::create('work_order_material_orders', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('work_order_material_line_id')->constrained('work_order_material_lines')->restrictOnDelete();
+            $table->foreignId('work_order_material_line_id')->constrained('work_order_material_lines', indexName: 'wo_material_order_line_fk')->restrictOnDelete();
             $table->foreignUuid('ticket_id')->constrained('tickets')->restrictOnDelete();
             $table->decimal('quantity', 14, 3);
             $table->string('status', 24)->default('requested');
@@ -65,12 +65,12 @@ return new class extends Migration
             $table->timestamp('approved_at')->nullable();
             $table->timestamp('ordered_at')->nullable();
             $table->timestamps();
-            $table->index(['work_order_material_line_id', 'status']);
+            $table->index(['work_order_material_line_id', 'status'], 'wo_material_order_status_idx');
         });
 
         Schema::create('work_order_material_receipts', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('work_order_material_order_id')->constrained('work_order_material_orders')->restrictOnDelete();
+            $table->foreignId('work_order_material_order_id')->constrained('work_order_material_orders', indexName: 'wo_material_receipt_order_fk')->restrictOnDelete();
             $table->decimal('quantity', 14, 3);
             $table->decimal('accepted_quantity', 14, 3)->nullable();
             $table->string('status', 16)->default('pending');
@@ -80,7 +80,7 @@ return new class extends Migration
             $table->foreignId('inspected_by')->nullable()->constrained('users')->restrictOnDelete();
             $table->timestamp('inspected_at')->nullable();
             $table->timestamps();
-            $table->index(['work_order_material_order_id', 'status']);
+            $table->index(['work_order_material_order_id', 'status'], 'wo_material_receipt_status_idx');
         });
     }
 
