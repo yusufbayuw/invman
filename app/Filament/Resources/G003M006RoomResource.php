@@ -211,10 +211,20 @@ class G003M006RoomResource extends Resource
                     ->url(fn (G003M006Room $record): string => $record->publicScheduleUrl())
                     ->openUrlInNewTab(),
                 Tables\Actions\Action::make('downloadQrPdf')
-                    ->label('Unduh QR A4')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->url(fn (G003M006Room $record): string => $record->qrCodePdfUrl()),
+                    ->label('Lihat QR A4')
+                    ->icon('heroicon-o-eye')
+                    ->color('gray')
+                    ->modalHeading('Pratinjau QR Ruangan A4')
+                    ->modalWidth('7xl')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalContent(fn (G003M006Room $record) => view('filament.components.pdf-preview-modal', [
+                        'title' => 'QR Ruangan '.$record->name,
+                        'previewUrl' => route('public.rooms.qrcode-pdf', [
+                            'room' => $record->qr_uuid, 'preview' => 1,
+                        ]),
+                        'downloadUrl' => $record->qrCodePdfUrl(),
+                    ])),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])

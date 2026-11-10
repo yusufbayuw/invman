@@ -336,8 +336,8 @@ class PeminjamanSaya extends Page implements HasTable
                         'reservation' => $record->reservation_id,
                     ])),
                 Tables\Actions\Action::make('download_handover_pdf')
-                    ->label('Bukti PDF')
-                    ->icon('heroicon-o-document-arrow-down')
+                    ->label('Lihat Bukti PDF')
+                    ->icon('heroicon-o-eye')
                     ->color('gray')
                     ->visible(fn (LoanRequestNeed $record): bool => in_array($record->status, [
                         ReservationStatus::Approved->value,
@@ -346,11 +346,22 @@ class PeminjamanSaya extends Page implements HasTable
                         ReservationStatus::Returned->value,
                     ], true) && app(\App\Services\LoanHandoverQrService::class)
                         ->canView(auth()->user(), static::reservationForNeed($record)))
-                    ->url(fn (LoanRequestNeed $record): string => route('loans.handover.pdf', [
-                        'type' => $record->type,
-                        'reservation' => $record->reservation_id,
-                    ]))
-                    ->openUrlInNewTab(),
+                    ->modalHeading('Pratinjau Bukti Serah-Terima')
+                    ->modalWidth('7xl')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalContent(fn (LoanRequestNeed $record) => view('filament.components.pdf-preview-modal', [
+                        'title' => 'Bukti Serah-Terima',
+                        'previewUrl' => route('loans.handover.pdf', [
+                            'type' => $record->type,
+                            'reservation' => $record->reservation_id,
+                            'preview' => 1,
+                        ]),
+                        'downloadUrl' => route('loans.handover.pdf', [
+                            'type' => $record->type,
+                            'reservation' => $record->reservation_id,
+                        ]),
+                    ])),
                 Tables\Actions\Action::make('view')
                     ->label('Lihat Kegiatan')
                     ->icon('heroicon-o-eye')

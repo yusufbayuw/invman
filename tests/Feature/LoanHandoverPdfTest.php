@@ -98,6 +98,15 @@ class LoanHandoverPdfTest extends TestCase
         $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
         $this->assertStringContainsString('attachment', (string) $response->headers->get('Content-Disposition'));
         $this->actingAs($manager)->get($url)->assertOk();
+
+        $previewUrl = $url.'?preview=1';
+        $preview = $this->actingAs($borrower)->get($previewUrl)
+            ->assertOk()->assertHeader('Content-Type', 'application/pdf')
+            ->assertHeader('X-Frame-Options', 'SAMEORIGIN');
+        $this->assertStringContainsString('inline', (string) $preview->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('no-store', (string) $preview->headers->get('Cache-Control'));
+        $this->assertStringStartsWith('%PDF-', (string) $preview->getContent());
+        $this->actingAs($outsider)->get($previewUrl)->assertNotFound();
     }
 
     public function test_complete_evidence_displays_real_roles_times_condition_and_notes(): void

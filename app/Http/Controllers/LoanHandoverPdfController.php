@@ -28,9 +28,13 @@ class LoanHandoverPdfController extends Controller
             ->setPaper('a4', 'portrait')
             ->setOption('isRemoteEnabled', false);
 
-        return $pdf->download("bukti-serah-terima-{$type}-{$reservation}.pdf")
+        $filename = "bukti-serah-terima-{$type}-{$reservation}.pdf";
+
+        // Keep existing download URLs working; preview uses identical access checks.
+        return ($request->boolean('preview') ? $pdf->stream($filename) : $pdf->download($filename))
             ->header('Cache-Control', 'private, no-store, max-age=0')
             ->header('Pragma', 'no-cache')
-            ->header('X-Content-Type-Options', 'nosniff');
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 }
