@@ -186,6 +186,23 @@ final class WorkOrderWorkflowService
             ->where('status', 'pending')->orderBy('sequence')->first();
     }
 
+    /**
+     * An acknowledged non-repair disposition is an administrative final
+     * decision, not a fabricated technician completion or requester QC.
+     */
+    public function nonRepairFinalReady(Ticket $ticket): bool
+    {
+        // A previously loaded ticket/approval can retain an old relation after
+        // reporter acknowledgement. Always read the current decision from DB.
+        $plan = \App\Models\WorkOrderHandlingPlan::query()->whereKey($ticket->id)->first();
+        return $ticket->status === 'open' && $ticket->assigned_to === null
+            && $plan !== null
+            && in_array($plan->decision, WorkOrderHandlingService::NON_REPAIR, true)
+            && $plan->acknowledged_at !== null
+            && ! $ticket->workOrderApprovals()->where('checkpoint', 'start')
+                ->whereIn('status', ['pending', 'rejected'])->exists();
+    }
+
     public function canDecide(WorkOrderApproval $approval, User $user, ?WorkOrderAuthoritySnapshot $authority = null): bool
     {
         if (! $user->is_enabled || $approval->status !== 'pending' || $approval->superseded_at) {
@@ -194,8 +211,9 @@ final class WorkOrderWorkflowService
         if ($approval->checkpoint === 'start' && $approval->ticket->status !== 'open') {
             return false;
         }
-        if ($approval->checkpoint === 'final' && ($approval->ticket->status !== 'resolved'
-            || ! $approval->ticket->maintenance?->verified_at)) {
+        if ($approval->checkpoint === 'final'
+            && ! (($approval->ticket->status === 'resolved' && $approval->ticket->maintenance?->verified_at)
+                || $this->nonRepairFinalReady($approval->ticket))) {
             return false;
         }
         if ($approval->ticket->workOrderApprovals()->where('checkpoint', $approval->checkpoint)->where('status', 'rejected')->exists()) {
@@ -233,7 +251,8 @@ final class WorkOrderWorkflowService
         $ticket = $approval->ticket;
         if (($approval->checkpoint === 'start' && $ticket->status !== 'open')
             || ($approval->checkpoint === 'final'
-                && ($ticket->status !== 'resolved' || ! $ticket->maintenance?->verified_at))) {
+                && ! (($ticket->status === 'resolved' && $ticket->maintenance?->verified_at)
+                    || $this->nonRepairFinalReady($ticket)))) {
             return false;
         }
         if ($ticket->workOrderApprovals()->where('checkpoint', $approval->checkpoint)->where('status', 'rejected')->exists()) {
@@ -282,6 +301,12 @@ final class WorkOrderWorkflowService
                 $estimate = $estimates->current($ticket, true, $locked->revision);
                 if (! $estimate || ($overrideReason === null && $estimate->recorded_by === $user->id) || $estimate->id !== $expectedEstimateId) {
                     throw ValidationException::withMessages(['estimate' => 'Periksa versi estimasi terbaru; pencatat dan penyetuju harus berbeda.']);
+                }
+                $plan = $ticket->handlingPlan;
+                if ($plan?->decision === 'repair'
+                    && ($estimate->execution_mode !== $plan->execution_mode
+                        || ($plan->execution_mode !== 'internal' && $estimate->vendor_name !== $plan->vendor_name))) {
+                    throw ValidationException::withMessages(['estimate' => 'Estimasi yang dipilih tidak lagi sesuai dengan rencana pelaksanaan.']);
                 }
                 $estimateId = $estimate->id;
             }
@@ -380,12 +405,22 @@ final class WorkOrderWorkflowService
                         ->whereHas('ticket', fn (Builder $tickets) => $tickets->where('status', 'open'));
                 })->orWhere(function (Builder $final) use ($user): void {
                     $final->where('work_order_approvals.checkpoint', 'final')
-                        ->whereHas('ticket', fn (Builder $tickets) => $tickets
-                            ->where('status', 'resolved')
-                            ->where(function (Builder $assignee) use ($user): void {
-                                $assignee->whereNull('assigned_to')->orWhere('assigned_to', '!=', $user->id);
-                            })
-                            ->whereHas('maintenance', fn (Builder $cases) => $cases->whereNotNull('verified_at')));
+                        ->where(function (Builder $allowed) use ($user): void {
+                            $allowed->whereHas('ticket', fn (Builder $tickets) => $tickets
+                                ->where('status', 'resolved')
+                                ->where(function (Builder $assignee) use ($user): void {
+                                    $assignee->whereNull('assigned_to')->orWhere('assigned_to', '!=', $user->id);
+                                })
+                                ->whereHas('maintenance', fn (Builder $cases) => $cases->whereNotNull('verified_at')))
+                                ->orWhereHas('ticket', fn (Builder $noRepair) => $noRepair
+                                    ->where('status', 'open')->whereNull('assigned_to')
+                                    ->whereHas('handlingPlan', fn (Builder $plans) => $plans
+                                        ->whereIn('decision', WorkOrderHandlingService::NON_REPAIR)
+                                        ->whereNotNull('acknowledged_at'))
+                                    ->whereDoesntHave('workOrderApprovals', fn (Builder $steps) => $steps
+                                        ->where('checkpoint', 'start')
+                                        ->whereIn('status', ['pending', 'rejected'])));
+                        });
                 });
             })
             ->whereNotExists(function ($earlier): void {

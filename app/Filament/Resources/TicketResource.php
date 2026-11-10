@@ -253,6 +253,30 @@ class TicketResource extends Resource
                     Infolists\Components\TextEntry::make('maintenance.final_approved_at')->label('Pengesahan akhir')->dateTime()->placeholder('-'),
                     Infolists\Components\TextEntry::make('maintenance.asset_released_at')->label('Dinyatakan layak pakai')->dateTime()->placeholder('Belum'),
                 ])->columns(2)->collapsible(),
+            Infolists\Components\Section::make('Keputusan Penanganan')
+                ->visible(fn ($record): bool => $record->handlingPlan !== null)
+                ->description('Keputusan administratif terpisah dari hasil kerja teknisi; penggantian bukan hasil pekerjaan.')
+                ->schema([
+                    Infolists\Components\TextEntry::make('handlingPlan.decision')->label('Keputusan')->badge()
+                        ->formatStateUsing(fn (?string $state): string => match ($state) {
+                            'repair' => 'Diperbaiki', 'replace' => 'Diganti',
+                            'not_repairable' => 'Tidak dapat diperbaiki', 'defer' => 'Ditunda', default => $state ?? '-',
+                        }),
+                    Infolists\Components\TextEntry::make('handlingPlan.execution_mode')->label('Pelaksanaan')->placeholder('-')
+                        ->formatStateUsing(fn (?string $state): string => match ($state) {
+                            'internal' => 'Internal', 'external' => 'Servis pihak ketiga',
+                            'hybrid' => 'Internal dan pihak ketiga', default => '-',
+                        }),
+                    Infolists\Components\TextEntry::make('handlingPlan.vendor_name')->label('Vendor')->placeholder('-'),
+                    Infolists\Components\TextEntry::make('handlingPlan.vendor_scope')->label('Lingkup servis')->placeholder('-'),
+                    Infolists\Components\TextEntry::make('handlingPlan.reason')->label('Dasar keputusan')->columnSpanFull(),
+                    Infolists\Components\TextEntry::make('handlingPlan.acknowledged_at')->label('Diketahui pelapor')->dateTime()->placeholder('-'),
+                    Infolists\Components\TextEntry::make('handlingPlan.vendor_reference')->label('Dokumen penyerahan vendor')->placeholder('-'),
+                    Infolists\Components\TextEntry::make('handlingPlan.vendor_completed_at')->label('Hasil servis diserahkan')->dateTime()->placeholder('-'),
+                    Infolists\Components\TextEntry::make('handlingPlan.vendor_inspection_notes')->label('Pemeriksaan servis')->placeholder('-')->columnSpanFull(),
+                    Infolists\Components\TextEntry::make('handlingPlan.vendor_accepted')->label('Hasil sesuai')
+                        ->formatStateUsing(fn ($state): string => $state === null ? 'Belum diperiksa' : ($state ? 'Ya' : 'Tidak')),
+                ])->columns(2)->collapsible(),
             Infolists\Components\Section::make('Tinjauan & Estimasi Biaya')
                 ->visible(fn ($record): bool => $record->workOrderEstimates()->exists())
                 ->schema([
@@ -260,7 +284,10 @@ class TicketResource extends Resource
                         Infolists\Components\TextEntry::make('version')->label('Versi estimasi'),
                         Infolists\Components\TextEntry::make('revision')->label('Revisi laporan'),
                         Infolists\Components\TextEntry::make('execution_mode')->label('Pelaksana')
-                            ->formatStateUsing(fn (string $state): string => $state === 'external' ? 'Vendor eksternal' : 'Tim internal'),
+                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                                'external' => 'Vendor eksternal', 'hybrid' => 'Gabungan internal/vendor',
+                                default => 'Tim internal',
+                            }),
                         Infolists\Components\TextEntry::make('vendor_name')->label('Vendor')->placeholder('-'),
                         Infolists\Components\TextEntry::make('amount')->label('Estimasi (Rp)'),
                         Infolists\Components\TextEntry::make('diagnosis')->label('Tinjauan awal')->columnSpanFull(),
@@ -373,6 +400,8 @@ class TicketResource extends Resource
         return [
             \App\Filament\Resources\RelationManagers\TicketOperationalOverridesRelationManager::class,
             \App\Filament\Resources\RelationManagers\TicketWorkOrderEstimatesRelationManager::class,
+            \App\Filament\Resources\RelationManagers\TicketWorkOrderMaterialsRelationManager::class,
+            \App\Filament\Resources\RelationManagers\TicketWorkOrderMaterialOrdersRelationManager::class,
             \App\Filament\Resources\RelationManagers\TicketWorkOrderRevisionsRelationManager::class,
             \App\Filament\Resources\RelationManagers\TicketWorkOrderApprovalHistoryRelationManager::class,
             \App\Filament\Resources\RelationManagers\TicketEventsRelationManager::class,
