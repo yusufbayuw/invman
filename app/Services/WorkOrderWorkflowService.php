@@ -302,6 +302,12 @@ final class WorkOrderWorkflowService
                 if (! $estimate || ($overrideReason === null && $estimate->recorded_by === $user->id) || $estimate->id !== $expectedEstimateId) {
                     throw ValidationException::withMessages(['estimate' => 'Periksa versi estimasi terbaru; pencatat dan penyetuju harus berbeda.']);
                 }
+                $plan = $ticket->handlingPlan;
+                if ($plan?->decision === 'repair'
+                    && ($estimate->execution_mode !== $plan->execution_mode
+                        || ($plan->execution_mode !== 'internal' && $estimate->vendor_name !== $plan->vendor_name))) {
+                    throw ValidationException::withMessages(['estimate' => 'Estimasi yang dipilih tidak lagi sesuai dengan rencana pelaksanaan.']);
+                }
                 $estimateId = $estimate->id;
             }
             $locked->forceFill([
