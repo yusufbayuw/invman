@@ -82,6 +82,13 @@ final class WorkOrderEstimateService
             if (! $allowed || $version !== $expectedVersion) {
                 throw ValidationException::withMessages(['estimate' => 'Tidak berwenang, estimasi sudah disetujui, atau data telah berubah.']);
             }
+            $plan = $locked->handlingPlan;
+            if ($plan?->decision === 'repair'
+                && ($plan->execution_mode !== $data['execution_mode']
+                    || ($plan->execution_mode !== 'internal'
+                        && $plan->vendor_name !== trim((string) ($data['vendor_name'] ?? ''))))) {
+                throw ValidationException::withMessages(['estimate' => 'Pelaksana/vendor estimasi tidak sesuai rencana penanganan. Revisi rencana sebelum persetujuan.']);
+            }
             $estimate = $locked->workOrderEstimates()->create([
                 'revision' => $steps->where('checkpoint', 'start')->min('revision'),
                 'version' => $version + 1, 'recorded_by' => $actor->id,
