@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\TicketResource\Pages\ViewTicket;
+use App\Filament\Resources\RelationManagers\TicketWorkOrderMaterialsRelationManager;
+use App\Filament\Resources\RelationManagers\TicketWorkOrderMaterialOrdersRelationManager;
 use App\Models\G001M001Unit;
 use App\Models\TicketCategory;
 use App\Models\User;
@@ -245,5 +247,35 @@ class WorkOrderOperationalScenariosTest extends TestCase
             'execution_mode' => 'hybrid',
             'vendor_name' => 'Servis Plafon Mandiri',
         ]);
+    }
+
+    public function test_native_filament_material_tables_execute_stock_and_purchase_approval_with_role_checks(): void
+    {
+        $d = $this->context();
+        $this->plan($d);
+        $this->start($d);
+        $service = app(WorkOrderMaterialsService::class);
+        $line = $service->addRequirement($d['ticket'], $d['technician'], 'Papan plafon', 'lembar', 3);
+
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        Livewire::actingAs($d['manager'])->test(TicketWorkOrderMaterialsRelationManager::class, [
+            'ownerRecord' => $d['ticket']->fresh(), 'pageClass' => ViewTicket::class,
+        ])->assertCanSeeTableRecords([$line])
+            ->assertTableActionVisible('allocate_stock', $line)
+            ->callTableAction('allocate_stock', $line, ['quantity' => 1])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame('1.000', $line->fresh()->stock_allocated_quantity);
+        $order = $service->requestPurchase($line, $d['technician'], 2, 'Sisa kebutuhan dua lembar.');
+
+        Livewire::actingAs($d['manager'])->test(TicketWorkOrderMaterialOrdersRelationManager::class, [
+            'ownerRecord' => $d['ticket']->fresh(), 'pageClass' => ViewTicket::class,
+        ])->assertCanSeeTableRecords([$order])
+            ->assertTableActionVisible('approve_purchase', $order)
+            ->callTableAction('approve_purchase', $order, [
+                'notes' => 'Dibutuhkan untuk menyelesaikan pekerjaan.',
+            ])->assertHasNoTableActionErrors();
+
+        $this->assertSame('approved', $order->fresh()->status);
     }
 }
