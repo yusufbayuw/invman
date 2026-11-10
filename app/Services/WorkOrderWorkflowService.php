@@ -192,7 +192,9 @@ final class WorkOrderWorkflowService
      */
     public function nonRepairFinalReady(Ticket $ticket): bool
     {
-        $plan = $ticket->handlingPlan;
+        // A previously loaded ticket/approval can retain an old relation after
+        // reporter acknowledgement. Always read the current decision from DB.
+        $plan = \App\Models\WorkOrderHandlingPlan::query()->whereKey($ticket->id)->first();
         return $ticket->status === 'open' && $ticket->assigned_to === null
             && $plan !== null
             && in_array($plan->decision, WorkOrderHandlingService::NON_REPAIR, true)
