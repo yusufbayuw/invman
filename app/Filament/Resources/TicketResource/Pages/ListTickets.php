@@ -38,10 +38,9 @@ class ListTickets extends ListRecords
         if ($user?->is_enabled) {
             $tabs['my_approvals'] = Tab::make('Persetujuan Saya')
                 ->modifyQueryUsing(fn (Builder $query) => $query
-                    ->whereIn('status', ['open', 'resolved'])
                     ->whereHas('workOrderApprovals', fn (Builder $approvals) =>
                         app(\App\Services\WorkOrderWorkflowService::class)
-                            ->scopeEligibleCandidates($approvals, $user)));
+                            ->scopeActionableCandidates($approvals, $user)));
         }
         $subordinates = $user ? TicketTeamMember::descendantsOf($user) : [];
         if ($subordinates !== []) {
