@@ -186,6 +186,21 @@ final class WorkOrderWorkflowService
             ->where('status', 'pending')->orderBy('sequence')->first();
     }
 
+    /**
+     * An acknowledged non-repair disposition is an administrative final
+     * decision, not a fabricated technician completion or requester QC.
+     */
+    public function nonRepairFinalReady(Ticket $ticket): bool
+    {
+        $plan = $ticket->handlingPlan;
+        return $ticket->status === 'open' && $ticket->assigned_to === null
+            && $plan !== null
+            && in_array($plan->decision, WorkOrderHandlingService::NON_REPAIR, true)
+            && $plan->acknowledged_at !== null
+            && ! $ticket->workOrderApprovals()->where('checkpoint', 'start')
+                ->whereIn('status', ['pending', 'rejected'])->exists();
+    }
+
     public function canDecide(WorkOrderApproval $approval, User $user, ?WorkOrderAuthoritySnapshot $authority = null): bool
     {
         if (! $user->is_enabled || $approval->status !== 'pending' || $approval->superseded_at) {
@@ -194,8 +209,9 @@ final class WorkOrderWorkflowService
         if ($approval->checkpoint === 'start' && $approval->ticket->status !== 'open') {
             return false;
         }
-        if ($approval->checkpoint === 'final' && ($approval->ticket->status !== 'resolved'
-            || ! $approval->ticket->maintenance?->verified_at)) {
+        if ($approval->checkpoint === 'final'
+            && ! (($approval->ticket->status === 'resolved' && $approval->ticket->maintenance?->verified_at)
+                || $this->nonRepairFinalReady($approval->ticket))) {
             return false;
         }
         if ($approval->ticket->workOrderApprovals()->where('checkpoint', $approval->checkpoint)->where('status', 'rejected')->exists()) {
@@ -233,7 +249,8 @@ final class WorkOrderWorkflowService
         $ticket = $approval->ticket;
         if (($approval->checkpoint === 'start' && $ticket->status !== 'open')
             || ($approval->checkpoint === 'final'
-                && ($ticket->status !== 'resolved' || ! $ticket->maintenance?->verified_at))) {
+                && ! (($ticket->status === 'resolved' && $ticket->maintenance?->verified_at)
+                    || $this->nonRepairFinalReady($ticket)))) {
             return false;
         }
         if ($ticket->workOrderApprovals()->where('checkpoint', $approval->checkpoint)->where('status', 'rejected')->exists()) {
@@ -385,7 +402,16 @@ final class WorkOrderWorkflowService
                             ->where(function (Builder $assignee) use ($user): void {
                                 $assignee->whereNull('assigned_to')->orWhere('assigned_to', '!=', $user->id);
                             })
-                            ->whereHas('maintenance', fn (Builder $cases) => $cases->whereNotNull('verified_at')));
+                            ->whereHas('maintenance', fn (Builder $cases) => $cases->whereNotNull('verified_at')))
+                            ->orWhere(function (Builder $noRepair) use ($user): void {
+                                $noRepair->where('status', 'open')->whereNull('assigned_to')
+                                    ->whereHas('handlingPlan', fn (Builder $plans) => $plans
+                                        ->whereIn('decision', WorkOrderHandlingService::NON_REPAIR)
+                                        ->whereNotNull('acknowledged_at'))
+                                    ->whereDoesntHave('workOrderApprovals', fn (Builder $steps) => $steps
+                                        ->where('checkpoint', 'start')
+                                        ->whereIn('status', ['pending', 'rejected']));
+                            });
                 });
             })
             ->whereNotExists(function ($earlier): void {

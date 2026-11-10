@@ -58,8 +58,8 @@ final class WorkOrderEstimateService
     ): void
     {
         $data = Validator::make($data, [
-            'execution_mode' => 'required|in:internal,external',
-            'vendor_name' => 'nullable|required_if:execution_mode,external|string|max:200',
+            'execution_mode' => 'required|in:internal,external,hybrid',
+            'vendor_name' => 'nullable|required_if:execution_mode,external,hybrid|string|max:200',
             'diagnosis' => 'required|string|min:5|max:10000',
             'amount' => ['required', 'regex:/^(0|[1-9][0-9]{0,11})$/D'],
             'materials' => 'present|array|max:30',
@@ -86,7 +86,7 @@ final class WorkOrderEstimateService
                 'revision' => $steps->where('checkpoint', 'start')->min('revision'),
                 'version' => $version + 1, 'recorded_by' => $actor->id,
                 'execution_mode' => $data['execution_mode'],
-                'vendor_name' => $data['execution_mode'] === 'external' ? trim($data['vendor_name']) : null,
+                'vendor_name' => $data['execution_mode'] !== 'internal' ? trim($data['vendor_name']) : null,
                 'diagnosis' => trim($data['diagnosis']), 'materials' => $data['materials'], 'amount' => $data['amount'],
             ]);
             if ($overrideReason !== null) {

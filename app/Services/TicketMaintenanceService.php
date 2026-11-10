@@ -79,6 +79,9 @@ class TicketMaintenanceService
             if ($locked->status !== 'open' || $case->approved_at) {
                 $this->reject('Tiket bukan pengajuan baru.');
             }
+            if ($locked->handlingPlan && $locked->handlingPlan->decision !== 'repair') {
+                $this->reject('Keputusan tidak mengizinkan pekerjaan perbaikan. Gunakan alur keputusan administratif.');
+            }
             $technician = User::query()->find($technicianId);
             if (! $technician || ! TicketTeamMember::qualifiesFor($locked, $technician)) {
                 $this->reject('Petugas tidak aktif atau berada di luar tim/pengelola tiket.');
@@ -225,6 +228,9 @@ class TicketMaintenanceService
                 $this->reject('Status pekerjaan atau petugas tidak sesuai.');
             }
             $to = $waiting ? 'waiting_parts' : 'in_progress';
+            if (! $waiting) {
+                app(WorkOrderMaterialsService::class)->assertAllIssued($locked);
+            }
             $locked->forceFill(['status' => $to])->save();
             $this->record($locked, $technician, 'maintenance_waiting', $from, $to, $reason);
         }, 3);
@@ -271,6 +277,8 @@ class TicketMaintenanceService
                 || ! $assignee || $locked->status !== 'in_progress' || ! $case->accepted_at) {
                 $this->reject('Hanya teknisi yang menerima tugas dapat mengirim hasil pekerjaan.');
             }
+            app(WorkOrderMaterialsService::class)->assertAllIssued($locked);
+            app(WorkOrderHandlingService::class)->assertReadyForCompletion($locked);
             $case->forceFill([
                 'diagnosis' => trim($diagnosis), 'repair_actions' => trim($actions),
                 'materials' => $clean, 'outcome' => $outcome,
