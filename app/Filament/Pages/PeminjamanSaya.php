@@ -43,7 +43,7 @@ class PeminjamanSaya extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isSarpras() || auth()->user()?->isAdmin() || auth()->user()?->isAssetManager();
+        return (bool) (auth()->user()?->isSarpras() || auth()->user()?->isFacility() || auth()->user()?->isAssetManager());
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -53,18 +53,18 @@ class PeminjamanSaya extends Page implements HasTable
 
     public static function getNavigationLabel(): string
     {
-        return auth()->user()?->isAdmin() || auth()->user()?->isAssetManager() ? 'Peminjaman Dikelola' : 'Peminjaman Saya';
+        return auth()->user()?->isFacility() || auth()->user()?->isAssetManager() ? 'Peminjaman Dikelola' : 'Peminjaman Saya';
     }
 
     public function getTitle(): string
     {
-        return auth()->user()?->isAdmin() || auth()->user()?->isAssetManager() ? 'Peminjaman Dikelola' : 'Peminjaman Saya';
+        return auth()->user()?->isFacility() || auth()->user()?->isAssetManager() ? 'Peminjaman Dikelola' : 'Peminjaman Saya';
     }
 
     public function getSubheading(): ?string
     {
-        return auth()->user()?->isAdmin() || auth()->user()?->isAssetManager()
-            ? 'Kebutuhan yang berasal dari kelompok Pengelola Barang Anda.'
+        return auth()->user()?->isFacility() || auth()->user()?->isAssetManager()
+            ? 'Kebutuhan yang berada dalam kewenangan pengelolaan Anda.'
             : 'Seluruh kebutuhan barang, tempat/ruangan, dan kendaraan untuk unit Anda.';
     }
 
@@ -390,7 +390,7 @@ class PeminjamanSaya extends Page implements HasTable
         $unitId = $user?->isSarpras() ? $user->g001_m001_unit_id : null;
         $managementIds = $user?->itemManagements()->pluck('g002_m003_item_management.id') ?? collect();
         $scope = static function (QueryBuilder $query) use ($user, $unitId, $managementIds): void {
-            if ($user?->isAdmin()) {
+            if ($user?->isFacility()) {
                 return;
             }
 
