@@ -151,9 +151,7 @@ class G005M010RoomReservationResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-            ])
+            ->actions(\App\Filament\Actions\ReservationTableActions::make('room'))
             ->defaultSort('created_at', 'desc')
             ->bulkActions([
             ]);

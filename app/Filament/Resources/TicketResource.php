@@ -198,7 +198,7 @@ class TicketResource extends Resource
                 ->relationship('category','name'),
         ])
         ->defaultSort('created_at','desc')
-        ->actions([Tables\Actions\ViewAction::make()])
+        ->actions(\App\Filament\Actions\TicketTableActions::make())
         ->bulkActions([]);
     }
 

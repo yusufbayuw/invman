@@ -362,6 +362,49 @@ final class WorkOrderWorkflowService
             });
     }
 
+    /**
+     * Queue only the step that can be decided NOW, not every snapshotted
+     * pending candidate. Both checkpoints are created when a ticket opens,
+     * but the final checkpoint must wait for requester verification.
+     *
+     * Keep this query in sync with canDecide(): only the first pending step
+     * within its checkpoint, no rejected predecessor, current assignments,
+     * and no approver acting as the final assignee.
+     */
+    public function scopeActionableCandidates(Builder $query, User $user): Builder
+    {
+        return $this->scopeEligibleCandidates($query, $user)
+            ->where(function (Builder $checkpoints) use ($user): void {
+                $checkpoints->where(function (Builder $start): void {
+                    $start->where('work_order_approvals.checkpoint', 'start')
+                        ->whereHas('ticket', fn (Builder $tickets) => $tickets->where('status', 'open'));
+                })->orWhere(function (Builder $final) use ($user): void {
+                    $final->where('work_order_approvals.checkpoint', 'final')
+                        ->whereHas('ticket', fn (Builder $tickets) => $tickets
+                            ->where('status', 'resolved')
+                            ->where(function (Builder $assignee) use ($user): void {
+                                $assignee->whereNull('assigned_to')->orWhere('assigned_to', '!=', $user->id);
+                            })
+                            ->whereHas('maintenance', fn (Builder $cases) => $cases->whereNotNull('verified_at')));
+                });
+            })
+            ->whereNotExists(function ($earlier): void {
+                $earlier->selectRaw('1')->from('work_order_approvals as earlier')
+                    ->whereColumn('earlier.ticket_id', 'work_order_approvals.ticket_id')
+                    ->whereColumn('earlier.checkpoint', 'work_order_approvals.checkpoint')
+                    ->whereNull('earlier.superseded_at')
+                    ->where('earlier.status', 'pending')
+                    ->whereColumn('earlier.sequence', '<', 'work_order_approvals.sequence');
+            })
+            ->whereNotExists(function ($rejections): void {
+                $rejections->selectRaw('1')->from('work_order_approvals as rejected')
+                    ->whereColumn('rejected.ticket_id', 'work_order_approvals.ticket_id')
+                    ->whereColumn('rejected.checkpoint', 'work_order_approvals.checkpoint')
+                    ->whereNull('rejected.superseded_at')
+                    ->where('rejected.status', 'rejected');
+            });
+    }
+
     private function reporterAssignments(Ticket $ticket): Builder
     {
         return WorkOrderAssignment::query()->where('user_id', $ticket->reporter_id)

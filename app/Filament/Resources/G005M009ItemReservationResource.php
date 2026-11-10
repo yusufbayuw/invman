@@ -166,9 +166,7 @@ class G005M009ItemReservationResource extends Resource
             ])
             ->defaultGroup('activity.name')
             ->defaultSort('created_at', 'desc')
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-            ])
+            ->actions(\App\Filament\Actions\ReservationTableActions::make('item'))
             ->bulkActions([
             ]);
     }

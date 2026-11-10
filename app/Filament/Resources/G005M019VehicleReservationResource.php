@@ -149,9 +149,7 @@ class G005M019VehicleReservationResource extends Resource
                     ->options(ReservationStatus::options())
                     ->multiple(),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-            ])
+            ->actions(\App\Filament\Actions\ReservationTableActions::make('vehicle'))
             ->defaultSort('created_at', 'desc')
             ->bulkActions([
             ]);
