@@ -245,6 +245,9 @@ class OperationalTableActionsTest extends TestCase
 
         $maintenance = app(TicketMaintenanceService::class);
         $maintenance->approve($ticket, $manager, $technician->id, 'high');
+        // Direct service calls do not update the original in-memory Eloquent model.
+        // Livewire row-action assertions must receive the current ticket status.
+        $ticket->refresh();
         $this->actingAs($technician);
         Livewire::test(ListTickets::class)
             ->assertTableActionVisible('start_work', $ticket)
@@ -253,6 +256,7 @@ class OperationalTableActionsTest extends TestCase
         $this->assertSame('in_progress', $ticket->fresh()->status);
         $maintenance->finish($ticket, $technician, 'Motor AC tidak menyala sejak pagi',
             'Unit AC diperbaiki dan kembali berfungsi', [], 'complete');
+        $ticket->refresh();
 
         // Resolved without requester verification is still not actionable.
         $this->actingAs($manager);
@@ -261,6 +265,7 @@ class OperationalTableActionsTest extends TestCase
             ->assertCanNotSeeTableRecords([$ticket]);
 
         $maintenance->verify($ticket, $reporter, true, 'Hasil pekerjaan sudah diperiksa.');
+        $ticket->refresh();
         Livewire::test(ListTickets::class)
             ->set('activeTab', 'my_approvals')
             ->assertCanSeeTableRecords([$ticket])
