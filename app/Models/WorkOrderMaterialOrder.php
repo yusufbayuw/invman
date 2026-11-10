@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 class WorkOrderMaterialOrder extends Model
 {
     protected $fillable = [
-        'work_order_material_line_id', 'quantity', 'status', 'vendor_name',
+        'work_order_material_line_id', 'ticket_id', 'quantity', 'status', 'vendor_name',
         'order_reference', 'amount', 'reason', 'requested_by', 'approved_by',
         'ordered_by', 'approved_at', 'ordered_at',
     ];

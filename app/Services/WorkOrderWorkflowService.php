@@ -397,21 +397,22 @@ final class WorkOrderWorkflowService
                         ->whereHas('ticket', fn (Builder $tickets) => $tickets->where('status', 'open'));
                 })->orWhere(function (Builder $final) use ($user): void {
                     $final->where('work_order_approvals.checkpoint', 'final')
-                        ->whereHas('ticket', fn (Builder $tickets) => $tickets
-                            ->where('status', 'resolved')
-                            ->where(function (Builder $assignee) use ($user): void {
-                                $assignee->whereNull('assigned_to')->orWhere('assigned_to', '!=', $user->id);
-                            })
-                            ->whereHas('maintenance', fn (Builder $cases) => $cases->whereNotNull('verified_at')))
-                            ->orWhere(function (Builder $noRepair) use ($user): void {
-                                $noRepair->where('status', 'open')->whereNull('assigned_to')
+                        ->where(function (Builder $allowed) use ($user): void {
+                            $allowed->whereHas('ticket', fn (Builder $tickets) => $tickets
+                                ->where('status', 'resolved')
+                                ->where(function (Builder $assignee) use ($user): void {
+                                    $assignee->whereNull('assigned_to')->orWhere('assigned_to', '!=', $user->id);
+                                })
+                                ->whereHas('maintenance', fn (Builder $cases) => $cases->whereNotNull('verified_at')))
+                                ->orWhereHas('ticket', fn (Builder $noRepair) => $noRepair
+                                    ->where('status', 'open')->whereNull('assigned_to')
                                     ->whereHas('handlingPlan', fn (Builder $plans) => $plans
                                         ->whereIn('decision', WorkOrderHandlingService::NON_REPAIR)
                                         ->whereNotNull('acknowledged_at'))
                                     ->whereDoesntHave('workOrderApprovals', fn (Builder $steps) => $steps
                                         ->where('checkpoint', 'start')
-                                        ->whereIn('status', ['pending', 'rejected']));
-                            });
+                                        ->whereIn('status', ['pending', 'rejected'])));
+                        });
                 });
             })
             ->whereNotExists(function ($earlier): void {

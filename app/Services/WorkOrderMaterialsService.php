@@ -177,6 +177,7 @@ final class WorkOrderMaterialsService
                 $this->reject('Permintaan melebihi kekurangan setelah memperhitungkan stok dan pembelian aktif.');
             }
             $order = $locked->orders()->create([
+                'ticket_id' => $ticket->id,
                 'quantity' => $this->decimal($qty), 'status' => 'requested',
                 'reason' => trim($reason), 'requested_by' => $user->id,
             ]);

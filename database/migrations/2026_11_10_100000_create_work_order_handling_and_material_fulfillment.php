@@ -52,6 +52,7 @@ return new class extends Migration
         Schema::create('work_order_material_orders', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('work_order_material_line_id')->constrained('work_order_material_lines')->restrictOnDelete();
+            $table->foreignUuid('ticket_id')->constrained('tickets')->restrictOnDelete();
             $table->decimal('quantity', 14, 3);
             $table->string('status', 24)->default('requested');
             $table->string('vendor_name', 200)->nullable();

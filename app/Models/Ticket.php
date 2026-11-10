@@ -42,6 +42,7 @@ class Ticket extends Model
     public function maintenance(): \Illuminate\Database\Eloquent\Relations\HasOne { return $this->hasOne(TicketMaintenanceCase::class, 'ticket_id'); }
     public function handlingPlan(): \Illuminate\Database\Eloquent\Relations\HasOne { return $this->hasOne(WorkOrderHandlingPlan::class, 'ticket_id'); }
     public function workOrderMaterials(): HasMany { return $this->hasMany(WorkOrderMaterialLine::class, 'ticket_id'); }
+    public function materialPurchaseOrders(): HasMany { return $this->hasMany(WorkOrderMaterialOrder::class, 'ticket_id'); }
     public function assets(): HasMany { return $this->hasMany(TicketAssetLink::class); }
     public function comments(): HasMany { return $this->hasMany(TicketComment::class); }
     public function attachments(): HasMany { return $this->hasMany(TicketAttachment::class); }
