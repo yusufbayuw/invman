@@ -51,6 +51,20 @@ final class WorkOrderMaterialsService
         ]);
     }
 
+    public function mayManage(Ticket $ticket, ?User $actor, bool $manager = false): bool
+    {
+        if (! $actor || ! $actor->is_enabled || ! $ticket->maintenance
+            || ! in_array($ticket->status, ['triaged', 'in_progress', 'waiting_parts'], true)
+            || ($ticket->handlingPlan && $ticket->handlingPlan->decision !== 'repair')) {
+            return false;
+        }
+        if (app(WorkOrderWorkflowService::class)->canPerform($ticket, $actor, 'assign')) {
+            return true;
+        }
+        return ! $manager && $ticket->assigned_to === $actor->id
+            && TicketTeamMember::qualifiesFor($ticket, $actor);
+    }
+
     private function authorized(Ticket $ticket, User $user, bool $manager = false): void
     {
         $fresh = User::query()->find($user->id);
