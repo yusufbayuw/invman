@@ -12,6 +12,7 @@ use App\Services\TicketMaintenanceService;
 use App\Services\TicketService;
 use App\Services\TicketVisibility;
 use App\Services\WorkOrderEstimateService;
+use App\Services\WorkOrderHandlingService;
 use App\Services\WorkOrderRevisionService;
 use App\Services\WorkOrderWorkflowService;
 use Filament\Actions;
@@ -79,6 +80,128 @@ class ViewTicket extends ViewRecord
                     );
                     Notification::make()->title('Inventaris berhasil dihubungkan')->success()->send();
                 }),
+            Actions\Action::make('handlingPlan')
+                ->label('Keputusan Penanganan')->icon('heroicon-o-clipboard-document-list')
+                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                    && $this->getRecord()->status === 'open'
+                    && ! $this->getRecord()->workOrderApprovals()->where('checkpoint', 'start')
+                        ->where('status', 'approved')->exists()
+                    && app(WorkOrderWorkflowService::class)->canPerform($this->getRecord(), auth()->user(), 'assign'))
+                ->fillForm(fn (): array => [
+                    'decision' => $this->getRecord()->handlingPlan?->decision ?? 'repair',
+                    'execution_mode' => $this->getRecord()->handlingPlan?->execution_mode ?? 'internal',
+                    'vendor_name' => $this->getRecord()->handlingPlan?->vendor_name,
+                    'vendor_scope' => $this->getRecord()->handlingPlan?->vendor_scope,
+                    'reason' => $this->getRecord()->handlingPlan?->reason,
+                ])
+                ->form([
+                    Forms\Components\Select::make('decision')->label('Keputusan')->required()->live()
+                        ->options([
+                            'repair' => 'Diperbaiki',
+                            'replace' => 'Rekomendasi penggantian',
+                            'not_repairable' => 'Tidak dapat diperbaiki',
+                            'defer' => 'Penanganan ditunda',
+                        ])
+                        ->helperText('Tidak diperbaiki/diganti menempuh konfirmasi pelapor dan pengesahan administratif.'),
+                    Forms\Components\Select::make('execution_mode')->label('Pelaksana perbaikan')
+                        ->options([
+                            'internal' => 'Teknisi internal',
+                            'external' => 'Servis pihak ketiga',
+                            'hybrid' => 'Gabungan internal dan pihak ketiga',
+                        ])->live()
+                        ->visible(fn (Forms\Get $get): bool => $get('decision') === 'repair')
+                        ->required(fn (Forms\Get $get): bool => $get('decision') === 'repair'),
+                    Forms\Components\TextInput::make('vendor_name')->label('Nama penyedia servis')->maxLength(200)
+                        ->visible(fn (Forms\Get $get): bool => $get('decision') === 'repair'
+                            && in_array($get('execution_mode'), ['external', 'hybrid'], true))
+                        ->required(fn (Forms\Get $get): bool => $get('decision') === 'repair'
+                            && in_array($get('execution_mode'), ['external', 'hybrid'], true)),
+                    Forms\Components\Textarea::make('vendor_scope')->label('Lingkup pekerjaan vendor')
+                        ->minLength(10)->maxLength(5000)
+                        ->visible(fn (Forms\Get $get): bool => $get('decision') === 'repair'
+                            && in_array($get('execution_mode'), ['external', 'hybrid'], true))
+                        ->required(fn (Forms\Get $get): bool => $get('decision') === 'repair'
+                            && in_array($get('execution_mode'), ['external', 'hybrid'], true)),
+                    Forms\Components\Textarea::make('reason')->label('Diagnosis dan alasan keputusan')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(function (array $data): void {
+                    app(WorkOrderHandlingService::class)->recordPlan(
+                        $this->getRecord(), auth()->user(), $data['decision'],
+                        $data['execution_mode'] ?? null, $data['vendor_name'] ?? null,
+                        $data['vendor_scope'] ?? null, $data['reason'],
+                    );
+                    Notification::make()->title('Keputusan penanganan tersimpan')->success()->send();
+                }),
+            Actions\Action::make('acknowledgeNoRepair')
+                ->label('Ketahui Keputusan Tidak Diperbaiki')->icon('heroicon-o-information-circle')
+                ->color('warning')
+                ->visible(fn (): bool => $this->getRecord()->status === 'open'
+                    && in_array($this->getRecord()->handlingPlan?->decision, WorkOrderHandlingService::NON_REPAIR, true)
+                    && ! $this->getRecord()->handlingPlan?->acknowledged_at
+                    && $this->getRecord()->reporter_id === auth()->id())
+                ->requiresConfirmation()
+                ->modalDescription('Ini adalah konfirmasi mengetahui keputusan. Bukan bukti pekerjaan perbaikan telah selesai.')
+                ->action(fn () => app(WorkOrderHandlingService::class)
+                    ->acknowledgeNoRepair($this->getRecord(), auth()->user())),
+            Actions\Action::make('closeWithoutRepair')
+                ->label('Sahkan Penutupan Tanpa Perbaikan')->icon('heroicon-o-shield-check')->color('warning')
+                ->visible(fn (): bool => $this->getRecord()->status === 'open'
+                    && in_array($this->getRecord()->handlingPlan?->decision, WorkOrderHandlingService::NON_REPAIR, true)
+                    && $this->getRecord()->handlingPlan?->acknowledged_at !== null
+                    && app(WorkOrderWorkflowService::class)->canPerform($this->getRecord(), auth()->user(), 'close')
+                    && ! $this->getRecord()->workOrderApprovals()->whereIn('status', ['pending', 'rejected'])->exists())
+                ->form([
+                    Forms\Components\Textarea::make('notes')->label('Dasar penutupan dan tindak lanjut')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])
+                ->requiresConfirmation()
+                ->action(fn (array $data) => app(WorkOrderHandlingService::class)
+                    ->closeNoRepair($this->getRecord(), auth()->user(), $data['notes'])),
+            Actions\Action::make('vendorDispatch')
+                ->label('Serahkan Servis ke Vendor')->icon('heroicon-o-truck')->color('info')
+                ->visible(fn (): bool => $this->getRecord()->maintenance?->approved_at !== null
+                    && in_array($this->getRecord()->handlingPlan?->execution_mode, ['external', 'hybrid'], true)
+                    && ! $this->getRecord()->handlingPlan?->vendor_dispatched_at
+                    && in_array($this->getRecord()->status, ['triaged', 'in_progress', 'waiting_parts'], true)
+                    && app(WorkOrderWorkflowService::class)->canPerform($this->getRecord(), auth()->user(), 'assign'))
+                ->form([
+                    Forms\Components\TextInput::make('reference')->label('Referensi penyerahan/servis')
+                        ->required()->minLength(5)->maxLength(200)
+                        ->helperText('Bukti fisik dapat diunggah dalam Percakapan tiket.'),
+                ])
+                ->action(fn (array $data) => app(WorkOrderHandlingService::class)
+                    ->dispatchVendor($this->getRecord(), auth()->user(), $data['reference'])),
+            Actions\Action::make('vendorResult')
+                ->label('Catat Hasil Servis Vendor')->icon('heroicon-o-document-text')->color('info')
+                ->visible(fn (): bool => $this->getRecord()->handlingPlan?->vendor_dispatched_at !== null
+                    && ! $this->getRecord()->handlingPlan?->vendor_accepted
+                    && in_array($this->getRecord()->status, ['triaged', 'in_progress', 'waiting_parts'], true)
+                    && app(WorkOrderWorkflowService::class)->canPerform($this->getRecord(), auth()->user(), 'assign'))
+                ->form([
+                    Forms\Components\Textarea::make('result')->label('Rincian hasil servis')->required()->minLength(10),
+                    Forms\Components\Textarea::make('evidence')->label('Referensi bukti/berita acara')
+                        ->required()->minLength(5)
+                        ->helperText('Lampiran fisik dapat diunggah melalui Percakapan tiket.'),
+                ])
+                ->action(fn (array $data) => app(WorkOrderHandlingService::class)
+                    ->vendorResult($this->getRecord(), auth()->user(), $data['result'], $data['evidence'])),
+            Actions\Action::make('vendorInspection')
+                ->label('Periksa Hasil Servis Vendor')->icon('heroicon-o-clipboard-document-check')
+                ->color('success')
+                ->visible(fn (): bool => $this->getRecord()->handlingPlan?->vendor_completed_at !== null
+                    && ! $this->getRecord()->handlingPlan?->vendor_inspected_at
+                    && $this->getRecord()->handlingPlan?->vendor_completed_by !== auth()->id()
+                    && in_array($this->getRecord()->status, ['triaged', 'in_progress', 'waiting_parts'], true)
+                    && app(WorkOrderWorkflowService::class)->canPerform($this->getRecord(), auth()->user(), 'assign'))
+                ->form([
+                    Forms\Components\Select::make('accepted')->label('Hasil pemeriksaan')
+                        ->options(['yes' => 'Sesuai/diterima', 'no' => 'Tidak sesuai/servis ulang'])->required(),
+                    Forms\Components\Textarea::make('notes')->label('Bukti dan catatan pemeriksaan')
+                        ->required()->minLength(10)->maxLength(2000),
+                ])
+                ->action(fn (array $data) => app(WorkOrderHandlingService::class)
+                    ->inspectVendor($this->getRecord(), auth()->user(), $data['accepted'] === 'yes', $data['notes'])),
             Actions\Action::make('recordWorkOrderEstimate')
                 ->label('Catat Tinjauan & Estimasi')->icon('heroicon-o-calculator')
                 ->visible(fn (): bool => app(WorkOrderEstimateService::class)->canRecord($this->getRecord(), auth()->user()))
@@ -89,10 +212,10 @@ class ViewTicket extends ViewRecord
                 ->form([
                     Forms\Components\Hidden::make('expected_version')->required(),
                     Forms\Components\Select::make('execution_mode')->label('Pelaksana')->required()->live()
-                        ->options(['internal' => 'Tim internal', 'external' => 'Vendor eksternal']),
+                        ->options(['internal' => 'Tim internal', 'external' => 'Vendor eksternal', 'hybrid' => 'Gabungan internal/vendor']),
                     Forms\Components\TextInput::make('vendor_name')->label('Nama vendor')->maxLength(200)
-                        ->required(fn (Forms\Get $get): bool => $get('execution_mode') === 'external')
-                        ->visible(fn (Forms\Get $get): bool => $get('execution_mode') === 'external'),
+                        ->required(fn (Forms\Get $get): bool => in_array($get('execution_mode'), ['external', 'hybrid'], true))
+                        ->visible(fn (Forms\Get $get): bool => in_array($get('execution_mode'), ['external', 'hybrid'], true)),
                     Forms\Components\Textarea::make('diagnosis')->label('Diagnosis / tinjauan awal')->required()->minLength(5)->maxLength(10000),
                     Forms\Components\Repeater::make('materials')->label('Rencana material')->schema([
                         Forms\Components\TextInput::make('name')->label('Material')->required()->maxLength(200),
@@ -121,10 +244,10 @@ class ViewTicket extends ViewRecord
                 ->form([
                     Forms\Components\Hidden::make('expected_version')->required(),
                     Forms\Components\Select::make('execution_mode')->label('Pelaksana')->required()->live()
-                        ->options(['internal' => 'Tim internal', 'external' => 'Vendor eksternal']),
+                        ->options(['internal' => 'Tim internal', 'external' => 'Vendor eksternal', 'hybrid' => 'Gabungan internal/vendor']),
                     Forms\Components\TextInput::make('vendor_name')->label('Nama vendor')->maxLength(200)
-                        ->required(fn (Forms\Get $get): bool => $get('execution_mode') === 'external')
-                        ->visible(fn (Forms\Get $get): bool => $get('execution_mode') === 'external'),
+                        ->required(fn (Forms\Get $get): bool => in_array($get('execution_mode'), ['external', 'hybrid'], true))
+                        ->visible(fn (Forms\Get $get): bool => in_array($get('execution_mode'), ['external', 'hybrid'], true)),
                     Forms\Components\Textarea::make('diagnosis')->label('Diagnosis / tinjauan awal')
                         ->required()->minLength(5)->maxLength(10000),
                     Forms\Components\Repeater::make('materials')->label('Rencana material')->schema([
