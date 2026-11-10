@@ -35,13 +35,21 @@ class ListTickets extends ListRecords
         ];
 
         $user = auth()->user();
+        if ($user?->is_enabled) {
+            $tabs['my_approvals'] = Tab::make('Persetujuan Saya')
+                ->modifyQueryUsing(fn (Builder $query) => $query
+                    ->whereIn('status', ['open', 'resolved'])
+                    ->whereHas('workOrderApprovals', fn (Builder $approvals) =>
+                        app(\\App\\Services\\WorkOrderWorkflowService::class)
+                            ->scopeEligibleCandidates($approvals, $user)));
+        }
         $subordinates = $user ? TicketTeamMember::descendantsOf($user) : [];
         if ($subordinates !== []) {
             $tabs['team'] = Tab::make('Tugas Tim Saya')
                 ->modifyQueryUsing(fn (Builder $query) => $query->whereIn('assigned_to', $subordinates));
         }
         if ($user?->isFacility()) {
-            $tabs['approval'] = Tab::make('Perlu Persetujuan')
+            $tabs['approval'] = Tab::make('Tiket Perlu Ditinjau')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'open'));
         }
 
