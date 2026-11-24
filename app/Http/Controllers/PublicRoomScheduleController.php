@@ -10,6 +10,8 @@ class PublicRoomScheduleController extends Controller
 {
     public function __invoke(G003M006Room $room): View
     {
+        $modules = app(\App\Services\ModuleManager::class);
+        abort_unless($modules->enabled('public_schedule') && $modules->enabled('rooms'), 404);
         $visibleStatuses = ReservationStatus::confirmedBlockingValues();
 
         $reservations = $room->room_reservation()

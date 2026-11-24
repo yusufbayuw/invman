@@ -74,6 +74,11 @@ final class ModuleManager
         ], fn (string $type): bool => $this->loanTypeEnabled($type), ARRAY_FILTER_USE_KEY);
     }
 
+    public function publicLoanTypeVisible(string $type): bool
+    {
+        return $this->enabled('public_schedule') && $this->state('loans_'.$type) !== 'inactive';
+    }
+
     public function anyLoanTypeEnabled(): bool
     {
         return $this->loanTypeEnabled('item') || $this->loanTypeEnabled('room') || $this->loanTypeEnabled('vehicle');

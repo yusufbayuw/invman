@@ -14,6 +14,8 @@ class VehicleLoanSchedule extends TableWidget
 {
     use BuildsPublicLoanScheduleTable;
 
+    protected static string $loanType = 'vehicle';
+
     protected static ?int $sort = -70;
 
     protected int|string|array $columnSpan = 'full';

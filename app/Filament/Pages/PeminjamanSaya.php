@@ -53,6 +53,9 @@ class PeminjamanSaya extends Page implements HasTable
 
     public static function getNavigationLabel(): string
     {
+        if (app(\App\Services\ModuleManager::class)->state('loans') === 'inactive') {
+            return 'Riwayat Peminjaman';
+        }
         return auth()->user()?->isFacility() || auth()->user()?->isAssetManager() ? 'Peminjaman Dikelola' : 'Peminjaman Saya';
     }
 
