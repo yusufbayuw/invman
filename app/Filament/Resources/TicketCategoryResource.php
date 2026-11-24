@@ -6,7 +6,7 @@ use App\Filament\Resources\TicketCategoryResource\Pages;
 use App\Models\TicketCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +14,8 @@ use Illuminate\Support\Str;
 
 class TicketCategoryResource extends Resource
 {
+    protected static string $moduleKey = 'tickets';
+
     protected static ?string $model = TicketCategory::class;
     protected static ?string $navigationGroup = 'Pengaturan';
     protected static ?string $navigationLabel = 'Kategori Laporan';
@@ -24,10 +26,10 @@ class TicketCategoryResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        return static::moduleVisible() && (auth()->user()?->isAdmin() ?? false);
     }
 
-    public static function canCreate(): bool { return static::canViewAny(); }
+    public static function canCreate(): bool { return static::moduleEnabled() && (static::canViewAny()); }
     public static function canEdit(Model $record): bool { return static::canViewAny(); }
     public static function canDelete(Model $record): bool { return false; }
     public static function canDeleteAny(): bool { return false; }

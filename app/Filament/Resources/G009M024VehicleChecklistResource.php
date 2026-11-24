@@ -6,12 +6,14 @@ use App\Filament\Resources\G009M024VehicleChecklistResource\Pages;
 use App\Models\G009M024VehicleChecklist;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
 class G009M024VehicleChecklistResource extends Resource
 {
+    protected static string $moduleKey = 'vehicles';
+
     protected static ?string $model = G009M024VehicleChecklist::class;
 
     protected static ?string $navigationGroup = 'Data Aset';

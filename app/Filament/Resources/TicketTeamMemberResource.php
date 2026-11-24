@@ -8,13 +8,16 @@ use App\Models\TicketTeamMember;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
 class TicketTeamMemberResource extends Resource
 {
+    protected static string $moduleKey = 'tickets';
+    protected static bool $moduleDrainSetup = true;
+
     protected static ?string $model = TicketTeamMember::class;
     protected static ?string $navigationGroup = 'Pengaturan';
     protected static ?int $navigationSort = 6;
@@ -23,8 +26,8 @@ class TicketTeamMemberResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $slug = 'tim-teknis';
 
-    public static function canViewAny(): bool { return auth()->user()?->isFacility() ?? false; }
-    public static function canCreate(): bool { return static::canViewAny(); }
+    public static function canViewAny(): bool { return static::moduleVisible() && (auth()->user()?->isFacility() ?? false); }
+    public static function canCreate(): bool { return static::moduleVisible() && (static::canViewAny()); }
     public static function canEdit(Model $record): bool { return static::canViewAny(); }
     public static function canDelete(Model $record): bool { return false; }
     public static function canDeleteAny(): bool { return false; }

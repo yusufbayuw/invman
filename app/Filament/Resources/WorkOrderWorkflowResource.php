@@ -6,13 +6,15 @@ use App\Models\WorkOrderWorkflow;
 use App\Services\WorkOrderWorkflowService;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
 class WorkOrderWorkflowResource extends Resource
 {
+    protected static string $moduleKey = 'work_orders';
+
     protected static ?string $model = WorkOrderWorkflow::class;
     protected static ?string $navigationGroup = 'Pengaturan';
     protected static ?int $navigationSort = 8;
@@ -20,8 +22,8 @@ class WorkOrderWorkflowResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
     protected static ?string $slug = 'work-order-workflows';
 
-    public static function canViewAny(): bool { return auth()->user()?->isAdmin() ?? false; }
-    public static function canCreate(): bool { return static::canViewAny(); }
+    public static function canViewAny(): bool { return static::moduleVisible() && (auth()->user()?->isAdmin() ?? false); }
+    public static function canCreate(): bool { return static::moduleEnabled() && (static::canViewAny()); }
     public static function canEdit(Model $record): bool { return static::canViewAny() && $record->status === 'draft'; }
     public static function canDelete(Model $record): bool { return false; }
 
