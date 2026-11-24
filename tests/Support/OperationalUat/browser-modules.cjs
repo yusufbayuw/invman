@@ -41,8 +41,53 @@ async function readState(page, key) {
     return state === 'true';
 }
 
+async function dismissOnboarding(page) {
+    const close = page.locator('#pwa-onboarding [data-pwa-dismiss]');
+    if (await close.isVisible()) {
+        await close.click();
+        await page.locator('#pwa-onboarding').waitFor({ state: 'hidden' });
+    }
+}
+
+async function verifyOnboardingDoesNotObstructSave(page) {
+    const banner = page.locator('#pwa-onboarding');
+    await banner.waitFor({ state: 'attached' });
+    await page.waitForFunction(() => window.PpasPwa
+        && document.querySelector('#pwa-onboarding [data-pwa-status]')?.textContent !== 'Memeriksa dukungan perangkat…');
+    const sizes = [];
+    for (const width of [1366, 390]) {
+        await page.setViewportSize({ width, height: 900 });
+        const overlay = page.locator('.fi-sidebar-close-overlay');
+        if (width < 1024 && await overlay.isVisible()) {
+            const box = await overlay.boundingBox();
+            await overlay.click({ position: { x: box.width - 12, y: Math.min(300, box.height / 2) } });
+            await overlay.waitFor({ state: 'hidden' });
+        }
+        const layout = await banner.evaluate(element => ({
+            position: getComputedStyle(element).position,
+            hidden: element.hidden,
+            permission: typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
+            installAvailable: !element.querySelector('[data-pwa-install-button]').hidden,
+            width: innerWidth,
+            documentWidth: document.documentElement.scrollWidth,
+        }));
+        assert.ok(['relative', 'static'].includes(layout.position), 'Onboarding must be in document flow');
+        assert.ok(layout.documentWidth <= width + 1, 'Horizontal overflow on module management: ' + JSON.stringify(layout));
+        if (layout.permission === 'denied' && !layout.installAvailable) {
+            assert.equal(layout.hidden, true, 'Blocked notifications without install action must not prompt');
+        }
+        // Real actionability check, including pointer hit-testing. No force or DOM click.
+        await page.getByRole('button', { name: 'Simpan Pengaturan', exact: true }).click({ trial: true });
+        sizes.push(layout);
+    }
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await dismissOnboarding(page);
+    return sizes;
+}
+
 async function saveState(page, states) {
     await open(page, settings, 200);
+    await dismissOnboarding(page);
     for (const [key, wanted] of Object.entries(states)) {
         if ((await readState(page, key)) !== wanted) {
             await toggle(page, key).click();
@@ -66,6 +111,8 @@ async function saveState(page, states) {
     try {
         admin = await login(browser, 'admin', password);
         await open(admin.page, settings, 200);
+        const layout = await verifyOnboardingDoesNotObstructSave(admin.page);
+        results.push({ scenario: 'pwa-onboarding-non-obstructing', status: 'PASS', layouts: layout });
         before = {};
         for (const key of keys) before[key] = await readState(admin.page, key);
         await saveState(admin.page, Object.fromEntries(keys.map(key => [key, false])));
@@ -98,9 +145,11 @@ async function saveState(page, states) {
         await saveState(admin.page, before);
         await admin.page.screenshot({ path: path.join(out, 'modules-restored.png'), fullPage: true });
         results.push({ scenario: 'reactivation-and-restore', status: 'PASS' });
+        before = null; // Successfully restored; no duplicate save in finally.
     } catch (error) {
         results.push({ scenario: 'module-uat', status: 'FAIL', error: String(error.message).replaceAll(password, '[REDACTED]') });
         process.exitCode = 1;
+        if (admin) await admin.page.screenshot({ path: path.join(out, 'modules-error.png'), fullPage: true, timeout: 10000 }).catch(() => {});
     } finally {
         if (admin && before) {
             try { await saveState(admin.page, before); }

@@ -25,6 +25,23 @@ class PwaAssetsTest extends TestCase
         $this->assertContains('maskable', array_column($manifest['icons'], 'purpose'));
     }
 
+    public function test_onboarding_is_rendered_in_page_content_and_only_prompts_for_available_actions(): void
+    {
+        $client = file_get_contents(resource_path('views/pwa/client.blade.php'));
+        $onboarding = file_get_contents(resource_path('views/pwa/onboarding.blade.php'));
+        $provider = file_get_contents(app_path('Providers/Filament/AdminPanelProvider.php'));
+        $script = file_get_contents(public_path('js/pwa.js'));
+
+        $this->assertStringContainsString('id="pwa-onboarding"', $onboarding);
+        $this->assertStringContainsString('data-pwa-dismiss', $onboarding);
+        $this->assertStringContainsString('position: relative;', $client);
+        $this->assertStringNotContainsString('position: fixed;', $client);
+        $this->assertStringContainsString("view('pwa.onboarding')", $provider);
+        $this->assertStringContainsString('PanelsRenderHook::CONTENT_START', $provider);
+        $this->assertStringContainsString('const needsAttention = installAvailable || canEnableNotifications;', $script);
+        $this->assertStringContainsString("Notification.permission !== 'denied'", $script);
+    }
+
     public function test_service_worker_handles_push_without_caching_pages(): void
     {
         $serviceWorker = file_get_contents(public_path('sw.js'));

@@ -118,9 +118,11 @@
         }
 
         const subscribed = Boolean(state.subscription);
+        const canEnableNotifications = config.authenticated
+            && pushSupported && ! subscribed && Notification.permission !== 'denied';
 
         setVisible('[data-pwa-install-button]', installAvailable);
-        setVisible('[data-pwa-enable-button]', config.authenticated && pushSupported && ! subscribed && Notification.permission !== 'denied');
+        setVisible('[data-pwa-enable-button]', canEnableNotifications);
         setVisible('[data-pwa-disable-button]', config.authenticated && subscribed);
 
         if (! pushSupported) {
@@ -135,7 +137,9 @@
 
         const banner = document.getElementById('pwa-onboarding');
         if (banner) {
-            const needsAttention = installAvailable || (pushSupported && ! subscribed);
+            // A denied permission can only be changed in browser settings.
+            // Keep its explanation on the profile; don't repeatedly prompt here.
+            const needsAttention = installAvailable || canEnableNotifications;
             banner.hidden = state.dismissed || ! needsAttention;
         }
     };

@@ -36,9 +36,7 @@ class PublicPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->favicon(asset(config('app.logo')))
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('pwa.meta'))
-            ->renderHook(PanelsRenderHook::BODY_END, fn () => view('pwa.client', [
-                'showBanner' => false,
-            ]))
+            ->renderHook(PanelsRenderHook::BODY_END, fn () => view('pwa.client'))
             ->darkMode(false)
             ->navigation(false)
             ->maxContentWidth(MaxWidth::SevenExtraLarge)
