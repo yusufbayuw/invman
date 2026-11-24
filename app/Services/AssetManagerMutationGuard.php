@@ -12,6 +12,7 @@ final class AssetManagerMutationGuard
 {
     public function item(array $data, User $user, ?G002M007Item $existing = null): array
     {
+        app(ModuleManager::class)->assertEnabled('inventory');
         if ($user->isFacility()) {
             return $data;
         }
@@ -43,6 +44,7 @@ final class AssetManagerMutationGuard
 
     public function instance(array $data, User $user, ?G002M015ItemInstance $existing = null): array
     {
+        app(ModuleManager::class)->assertEnabled('inventory');
         $item = G002M007Item::query()->findOrFail(
             $data['g002_m007_item_id'] ?? $existing?->g002_m007_item_id ?? 0,
         );

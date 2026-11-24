@@ -8,7 +8,7 @@ use App\Filament\Resources\G003M004BuildingResource\RelationManagers\FloorRelati
 use App\Models\G003M004Building;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class G003M004BuildingResource extends Resource
 {
+    protected static string $moduleKey = 'rooms';
+
     protected static ?string $model = G003M004Building::class;
 
     protected static ?string $navigationGroup = 'Data Aset';

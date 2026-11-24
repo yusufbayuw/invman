@@ -6,7 +6,7 @@ use App\Filament\Resources\G009M022ItemInstanceChecklistResource\Pages;
 use App\Models\G009M022ItemInstanceChecklist;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Table;
@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class G009M022ItemInstanceChecklistResource extends Resource
 {
+    protected static string $moduleKey = 'inventory';
+
     protected static ?string $model = G009M022ItemInstanceChecklist::class;
 
     protected static ?string $navigationGroup = 'Data Aset';

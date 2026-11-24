@@ -9,13 +9,15 @@ use App\Models\G002M007Item;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 class G002M007ItemResource extends Resource
 {
+    protected static string $moduleKey = 'inventory';
+
     protected static ?string $model = G002M007Item::class;
 
     protected static ?string $navigationGroup = 'Data Aset';

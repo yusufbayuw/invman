@@ -22,9 +22,27 @@ class Ticket extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (self $ticket): void {
+            // Only internal workflow entry points set the immutable mode with forceFill.
+            if ($ticket->workflow_mode !== null && ! in_array($ticket->workflow_mode, ['simple', 'advanced'], true)) {
+                throw ValidationException::withMessages(['workflow_mode' => 'Mode penanganan tidak valid.']);
+            }
+        });
+        static::updating(function (self $ticket): void {
+            if ($ticket->isDirty('workflow_mode')) {
+                throw ValidationException::withMessages(['workflow_mode' => 'Mode penanganan tiket tidak dapat diubah.']);
+            }
+        });
+
         static::deleting(fn (): never => throw ValidationException::withMessages([
             'ticket' => 'Tiket dan auditnya tidak dapat dihapus. Gunakan status Dibatalkan.',
         ]));
+    }
+
+    public function usesAdvancedWorkflow(): bool
+    {
+        // Historical tickets retain their original behavior regardless of toggles.
+        return $this->workflow_mode !== 'simple';
     }
 
     public function operationalOverrides(): HasMany

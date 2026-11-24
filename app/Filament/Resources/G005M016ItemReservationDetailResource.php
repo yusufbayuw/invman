@@ -6,7 +6,7 @@ use App\Filament\Resources\G005M016ItemReservationDetailResource\Pages;
 use App\Models\G005M016ItemReservationDetail;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class G005M016ItemReservationDetailResource extends Resource
 {
+    protected static string $moduleKey = 'loans_item';
+    protected static bool $moduleHistory = true;
+
     protected static ?string $model = G005M016ItemReservationDetail::class;
 
     protected static ?string $navigationGroup = 'Peminjaman';
@@ -28,12 +31,12 @@ class G005M016ItemReservationDetailResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return false;
+        return static::moduleVisible() && (false);
     }
 
     public static function canCreate(): bool
     {
-        return false;
+        return static::moduleEnabled() && (false);
     }
 
     public static function canEdit(Model $record): bool

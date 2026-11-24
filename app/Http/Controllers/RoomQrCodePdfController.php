@@ -13,6 +13,8 @@ class RoomQrCodePdfController extends Controller
 {
     public function __invoke(G003M006Room $room, RoomQrCodeService $qrCodes): Response
     {
+        $modules = app(\App\Services\ModuleManager::class);
+        abort_unless($modules->enabled('public_schedule') && $modules->enabled('rooms'), 404);
         $room->loadMissing('floor.building');
         $qrCodePath = $qrCodes->ensure($room);
         $qrCodeDataUri = 'data:image/png;base64,'.base64_encode(Storage::disk('public')->get($qrCodePath));

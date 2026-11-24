@@ -33,7 +33,7 @@ final class WorkOrderEstimateService
     {
         $steps ??= $ticket->workOrderApprovals()->get();
 
-        return $actor->is_enabled && $actor->id !== $ticket->reporter_id
+        return $ticket->usesAdvancedWorkflow() && $actor->is_enabled && $actor->id !== $ticket->reporter_id
             && $ticket->status === 'open' && $ticket->maintenance && ! $ticket->maintenance->approved_at
             && $steps->where('checkpoint', 'start')->isNotEmpty()
             && $steps->where('checkpoint', 'start')->where('status', 'rejected')->isEmpty()
@@ -44,7 +44,7 @@ final class WorkOrderEstimateService
     public function canRecordOverride(Ticket $ticket, User $actor): bool
     {
         $steps = $ticket->workOrderApprovals()->get();
-        return $actor->is_enabled && $ticket->status === 'open'
+        return $ticket->usesAdvancedWorkflow() && $actor->is_enabled && $ticket->status === 'open'
             && $ticket->maintenance && ! $ticket->maintenance->approved_at
             && $steps->where('checkpoint', 'start')->isNotEmpty()
             && $steps->where('checkpoint', 'start')->where('status', 'rejected')->isEmpty()

@@ -7,7 +7,7 @@ use App\Filament\Resources\G008M018DriverResource\RelationManagers;
 use App\Models\G008M018Driver;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class G008M018DriverResource extends Resource
 {
+    protected static string $moduleKey = 'vehicles';
+
     protected static ?string $model = G008M018Driver::class;
 
     protected static ?string $navigationGroup = 'Data Aset';

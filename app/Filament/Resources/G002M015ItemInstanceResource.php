@@ -10,12 +10,14 @@ use App\Filament\Resources\G002M015ItemInstanceResource\RelationManagers\ItemRev
 use App\Models\G002M015ItemInstance;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
 class G002M015ItemInstanceResource extends Resource
 {
+    protected static string $moduleKey = 'inventory';
+
     protected static ?string $model = G002M015ItemInstance::class;
 
     protected static ?string $navigationGroup = 'Data Aset';

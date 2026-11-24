@@ -18,7 +18,7 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,6 +26,9 @@ use Illuminate\Support\Facades\Auth;
 
 class G004M008ActivityResource extends Resource
 {
+    protected static string $moduleKey = 'loans';
+    protected static bool $moduleHistory = true;
+
     protected static ?string $model = G004M008Activity::class;
 
     protected static ?string $navigationGroup = 'Peminjaman';
@@ -94,6 +97,18 @@ class G004M008ActivityResource extends Resource
     public static function getModelLabel(): string
     {
         return 'Kegiatan';
+    }
+
+    public static function canCreate(): bool
+    {
+        return app(\App\Services\ModuleManager::class)->anyLoanTypeEnabled() && parent::canCreate();
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return $record instanceof G004M008Activity
+            && app(\App\Services\ModuleManager::class)->activityEntryEnabled($record->id)
+            && parent::canEdit($record);
     }
 
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
@@ -440,7 +455,7 @@ class G004M008ActivityResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
                     ->url(fn (G004M008Activity $record): string => AjukanPeminjaman::getUrl(['record' => $record->id]))
-                    ->visible(fn (G004M008Activity $record) => Auth::user()?->can('update', $record)),
+                    ->visible(fn (G004M008Activity $record) => static::canEdit($record)),
                 Tables\Actions\Action::make('cancel')
                     ->label('Batalkan')
                     ->icon('heroicon-o-x-circle')

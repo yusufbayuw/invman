@@ -27,10 +27,23 @@ class ResourceDataExchange
         return $this->schema->rules($resource::getModel()) !== null;
     }
 
+    public function canUseImport(string $resource): bool
+    {
+        if (! $this->supportsImport($resource)) {
+            return false;
+        }
+        if ($resource === \App\Filament\Resources\G004M008ActivityResource::class) {
+            return app(\App\Services\ModuleManager::class)->anyLoanTypeEnabled();
+        }
+
+        return ! is_subclass_of($resource, \App\Filament\Support\ModuleResource::class)
+            || $resource::moduleEnabled();
+    }
+
     public function download(string $resource, bool $template = false, ?Builder $query = null): StreamedResponse
     {
         abort_unless(auth()->check() && $resource::canViewAny(), 403);
-        abort_if($template && ! $this->supportsImport($resource), 403);
+        abort_if($template && ! $this->canUseImport($resource), 403);
         $model = $resource::getModel();
         $columns = ['id', ...$this->schema->columns($model), ...($template ? [] : $this->schema->readOnlyColumns($model))];
         // Intersect table filters with the resource scope, never trust a supplied query's scope.
@@ -110,7 +123,7 @@ class ResourceDataExchange
     /** All rows commit together. Any invalid row rolls the entire upload back. */
     public function import(string $resource, string $path, string $mode = 'upsert'): array
     {
-        abort_unless(auth()->check() && $resource::canViewAny() && $this->supportsImport($resource), 403);
+        abort_unless(auth()->check() && $resource::canViewAny() && $this->canUseImport($resource), 403);
         if (! in_array($mode, ['create', 'update', 'upsert'], true)) {
             throw ValidationException::withMessages(['file' => 'Mode impor tidak valid.']);
         }

@@ -52,6 +52,29 @@ class RecurringAssetScheduleTest extends TestCase
         ], $data));
     }
 
+    public function test_disabled_recurring_module_preserves_existing_block_and_disallows_new_schedule(): void
+    {
+        $room = $this->assets()[1];
+        $schedule = $this->schedule($room);
+        $admin = User::factory()->create(['is_enabled' => true]);
+        $admin->assignRole(\Spatie\Permission\Models\Role::findOrCreate(config('role.admin'), 'web'));
+        $modules = app(\App\Services\ModuleManager::class);
+        $modules->save($admin, ['recurring' => false]);
+        $this->assertSame('draining', $modules->state('recurring'));
+        $this->assertFalse(app(LoanAvailabilityService::class)->roomIsAvailable(
+            $room->id, Carbon::parse('2026-11-09 10:00'), Carbon::parse('2026-11-09 11:00')
+        ));
+        try {
+            $this->schedule($room, ['name' => 'Jadwal baru']);
+            $this->fail('New recurring schedule accepted');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('module', $exception->errors());
+        }
+        $this->assertDatabaseCount('recurring_asset_schedules', 1);
+        $schedule->update(['is_active' => false]);
+        $this->assertSame('inactive', $modules->state('recurring'));
+    }
+
     public function test_all_asset_options_and_locked_availability_reject_routine_conflicts(): void
     {
         [$item, $room, $vehicle] = $assets = $this->assets();

@@ -21,8 +21,15 @@ class LoanEvent extends Model
         'end_time' => 'datetime',
     ];
 
+    public function save(array $options = [])
+    {
+        return \Illuminate\Support\Facades\DB::transaction(fn () => parent::save($options), 3);
+    }
+
     protected static function booted(): void
     {
+        static::creating(fn () => app(\App\Services\ModuleManager::class)->assertAnyLoanTypeEnabled());
+
         // A used master event is historical context, not a disposable request.
         static::deleting(function (self $event): void {
             if ($event->requests()->exists()) {

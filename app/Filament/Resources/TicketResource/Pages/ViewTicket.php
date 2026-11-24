@@ -82,7 +82,7 @@ class ViewTicket extends ViewRecord
                 }),
             Actions\Action::make('handlingPlan')
                 ->label('Keputusan Penanganan')->icon('heroicon-o-clipboard-document-list')
-                ->visible(fn (): bool => $this->getRecord()->maintenance !== null
+                ->visible(fn (): bool => $this->getRecord()->usesAdvancedWorkflow() && $this->getRecord()->maintenance !== null
                     && $this->getRecord()->status === 'open'
                     && ! $this->getRecord()->workOrderApprovals()->where('checkpoint', 'start')
                         ->where('status', 'approved')->exists()
@@ -136,7 +136,7 @@ class ViewTicket extends ViewRecord
             Actions\Action::make('acknowledgeNoRepair')
                 ->label('Ketahui Keputusan Tidak Diperbaiki')->icon('heroicon-o-information-circle')
                 ->color('warning')
-                ->visible(fn (): bool => $this->getRecord()->status === 'open'
+                ->visible(fn (): bool => $this->getRecord()->usesAdvancedWorkflow() && $this->getRecord()->status === 'open'
                     && in_array($this->getRecord()->handlingPlan?->decision, WorkOrderHandlingService::NON_REPAIR, true)
                     && ! $this->getRecord()->handlingPlan?->acknowledged_at
                     && $this->getRecord()->reporter_id === auth()->id())
@@ -146,7 +146,7 @@ class ViewTicket extends ViewRecord
                     ->acknowledgeNoRepair($this->getRecord(), auth()->user())),
             Actions\Action::make('closeWithoutRepair')
                 ->label('Sahkan Penutupan Tanpa Perbaikan')->icon('heroicon-o-shield-check')->color('warning')
-                ->visible(fn (): bool => $this->getRecord()->status === 'open'
+                ->visible(fn (): bool => $this->getRecord()->usesAdvancedWorkflow() && $this->getRecord()->status === 'open'
                     && in_array($this->getRecord()->handlingPlan?->decision, WorkOrderHandlingService::NON_REPAIR, true)
                     && $this->getRecord()->handlingPlan?->acknowledged_at !== null
                     && app(WorkOrderWorkflowService::class)->canPerform($this->getRecord(), auth()->user(), 'close')
@@ -160,7 +160,7 @@ class ViewTicket extends ViewRecord
                     ->closeNoRepair($this->getRecord(), auth()->user(), $data['notes'])),
             Actions\Action::make('vendorDispatch')
                 ->label('Serahkan Servis ke Vendor')->icon('heroicon-o-truck')->color('info')
-                ->visible(fn (): bool => $this->getRecord()->maintenance?->approved_at !== null
+                ->visible(fn (): bool => $this->getRecord()->usesAdvancedWorkflow() && $this->getRecord()->maintenance?->approved_at !== null
                     && in_array($this->getRecord()->handlingPlan?->execution_mode, ['external', 'hybrid'], true)
                     && ! $this->getRecord()->handlingPlan?->vendor_dispatched_at
                     && in_array($this->getRecord()->status, ['triaged', 'in_progress', 'waiting_parts'], true)
@@ -174,7 +174,7 @@ class ViewTicket extends ViewRecord
                     ->dispatchVendor($this->getRecord(), auth()->user(), $data['reference'])),
             Actions\Action::make('vendorResult')
                 ->label('Catat Hasil Servis Vendor')->icon('heroicon-o-document-text')->color('info')
-                ->visible(fn (): bool => $this->getRecord()->handlingPlan?->vendor_dispatched_at !== null
+                ->visible(fn (): bool => $this->getRecord()->usesAdvancedWorkflow() && $this->getRecord()->handlingPlan?->vendor_dispatched_at !== null
                     && ! $this->getRecord()->handlingPlan?->vendor_accepted
                     && in_array($this->getRecord()->status, ['triaged', 'in_progress', 'waiting_parts'], true)
                     && app(WorkOrderWorkflowService::class)->canPerform($this->getRecord(), auth()->user(), 'assign'))
@@ -189,7 +189,7 @@ class ViewTicket extends ViewRecord
             Actions\Action::make('vendorInspection')
                 ->label('Periksa Hasil Servis Vendor')->icon('heroicon-o-clipboard-document-check')
                 ->color('success')
-                ->visible(fn (): bool => $this->getRecord()->handlingPlan?->vendor_completed_at !== null
+                ->visible(fn (): bool => $this->getRecord()->usesAdvancedWorkflow() && $this->getRecord()->handlingPlan?->vendor_completed_at !== null
                     && ! $this->getRecord()->handlingPlan?->vendor_inspected_at
                     && $this->getRecord()->handlingPlan?->vendor_completed_by !== auth()->id()
                     && in_array($this->getRecord()->status, ['triaged', 'in_progress', 'waiting_parts'], true)
@@ -204,7 +204,7 @@ class ViewTicket extends ViewRecord
                     ->inspectVendor($this->getRecord(), auth()->user(), $data['accepted'] === 'yes', $data['notes'])),
             Actions\Action::make('recordWorkOrderEstimate')
                 ->label('Catat Tinjauan & Estimasi')->icon('heroicon-o-calculator')
-                ->visible(fn (): bool => app(WorkOrderEstimateService::class)->canRecord($this->getRecord(), auth()->user()))
+                ->visible(fn (): bool => $this->getRecord()->usesAdvancedWorkflow() && app(WorkOrderEstimateService::class)->canRecord($this->getRecord(), auth()->user()))
                 ->fillForm(fn (): array => [
                     'expected_version' => (int) $this->getRecord()->workOrderEstimates()->max('version'),
                     'materials' => [], 'execution_mode' => 'internal',
@@ -234,7 +234,7 @@ class ViewTicket extends ViewRecord
                 }),
             Actions\Action::make('overrideWorkOrderEstimate')
                 ->label('Override Input Estimasi')->icon('heroicon-o-calculator')->color('warning')
-                ->visible(fn (): bool => app(WorkOrderEstimateService::class)
+                ->visible(fn (): bool => $this->getRecord()->usesAdvancedWorkflow() && app(WorkOrderEstimateService::class)
                     ->canRecordOverride($this->getRecord(), auth()->user()))
                 ->modalDescription('Tinjauan dan estimasi dicatat atas tanggung jawab Anda, termasuk jika Anda pelapor. Semua tindakan ditandai sebagai override.')
                 ->fillForm(fn (): array => [
@@ -273,7 +273,7 @@ class ViewTicket extends ViewRecord
                 }),
             Actions\Action::make('workOrderApproval')
                 ->label('Persetujuan Work Order')->icon('heroicon-o-document-check')->color('warning')
-                ->visible(fn (): bool => ($step = $this->nextWorkOrderApproval()) !== null
+                ->visible(fn (): bool => $this->getRecord()->usesAdvancedWorkflow() && ($step = $this->nextWorkOrderApproval()) !== null
                     && app(WorkOrderWorkflowService::class)->canDecide($step, auth()->user()))
                 ->modalHeading(fn (): string => $this->nextWorkOrderApproval()?->label ?? 'Persetujuan Work Order')
                 ->fillForm(function (): array {
@@ -308,7 +308,7 @@ class ViewTicket extends ViewRecord
                 }),
             Actions\Action::make('overrideWorkOrderApproval')
                 ->label('Override Persetujuan')->icon('heroicon-o-shield-exclamation')->color('warning')
-                ->visible(fn (): bool => ($step = $this->nextWorkOrderApproval()) !== null
+                ->visible(fn (): bool => $this->getRecord()->usesAdvancedWorkflow() && ($step = $this->nextWorkOrderApproval()) !== null
                     && app(WorkOrderWorkflowService::class)->canOverrideDecide($step, auth()->user()))
                 ->modalHeading('Keputusan hierarki menggantikan approver')
                 ->modalDescription('Keputusan ini berlaku, termasuk bila penginput dan penyetuju sama. Pelaku asli dan target dicatat permanen.')
@@ -340,7 +340,7 @@ class ViewTicket extends ViewRecord
                 }),
             Actions\Action::make('reviseWorkOrder')
                 ->label('Revisi & Kirim Ulang')->icon('heroicon-o-arrow-path')->color('warning')
-                ->visible(fn (): bool => app(WorkOrderRevisionService::class)
+                ->visible(fn (): bool => $this->getRecord()->usesAdvancedWorkflow() && app(WorkOrderRevisionService::class)
                     ->canRevise($this->getRecord(), auth()->user(), 'start'))
                 ->fillForm(fn (): array => $this->getRecord()->only(['title', 'description', 'location', 'reported_urgency']) + [
                     'rejection_id' => $this->getRecord()->workOrderApprovals()->where('checkpoint', 'start')->where('status', 'rejected')->value('id'),
@@ -365,7 +365,7 @@ class ViewTicket extends ViewRecord
                 }),
             Actions\Action::make('reworkRejectedWorkOrder')
                 ->label('Perbaiki Hasil yang Ditolak')->icon('heroicon-o-wrench-screwdriver')->color('warning')
-                ->visible(fn (): bool => app(WorkOrderRevisionService::class)
+                ->visible(fn (): bool => $this->getRecord()->usesAdvancedWorkflow() && app(WorkOrderRevisionService::class)
                     ->canRevise($this->getRecord(), auth()->user(), 'final'))
                 ->fillForm(fn (): array => [
                     'rejection_id' => $this->getRecord()->workOrderApprovals()->where('checkpoint', 'final')->where('status', 'rejected')->value('id'),
@@ -384,7 +384,7 @@ class ViewTicket extends ViewRecord
                 }),
             Actions\Action::make('reassignWorkOrderApproval')
                 ->label('Alihkan Persetujuan')->icon('heroicon-o-arrow-path')->color('gray')
-                ->visible(fn (): bool => (auth()->user()?->isAdmin() ?? false)
+                ->visible(fn (): bool => $this->getRecord()->usesAdvancedWorkflow() && (auth()->user()?->isAdmin() ?? false)
                     && $this->nextWorkOrderApproval() !== null)
                 ->fillForm(fn (): array => [
                     'approval_id' => $this->nextWorkOrderApproval()?->id,

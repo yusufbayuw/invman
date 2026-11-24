@@ -47,6 +47,7 @@ class AjukanPeminjaman extends Page implements HasForms
 
     public ?array $data = [];
 
+    #[\Livewire\Attributes\Locked]
     public ?string $draftId = null;
 
     public function mount(?string $record = null): void
@@ -61,7 +62,7 @@ class AjukanPeminjaman extends Page implements HasForms
                 ->with(['item_reservation', 'room_reservation', 'vehicle_reservation'])
                 ->findOrFail($record);
 
-            abort_unless(auth()->user()?->can('update', $draft), 403);
+            abort_unless(G004M008ActivityResource::canEdit($draft), 403);
 
             $this->form->fill([
                 'loan_event_id' => $draft->loan_event_id,
@@ -82,19 +83,28 @@ class AjukanPeminjaman extends Page implements HasForms
         $this->form->fill([
             'start_time' => $start,
             'end_time' => $start->copy()->addHour(),
-            'needs' => [['type' => 'item', 'quantity' => 1]],
+            'needs' => [['type' => array_key_first(app(\App\Services\ModuleManager::class)->loanTypeOptions()), 'quantity' => 1]],
         ]);
     }
 
     public static function canAccess(): bool
     {
-        return auth()->check()
+        return app(\App\Services\ModuleManager::class)->anyLoanTypeEnabled()
+            && auth()->check()
             && (auth()->user()->isFacility() || auth()->user()->isSarpras());
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->check() && (auth()->user()->isSarpras() || auth()->user()->isFacility());
+        return static::canAccess();
+    }
+
+    public function hydrate(): void
+    {
+        abort_unless(static::canAccess(), 403);
+        if ($this->draftId) {
+            abort_unless(G004M008ActivityResource::canEdit(G004M008Activity::query()->findOrFail($this->draftId)), 403);
+        }
     }
 
     public function refreshAvailability(): void
@@ -205,11 +215,7 @@ class AjukanPeminjaman extends Page implements HasForms
                             ->schema([
                                 Select::make('type')
                                     ->label('Jenis kebutuhan')
-                                    ->options([
-                                        'item' => 'Barang / Peralatan',
-                                        'room' => 'Ruangan / Tempat',
-                                        'vehicle' => 'Kendaraan',
-                                    ])
+                                    ->options(fn (): array => app(\App\Services\ModuleManager::class)->loanTypeOptions())
                                     ->live()
                                     ->required(),
                                 Select::make('item_id')
@@ -388,6 +394,7 @@ class AjukanPeminjaman extends Page implements HasForms
 
     public function submit(): void
     {
+        abort_unless(static::canAccess(), 403);
         $data = $this->form->getState();
         $draft = $this->currentDraft();
         $actor = auth()->user();
@@ -422,6 +429,7 @@ class AjukanPeminjaman extends Page implements HasForms
 
     public function saveDraft(): void
     {
+        abort_unless(static::canAccess(), 403);
         $actor = auth()->user();
         $data = $this->form->getState();
         $activity = $actor->isFacility()

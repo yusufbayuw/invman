@@ -18,6 +18,14 @@ trait GuardsRecurringAssetBookings
                 'item' => 'g002_m007_item_id', 'room' => 'g003_m006_room_id', 'vehicle' => 'g008_m017_vehicle_id'
             };
             $status = $this->status ?? ($this->activity?->status === 'draft' ? 'draft' : 'submitted');
+            // Reject creation, draft submission and changing the booked asset/time;
+            // approvals, cancellation, checkout and returns of existing records still work.
+            if (! $this->exists
+                || ($this->getOriginal('status') === 'draft' && $status === 'submitted')
+                || $this->isDirty([$key, 'start_time', 'end_time', 'g004_m008_activity_id'])
+                || ($type === 'item' && $this->isDirty('quantity'))) {
+                app(\App\Services\ModuleManager::class)->assertLoanType($type);
+            }
             $newBlockingState = $this->isDirty('status') && in_array($status, ['submitted', 'approved'], true);
             if ((! $this->exists || $newBlockingState || $this->isDirty([$key, 'start_time', 'end_time']))
                 && in_array($status, ReservationStatus::blockingValues(), true)

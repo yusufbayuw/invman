@@ -53,6 +53,9 @@ class PeminjamanSaya extends Page implements HasTable
 
     public static function getNavigationLabel(): string
     {
+        if (app(\App\Services\ModuleManager::class)->state('loans') === 'inactive') {
+            return 'Riwayat Peminjaman';
+        }
         return auth()->user()?->isFacility() || auth()->user()?->isAssetManager() ? 'Peminjaman Dikelola' : 'Peminjaman Saya';
     }
 
@@ -101,6 +104,7 @@ class PeminjamanSaya extends Page implements HasTable
                 Tables\Actions\Action::make('exportData')->label('Ekspor Excel (.xlsx)')->icon('heroicon-o-arrow-down-tray')
                     ->action(fn () => app(\App\Services\DataExchange\ResourceDataExchange::class)->downloadNeeds($this->getFilteredSortedTableQuery())),
                 Tables\Actions\Action::make('importDrafts')->label('Impor / Template Pengajuan')->icon('heroicon-o-arrow-up-tray')
+                    ->visible(fn (): bool => AjukanPeminjaman::canAccess())
                     ->url(\App\Filament\Resources\G004M008ActivityResource::getUrl()),
             ])
             ->query($this->getTableQuery())
@@ -185,7 +189,8 @@ class PeminjamanSaya extends Page implements HasTable
                     ->icon('heroicon-o-pencil-square')
                     ->color('gray')
                     ->visible(fn (LoanRequestNeed $record): bool => auth()->user()?->isSarpras()
-                        && $record->status === ReservationStatus::Draft->value)
+                        && $record->status === ReservationStatus::Draft->value
+                        && app(\App\Services\ModuleManager::class)->activityEntryEnabled($record->activity_id))
                     ->url(fn (LoanRequestNeed $record): string => AjukanPeminjaman::getUrl(['record' => $record->activity_id])),
                 Tables\Actions\Action::make('cancel')
                     ->label('Batalkan')

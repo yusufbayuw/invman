@@ -8,12 +8,15 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
 class G007M021VehicleHistoryResource extends Resource
 {
+    protected static string $moduleKey = 'vehicles';
+    protected static bool $moduleHistory = true;
+
     protected static ?string $model = G007M021VehicleHistory::class;
 
     protected static ?string $navigationGroup = 'Data Aset';

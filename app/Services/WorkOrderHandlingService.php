@@ -59,6 +59,7 @@ final class WorkOrderHandlingService
 
         return DB::transaction(function () use ($ticket, $actor, $decision, $mode, $vendorName, $vendorScope, $reason): WorkOrderHandlingPlan {
             $locked = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
+            app(ModuleManager::class)->assertAdvanced($locked);
             $this->authorizeManager($locked, $actor);
             if ($locked->status !== 'open' || ! $locked->maintenance || $locked->maintenance->approved_at
                 || $locked->workOrderApprovals()->where('checkpoint', 'start')->where('status', 'approved')->exists()) {
@@ -87,6 +88,7 @@ final class WorkOrderHandlingService
     {
         DB::transaction(function () use ($ticket, $reporter): void {
             $locked = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
+            app(ModuleManager::class)->assertAdvanced($locked);
             $plan = WorkOrderHandlingPlan::query()->whereKey($locked->id)->lockForUpdate()->first();
             if (! $reporter->is_enabled || $locked->status !== 'open'
                 || (int) $locked->reporter_id !== (int) $reporter->id
@@ -107,6 +109,7 @@ final class WorkOrderHandlingService
         }
         DB::transaction(function () use ($ticket, $manager, $notes): void {
             $locked = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
+            app(ModuleManager::class)->assertAdvanced($locked);
             $this->authorizeManager($locked, $manager, 'close');
             $plan = WorkOrderHandlingPlan::query()->whereKey($locked->id)->lockForUpdate()->first();
             if ($locked->status !== 'open' || $locked->assigned_to || ! $locked->maintenance
@@ -137,6 +140,7 @@ final class WorkOrderHandlingService
         }
         DB::transaction(function () use ($ticket, $actor, $reference): void {
             $locked = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
+            app(ModuleManager::class)->assertAdvanced($locked);
             $this->authorizeManager($locked, $actor);
             $plan = WorkOrderHandlingPlan::query()->whereKey($locked->id)->lockForUpdate()->first();
             if (! $plan || $plan->decision !== 'repair'
@@ -162,6 +166,7 @@ final class WorkOrderHandlingService
         }
         DB::transaction(function () use ($ticket, $actor, $result, $evidence): void {
             $locked = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
+            app(ModuleManager::class)->assertAdvanced($locked);
             $this->authorizeManager($locked, $actor);
             $plan = WorkOrderHandlingPlan::query()->whereKey($locked->id)->lockForUpdate()->first();
             if (! $plan?->vendor_dispatched_at
@@ -187,6 +192,7 @@ final class WorkOrderHandlingService
         }
         DB::transaction(function () use ($ticket, $actor, $accepted, $notes): void {
             $locked = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
+            app(ModuleManager::class)->assertAdvanced($locked);
             $this->authorizeManager($locked, $actor);
             $plan = WorkOrderHandlingPlan::query()->whereKey($locked->id)->lockForUpdate()->first();
             if (! $plan?->vendor_completed_at || $plan->vendor_inspected_at

@@ -34,7 +34,7 @@ class PengaturanPeminjaman extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        return app(\App\Services\ModuleManager::class)->enabled('loans') && (auth()->user()?->isAdmin() ?? false);
     }
 
     public function mount(): void

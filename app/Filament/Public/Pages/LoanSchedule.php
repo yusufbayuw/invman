@@ -11,8 +11,16 @@ class LoanSchedule extends Dashboard
 
     protected static bool $shouldRegisterNavigation = false;
 
+    public function getTitle(): string
+    {
+        return app(\App\Services\ModuleManager::class)->enabled('public_schedule') ? 'Jadwal Peminjaman' : config('app.name');
+    }
+
     public function getSubheading(): ?string
     {
+        if (! app(\App\Services\ModuleManager::class)->enabled('public_schedule')) {
+            return 'Masuk untuk menggunakan layanan aplikasi.';
+        }
         if (! auth()->user()?->is_enabled) {
             return 'Jadwal, jumlah, dan status dapat dilihat. Nama aset, kegiatan, unit, lokasi, dan nomor polisi disamarkan sebagian. Masuk untuk melihat detail lengkap.';
         }
@@ -32,7 +40,7 @@ class LoanSchedule extends Dashboard
     {
         return [
             Action::make('login')
-                ->label(auth()->user()?->is_enabled ? 'Buka Dasbor' : 'Masuk untuk Melihat Data')
+                ->label(auth()->user()?->is_enabled ? 'Buka Dasbor' : (app(\App\Services\ModuleManager::class)->enabled('public_schedule') ? 'Masuk untuk Melihat Data' : 'Masuk'))
                 ->icon('heroicon-o-arrow-right-end-on-rectangle')
                 ->url('/admin'),
         ];

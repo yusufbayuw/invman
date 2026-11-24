@@ -8,12 +8,15 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
 class G006M012RoomReviewResource extends Resource
 {
+    protected static string $moduleKey = 'loans_room';
+    protected static bool $moduleHistory = true;
+
     protected static ?string $model = G006M012RoomReview::class;
 
     protected static ?string $navigationGroup = 'Data Aset';

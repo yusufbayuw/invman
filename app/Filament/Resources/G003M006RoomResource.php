@@ -10,13 +10,15 @@ use App\Models\G003M006Room;
 use App\Services\RoomQrCodeService;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 class G003M006RoomResource extends Resource
 {
+    protected static string $moduleKey = 'rooms';
+
     protected static ?string $model = G003M006Room::class;
 
     protected static ?string $navigationGroup = 'Data Aset';

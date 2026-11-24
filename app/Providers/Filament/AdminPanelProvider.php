@@ -62,9 +62,9 @@ class AdminPanelProvider extends PanelProvider
             // without overriding the vendor resource or changing its permissions.
             ->renderHook(PanelsRenderHook::CONTENT_START, fn () => request()->is('admin/shield/roles*')
                 ? view('filament.components.shield-role-guidance') : '')
-            ->renderHook(PanelsRenderHook::BODY_END, fn () => view('pwa.client', [
-                'showBanner' => auth()->check(),
-            ]))
+            ->renderHook(PanelsRenderHook::CONTENT_START, fn () => auth()->check()
+                ? view('pwa.onboarding') : '')
+            ->renderHook(PanelsRenderHook::BODY_END, fn () => view('pwa.client'))
             ->renderHook(PanelsRenderHook::BODY_END, fn () => view('filament.components.session-recovery'))
             ->login(Login::class)
             ->profile(EditProfile::class, isSimple: false)
@@ -86,6 +86,7 @@ class AdminPanelProvider extends PanelProvider
             ->userMenuItems([
                 MenuItem::make()
                     ->label('Rekapan Penggunaan')
+                    ->visible(fn (): bool => RekapanPenggunaan::canAccess())
                     ->icon('heroicon-o-chart-bar-square')
                     ->url(fn (): string => RekapanPenggunaan::getUrl())
                     ->sort(10),

@@ -111,6 +111,11 @@ jobs:
         env:
           UAT_BROWSER_CHANNEL: chromium
         run: node tests/Support/OperationalUat/browser-security.cjs
+      - name: Module management browser UAT and role boundaries
+        if: always()
+        env:
+          UAT_BROWSER_CHANNEL: chromium
+        run: node tests/Support/OperationalUat/browser-modules.cjs
       - name: Controlled authenticated read load
         if: always()
         env:

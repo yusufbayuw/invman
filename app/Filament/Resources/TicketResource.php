@@ -13,7 +13,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,6 +21,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class TicketResource extends Resource
 {
+    protected static string $moduleKey = 'tickets';
+    protected static bool $moduleHistory = true;
+
     protected static ?string $model = Ticket::class;
     protected static ?string $navigationGroup = 'Laporan & Perbaikan';
     protected static ?string $navigationLabel = 'Laporan Kerusakan';
@@ -30,9 +33,22 @@ class TicketResource extends Resource
     protected static ?int $navigationSort = 1;
     protected static ?string $recordTitleAttribute = 'number';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        // Authorized users can still find history after the module is drained.
+        return static::canViewAny();
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return app(\App\Services\ModuleManager::class)->state('tickets') === 'inactive'
+            ? 'Riwayat Tiket' : parent::getNavigationLabel();
+    }
+
     public static function canViewAny(): bool
     {
-        return app(TicketService::class)->canCreate(auth()->user())
+        return (auth()->user()?->is_enabled && (auth()->user()->isSarpras() || auth()->user()->isFacility() || auth()->user()->isAssetManager())
+                && (app(\App\Services\ModuleManager::class)->enabled('tickets') || app(TicketVisibility::class)->query(auth()->user())->exists()))
             || (auth()->user()?->ticketTeamMember()->where('is_active', true)->exists() ?? false)
             || (auth()->user()?->workOrderAssignments()->where('is_active', true)->whereHas('jobTitle', fn ($query) => $query->where('is_active', true))->exists() ?? false)
             || (auth()->check() && app(\App\Services\WorkOrderWorkflowService::class)->scopeEligibleCandidates(\App\Models\WorkOrderApproval::query(), auth()->user())->exists());

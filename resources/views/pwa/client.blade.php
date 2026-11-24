@@ -1,33 +1,3 @@
-@if ($showBanner)
-    <aside id="pwa-onboarding" hidden aria-live="polite">
-        <button
-            type="button"
-            class="pwa-onboarding__close"
-            data-pwa-dismiss
-            aria-label="Tutup"
-        >&times;</button>
-
-        <div class="pwa-onboarding__content">
-            <strong>Gunakan LIST sebagai aplikasi</strong>
-            <span data-pwa-status>Memeriksa dukungan perangkat…</span>
-        </div>
-
-        <div class="pwa-onboarding__actions">
-            <button type="button" data-pwa-install-button hidden>
-                Install aplikasi
-            </button>
-
-            <button type="button" data-pwa-enable-button hidden>
-                Aktifkan notifikasi
-            </button>
-
-            <button type="button" data-pwa-disable-button hidden>
-                Nonaktifkan notifikasi
-            </button>
-        </div>
-    </aside>
-@endif
-
 @php
     $pwaConfig = [
         'authenticated' => auth()->check(),
@@ -46,11 +16,13 @@
 
 <style>
     #pwa-onboarding {
-        position: fixed;
-        z-index: 100;
-        right: 1rem;
-        bottom: 1rem;
-        width: min(25rem, calc(100vw - 2rem));
+        /* Keep onboarding inside the page layout; never cover form actions. */
+        position: relative;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        margin-block: .75rem 1rem;
         padding: 1rem;
         border: 1px solid rgb(199 210 254);
         border-radius: .9rem;
@@ -63,16 +35,29 @@
         position: absolute;
         top: .35rem;
         right: .55rem;
-        padding: .2rem .4rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: .5rem;
         color: rgb(100 116 139);
         font-size: 1.4rem;
         line-height: 1;
     }
 
+    .pwa-onboarding__close:hover,
+    .pwa-onboarding__close:focus-visible {
+        background: rgb(241 245 249);
+        color: rgb(15 23 42);
+    }
+
     .pwa-onboarding__content {
         display: grid;
         gap: .25rem;
-        padding-right: 1.5rem;
+        min-width: 0;
+        padding-right: 2.75rem;
+        overflow-wrap: anywhere;
     }
 
     .pwa-onboarding__content span {

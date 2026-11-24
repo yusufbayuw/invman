@@ -47,7 +47,8 @@ class TicketService
 
     public function canCreate(?User $user): bool
     {
-        return (bool) ($user && $user->is_enabled && ($user->isSarpras() || $user->isFacility() || $user->isAssetManager()));
+        return app(ModuleManager::class)->enabled('tickets')
+            && (bool) ($user && $user->is_enabled && ($user->isSarpras() || $user->isFacility() || $user->isAssetManager()));
     }
 
     /**
@@ -253,6 +254,7 @@ class TicketService
         ?User $reporter = null, ?string $overrideReason = null,
     ): Ticket
     {
+        app(ModuleManager::class)->assertEnabled('tickets');
         if ($overrideReason === null && ! $this->canCreate($actor)) {
             throw ValidationException::withMessages(['ticket' => 'Akun tidak berwenang membuat tiket.']);
         }
@@ -311,8 +313,10 @@ class TicketService
             ? $data['priority'] : 'normal';
 
         $ticket = DB::transaction(function () use ($actor, $category, $asset, $activity, $title, $description, $priority, $unitId, $location, $urgency, $reporter, $overrideReason): Ticket {
+            app(ModuleManager::class)->assertEnabled('tickets');
             $asset = $this->lockUnchangedAsset($asset, $actor);
-            $ticket = Ticket::query()->create([
+            $ticket = new Ticket([
+
                 'number' => 'TKT-'.now()->format('Y').'-'.Str::upper(Str::random(12)),
                 'ticket_category_id' => $category->id,
                 'reporter_id' => $reporter?->id ?? $actor->id,
@@ -326,6 +330,8 @@ class TicketService
                 'priority' => $priority,
                 'status' => 'open',
             ]);
+            $ticket->forceFill(['workflow_mode' => $category->reporting_enabled
+                ? app(ModuleManager::class)->newTicketMode() : null])->save();
             if ($asset) {
                 $ticket->assets()->create(['asset_type' => $asset['type'], 'asset_id' => $asset['id']]);
             }
@@ -569,7 +575,7 @@ class TicketService
             $category = TicketCategory::query()->where('slug', $categorySlug)->first();
             if (! $category) { continue; }
 
-            $ticket = Ticket::query()->create([
+            $ticket = new Ticket([
                 'number' => 'TKT-'.now()->format('Y').'-'.Str::upper(Str::random(12)),
                 'ticket_category_id' => $category->id,
                 'reporter_id' => $reservation->activity?->user_id,
@@ -582,6 +588,7 @@ class TicketService
                 'priority' => 'high',
                 'status' => 'open',
             ]);
+            $ticket->forceFill(['workflow_mode' => app(ModuleManager::class)->newTicketMode()])->save();
             $ticket->assets()->create(['asset_type' => $assetType, 'asset_id' => $assetId]);
             $this->event($ticket, auth()->id(), 'created_from_return', null, 'open', $sourceKey);
             app(TicketMaintenanceService::class)->initialize($ticket);

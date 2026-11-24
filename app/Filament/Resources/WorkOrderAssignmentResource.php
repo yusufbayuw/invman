@@ -6,12 +6,15 @@ use App\Models\WorkOrderAssignment;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
 class WorkOrderAssignmentResource extends Resource
 {
+    protected static string $moduleKey = 'work_orders';
+    protected static bool $moduleDrainSetup = true;
+
     protected static ?string $model = WorkOrderAssignment::class;
     protected static ?string $navigationGroup = 'Pengaturan';
     protected static ?int $navigationSort = 5;
@@ -19,8 +22,8 @@ class WorkOrderAssignmentResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $slug = 'work-order-assignments';
 
-    public static function canViewAny(): bool { return auth()->user()?->isAdmin() ?? false; }
-    public static function canCreate(): bool { return static::canViewAny(); }
+    public static function canViewAny(): bool { return static::moduleVisible() && (auth()->user()?->isAdmin() ?? false); }
+    public static function canCreate(): bool { return static::moduleVisible() && (static::canViewAny()); }
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool { return static::canViewAny(); }
     public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool { return false; }
 

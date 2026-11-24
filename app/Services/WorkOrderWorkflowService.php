@@ -79,6 +79,7 @@ final class WorkOrderWorkflowService
 
     public function publish(WorkOrderWorkflow $workflow, User $actor): void
     {
+        app(ModuleManager::class)->assertEnabled('work_orders');
         if (! $actor->is_enabled || ! $actor->isAdmin()) {
             abort(403);
         }
@@ -127,6 +128,9 @@ final class WorkOrderWorkflowService
 
     public function snapshot(Ticket $ticket): void
     {
+        if (! $ticket->usesAdvancedWorkflow()) {
+            return;
+        }
         $workflow = $this->current($ticket->g001_m001_unit_id);
         if (! $workflow) {
             return;

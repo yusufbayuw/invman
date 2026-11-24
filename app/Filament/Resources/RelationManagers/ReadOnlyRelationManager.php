@@ -19,6 +19,10 @@ abstract class ReadOnlyRelationManager extends RelationManager
 
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
+        if ($ownerRecord instanceof Ticket && ! $ownerRecord->usesAdvancedWorkflow()
+            && in_array(static::$relationship, ['workOrderEstimates', 'workOrderRevisions', 'workOrderApprovalHistory'], true)) {
+            return false;
+        }
         $resource = $pageClass::getResource();
         if (! auth()->user()?->is_enabled || ! ($resource::canView($ownerRecord) || $resource::canEdit($ownerRecord))) {
             return false;

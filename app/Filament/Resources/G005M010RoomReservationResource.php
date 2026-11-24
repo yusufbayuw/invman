@@ -7,7 +7,7 @@ use Filament\Forms;
 use Filament\Tables;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Illuminate\Support\Facades\Auth;
 use App\Models\G005M010RoomReservation;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,6 +18,9 @@ use App\Filament\Resources\G005M010RoomReservationResource\RelationManagers\Room
 
 class G005M010RoomReservationResource extends Resource
 {
+    protected static string $moduleKey = 'loans_room';
+    protected static bool $moduleHistory = true;
+
     protected static ?string $model = G005M010RoomReservation::class;
 
     protected static ?string $navigationGroup = 'Peminjaman';
@@ -28,7 +31,7 @@ class G005M010RoomReservationResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->isFacility();
+        return static::moduleVisible() && (Auth::user()->isFacility());
     }
 
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist

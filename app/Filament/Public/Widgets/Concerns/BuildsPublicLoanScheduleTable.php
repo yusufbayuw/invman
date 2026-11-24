@@ -11,8 +11,19 @@ use Illuminate\Database\Eloquent\Model;
 
 trait BuildsPublicLoanScheduleTable
 {
+    public static function canView(): bool
+    {
+        return app(\App\Services\ModuleManager::class)->publicLoanTypeVisible(static::$loanType);
+    }
+
+    public function hydrateBuildsPublicLoanScheduleTable(): void
+    {
+        abort_unless(static::canView(), 403);
+    }
+
     public function callBuildsPublicLoanScheduleTable(string $methodName): void
     {
+        abort_unless(static::canView(), 403);
         // Filament exposes public record getters to Livewire. Guests may use
         // table navigation, but must never invoke getters that return raw models.
         if (! $this->canViewScheduleDetails()) {
@@ -24,6 +35,9 @@ trait BuildsPublicLoanScheduleTable
 
     protected function visibleReservations(Builder $query): Builder
     {
+        if (! static::canView()) {
+            return $query->whereRaw('1=0');
+        }
         return $query
             ->whereIn('status', [
                 ReservationStatus::Approved->value,
@@ -34,7 +48,7 @@ trait BuildsPublicLoanScheduleTable
 
     protected function canViewScheduleDetails(): bool
     {
-        return (bool) auth()->user()?->is_enabled;
+        return static::canView() && (bool) auth()->user()?->is_enabled;
     }
 
     public function getMountedTableAction(): ?Tables\Actions\Action

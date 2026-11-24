@@ -15,7 +15,7 @@ final class WorkOrderRevisionService
 {
     public function canRevise(Ticket $ticket, User $actor, string $checkpoint, ?WorkOrderApproval $rejection = null): bool
     {
-        if (! $actor->is_enabled || ! $ticket->maintenance
+        if (! $ticket->usesAdvancedWorkflow() || ! $actor->is_enabled || ! $ticket->maintenance
             || ! ($rejection ? ($rejection->ticket_id === $ticket->id && $rejection->checkpoint === $checkpoint && $rejection->status === 'rejected' && ! $rejection->superseded_at) : $ticket->workOrderApprovals()->where('checkpoint', $checkpoint)->where('status', 'rejected')->exists())) {
             return false;
         }

@@ -71,20 +71,16 @@ $case = $ticket->maintenance()->make();
 $case->forceFill(['approval_notes' => 'Existing history'])->save();
 $ticket->events()->create(['actor_id' => $user->id, 'action' => 'opened', 'notes' => 'Legacy event']);
 $tables = ['users', 'model_has_roles', 'g004_m008_activities', 'g005_m009_item_reservations', 'tickets', 'ticket_events', 'ticket_maintenance_cases'];
-// Adding the hold policy column is an additive schema change. Compare all
-// pre-existing field values and history, not the new column absent at baseline.
-$fingerprint = fn () => array_map(function (string $table): string {
-    $rows = DB::table($table)->get()->map(function (object $record) use ($table): object {
-        if ($table === 'g004_m008_activities') {
-            unset($record->hold_strategy);
-        }
+// Capture the original column lists before additive migrations. Compare every
+// original value and row, independent of row order or new nullable columns.
+$legacyColumns = array_combine($tables, array_map(fn (string $table) => Schema::getColumnListing($table), $tables));
+$fingerprint = fn () => array_map(function (string $table) use ($legacyColumns): string {
+    $rows = DB::table($table)->select($legacyColumns[$table])->get()
+        ->map(fn (object $record): string => json_encode($record, JSON_THROW_ON_ERROR))
+        ->sort(SORT_STRING)->values()->all();
 
-        return $record;
-    })->all();
-
-    return hash('sha256', json_encode($rows));
+    return hash('sha256', json_encode($rows, JSON_THROW_ON_ERROR));
 }, $tables);
-$before = $fingerprint();
 // Upgrade through the original #32 schema with a real rejected approval row.
 // The new revision migration must retain that decision, not only empty tables.
 $assert(Artisan::call('migrate', ['--path' => 'database/migrations/2026_11_02_210000_create_dynamic_work_order_workflows.php', '--force' => true]) === 0, 'Original dynamic schema migration failed');
@@ -103,7 +99,15 @@ $originalApproval = (array) DB::table('work_order_approvals')->where('id', $appr
 $before = $fingerprint();
 $assert(Artisan::call('migrate', ['--force' => true]) === 0, 'Upgrade failed');
 $assert(Schema::hasTable('recurring_asset_schedules'), 'Recurring schedule table missing after upgrade');
-$assert($before === $fingerprint(), 'Existing rows changed during upgrade');
+$after = $fingerprint();
+$changedTables = array_values(array_filter($tables, fn (string $table): bool => $before[array_search($table, $tables, true)] !== $after[array_search($table, $tables, true)]));
+$assert($before === $after, 'Existing rows changed during upgrade: '.implode(', ', $changedTables));
+$assert(Schema::hasColumn('tickets', 'workflow_mode'), 'Ticket workflow mode column missing');
+$assert(DB::table('tickets')->whereNotNull('workflow_mode')->count() === 0, 'Legacy tickets unexpectedly assigned a new workflow mode');
+$assert($ticket->fresh()->usesAdvancedWorkflow() && $dynamicTicket->fresh()->usesAdvancedWorkflow(), 'Legacy workflow behavior changed');
+$assert(Schema::hasTable('module_setting_audits'), 'Module audit table missing');
+$assert(DB::table('application_settings')->where('key', 'module_settings_lock')->value('value') === '1', 'Module operation lock missing');
+$assert(app(\App\Services\ModuleManager::class)->enabled('loans'), 'Existing installation must default to enabled');
 $upgradedApproval = (array) DB::table('work_order_approvals')->where('id', $approvalId)->first();
 $assert(array_intersect_key($upgradedApproval, $originalApproval) === $originalApproval, 'Original approval identity/decision changed');
 $assert((int) $upgradedApproval['revision'] === 1 && $upgradedApproval['superseded_at'] === null, 'Original approval not retained as active revision one');
