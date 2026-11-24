@@ -99,6 +99,18 @@ class G004M008ActivityResource extends Resource
         return 'Kegiatan';
     }
 
+    public static function canCreate(): bool
+    {
+        return app(\App\Services\ModuleManager::class)->anyLoanTypeEnabled() && parent::canCreate();
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return $record instanceof G004M008Activity
+            && app(\App\Services\ModuleManager::class)->activityEntryEnabled($record->id)
+            && parent::canEdit($record);
+    }
+
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
     {
         return $infolist
@@ -443,7 +455,7 @@ class G004M008ActivityResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
                     ->url(fn (G004M008Activity $record): string => AjukanPeminjaman::getUrl(['record' => $record->id]))
-                    ->visible(fn (G004M008Activity $record) => Auth::user()?->can('update', $record)),
+                    ->visible(fn (G004M008Activity $record) => static::canEdit($record)),
                 Tables\Actions\Action::make('cancel')
                     ->label('Batalkan')
                     ->icon('heroicon-o-x-circle')

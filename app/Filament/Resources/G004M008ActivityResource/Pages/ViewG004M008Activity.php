@@ -16,7 +16,7 @@ class ViewG004M008Activity extends ViewRecord
         return [
             Actions\EditAction::make()
                 ->url(fn (): string => AjukanPeminjaman::getUrl(['record' => $this->record->id]))
-                ->visible(fn () => auth()->user()?->can('update', $this->record)),
+                ->visible(fn () => G004M008ActivityResource::canEdit($this->record)),
         ];
     }
 }

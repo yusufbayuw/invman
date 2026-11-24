@@ -36,7 +36,7 @@ class LoanEventResource extends Resource
 
     public static function canCreate(): bool
     {
-        return static::moduleEnabled() && (static::canViewAny());
+        return app(\App\Services\ModuleManager::class)->anyLoanTypeEnabled() && static::canViewAny();
     }
 
     public static function canView(Model $record): bool
@@ -47,7 +47,8 @@ class LoanEventResource extends Resource
 
     public static function canEdit(Model $record): bool
     {
-        return static::canView($record) && ! $record->requests()->exists();
+        return app(\App\Services\ModuleManager::class)->anyLoanTypeEnabled()
+            && static::canView($record) && ! $record->requests()->exists();
     }
 
     public static function canDelete(Model $record): bool

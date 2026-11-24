@@ -85,6 +85,23 @@ final class ModuleManager
         return $this->enabled('public_schedule') && $this->state('loans_'.$type) !== 'inactive';
     }
 
+    public function activityEntryEnabled(string $activityId): bool
+    {
+        if (! $this->anyLoanTypeEnabled()) {
+            return false;
+        }
+        $activity = \App\Models\G004M008Activity::query()->find($activityId);
+        if (! $activity || $activity->status !== ReservationStatus::Draft->value) {
+            return false;
+        }
+        foreach (['item', 'room', 'vehicle'] as $type) {
+            if (! $this->loanTypeEnabled($type) && $activity->{$type.'_reservation'}()->exists()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public function anyLoanTypeEnabled(): bool
     {
         return $this->loanTypeEnabled('item') || $this->loanTypeEnabled('room') || $this->loanTypeEnabled('vehicle');

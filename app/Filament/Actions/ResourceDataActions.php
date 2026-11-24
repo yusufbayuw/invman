@@ -27,7 +27,7 @@ class ResourceDataActions
         // Import the complete parent draft rather than bypassing that lifecycle.
         $importResource = in_array($resource::getModel(), [G005M009ItemReservation::class, G005M010RoomReservation::class, G005M019VehicleReservation::class, G005M016ItemReservationDetail::class], true)
             ? G004M008ActivityResource::class : $resource;
-        $editable = $exchange->supportsImport($importResource);
+        $editable = fn (): bool => $exchange->canUseImport($importResource);
         $createOnly = $importResource::getModel() === Ticket::class;
         $loanImport = $importResource === G004M008ActivityResource::class;
 
@@ -36,10 +36,10 @@ class ResourceDataActions
                 ->visible(fn () => $resource::canViewAny())
                 ->action(fn ($livewire) => $exchange->download($resource, query: $livewire->getFilteredSortedTableQuery())),
             Action::make('downloadTemplate')->label($loanImport ? 'Template Pengajuan' : 'Unduh Template')->icon('heroicon-o-document-arrow-down')
-                ->visible(fn () => $editable && $resource::canViewAny())
+                ->visible(fn () => $editable() && $resource::canViewAny())
                 ->action(fn () => $exchange->download($importResource, template: true)),
             Action::make('importData')->label($loanImport ? 'Impor Draf Pengajuan' : 'Impor Data')->icon('heroicon-o-arrow-up-tray')
-                ->visible(fn () => $editable && $resource::canViewAny())
+                ->visible(fn () => $editable() && $resource::canViewAny())
                 ->modalHeading('Impor '.$importResource::getPluralModelLabel())
                 ->modalDescription(($loanImport ? 'Impor selalu menyimpan DRAF pengajuan lengkap, tanpa mengubah status persetujuan, serah terima, atau alokasi. ID adalah ID pengajuan, bukan ID reservasi. ' : '').'Gunakan Excel Workbook (.xlsx) dari template terbaru, satu lembar kerja, maksimal 5 MB / 1.000 baris data. Jika ada kesalahan, seluruh impor dibatalkan.')
                 ->form([

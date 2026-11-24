@@ -59,7 +59,10 @@ abstract class ModuleResource extends Resource
 
     public static function canEdit(Model $record): bool
     {
-        return static::moduleReadable() && parent::canEdit($record);
+        // Historical records can still be viewed. Operational transitions
+        // are explicit service-backed actions, not generic CRUD mutations.
+        return (static::moduleEnabled() || (static::$moduleDrainSetup && static::moduleVisible()))
+            && parent::canEdit($record);
     }
 
     public static function canDelete(Model $record): bool

@@ -1,0 +1,41 @@
+name: Resolve module release dependency patch
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feature/module-management-graceful'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, sqlite3, sodium, gd, zip, intl, fileinfo, bcmath
+          tools: composer:v2
+      - name: Resolve patched Laravel 12 lockfile without running application scripts
+        run: |
+          composer require 'laravel/framework:^12.71.0' --no-update --no-interaction --no-plugins --no-scripts
+          composer update laravel/framework --with-all-dependencies --minimal-changes --no-install --no-interaction --no-plugins --no-scripts --prefer-dist
+          composer validate --strict --no-check-publish
+          composer audit --locked --no-dev --abandoned=ignore --format=table
+          echo 'LOCK_PATCH_BEGIN'
+          git -c color.ui=never diff -- composer.json composer.lock
+          echo 'LOCK_PATCH_END'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: composer-resolved-security-patch
+          path: |
+            composer.json
+            composer.lock
+          if-no-files-found: error
+          retention-days: 7
