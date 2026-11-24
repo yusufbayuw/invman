@@ -10,7 +10,7 @@ use App\Models\RecurringAssetSchedule;
 use App\Services\RecurringAssetScheduleService;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,6 +18,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class RecurringAssetScheduleResource extends Resource
 {
+    protected static string $moduleKey = 'recurring';
+    protected static bool $moduleDrainSetup = true;
+
     protected static ?string $model = RecurringAssetSchedule::class;
 
     protected static ?string $navigationGroup = 'Data Aset';
@@ -41,12 +44,12 @@ class RecurringAssetScheduleResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->check() && collect(static::assetResources())->contains(fn ($resource) => $resource::canViewAny());
+        return static::moduleVisible() && auth()->check() && collect(static::assetResources())->contains(fn ($resource) => $resource::canViewAny());
     }
 
     public static function canCreate(): bool
     {
-        return static::canViewAny();
+        return static::moduleEnabled() && static::canViewAny();
     }
 
     public static function canEdit(Model $record): bool
@@ -54,12 +57,12 @@ class RecurringAssetScheduleResource extends Resource
         $resource = static::assetResources()[$record->asset_type] ?? null;
         $asset = $resource ? $resource::getEloquentQuery()->find($record->asset_id) : null;
 
-        return $asset && $resource::canEdit($asset);
+        return static::moduleVisible() && $asset && $resource::canEdit($asset);
     }
 
     public static function canDelete(Model $record): bool
     {
-        return static::canEdit($record);
+        return static::moduleEnabled() && static::canEdit($record);
     }
 
     public static function getEloquentQuery(): Builder

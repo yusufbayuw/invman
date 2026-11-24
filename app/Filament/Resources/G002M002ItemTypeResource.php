@@ -8,7 +8,7 @@ use App\Filament\Resources\G002M002ItemTypeResource\RelationManagers\ItemRelatio
 use App\Models\G002M002ItemType;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class G002M002ItemTypeResource extends Resource
 {
+    protected static string $moduleKey = 'inventory';
+
     protected static ?string $model = G002M002ItemType::class;
 
     protected static ?string $navigationGroup = 'Data Aset';

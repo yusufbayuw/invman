@@ -6,12 +6,14 @@ use App\Filament\Resources\G008M017VehicleResource\Pages;
 use App\Models\G008M017Vehicle;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
 class G008M017VehicleResource extends Resource
 {
+    protected static string $moduleKey = 'vehicles';
+
     protected static ?string $model = G008M017Vehicle::class;
 
     protected static ?string $navigationGroup = 'Data Aset';

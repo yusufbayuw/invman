@@ -6,12 +6,14 @@ use App\Filament\Resources\VehicleAssistantResource\Pages;
 use App\Models\VehicleAssistant;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
 class VehicleAssistantResource extends Resource
 {
+    protected static string $moduleKey = 'vehicles';
+
     protected static ?string $model = VehicleAssistant::class;
     protected static ?string $navigationGroup = 'Data Aset';
     protected static ?string $navigationLabel = 'Kenek Bus';
@@ -20,12 +22,12 @@ class VehicleAssistantResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->isFacility() ?? false;
+        return static::moduleEnabled() && (auth()->user()?->isFacility() ?? false);
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->isFacility() ?? false;
+        return static::moduleEnabled() && (auth()->user()?->isFacility() ?? false);
     }
 
     public static function canCreate(): bool
