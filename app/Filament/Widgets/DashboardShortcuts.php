@@ -32,7 +32,8 @@ class DashboardShortcuts extends Widget
         if (TicketResource::canCreate()) {
             $links[] = $this->link('Laporan Kerusakan', 'Laporkan kerusakan dan pantau penanganannya.', 'heroicon-o-wrench-screwdriver', TicketResource::getUrl('create'), true);
         }
-        if ($user?->isFacility() && G004M008ActivityResource::canViewAny()) {
+        if ($user?->isFacility() && G004M008ActivityResource::canViewAny()
+            && app(\App\Services\ModuleManager::class)->state('loans') !== 'inactive') {
             $links[] = $this->link('Tinjau Pengajuan', 'Periksa kebutuhan dan persetujuan.', 'heroicon-o-inbox-stack', G004M008ActivityResource::getUrl());
         }
         if (PeminjamanSaya::canAccess()) {
@@ -41,7 +42,7 @@ class DashboardShortcuts extends Widget
         if (TugasTeknisi::hasActiveTasks()) {
             $links[] = $this->link('Tugas Saya', 'Dokumentasikan pekerjaan dan kirim hasil.', 'heroicon-o-wrench-screwdriver', TugasTeknisi::getUrl());
         }
-        if (RingkasanPeminjaman::canAccess()) {
+        if (RingkasanPeminjaman::canAccess() && app(\App\Services\ModuleManager::class)->enabled('public_schedule')) {
             $links[] = $this->link('Lihat Jadwal', 'Cek jadwal peminjaman aset.', 'heroicon-o-calendar-days', url('/'));
         }
         if (! TicketResource::canCreate() && TicketResource::canViewAny()) {

@@ -88,7 +88,8 @@ class RingkasanPeminjaman extends BaseDashboard
     {
         $user = auth()->user();
 
-        return (bool) ($user && ($user->isFacility() || $user->isSarpras() || $user->isAssetManager()));
+        return app(\App\Services\ModuleManager::class)->enabled('reports')
+            && (bool) ($user && ($user->isFacility() || $user->isSarpras() || $user->isAssetManager()));
     }
 
     public static function getRoutePath(): string

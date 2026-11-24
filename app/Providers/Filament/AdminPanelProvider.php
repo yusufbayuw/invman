@@ -86,6 +86,7 @@ class AdminPanelProvider extends PanelProvider
             ->userMenuItems([
                 MenuItem::make()
                     ->label('Rekapan Penggunaan')
+                    ->visible(fn (): bool => RekapanPenggunaan::canAccess())
                     ->icon('heroicon-o-chart-bar-square')
                     ->url(fn (): string => RekapanPenggunaan::getUrl())
                     ->sort(10),

@@ -48,7 +48,7 @@ class PeminjamanCepat extends Page implements HasForms
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->check() && auth()->user()->isSarpras();
+        return static::canAccess() && auth()->user()->isSarpras();
     }
 
     public function mount(): void
@@ -56,9 +56,10 @@ class PeminjamanCepat extends Page implements HasForms
         abort_unless(static::canAccess(), 403);
 
         $requestedType = request()->query('type', 'item');
-        $type = is_string($requestedType) && in_array($requestedType, ['item', 'room', 'vehicle'], true)
+        $types = app(\App\Services\ModuleManager::class)->loanTypeOptions();
+        $type = is_string($requestedType) && array_key_exists($requestedType, $types)
             ? $requestedType
-            : 'item';
+            : array_key_first($types);
 
         $start = now()->addHour()->startOfHour();
 
@@ -80,11 +81,7 @@ class PeminjamanCepat extends Page implements HasForms
                     ->schema([
                         Select::make('type')
                             ->label('Jenis kebutuhan')
-                            ->options([
-                                'item' => 'Barang / Peralatan',
-                                'room' => 'Ruangan / Tempat',
-                                'vehicle' => 'Kendaraan',
-                            ])
+                            ->options(fn (): array => app(\App\Services\ModuleManager::class)->loanTypeOptions())
                             ->native(false)
                             ->live()
                             ->required()

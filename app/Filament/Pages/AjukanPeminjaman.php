@@ -88,13 +88,14 @@ class AjukanPeminjaman extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return auth()->check()
+        return app(\App\Services\ModuleManager::class)->anyLoanTypeEnabled()
+            && auth()->check()
             && (auth()->user()->isFacility() || auth()->user()->isSarpras());
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->check() && (auth()->user()->isSarpras() || auth()->user()->isFacility());
+        return static::canAccess();
     }
 
     public function refreshAvailability(): void
@@ -205,11 +206,7 @@ class AjukanPeminjaman extends Page implements HasForms
                             ->schema([
                                 Select::make('type')
                                     ->label('Jenis kebutuhan')
-                                    ->options([
-                                        'item' => 'Barang / Peralatan',
-                                        'room' => 'Ruangan / Tempat',
-                                        'vehicle' => 'Kendaraan',
-                                    ])
+                                    ->options(fn (): array => app(\App\Services\ModuleManager::class)->loanTypeOptions())
                                     ->live()
                                     ->required(),
                                 Select::make('item_id')

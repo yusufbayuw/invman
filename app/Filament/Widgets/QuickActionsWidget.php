@@ -43,7 +43,8 @@ class QuickActionsWidget extends Widget implements HasActions, HasForms
     {
         $user = auth()->user();
 
-        return $user && ($user->isFacility() || $user->isSarpras() || $user->isAssetManager());
+        return app(\App\Services\ModuleManager::class)->state('loans') !== 'inactive'
+            && $user && ($user->isFacility() || $user->isSarpras() || $user->isAssetManager());
     }
 
     public function previousPage(): void

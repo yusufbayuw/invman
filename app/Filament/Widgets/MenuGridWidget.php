@@ -38,10 +38,25 @@ class MenuGridWidget extends Widget
 
     public function loadPinnedMenus()
     {
+        $allowed = $this->visibleMenuUrls();
         $this->pinnedMenus = PinnedMenu::where('user_id', auth()->id())->get()
-            ->reject(fn ($menu): bool => ! \App\Filament\Pages\CustomChatifyPage::canAccess()
-                && rtrim($menu->url, '/') === rtrim(\App\Filament\Pages\CustomChatifyPage::getUrl(), '/'))
+            ->filter(fn ($menu): bool => in_array(rtrim($menu->url, '/'), $allowed, true))
             ->values()->toArray();
+    }
+
+    public function hydrate(): void
+    {
+        abort_unless(static::canView() && auth()->check(), 403);
+        $this->loadPinnedMenus();
+    }
+
+    private function visibleMenuUrls(): array
+    {
+        return collect(Filament::getNavigation())
+            ->flatMap(fn ($group) => method_exists($group, 'getItems') ? $group->getItems() : [])
+            ->filter(fn ($item) => $item->isVisible() && ! $item->isHidden())
+            ->map(fn ($item) => rtrim($item->getUrl(), '/'))
+            ->all();
     }
 
     public function togglePin($label, $url, $icon = null)
@@ -51,6 +66,7 @@ class MenuGridWidget extends Widget
         if ($existing) {
             $existing->delete();
         } else {
+            abort_unless(is_string($url) && in_array(rtrim($url, '/'), $this->visibleMenuUrls(), true), 403);
             PinnedMenu::create([
                 'user_id' => auth()->id(),
                 'label' => $label,

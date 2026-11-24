@@ -43,7 +43,8 @@ class RekapanPenggunaan extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return auth()->check() && (auth()->user()->isFacility() || auth()->user()->isSarpras());
+        return app(\App\Services\ModuleManager::class)->enabled('reports')
+            && auth()->check() && (auth()->user()->isFacility() || auth()->user()->isSarpras());
     }
 
     public static function getNavigationBadge(): ?string

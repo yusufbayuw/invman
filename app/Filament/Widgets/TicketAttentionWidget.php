@@ -21,7 +21,8 @@ class TicketAttentionWidget extends TableWidget
 
     public static function canView(): bool
     {
-        return TicketResource::canViewAny();
+        return app(\App\Services\ModuleManager::class)->state('tickets') !== 'inactive'
+            && TicketResource::canViewAny();
     }
 
     public function table(Table $table): Table

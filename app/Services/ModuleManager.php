@@ -65,6 +65,15 @@ final class ModuleManager
         return true;
     }
 
+    public function loanTypeOptions(): array
+    {
+        return array_filter([
+            'item' => 'Barang / Peralatan',
+            'room' => 'Ruangan / Tempat',
+            'vehicle' => 'Kendaraan',
+        ], fn (string $type): bool => $this->loanTypeEnabled($type), ARRAY_FILTER_USE_KEY);
+    }
+
     public function anyLoanTypeEnabled(): bool
     {
         return $this->loanTypeEnabled('item') || $this->loanTypeEnabled('room') || $this->loanTypeEnabled('vehicle');
