@@ -300,6 +300,50 @@ class LoanRequestServiceTest extends TestCase
         $this->assertSame(0, G005M009ItemReservation::query()->count());
     }
 
+    public function test_disabled_room_loan_rejects_new_drafts_and_submission_but_drains_existing_booking(): void
+    {
+        [$user, $item, $room] = $this->fixtures();
+        $this->actingAs($user);
+        $service = app(LoanRequestService::class);
+        $data = [
+            'name' => 'Booking sebelum modul mati',
+            'description' => 'Uji penonaktifan tanpa kehilangan transaksi.',
+            'start_time' => '2026-09-01 09:00:00',
+            'end_time' => '2026-09-01 11:00:00',
+            'needs' => [['type' => 'room', 'room_id' => $room->id]],
+        ];
+        $active = $service->submit($user, $data);
+        $reservation = $active->room_reservation()->firstOrFail();
+        $draft = $service->saveDraft($user, $data);
+        $admin = User::factory()->create(['is_enabled' => true]);
+        $admin->assignRole(Role::findOrCreate(config('filament-shield.super_admin.name'), 'web'));
+        $modules = app(\App\Services\ModuleManager::class);
+        $modules->save($admin, ['rooms' => false]);
+
+        $this->assertFalse($modules->loanTypeEnabled('room'));
+        $this->assertTrue($modules->loanTypeEnabled('item'));
+        $this->assertSame('draining', $modules->state('loans_room'));
+        foreach ([fn () => $service->saveDraft($user, $data), fn () => $service->submitDraft($user, $draft)] as $attempt) {
+            try {
+                $attempt();
+                $this->fail('New operation must be denied');
+            } catch (ValidationException $exception) {
+                $this->assertArrayHasKey('module', $exception->errors());
+            }
+        }
+        $this->assertSame('draft', $draft->fresh()->status);
+
+        $service->processReservation('room', $reservation->id, ReservationStatus::Approved);
+        $service->processReservation('room', $reservation->id, ReservationStatus::CheckedOut);
+        $service->requestReturn($active->fresh(), ['is_ok' => true, 'notes' => 'Ruangan kembali dalam kondisi baik.']);
+        $this->actAsSeparateManager($item);
+        $service->confirmReturn('room', $reservation->id);
+        $this->assertSame('returned', $reservation->fresh()->status);
+        $this->assertSame('inactive', $modules->state('loans_room'));
+        $modules->save($admin, ['rooms' => true]);
+        $this->assertTrue($modules->loanTypeEnabled('room'));
+    }
+
     private function fixtures(): array
     {
         $unit = G001M001Unit::query()->create(['name' => 'Unit Pengujian']);

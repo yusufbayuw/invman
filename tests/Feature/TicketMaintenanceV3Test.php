@@ -53,6 +53,65 @@ class TicketMaintenanceV3Test extends TestCase
         return compact('unit', 'reporter', 'facility', 'managerTeam', 'technician', 'outsider', 'room', 'ticket');
     }
 
+    public function test_work_order_mode_is_immutable_and_basic_maintenance_survives_module_disable(): void
+    {
+        $d = $this->context();
+        $admin = User::factory()->create(['is_enabled' => true]);
+        $admin->assignRole(config('role.admin'));
+        $modules = app(\App\Services\ModuleManager::class);
+        $this->assertSame('advanced', $d['ticket']->workflow_mode);
+        $modules->save($admin, ['work_orders' => false]);
+
+        $room = G003M006Room::withoutEvents(fn () => G003M006Room::query()->create([
+            'name' => 'Ruang kedua', 'g001_m001_unit_id' => $d['unit']->id,
+            'g002_m003_item_management_id' => $d['managerTeam']->id, 'is_borrowable' => true,
+            'status' => 'Tersedia',
+        ]));
+        $data = [
+            'ticket_category_id' => $d['ticket']->ticket_category_id,
+            'title' => 'AC rusak di ruang kedua',
+            'description' => 'AC mengeluarkan air dan perlu diperbaiki.',
+            'asset_type' => 'room', 'asset_id' => $room->id,
+        ];
+        $simple = app(TicketService::class)->open($d['reporter'], $data);
+        $this->assertSame('simple', $simple->workflow_mode);
+        $this->assertNotNull($simple->maintenance);
+        $this->assertFalse($simple->workOrderApprovals()->exists());
+        $handling = app(\App\Services\WorkOrderHandlingService::class);
+        $handling->recordPlan($d['ticket'], $d['facility'], 'repair', 'internal', null, null, 'Perbaikan internal tetap berjalan.');
+        try {
+            $handling->recordPlan($simple, $d['facility'], 'repair', 'internal', null, null, 'Percobaan Work Order sederhana.');
+            $this->fail('Advanced action accepted on simple ticket');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('module', $exception->errors());
+        }
+        $this->assertFalse($simple->handlingPlan()->exists());
+
+        $modules->save($admin, ['tickets' => false]);
+        $this->assertSame('draining', $modules->state('tickets'));
+        $this->assertFalse(app(TicketService::class)->canCreate($d['reporter']));
+        try {
+            app(TicketService::class)->open($d['reporter'], $data);
+            $this->fail('Manual ticket creation accepted while disabled');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('module', $exception->errors());
+        }
+        $this->assertTrue(app(TicketAssetSafetyService::class)->isBlocked('room', $room->id));
+        $this->actingAs($d['reporter']);
+        $this->assertTrue(\App\Filament\Resources\TicketResource::canViewAny());
+        $maintenance = app(TicketMaintenanceService::class);
+        $maintenance->approve($simple, $d['facility'], $d['technician']->id);
+        $maintenance->accept($simple, $d['technician']);
+        $maintenance->finish($simple, $d['technician'], 'Pipa retak dan bocor.', 'Ganti pipa dan periksa sambungan.', [], 'complete');
+        $maintenance->verify($simple, $d['reporter'], true, 'Pipa sudah tidak bocor.');
+        $maintenance->close($simple, $d['facility'], true, 'Aset sudah aman dipakai.');
+        $this->assertSame('closed', $simple->fresh()->status);
+        $this->assertFalse(app(TicketAssetSafetyService::class)->isBlocked('room', $room->id));
+        $modules->save($admin, ['tickets' => true, 'work_orders' => true]);
+        $this->assertFalse($simple->fresh()->usesAdvancedWorkflow());
+        $this->assertTrue($d['ticket']->fresh()->usesAdvancedWorkflow());
+    }
+
     public function test_cancellation_preserves_unreleased_safety_hold_and_inventory_state(): void
     {
         $d = $this->context();

@@ -16,6 +16,7 @@ final class AssetBulkStockService
             throw ValidationException::withMessages(['reason' => 'Perubahan stok harus memiliki jumlah dan alasan minimal lima karakter.']);
         }
         DB::transaction(function () use ($item, $delta, $reason, $actor): void {
+            app(ModuleManager::class)->assertEnabled('inventory');
             $item = G002M007Item::query()->lockForUpdate()->findOrFail($item->id);
             abort_unless($actor->can('update', $item), 403);
             if (! $item->isBulk()) {

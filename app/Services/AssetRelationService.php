@@ -15,6 +15,7 @@ final class AssetRelationService
     public function connect(int $parentId, int $childId, string $type, User $actor): AssetRelation
     {
         return DB::transaction(function () use ($parentId, $childId, $type, $actor): AssetRelation {
+            app(ModuleManager::class)->assertEnabled('inventory');
             if (! in_array($type, self::TYPES, true) || $parentId === $childId) {
                 throw ValidationException::withMessages(['relation_type' => 'Relasi aset tidak valid.']);
             }
@@ -88,6 +89,7 @@ final class AssetRelationService
     public function disconnect(AssetRelation $relation, User $actor): void
     {
         DB::transaction(function () use ($relation, $actor): void {
+            app(ModuleManager::class)->assertEnabled('inventory');
             $snapshot = AssetRelation::query()->findOrFail($relation->id);
             $units = G002M015ItemInstance::query()->whereKey([$snapshot->parent_instance_id, $snapshot->child_instance_id])
                 ->orderBy('id')->lockForUpdate()->get();
@@ -107,6 +109,7 @@ final class AssetRelationService
     public function changeType(AssetRelation $relation, string $type, User $actor): AssetRelation
     {
         return DB::transaction(function () use ($relation, $type, $actor): AssetRelation {
+            app(ModuleManager::class)->assertEnabled('inventory');
             $parent = (int) $relation->parent_instance_id;
             $child = (int) $relation->child_instance_id;
             $this->disconnect($relation, $actor);

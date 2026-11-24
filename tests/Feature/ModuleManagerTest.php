@@ -50,6 +50,32 @@ class ModuleManagerTest extends TestCase
         $this->assertDatabaseCount('module_setting_audits', 2);
     }
 
+    public function test_disabled_master_and_public_schedule_are_not_accessible_even_to_super_admin(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin);
+        \Filament\Facades\Filament::setCurrentPanel(\Filament\Facades\Filament::getPanel('admin'));
+        $manager = app(ModuleManager::class);
+        $room = \App\Models\G003M006Room::create(['name' => 'Ruangan yang dirahasiakan']);
+        $manager->save($admin, ['inventory' => false, 'rooms' => false, 'public_schedule' => false, 'reports' => false]);
+
+        $this->assertFalse(\App\Filament\Resources\G002M007ItemResource::canCreate());
+        $this->assertFalse(\App\Filament\Resources\G003M006RoomResource::canViewAny());
+        $this->assertFalse(\App\Filament\Resources\G003M006RoomResource::shouldRegisterNavigation());
+        $this->assertFalse(\App\Filament\Resources\G003M006RoomResource::canGloballySearch());
+        $this->assertFalse(\App\Filament\Pages\RingkasanPeminjaman::canAccess());
+        $this->assertFalse(\App\Filament\Public\Widgets\RoomLoanSchedule::canView());
+        $this->assertFalse(\App\Filament\Public\Widgets\LoanScheduleStats::canView());
+        $this->get($room->publicScheduleUrl())->assertNotFound();
+        $this->get($room->qrCodePdfUrl())->assertNotFound();
+        $this->get('/')->assertOk()->assertDontSee('Ruangan yang dirahasiakan');
+
+        $this->assertTrue(ManajemenModul::canAccess());
+        $manager->save($admin, ['rooms' => true, 'public_schedule' => true]);
+        $this->assertTrue(\App\Filament\Public\Widgets\RoomLoanSchedule::canView());
+        $this->get($room->publicScheduleUrl())->assertOk();
+    }
+
     public function test_non_admin_cannot_manage_even_if_authenticated(): void
     {
         $user = User::factory()->create(['is_enabled' => true]);

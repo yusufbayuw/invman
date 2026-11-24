@@ -30,6 +30,11 @@ class ManajemenModul extends Page
         $this->form->fill(app(ModuleManager::class)->configuration());
     }
 
+    public function hydrate(): void
+    {
+        abort_unless(static::canAccess(), 403);
+    }
+
     public function form(Form $form): Form
     {
         $manager = app(ModuleManager::class);
