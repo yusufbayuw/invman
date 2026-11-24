@@ -15,13 +15,19 @@ class Ticket extends Model
     protected $fillable = [
         'number', 'ticket_category_id', 'reporter_id', 'g001_m001_unit_id',
         'g002_m003_item_management_id', 'assigned_to', 'g004_m008_activity_id',
-        'source_key', 'workflow_mode', 'title', 'description', 'location', 'reported_urgency', 'priority', 'status', 'resolved_at', 'closed_at',
+        'source_key', 'title', 'description', 'location', 'reported_urgency', 'priority', 'status', 'resolved_at', 'closed_at',
     ];
 
     protected $casts = ['resolved_at' => 'datetime', 'closed_at' => 'datetime'];
 
     protected static function booted(): void
     {
+        static::creating(function (self $ticket): void {
+            // Only internal workflow entry points set the immutable mode with forceFill.
+            if ($ticket->workflow_mode !== null && ! in_array($ticket->workflow_mode, ['simple', 'advanced'], true)) {
+                throw ValidationException::withMessages(['workflow_mode' => 'Mode penanganan tidak valid.']);
+            }
+        });
         static::updating(function (self $ticket): void {
             if ($ticket->isDirty('workflow_mode')) {
                 throw ValidationException::withMessages(['workflow_mode' => 'Mode penanganan tiket tidak dapat diubah.']);

@@ -32,7 +32,8 @@ class TicketResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return app(TicketService::class)->canCreate(auth()->user())
+        return (auth()->user()?->is_enabled && (auth()->user()->isSarpras() || auth()->user()->isFacility() || auth()->user()->isAssetManager())
+                && (app(\App\Services\ModuleManager::class)->enabled('tickets') || app(TicketVisibility::class)->query(auth()->user())->exists()))
             || (auth()->user()?->ticketTeamMember()->where('is_active', true)->exists() ?? false)
             || (auth()->user()?->workOrderAssignments()->where('is_active', true)->whereHas('jobTitle', fn ($query) => $query->where('is_active', true))->exists() ?? false)
             || (auth()->check() && app(\App\Services\WorkOrderWorkflowService::class)->scopeEligibleCandidates(\App\Models\WorkOrderApproval::query(), auth()->user())->exists());

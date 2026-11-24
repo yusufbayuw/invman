@@ -53,7 +53,7 @@ final class WorkOrderMaterialsService
 
     public function mayManage(Ticket $ticket, ?User $actor, bool $manager = false): bool
     {
-        if (! $actor || ! $actor->is_enabled || ! $ticket->maintenance
+        if (! $ticket->usesAdvancedWorkflow() || ! $actor || ! $actor->is_enabled || ! $ticket->maintenance
             || ! in_array($ticket->status, ['triaged', 'in_progress', 'waiting_parts'], true)
             || ($ticket->handlingPlan && $ticket->handlingPlan->decision !== 'repair')) {
             return false;

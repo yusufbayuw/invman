@@ -21,7 +21,7 @@ class TicketWorkOrderMaterialOrdersRelationManager extends RelationManager
 
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
-        return $ownerRecord instanceof Ticket && $ownerRecord->maintenance !== null
+        return $ownerRecord instanceof Ticket && $ownerRecord->usesAdvancedWorkflow() && $ownerRecord->maintenance !== null
             && TicketResource::canView($ownerRecord);
     }
 

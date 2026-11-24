@@ -315,9 +315,8 @@ class TicketService
         $ticket = DB::transaction(function () use ($actor, $category, $asset, $activity, $title, $description, $priority, $unitId, $location, $urgency, $reporter, $overrideReason): Ticket {
             app(ModuleManager::class)->assertEnabled('tickets');
             $asset = $this->lockUnchangedAsset($asset, $actor);
-            $ticket = Ticket::query()->create([
-                'workflow_mode' => $category->reporting_enabled
-                    ? (app(ModuleManager::class)->enabled('work_orders') ? 'advanced' : 'simple') : null,
+            $ticket = new Ticket([
+
                 'number' => 'TKT-'.now()->format('Y').'-'.Str::upper(Str::random(12)),
                 'ticket_category_id' => $category->id,
                 'reporter_id' => $reporter?->id ?? $actor->id,
@@ -331,6 +330,8 @@ class TicketService
                 'priority' => $priority,
                 'status' => 'open',
             ]);
+            $ticket->forceFill(['workflow_mode' => $category->reporting_enabled
+                ? (app(ModuleManager::class)->enabled('work_orders') ? 'advanced' : 'simple') : null])->save();
             if ($asset) {
                 $ticket->assets()->create(['asset_type' => $asset['type'], 'asset_id' => $asset['id']]);
             }
@@ -574,7 +575,7 @@ class TicketService
             $category = TicketCategory::query()->where('slug', $categorySlug)->first();
             if (! $category) { continue; }
 
-            $ticket = Ticket::query()->create([
+            $ticket = new Ticket([
                 'number' => 'TKT-'.now()->format('Y').'-'.Str::upper(Str::random(12)),
                 'ticket_category_id' => $category->id,
                 'reporter_id' => $reservation->activity?->user_id,
@@ -582,12 +583,12 @@ class TicketService
                 'g002_m003_item_management_id' => $asset['management'],
                 'g004_m008_activity_id' => $reservation->g004_m008_activity_id,
                 'source_key' => $sourceKey,
-                'workflow_mode' => app(ModuleManager::class)->enabled('work_orders') ? 'advanced' : 'simple',
                 'title' => 'Kondisi tidak baik: '.$asset['name'],
                 'description' => trim($check->notes ?: 'Ditemukan kondisi tidak baik saat pengembalian aset.'),
                 'priority' => 'high',
                 'status' => 'open',
             ]);
+            $ticket->forceFill(['workflow_mode' => app(ModuleManager::class)->enabled('work_orders') ? 'advanced' : 'simple'])->save();
             $ticket->assets()->create(['asset_type' => $assetType, 'asset_id' => $assetId]);
             $this->event($ticket, auth()->id(), 'created_from_return', null, 'open', $sourceKey);
             app(TicketMaintenanceService::class)->initialize($ticket);
