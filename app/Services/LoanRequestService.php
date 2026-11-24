@@ -95,6 +95,13 @@ class LoanRequestService
         ?G004M008Activity $activity = null,
         bool $validateAvailability = false,
     ): G004M008Activity {
+        $modules = app(ModuleManager::class);
+        $modules->assertEnabled('loans');
+        foreach ($data['needs'] ?? [] as $need) {
+            if (in_array($need['type'] ?? null, ['item', 'room', 'vehicle'], true)) {
+                $modules->assertLoanType($need['type']);
+            }
+        }
         if (! $user->g001_m001_unit_id) {
             throw ValidationException::withMessages([
                 'data.requester' => 'Akun Anda belum terhubung ke unit. Hubungi admin sebelum mengajukan peminjaman.',
@@ -234,6 +241,13 @@ class LoanRequestService
             }
 
             $locked->load(['item_reservation.item', 'room_reservation.room', 'vehicle_reservation.vehicle']);
+            $modules = app(ModuleManager::class);
+            $modules->assertEnabled('loans');
+            foreach (['item', 'room', 'vehicle'] as $type) {
+                if ($locked->{$type.'_reservation'}->isNotEmpty()) {
+                    $modules->assertLoanType($type);
+                }
+            }
             $this->validateDraftAvailability($locked);
 
             $locked->update([

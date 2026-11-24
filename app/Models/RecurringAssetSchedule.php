@@ -27,6 +27,19 @@ class RecurringAssetSchedule extends Model
     public function save(array $options = [])
     {
         return DB::transaction(function () use ($options) {
+            $modules = app(\App\Services\ModuleManager::class);
+            if (! $this->exists || ($this->is_active && $this->isDirty())) {
+                $modules->assertEnabled('recurring');
+                $assetModule = match ($this->asset_type) {
+                    G002M007Item::class => 'inventory',
+                    G003M006Room::class => 'rooms',
+                    G008M017Vehicle::class => 'vehicles',
+                    default => null,
+                };
+                if ($assetModule) {
+                    $modules->assertEnabled($assetModule);
+                }
+            }
             Validator::make($this->attributesToArray(), [
                 'asset_type' => ['required', Rule::in(RecurringAssetScheduleService::assetModels())],
                 'asset_id' => ['required', 'integer', 'min:1'],

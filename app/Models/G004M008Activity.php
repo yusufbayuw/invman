@@ -42,6 +42,7 @@ class G004M008Activity extends Model
     protected static function booted(): void
     {
         static::creating(function (self $activity): void {
+            app(\App\Services\ModuleManager::class)->assertEnabled('loans');
             if (! $activity->loan_event_id) {
                 // Also covers legacy Filament resource creation and seed/imports.
                 // The event remains valid after an individual request is cancelled.
@@ -69,6 +70,19 @@ class G004M008Activity extends Model
                     $activity->hold_strategy ??= $settings->holdStrategy();
                 }
                 $activity->hold_expires_at = $settings->expiresAt($activity->start_time);
+            }
+        });
+
+        static::updating(function (self $activity): void {
+            if ($activity->getOriginal('status') === 'draft'
+                && $activity->isDirty('status') && $activity->status === 'submitted') {
+                $modules = app(\App\Services\ModuleManager::class);
+                $modules->assertEnabled('loans');
+                foreach (['item', 'room', 'vehicle'] as $type) {
+                    if ($activity->{$type.'_reservation'}()->exists()) {
+                        $modules->assertLoanType($type);
+                    }
+                }
             }
         });
 

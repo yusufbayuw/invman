@@ -28,7 +28,7 @@ class PengaturanAplikasi extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        return app(\App\Services\ModuleManager::class)->canManage(auth()->user());
     }
 
     public function mount(): void
@@ -48,7 +48,7 @@ class PengaturanAplikasi extends Page implements HasForms
     public function save(): void
     {
         abort_unless(static::canAccess(), 403);
-        app(ApplicationSettings::class)->setChatEnabled((bool) $this->form->getState()['chat_enabled']);
+        app(\App\Services\ModuleManager::class)->save(auth()->user(), ['chat' => (bool) $this->form->getState()['chat_enabled']]);
         Notification::make()->title('Pengaturan aplikasi disimpan')->success()->send();
         $this->redirect(static::getUrl());
     }

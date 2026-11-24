@@ -23,6 +23,8 @@ class LoanEvent extends Model
 
     protected static function booted(): void
     {
+        static::creating(fn () => app(\App\Services\ModuleManager::class)->assertEnabled('loans'));
+
         // A used master event is historical context, not a disposable request.
         static::deleting(function (self $event): void {
             if ($event->requests()->exists()) {

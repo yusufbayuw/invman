@@ -47,7 +47,8 @@ class TicketService
 
     public function canCreate(?User $user): bool
     {
-        return (bool) ($user && $user->is_enabled && ($user->isSarpras() || $user->isFacility() || $user->isAssetManager()));
+        return app(ModuleManager::class)->enabled('tickets')
+            && (bool) ($user && $user->is_enabled && ($user->isSarpras() || $user->isFacility() || $user->isAssetManager()));
     }
 
     /**
@@ -253,6 +254,7 @@ class TicketService
         ?User $reporter = null, ?string $overrideReason = null,
     ): Ticket
     {
+        app(ModuleManager::class)->assertEnabled('tickets');
         if ($overrideReason === null && ! $this->canCreate($actor)) {
             throw ValidationException::withMessages(['ticket' => 'Akun tidak berwenang membuat tiket.']);
         }
@@ -311,8 +313,11 @@ class TicketService
             ? $data['priority'] : 'normal';
 
         $ticket = DB::transaction(function () use ($actor, $category, $asset, $activity, $title, $description, $priority, $unitId, $location, $urgency, $reporter, $overrideReason): Ticket {
+            app(ModuleManager::class)->assertEnabled('tickets');
             $asset = $this->lockUnchangedAsset($asset, $actor);
             $ticket = Ticket::query()->create([
+                'workflow_mode' => $category->reporting_enabled
+                    ? (app(ModuleManager::class)->enabled('work_orders') ? 'advanced' : 'simple') : null,
                 'number' => 'TKT-'.now()->format('Y').'-'.Str::upper(Str::random(12)),
                 'ticket_category_id' => $category->id,
                 'reporter_id' => $reporter?->id ?? $actor->id,
@@ -577,6 +582,7 @@ class TicketService
                 'g002_m003_item_management_id' => $asset['management'],
                 'g004_m008_activity_id' => $reservation->g004_m008_activity_id,
                 'source_key' => $sourceKey,
+                'workflow_mode' => app(ModuleManager::class)->enabled('work_orders') ? 'advanced' : 'simple',
                 'title' => 'Kondisi tidak baik: '.$asset['name'],
                 'description' => trim($check->notes ?: 'Ditemukan kondisi tidak baik saat pengembalian aset.'),
                 'priority' => 'high',

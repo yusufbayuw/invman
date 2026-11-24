@@ -65,6 +65,11 @@ final class ModuleManager
         return true;
     }
 
+    public function anyLoanTypeEnabled(): bool
+    {
+        return $this->loanTypeEnabled('item') || $this->loanTypeEnabled('room') || $this->loanTypeEnabled('vehicle');
+    }
+
     public function loanTypeEnabled(string $type): bool
     {
         return $this->enabled(match ($type) {
@@ -73,6 +78,13 @@ final class ModuleManager
             'vehicle' => 'loans_vehicle',
             default => throw new \InvalidArgumentException('Unknown asset type: '.$type),
         });
+    }
+
+    public function assertAdvanced(Ticket $ticket): void
+    {
+        if (! $ticket->usesAdvancedWorkflow()) {
+            throw ValidationException::withMessages(['module' => 'Tiket ini menggunakan penanganan sederhana.']);
+        }
     }
 
     public function assertEnabled(string $module): void
@@ -140,7 +152,8 @@ final class ModuleManager
             'rooms', 'loans_room' => $loans(G005M010RoomReservation::class),
             'vehicles', 'loans_vehicle' => $loans(G005M019VehicleReservation::class),
             'loans' => $loans(G005M009ItemReservation::class) + $loans(G005M010RoomReservation::class) + $loans(G005M019VehicleReservation::class),
-            'tickets' => Ticket::query()->whereNotIn('status', ['closed', 'cancelled'])->count(),
+            'tickets' => Ticket::query()->where(fn ($query) => $query->whereNotIn('status', ['closed', 'cancelled'])
+                ->orWhereHas('maintenance', fn ($hold) => $hold->whereNotNull('asset_hold_at')->whereNull('asset_released_at')))->count(),
             'work_orders' => Ticket::query()->whereNotIn('status', ['closed', 'cancelled'])
                 ->where(fn ($query) => $query->whereNull('workflow_mode')->orWhere('workflow_mode', 'advanced'))->count(),
             'recurring' => RecurringAssetSchedule::query()->where('is_active', true)
