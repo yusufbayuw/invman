@@ -331,7 +331,7 @@ class TicketService
                 'status' => 'open',
             ]);
             $ticket->forceFill(['workflow_mode' => $category->reporting_enabled
-                ? (app(ModuleManager::class)->enabled('work_orders') ? 'advanced' : 'simple') : null])->save();
+                ? app(ModuleManager::class)->newTicketMode() : null])->save();
             if ($asset) {
                 $ticket->assets()->create(['asset_type' => $asset['type'], 'asset_id' => $asset['id']]);
             }
@@ -588,7 +588,7 @@ class TicketService
                 'priority' => 'high',
                 'status' => 'open',
             ]);
-            $ticket->forceFill(['workflow_mode' => app(ModuleManager::class)->enabled('work_orders') ? 'advanced' : 'simple'])->save();
+            $ticket->forceFill(['workflow_mode' => app(ModuleManager::class)->newTicketMode()])->save();
             $ticket->assets()->create(['asset_type' => $assetType, 'asset_id' => $assetId]);
             $this->event($ticket, auth()->id(), 'created_from_return', null, 'open', $sourceKey);
             app(TicketMaintenanceService::class)->initialize($ticket);

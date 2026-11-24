@@ -39,6 +39,11 @@ class G004M008Activity extends Model
         'expired_at' => 'datetime',
     ];
 
+    public function save(array $options = [])
+    {
+        return \Illuminate\Support\Facades\DB::transaction(fn () => parent::save($options), 3);
+    }
+
     protected static function booted(): void
     {
         static::creating(function (self $activity): void {

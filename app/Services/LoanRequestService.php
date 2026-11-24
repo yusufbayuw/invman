@@ -145,6 +145,13 @@ class LoanRequestService
         $eventId = $event?->id ?: $relatedActivity?->loan_event_id ?: $activity?->loan_event_id;
 
         return DB::transaction(function () use ($user, $data, $start, $end, $activity, $validateAvailability, $relatedActivity, $eventId) {
+            $modules = app(ModuleManager::class);
+            $modules->assertEnabled('loans');
+            foreach ($data['needs'] ?? [] as $need) {
+                if (in_array($need['type'] ?? null, ['item', 'room', 'vehicle'], true)) {
+                    $modules->assertLoanType($need['type']);
+                }
+            }
             $attributes = [
                 'user_id' => $user->id,
                 'g001_m001_unit_id' => $user->g001_m001_unit_id,

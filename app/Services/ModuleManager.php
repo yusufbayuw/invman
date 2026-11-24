@@ -35,18 +35,24 @@ final class ModuleManager
     }
 
     // No process-wide cache: changes must apply to subsequent Livewire and worker requests.
-    public function requested(string $module): bool
+    public function requested(string $module, bool $locked = false): bool
     {
         $key = $this->key($module);
 
         // Existing migrations can run before the settings table is created.
-        return ! Schema::hasTable('application_settings')
-            || DB::table('application_settings')->where('key', $key)->value('value') !== '0';
+        if (! Schema::hasTable('application_settings')) {
+            return true;
+        }
+        $query = DB::table('application_settings')->where('key', $key);
+        if ($locked) {
+            $query->sharedLock();
+        }
+        return $query->value('value') !== '0';
     }
 
-    public function enabled(string $module): bool
+    public function enabled(string $module, bool $locked = false): bool
     {
-        if (! $this->requested($module)) {
+        if (! $this->requested($module, $locked)) {
             return false;
         }
 
@@ -57,7 +63,7 @@ final class ModuleManager
         }
 
         foreach ($requires as $dependency) {
-            if (! $this->enabled($dependency)) {
+            if (! $this->enabled($dependency, $locked)) {
                 return false;
             }
         }
@@ -94,6 +100,11 @@ final class ModuleManager
         });
     }
 
+    public function newTicketMode(): string
+    {
+        return $this->enabled('work_orders', $this->lockNewOperations()) ? 'advanced' : 'simple';
+    }
+
     public function assertAdvanced(Ticket $ticket): void
     {
         if (! $ticket->usesAdvancedWorkflow()) {
@@ -101,9 +112,18 @@ final class ModuleManager
         }
     }
 
+    /** Serialize new operations with administrator changes, not with other readers. */
+    public function lockNewOperations(): bool
+    {
+        if (DB::transactionLevel() === 0 || ! Schema::hasTable('application_settings')) {
+            return false;
+        }
+        return DB::table('application_settings')->where('key', 'module_settings_lock')->sharedLock()->first() !== null;
+    }
+
     public function assertEnabled(string $module): void
     {
-        if (! $this->enabled($module)) {
+        if (! $this->enabled($module, $this->lockNewOperations())) {
             throw ValidationException::withMessages(['module' => $this->definitions()[$module]['label'].' sedang dinonaktifkan.']);
         }
     }
@@ -140,7 +160,7 @@ final class ModuleManager
             abort_unless($this->canManage(User::query()->find($actor->id)), 403);
 
             foreach ($settings as $module => $enabled) {
-                $previous = $this->requested($module);
+                $previous = $this->requested($module, true);
                 if ($previous === $enabled) {
                     continue;
                 }
