@@ -9,8 +9,10 @@ use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 
-class ManajemenModul extends Page
+class ManajemenModul extends Page implements \Filament\Forms\Contracts\HasForms
 {
+    use \Filament\Forms\Concerns\InteractsWithForms;
+
     protected static ?string $navigationIcon = 'heroicon-o-squares-2x2';
     protected static ?string $navigationGroup = 'Pengaturan';
     protected static ?int $navigationSort = 9;

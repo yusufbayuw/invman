@@ -47,7 +47,7 @@ class G004M008Activity extends Model
     protected static function booted(): void
     {
         static::creating(function (self $activity): void {
-            app(\App\Services\ModuleManager::class)->assertEnabled('loans');
+            app(\App\Services\ModuleManager::class)->assertAnyLoanTypeEnabled();
             if (! $activity->loan_event_id) {
                 // Also covers legacy Filament resource creation and seed/imports.
                 // The event remains valid after an individual request is cancelled.
@@ -82,7 +82,7 @@ class G004M008Activity extends Model
             if ($activity->getOriginal('status') === 'draft'
                 && $activity->isDirty('status') && $activity->status === 'submitted') {
                 $modules = app(\App\Services\ModuleManager::class);
-                $modules->assertEnabled('loans');
+                $modules->assertAnyLoanTypeEnabled();
                 foreach (['item', 'room', 'vehicle'] as $type) {
                     if ($activity->{$type.'_reservation'}()->exists()) {
                         $modules->assertLoanType($type);

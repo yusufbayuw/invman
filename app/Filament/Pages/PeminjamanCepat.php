@@ -205,6 +205,11 @@ class PeminjamanCepat extends Page implements HasForms
         };
     }
 
+    public function hydrate(): void
+    {
+        abort_unless(static::canAccess(), 403);
+    }
+
     public function submit(): void
     {
         abort_unless(static::canAccess(), 403);

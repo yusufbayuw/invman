@@ -145,6 +145,17 @@ final class ModuleManager
         }
     }
 
+    public function assertAnyLoanTypeEnabled(): void
+    {
+        $locked = $this->lockNewOperations();
+        foreach (['loans_item', 'loans_room', 'loans_vehicle'] as $module) {
+            if ($this->enabled($module, $locked)) {
+                return;
+            }
+        }
+        throw ValidationException::withMessages(['module' => 'Tidak ada jenis peminjaman yang aktif.']);
+    }
+
     public function assertLoanType(string $type): void
     {
         $this->assertEnabled('loans_'.$type);

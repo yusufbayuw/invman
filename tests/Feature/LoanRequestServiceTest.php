@@ -332,6 +332,10 @@ class LoanRequestServiceTest extends TestCase
             }
         }
         $this->assertSame('draft', $draft->fresh()->status);
+        $this->assertFalse($modules->activityEntryEnabled($draft->id));
+        $this->assertFalse(\App\Filament\Resources\G004M008ActivityResource::canEdit($draft));
+        \Filament\Facades\Filament::setCurrentPanel(\Filament\Facades\Filament::getPanel('admin'));
+        $this->get(\App\Filament\Pages\AjukanPeminjaman::getUrl(['record' => $draft->id]))->assertForbidden();
 
         $service->processReservation('room', $reservation->id, ReservationStatus::Approved);
         $service->processReservation('room', $reservation->id, ReservationStatus::CheckedOut);

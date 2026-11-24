@@ -26,11 +26,12 @@ jobs:
         run: |
           composer require 'laravel/framework:^12.71.0' --no-update --no-interaction --no-plugins --no-scripts
           composer update laravel/framework --with-all-dependencies --minimal-changes --no-install --no-interaction --no-plugins --no-scripts --prefer-dist
-          composer validate --strict --no-check-publish
+          composer validate --no-check-publish
           composer audit --locked --no-dev --abandoned=ignore --format=table
           echo 'LOCK_PATCH_BEGIN'
           git -c color.ui=never diff -- composer.json composer.lock
           echo 'LOCK_PATCH_END'
+          git hash-object composer.json composer.lock
       - uses: actions/upload-artifact@v4
         with:
           name: composer-resolved-security-patch

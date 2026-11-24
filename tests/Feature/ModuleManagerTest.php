@@ -76,6 +76,42 @@ class ModuleManagerTest extends TestCase
         $this->get($room->publicScheduleUrl())->assertOk();
     }
 
+    public function test_module_page_saves_and_rejects_non_super_admin_livewire_access(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin);
+        \Filament\Facades\Filament::setCurrentPanel(\Filament\Facades\Filament::getPanel('admin'));
+        $this->get(ManajemenModul::getUrl())->assertOk();
+        \Livewire\Livewire::test(ManajemenModul::class)
+            ->set('data.loans', false)
+            ->set('data.chat', false)
+            ->call('save')
+            ->assertHasNoErrors();
+        $this->assertFalse(app(ModuleManager::class)->enabled('loans'));
+        $this->assertFalse(app(ApplicationSettings::class)->chatEnabled());
+        $this->assertDatabaseHas('module_setting_audits', ['actor_id' => $admin->id, 'module' => 'loans', 'enabled' => false]);
+        $this->actingAs(User::factory()->create(['is_enabled' => true]));
+        \Livewire\Livewire::test(ManajemenModul::class)->assertForbidden();
+    }
+
+    public function test_all_loan_children_disabled_blocks_new_event_and_activity(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin);
+        $manager = app(ModuleManager::class);
+        $manager->save($admin, ['loans_item' => false, 'loans_room' => false, 'loans_vehicle' => false]);
+        $this->assertFalse($manager->anyLoanTypeEnabled());
+        $this->assertFalse(\App\Filament\Pages\AjukanPeminjaman::canAccess());
+        $this->assertFalse(app(\App\Services\DataExchange\ResourceDataExchange::class)->canUseImport(\App\Filament\Resources\G004M008ActivityResource::class));
+        try {
+            \App\Models\LoanEvent::create(['name' => 'No active loan type']);
+            $this->fail('Unexpected new event');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->assertArrayHasKey('module', $e->errors());
+        }
+        $this->assertDatabaseCount('loan_events', 0);
+    }
+
     public function test_non_admin_cannot_manage_even_if_authenticated(): void
     {
         $user = User::factory()->create(['is_enabled' => true]);
