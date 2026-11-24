@@ -18,7 +18,7 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,6 +26,9 @@ use Illuminate\Support\Facades\Auth;
 
 class G004M008ActivityResource extends Resource
 {
+    protected static string $moduleKey = 'loans';
+    protected static bool $moduleHistory = true;
+
     protected static ?string $model = G004M008Activity::class;
 
     protected static ?string $navigationGroup = 'Peminjaman';

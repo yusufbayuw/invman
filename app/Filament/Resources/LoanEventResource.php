@@ -8,7 +8,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
+use App\Filament\Support\ModuleResource as Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +16,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class LoanEventResource extends Resource
 {
+    protected static string $moduleKey = 'loans';
+    protected static bool $moduleHistory = true;
+
     protected static ?string $model = LoanEvent::class;
     protected static ?string $navigationGroup = 'Peminjaman';
     protected static ?string $navigationLabel = 'Agenda Kegiatan';
@@ -33,7 +36,7 @@ class LoanEventResource extends Resource
 
     public static function canCreate(): bool
     {
-        return static::canViewAny();
+        return static::moduleEnabled() && (static::canViewAny());
     }
 
     public static function canView(Model $record): bool
